@@ -1,0 +1,20 @@
+{
+  "name": "@otter/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "otter": "./dist/bin.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "files": ["dist"],
+  "dependencies": {
+    "@otter/core": "workspace:*",
+    "commander": "^13.0.0"
+  }
+}
