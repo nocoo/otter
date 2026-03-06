@@ -80,8 +80,8 @@ interface CollectDirOptions {
 | `~/.claude/stats-cache.json` | 使用统计汇总 | — |
 | `~/.claude/plugins/installed_plugins.json` | 已安装插件 | — |
 | `~/.claude/plugins/blocklist.json` | 插件黑名单 | — |
-| `~/.claude/history.jsonl` | 提示词历史 | `maxSize: 2 MB` |
-| `~/.claude/projects/__sessions-summary.json` | 会话摘要（合成文件） | 见下方说明 |
+| `~/.claude/history.jsonl` | 提示词历史 | `redact: true`, `maxSize: 2 MB`, `--slim` 排除 |
+| `~/.claude/projects/__sessions-summary.json` | 会话摘要（合成文件） | `--slim` 排除，见下方说明 |
 
 **会话摘要机制**：
 
@@ -134,14 +134,15 @@ interface CollectDirOptions {
 
 | 文件 | 脱敏 |
 |------|------|
-| `.zshrc`, `.zprofile`, `.zshenv`, `.zlogin` | 否 |
-| `.bashrc`, `.bash_profile`, `.profile` | 否 |
-| `.gitconfig` | **是** |
+| `.zshrc`, `.zprofile`, `.zshenv`, `.zlogin` | **是**（Shell 脚本脱敏） |
+| `.bashrc`, `.bash_profile`, `.profile` | **是**（Shell 脚本脱敏） |
+| `.gitconfig` | **是**（行级脱敏） |
 | `.gitignore_global` | 否 |
-| `.vimrc`, `.editorconfig`, `.tmux.conf` | 否 |
-| `.npmrc` | **是** |
-| `.yarnrc`, `.wgetrc`, `.curlrc`, `.hushlogin` | 否 |
-| `.netrc` | **是** |
+| `.vimrc`, `.editorconfig` | 否 |
+| `.tmux.conf`, `.wgetrc`, `.curlrc` | **是**（Shell 脚本脱敏） |
+| `.npmrc` | **是**（行级脱敏） |
+| `.yarnrc`, `.hushlogin` | 否 |
+| `.netrc` | **是**（行级脱敏） |
 | `.ssh/config`, `.ssh/known_hosts` | 否（不采集密钥文件） |
 
 **SSH 密钥存在性检测**：

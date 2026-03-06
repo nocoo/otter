@@ -58,6 +58,7 @@ __tests__/
 ├── uploader/
 │   └── webhook.test.ts
 └── utils/
+    ├── icons.test.ts
     └── redact.test.ts
 ```
 
@@ -122,7 +123,10 @@ collector._execCommand = async (cmd: string) => "package1\npackage2\n";
 凭据脱敏工具的测试必须验证：
 
 - JSON 中敏感键值被替换为 `[REDACTED]`
+- Shell 脚本中 `export KEY=value` 模式被正确脱敏
+- JSONL 中的值级凭据（JWT、API Key、Bearer Token 等）被扫描替换
 - 无敏感数据时保持原文不变
+- 注释行（`#` 开头）不被脱敏
 - 非 JSON 格式的行级脱敏正确工作
 - 无效 JSON 返回原文
 
@@ -130,8 +134,8 @@ collector._execCommand = async (cmd: string) => "package1\npackage2\n";
 
 | 指标 | 数值 |
 |------|------|
-| 测试文件 | 11 |
-| 测试用例 | 80 |
+| 测试文件 | 12 |
+| 测试用例 | 133 |
 | 通过率 | 100% |
 
 ## 相关文档

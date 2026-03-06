@@ -58,7 +58,7 @@ otter/
 ├─────────────────────────────────────────────┤
 │               Layer 3: 上传                  │
 │                                             │
-│  uploadSnapshot() → POST Webhook            │
+│  uploadSnapshot() → gzip → POST Webhook     │
 └─────────────────────────────────────────────┘
 ```
 

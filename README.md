@@ -8,15 +8,15 @@
 
 ## ✨ 主要功能
 
-- 🐚 **Shell 配置采集** — `.zshrc`、`.bashrc`、`.gitconfig`、`.npmrc` 等 dotfiles，敏感凭据自动脱敏
+- 🐚 **Shell 配置采集** — `.zshrc`、`.bashrc`、`.gitconfig`、`.npmrc` 等 dotfiles，敏感凭据自动脱敏（含 `export KEY=value` 模式）
 - 🔑 **SSH 密钥检测** — 扫描 `~/.ssh/` 目录，报告密钥存在性（类型 + 修改时间），不采集密钥内容，提示用户手动备份
 - 🤖 **Claude 配置采集** — 精准采集 `~/.claude/` 下的核心配置，会话仅保留摘要（标题/token/模型），不含完整对话
 - 💻 **OpenCode 配置采集** — `~/.config/opencode/` 下的配置和技能文件，内置凭据脱敏，技能列表含 SKILL.md 描述和路径
 - 🍺 **Homebrew 采集** — 已安装的 formulae 和 casks 列表（仅名称）
 - 📱 **应用采集** — `/Applications` 目录下所有 `.app` 名称列表
 - 🎨 **应用图标导出** — `otter export-icons` 命令将 app 图标提取为 PNG 文件（基于 macOS sips，无外部依赖）
-- 🔒 **三层安全机制** — 采集过滤 → 内容脱敏 → 传输保护，详见 [安全文档](docs/05-security.md)
-- 📦 **JSON 快照** — 压缩至 ~1 MB，支持 Webhook 上传
+- 🔒 **四层安全机制** — 采集过滤 → Shell/JSON/JSONL 脱敏 → 值级凭据扫描 → gzip 压缩传输，详见 [安全文档](docs/05-security.md)
+- 📦 **JSON 快照** — 完整模式 ~1 MB，`--slim` 模式 ~130 KB，支持 gzip 压缩 Webhook 上传
 
 ## 📁 项目结构
 
@@ -62,6 +62,12 @@ bun run build
 
 # 运行扫描（生成快照）
 bun run --filter @otter/cli start -- scan
+
+# 精简模式（排除 history.jsonl 和会话摘要，~130 KB）
+bun run --filter @otter/cli start -- scan --slim
+
+# 输出 JSON 到 stdout（进度信息转至 stderr）
+bun run --filter @otter/cli start -- scan --json
 ```
 
 ### 开发命令

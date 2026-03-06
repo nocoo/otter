@@ -4,11 +4,12 @@
 
 ## 安全设计原则
 
-Otter 在采集开发环境配置时，必须确保不泄露敏感信息。安全防护分为三层：
+Otter 在采集开发环境配置时，必须确保不泄露敏感信息。安全防护分为四层：
 
 1. **采集层过滤** — 从源头排除危险文件和目录
-2. **内容层脱敏** — 对采集到的文件内容进行凭据替换
-3. **传输层保护** — 上传时使用 HTTPS
+2. **内容层脱敏** — 对采集到的文件内容进行凭据替换（JSON / INI / Shell / JSONL 四种策略）
+3. **值级凭据扫描** — 扫描 freeform 文本中的 JWT、API Key、Bearer Token 等模式
+4. **传输层保护** — gzip 压缩 + HTTPS 上传
 
 ## 采集层过滤
 
@@ -89,21 +90,71 @@ shell-snapshots/, session-env/, statsig/
 
 ### 自动格式检测（`redactSecrets`）
 
-根据文件路径扩展名自动选择脱敏策略：
+根据文件路径扩展名或文件名自动选择脱敏策略：
 
-| 扩展名 | 策略 |
-|--------|------|
-| `.json` | JSON 深度脱敏 |
+| 匹配规则 | 策略 |
+|----------|------|
+| `.json` | JSON 深度脱敏（键名匹配） |
+| `.jsonl` | JSONL 脱敏（键名 + 值级凭据扫描） |
 | `.npmrc`, `.gitconfig`, `.env`, `.env.local`, `.netrc` | 行级脱敏 |
+| `.zshrc`, `.bashrc`, `.profile`, `.zprofile`, `.zshenv`, `.zlogin`, `.bash_profile`, `.tmux.conf`, `.wgetrc`, `.curlrc` | Shell 脚本脱敏 |
 | 其他 | 不处理 |
+
+### Shell 脚本脱敏（`redactShellSecrets`）
+
+针对 `.zshrc`, `.bashrc`, `.profile` 等 shell 配置文件，识别敏感变量赋值并脱敏：
+
+| 模式 | 匹配示例 |
+|------|----------|
+| `export KEY=value`（KEY 含 TOKEN/SECRET/KEY/PASSWORD/CREDENTIAL/AUTH） | `export Z_AI_API_KEY="sk-..."` |
+| `KEY=value`（同上，无 export） | `GITHUB_TOKEN=ghp_xxx` |
+
+特性：
+- 注释行（`#` 开头）自动跳过
+- 支持 `export` 和非 `export` 两种形式
+- 不影响非敏感变量（如 `export PATH=...`, `EDITOR=nvim`）
+
+### JSONL 值级脱敏（`redactJsonlSecrets`）
+
+针对 `history.jsonl` 等 JSONL 文件，对每行 JSON 执行双重脱敏：
+
+1. **键名脱敏**：与 `redactJsonSecrets` 相同的键名模式匹配
+2. **值级凭据扫描**：深度遍历所有字符串值，匹配以下凭据模式并替换为 `[REDACTED]`：
+
+| 凭据类型 | 匹配模式 |
+|----------|----------|
+| JWT Token | `eyJhbG...` 三段式 base64 |
+| Bearer/Token Header | `Bearer xxx`, `Token xxx` |
+| AWS Access Key | `AKIA...`（20 字符） |
+| GitHub Token | `ghp_`, `gho_`, `ghu_`, `ghs_`, `ghr_` 前缀 |
+| Anthropic API Key | `sk-ant-` 前缀 |
+| OpenAI API Key | `sk-`, `sk-proj-` 前缀 |
+| Slack Token | `xoxb-`, `xoxp-`, `xoxs-`, `xoxa-` 前缀 |
+| npm Token | `npm_` 前缀 |
+| Cookie Session | `session=`, `sid=`, `connect.sid=` 等 |
+| Private Key | `-----BEGIN PRIVATE KEY-----` 块 |
+| Generic Long Secret | `token/key/secret=` + 32+ 字符值 |
 
 ## 脱敏应用点
 
 | 采集器 | 脱敏文件 | 方式 |
 |--------|----------|------|
-| ClaudeConfigCollector | `settings.json` | `safeReadFile({ redact: true })` |
+| ClaudeConfigCollector | `settings.json` | `safeReadFile({ redact: true })` — JSON 键名脱敏 |
+| ClaudeConfigCollector | `history.jsonl` | `safeReadFile({ redact: true })` — JSONL 值级凭据扫描 |
 | OpenCodeConfigCollector | 全部 JSON 配置 | `collectDir({ redact: true })` |
-| ShellConfigCollector | `.gitconfig`, `.npmrc`, `.netrc` | `safeReadFile({ redact: true })` |
+| ShellConfigCollector | `.zshrc`, `.bashrc`, `.profile` 等 | `safeReadFile({ redact: true })` — Shell 脚本脱敏 |
+| ShellConfigCollector | `.gitconfig`, `.npmrc`, `.netrc` | `safeReadFile({ redact: true })` — 行级脱敏 |
+
+## `--slim` 精简模式
+
+`otter scan --slim` 和 `otter backup --slim` 可排除行为数据，仅保留纯配置文件：
+
+| 排除内容 | 大小占比 | 原因 |
+|----------|----------|------|
+| `history.jsonl` | ~80% (~842 KB) | 提示词历史，含用户输入的 freeform 文本 |
+| `__sessions-summary.json` | ~17% (~175 KB) | 会话元数据摘要 |
+
+精简模式下快照从 ~1.15 MB 缩减至 ~130 KB。
 
 ## SSH 密钥保护
 
