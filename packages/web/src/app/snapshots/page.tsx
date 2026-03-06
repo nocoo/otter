@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Archive,
@@ -7,13 +8,14 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 
 // ---------------------------------------------------------------------------
-// Static placeholder data (Phase 1 — will be replaced by API calls)
+// Types
 // ---------------------------------------------------------------------------
 
 interface SnapshotRow {
@@ -22,34 +24,120 @@ interface SnapshotRow {
   platform: string;
   arch: string;
   username: string;
-  collectors: number;
-  files: number;
-  lists: number;
-  sizeKb: number;
-  createdAt: string;
-  timeAgo: string;
+  collectorCount: number;
+  fileCount: number;
+  listCount: number;
+  sizeBytes: number;
+  snapshotAt: number;
+  uploadedAt: number;
 }
 
-const snapshots: SnapshotRow[] = [
-  { id: "a1b2c3d4", hostname: "nocoo-mbp", platform: "darwin", arch: "arm64", username: "nocoo", collectors: 5, files: 21, lists: 201, sizeKb: 71, createdAt: "2026-03-06 11:30", timeAgo: "2 hours ago" },
-  { id: "e5f6g7h8", hostname: "nocoo-mbp", platform: "darwin", arch: "arm64", username: "nocoo", collectors: 5, files: 21, lists: 198, sizeKb: 70, createdAt: "2026-03-05 09:15", timeAgo: "1 day ago" },
-  { id: "i9j0k1l2", hostname: "nocoo-mbp", platform: "darwin", arch: "arm64", username: "nocoo", collectors: 5, files: 20, lists: 195, sizeKb: 68, createdAt: "2026-03-03 14:22", timeAgo: "3 days ago" },
-  { id: "m3n4o5p6", hostname: "nocoo-mbp", platform: "darwin", arch: "arm64", username: "nocoo", collectors: 5, files: 20, lists: 190, sizeKb: 67, createdAt: "2026-03-01 08:45", timeAgo: "5 days ago" },
-  { id: "q7r8s9t0", hostname: "nocoo-mbp", platform: "darwin", arch: "arm64", username: "nocoo", collectors: 4, files: 18, lists: 185, sizeKb: 62, createdAt: "2026-02-27 16:30", timeAgo: "1 week ago" },
-  { id: "u1v2w3x4", hostname: "nocoo-mbp", platform: "darwin", arch: "arm64", username: "nocoo", collectors: 4, files: 18, lists: 182, sizeKb: 60, createdAt: "2026-02-24 10:00", timeAgo: "10 days ago" },
-  { id: "y5z6a7b8", hostname: "nocoo-mbp", platform: "darwin", arch: "arm64", username: "nocoo", collectors: 4, files: 17, lists: 178, sizeKb: 58, createdAt: "2026-02-20 13:15", timeAgo: "2 weeks ago" },
-  { id: "c9d0e1f2", hostname: "nocoo-mbp", platform: "darwin", arch: "arm64", username: "nocoo", collectors: 4, files: 17, lists: 175, sizeKb: 56, createdAt: "2026-02-15 09:30", timeAgo: "19 days ago" },
-  { id: "g3h4i5j6", hostname: "nocoo-mbp", platform: "darwin", arch: "arm64", username: "nocoo", collectors: 3, files: 15, lists: 170, sizeKb: 52, createdAt: "2026-02-10 11:45", timeAgo: "24 days ago" },
-  { id: "k7l8m9n0", hostname: "nocoo-mbp", platform: "darwin", arch: "arm64", username: "nocoo", collectors: 3, files: 14, lists: 165, sizeKb: 48, createdAt: "2026-02-05 15:00", timeAgo: "29 days ago" },
-  { id: "o1p2q3r4", hostname: "nocoo-mbp", platform: "darwin", arch: "arm64", username: "nocoo", collectors: 3, files: 14, lists: 160, sizeKb: 45, createdAt: "2026-02-01 08:00", timeAgo: "1 month ago" },
-  { id: "s5t6u7v8", hostname: "nocoo-mbp", platform: "darwin", arch: "arm64", username: "nocoo", collectors: 3, files: 12, lists: 150, sizeKb: 40, createdAt: "2026-01-25 12:30", timeAgo: "1 month ago" },
-];
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatTimeAgo(ts: number): string {
+  const diff = Date.now() - ts;
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  if (days < 30) return `${Math.floor(days / 7)}w ago`;
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
+}
+
+function formatDateTime(ts: number): string {
+  return new Date(ts).toLocaleString("en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  return `${Math.round(bytes / 1024)} KB`;
+}
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const PAGE_SIZE = 20;
 
 // ---------------------------------------------------------------------------
 // Components
 // ---------------------------------------------------------------------------
 
 export default function SnapshotsPage() {
+  const [snapshots, setSnapshots] = useState<SnapshotRow[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [cursors, setCursors] = useState<number[]>([]); // stack of "before" cursors for back navigation
+  const [nextBefore, setNextBefore] = useState<number | null>(null);
+
+  const fetchPage = useCallback(async (before?: number) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ limit: String(PAGE_SIZE) });
+      if (before !== undefined) {
+        params.set("before", String(before));
+      }
+      const res = await fetch(`/api/snapshots?${params.toString()}`);
+      if (!res.ok) throw new Error("Failed to load snapshots");
+      const data = await res.json();
+      setSnapshots(data.snapshots);
+      setTotal(data.total);
+      setNextBefore(data.nextBefore);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchPage();
+  }, [fetchPage]);
+
+  const currentPage = cursors.length + 1;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const showStart = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const showEnd = Math.min(currentPage * PAGE_SIZE, total);
+
+  const handleNext = () => {
+    if (nextBefore === null) return;
+    // Push current first item's uploadedAt as cursor for "back"
+    if (snapshots.length > 0) {
+      setCursors((prev) => [...prev, snapshots[0]!.uploadedAt + 1]);
+    }
+    void fetchPage(nextBefore);
+  };
+
+  const handlePrev = () => {
+    if (cursors.length === 0) return;
+    const newCursors = [...cursors];
+    newCursors.pop();
+    setCursors(newCursors);
+    const prevBefore = newCursors.length > 0 ? newCursors[newCursors.length - 1] : undefined;
+    // Go back to the first page if no cursor
+    void fetchPage(prevBefore !== undefined ? prevBefore - 1 : undefined);
+  };
+
+  // For back navigation, we refetch without cursor if it's page 1
+  const handlePrevToFirst = () => {
+    setCursors([]);
+    void fetchPage();
+  };
+
   return (
     <AppShell breadcrumbs={[{ label: "Snapshots" }]}>
       <div className="space-y-6">
@@ -71,86 +159,119 @@ export default function SnapshotsPage() {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="rounded-xl bg-secondary p-1">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">Snapshot</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">Host</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">Platform</th>
-                  <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">Collectors</th>
-                  <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">Files</th>
-                  <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">Lists</th>
-                  <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">Size</th>
-                  <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                {snapshots.map((snap) => (
-                  <tr
-                    key={snap.id}
-                    className="border-b border-border/50 last:border-0 hover:bg-accent/50 transition-colors"
-                  >
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/snapshots/${snap.id}`}
-                        className="inline-flex items-center gap-2 text-foreground hover:text-primary transition-colors"
+        {/* Content */}
+        {loading ? (
+          <div className="rounded-xl bg-secondary p-12 text-center">
+            <Loader2 className="h-8 w-8 text-muted-foreground/40 mx-auto animate-spin" />
+            <p className="mt-3 text-sm text-muted-foreground">Loading snapshots...</p>
+          </div>
+        ) : error ? (
+          <div className="rounded-xl bg-secondary p-12 text-center">
+            <p className="text-sm text-destructive">{error}</p>
+            <button
+              onClick={() => {
+                setCursors([]);
+                void fetchPage();
+              }}
+              className="mt-2 text-xs text-muted-foreground hover:text-foreground underline"
+            >
+              Retry
+            </button>
+          </div>
+        ) : snapshots.length === 0 ? (
+          <div className="rounded-xl bg-secondary p-12 text-center">
+            <Archive className="h-8 w-8 text-muted-foreground/40 mx-auto" strokeWidth={1.5} />
+            <p className="mt-3 text-sm text-muted-foreground">No snapshots yet</p>
+            <p className="mt-1 text-xs text-muted-foreground/60">
+              Configure a webhook and run the CLI to create your first backup
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Table */}
+            <div className="rounded-xl bg-secondary p-1">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">Snapshot</th>
+                      <th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">Host</th>
+                      <th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">Platform</th>
+                      <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">Collectors</th>
+                      <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">Files</th>
+                      <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">Lists</th>
+                      <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">Size</th>
+                      <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">Created</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {snapshots.map((snap) => (
+                      <tr
+                        key={snap.id}
+                        className="border-b border-border/50 last:border-0 hover:bg-accent/50 transition-colors"
                       >
-                        <Archive className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
-                        <code className="text-xs font-mono">{snap.id}</code>
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Monitor className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
-                        <span className="font-medium">{snap.hostname}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant="secondary" className="text-xs font-normal">
-                        {snap.platform}/{snap.arch}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums">{snap.collectors}</td>
-                    <td className="px-4 py-3 text-right tabular-nums">{snap.files}</td>
-                    <td className="px-4 py-3 text-right tabular-nums">{snap.lists}</td>
-                    <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{snap.sizeKb} KB</td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex flex-col items-end">
-                        <span className="text-xs text-muted-foreground">{snap.timeAgo}</span>
-                        <span className="text-[10px] text-muted-foreground/60">{snap.createdAt}</span>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                        <td className="px-4 py-3">
+                          <Link
+                            href={`/snapshots/${snap.id}`}
+                            className="inline-flex items-center gap-2 text-foreground hover:text-primary transition-colors"
+                          >
+                            <Archive className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                            <code className="text-xs font-mono">{snap.id.slice(0, 8)}</code>
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <Monitor className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                            <span className="font-medium">{snap.hostname}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant="secondary" className="text-xs font-normal">
+                            {snap.platform}/{snap.arch}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-right tabular-nums">{snap.collectorCount}</td>
+                        <td className="px-4 py-3 text-right tabular-nums">{snap.fileCount}</td>
+                        <td className="px-4 py-3 text-right tabular-nums">{snap.listCount}</td>
+                        <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{formatSize(snap.sizeBytes)}</td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex flex-col items-end">
+                            <span className="text-xs text-muted-foreground">{formatTimeAgo(snap.snapshotAt)}</span>
+                            <span className="text-[10px] text-muted-foreground/60">{formatDateTime(snap.snapshotAt)}</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
-        {/* Pagination (static placeholder) */}
-        <div className="flex items-center justify-between px-2">
-          <p className="text-xs text-muted-foreground">
-            Showing 1-12 of 12 snapshots
-          </p>
-          <div className="flex items-center gap-1">
-            <button
-              disabled
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground disabled:opacity-40"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <span className="px-2 text-xs text-muted-foreground">Page 1 of 1</span>
-            <button
-              disabled
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground disabled:opacity-40"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+            {/* Pagination */}
+            <div className="flex items-center justify-between px-2">
+              <p className="text-xs text-muted-foreground">
+                Showing {showStart}-{showEnd} of {total} snapshots
+              </p>
+              <div className="flex items-center gap-1">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={currentPage === 2 ? handlePrevToFirst : handlePrev}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-40 transition-colors"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="px-2 text-xs text-muted-foreground">Page {currentPage} of {totalPages}</span>
+                <button
+                  disabled={nextBefore === null}
+                  onClick={handleNext}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-40 transition-colors"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </AppShell>
   );

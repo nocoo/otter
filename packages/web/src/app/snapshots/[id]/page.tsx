@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { use } from "react";
+import { useState, useEffect, use } from "react";
 import {
   Monitor,
   FileText,
@@ -13,18 +12,21 @@ import {
   Cpu,
   User,
   Archive,
+  Loader2,
+  Download,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 // ---------------------------------------------------------------------------
-// Static placeholder data (Phase 1 — will be replaced by API call)
+// Types
 // ---------------------------------------------------------------------------
 
 interface FileData {
   path: string;
   sizeBytes: number;
-  preview: string;
+  content?: string;
 }
 
 interface ListItem {
@@ -41,103 +43,52 @@ interface Collector {
   errors: string[];
 }
 
-interface SnapshotDetail {
+interface SnapshotMeta {
   id: string;
   hostname: string;
   platform: string;
   arch: string;
   username: string;
+  collectorCount: number;
+  fileCount: number;
+  listCount: number;
+  sizeBytes: number;
+  snapshotAt: number;
+  uploadedAt: number;
+}
+
+interface SnapshotData {
+  version: number;
+  id: string;
   createdAt: string;
-  sizeKb: number;
+  machine: {
+    hostname: string;
+    platform: string;
+    arch: string;
+    username: string;
+  };
   collectors: Collector[];
 }
 
-const mockSnapshot: SnapshotDetail = {
-  id: "a1b2c3d4",
-  hostname: "nocoo-mbp",
-  platform: "darwin",
-  arch: "arm64",
-  username: "nocoo",
-  createdAt: "2026-03-06 11:30:00",
-  sizeKb: 71,
-  collectors: [
-    {
-      id: "claude-config",
-      label: "Claude Config",
-      category: "config",
-      files: [
-        { path: "/Users/nocoo/.claude/CLAUDE.md", sizeBytes: 3200, preview: "# Claude Configuration\n\n## Core interaction & personality\n..." },
-        { path: "/Users/nocoo/.claude/settings.json", sizeBytes: 450, preview: '{\n  "model": "claude-opus-4",\n  "theme": "dark"\n}' },
-      ],
-      lists: [],
-      errors: [],
-    },
-    {
-      id: "opencode-config",
-      label: "OpenCode Config",
-      category: "config",
-      files: [
-        { path: "/Users/nocoo/.config/opencode/config.json", sizeBytes: 1800, preview: '{\n  "editor": "nvim",\n  "plugins": [...]\n}' },
-      ],
-      lists: [
-        { name: "context7" },
-        { name: "web-design-guidelines" },
-        { name: "agent-browser" },
-      ],
-      errors: [],
-    },
-    {
-      id: "shell-config",
-      label: "Shell Config",
-      category: "config",
-      files: [
-        { path: "/Users/nocoo/.zshrc", sizeBytes: 2400, preview: "# Zsh configuration\nexport PATH=...\nalias ll='ls -la'" },
-        { path: "/Users/nocoo/.zprofile", sizeBytes: 800, preview: "# Zsh profile\neval $(/opt/homebrew/bin/brew shellenv)" },
-        { path: "/Users/nocoo/.gitconfig", sizeBytes: 600, preview: "[user]\n  name = Nicholas\n  email = nicholasnoo@gmail.com" },
-      ],
-      lists: [],
-      errors: [],
-    },
-    {
-      id: "homebrew",
-      label: "Homebrew",
-      category: "environment",
-      files: [],
-      lists: [
-        { name: "bat", version: "0.24.0" },
-        { name: "fd", version: "10.2.0" },
-        { name: "fzf", version: "0.57.0" },
-        { name: "git", version: "2.47.1" },
-        { name: "jq", version: "1.7.1" },
-        { name: "neovim", version: "0.10.3" },
-        { name: "ripgrep", version: "14.1.1" },
-        { name: "sd", version: "1.0.0" },
-        { name: "starship", version: "1.21.1" },
-        { name: "tree", version: "2.2.1" },
-      ],
-      errors: [],
-    },
-    {
-      id: "applications",
-      label: "Applications",
-      category: "environment",
-      files: [],
-      lists: [
-        { name: "Arc", version: "1.70.0" },
-        { name: "Discord", version: "0.0.331" },
-        { name: "Figma", version: "124.5.3" },
-        { name: "iTerm", version: "3.5.10" },
-        { name: "Notion", version: "3.15.0" },
-        { name: "Slack", version: "4.41.3" },
-        { name: "Spotify", version: "1.2.52" },
-        { name: "Visual Studio Code", version: "1.96.2" },
-        { name: "Warp", version: "0.2025.01.01" },
-        { name: "Xcode", version: "16.2" },
-      ],
-      errors: [],
-    },
-  ],
-};
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatDateTime(ts: number): string {
+  return new Date(ts).toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Components
@@ -191,14 +142,14 @@ function CollectorSection({ collector }: { collector: Collector }) {
                   <div className="flex items-center justify-between mb-2">
                     <code className="text-xs font-mono text-foreground">{file.path}</code>
                     <span className="text-[10px] text-muted-foreground tabular-nums">
-                      {file.sizeBytes > 1024
-                        ? `${(file.sizeBytes / 1024).toFixed(1)} KB`
-                        : `${file.sizeBytes} B`}
+                      {formatSize(file.sizeBytes)}
                     </span>
                   </div>
-                  <pre className="text-xs text-muted-foreground font-mono whitespace-pre-wrap leading-relaxed bg-background/50 rounded-md p-2.5 overflow-x-auto max-h-32">
-                    {file.preview}
-                  </pre>
+                  {file.content && (
+                    <pre className="text-xs text-muted-foreground font-mono whitespace-pre-wrap leading-relaxed bg-background/50 rounded-md p-2.5 overflow-x-auto max-h-32">
+                      {file.content}
+                    </pre>
+                  )}
                 </div>
               ))}
             </div>
@@ -245,25 +196,81 @@ export default function SnapshotDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const [meta, setMeta] = useState<SnapshotMeta | null>(null);
+  const [data, setData] = useState<SnapshotData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Phase 1: always use mock data regardless of id
-  const snapshot = { ...mockSnapshot, id };
+  useEffect(() => {
+    async function fetchSnapshot() {
+      try {
+        const res = await fetch(`/api/snapshots/${id}`);
+        if (res.status === 404) {
+          setError("Snapshot not found");
+          return;
+        }
+        if (!res.ok) throw new Error("Failed to load snapshot");
+        const result = await res.json();
+        setMeta(result.snapshot);
+        setData(result.data);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unknown error");
+      } finally {
+        setLoading(false);
+      }
+    }
+    void fetchSnapshot();
+  }, [id]);
 
-  const totalFiles = snapshot.collectors.reduce((sum, c) => sum + c.files.length, 0);
-  const totalLists = snapshot.collectors.reduce((sum, c) => sum + c.lists.length, 0);
+  const handleDownload = () => {
+    if (!data) return;
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `snapshot-${id}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  if (loading) {
+    return (
+      <AppShell breadcrumbs={[{ label: "Snapshots", href: "/snapshots" }, { label: id }]}>
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 text-muted-foreground/40 animate-spin" />
+          <p className="mt-3 text-sm text-muted-foreground">Loading snapshot...</p>
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (error || !meta || !data) {
+    return (
+      <AppShell breadcrumbs={[{ label: "Snapshots", href: "/snapshots" }, { label: id }]}>
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="text-sm text-destructive">{error ?? "Snapshot not found"}</p>
+        </div>
+      </AppShell>
+    );
+  }
+
+  const collectors = data.collectors ?? [];
+  const totalFiles = collectors.reduce((sum, c) => sum + c.files.length, 0);
+  const totalLists = collectors.reduce((sum, c) => sum + c.lists.length, 0);
 
   return (
-    <AppShell breadcrumbs={[{ label: "Snapshots", href: "/snapshots" }, { label: id }]}>
+    <AppShell breadcrumbs={[{ label: "Snapshots", href: "/snapshots" }, { label: id.slice(0, 8) }]}>
       <div className="space-y-6">
         {/* Header */}
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight">
-              Snapshot <code className="font-mono text-lg">{id}</code>
+              Snapshot <code className="font-mono text-lg">{id.slice(0, 8)}</code>
             </h1>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Captured on {snapshot.createdAt}
+            Captured {formatDateTime(meta.snapshotAt)}
           </p>
         </div>
 
@@ -273,21 +280,21 @@ export default function SnapshotDetailPage({
             <Monitor className="h-4 w-4 text-primary shrink-0" strokeWidth={1.5} />
             <div>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Host</p>
-              <p className="text-sm font-medium">{snapshot.hostname}</p>
+              <p className="text-sm font-medium">{meta.hostname}</p>
             </div>
           </div>
           <div className="rounded-xl bg-secondary p-4 flex items-center gap-3">
             <Cpu className="h-4 w-4 text-primary shrink-0" strokeWidth={1.5} />
             <div>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Platform</p>
-              <p className="text-sm font-medium">{snapshot.platform}/{snapshot.arch}</p>
+              <p className="text-sm font-medium">{meta.platform}/{meta.arch}</p>
             </div>
           </div>
           <div className="rounded-xl bg-secondary p-4 flex items-center gap-3">
             <User className="h-4 w-4 text-primary shrink-0" strokeWidth={1.5} />
             <div>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">User</p>
-              <p className="text-sm font-medium">{snapshot.username}</p>
+              <p className="text-sm font-medium">{meta.username}</p>
             </div>
           </div>
           <div className="rounded-xl bg-secondary p-4 flex items-center gap-3">
@@ -301,7 +308,7 @@ export default function SnapshotDetailPage({
             <HardDrive className="h-4 w-4 text-primary shrink-0" strokeWidth={1.5} />
             <div>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Size</p>
-              <p className="text-sm font-medium">{snapshot.sizeKb} KB</p>
+              <p className="text-sm font-medium">{formatSize(meta.sizeBytes)}</p>
             </div>
           </div>
         </div>
@@ -311,23 +318,27 @@ export default function SnapshotDetailPage({
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-medium text-foreground">Collectors</h2>
             <Badge variant="secondary" className="text-[10px] font-normal">
-              {snapshot.collectors.length}
+              {collectors.length}
             </Badge>
           </div>
-          {snapshot.collectors.map((collector) => (
+          {collectors.map((collector) => (
             <CollectorSection key={collector.id} collector={collector} />
           ))}
         </div>
 
-        {/* Raw JSON toggle (placeholder) */}
+        {/* Raw JSON download */}
         <div className="rounded-xl bg-secondary p-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
               <span className="text-sm text-muted-foreground">
-                Raw JSON export will be available when connected to R2 storage
+                Download the full snapshot as JSON
               </span>
             </div>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={handleDownload}>
+              <Download className="h-3.5 w-3.5" strokeWidth={1.5} />
+              Export JSON
+            </Button>
           </div>
         </div>
       </div>
