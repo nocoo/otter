@@ -1,6 +1,6 @@
 # 🦦 Otter
 
-**macOS 开发环境备份工具** — 扫描你的配置文件、dotfiles、已安装应用和包列表，生成 JSON 快照并上传至 Webhook。
+**macOS 开发环境备份工具** — 扫描你的配置文件、dotfiles、已安装应用和包列表，生成 JSON 快照，支持本地保存和 Webhook 上传。
 
 > 一键备份开发环境，随时恢复到熟悉的状态。
 
@@ -24,10 +24,10 @@
 ```
 otter/
 ├── packages/
-│   ├── core/          # 核心类型定义 (SnapshotData, CollectorResult, etc.)
+│   ├── core/          # 核心类型定义 (Snapshot, CollectorResult, etc.)
 │   └── cli/           # CLI 主包
 │       ├── src/
-│       │   ├── cli.ts              # 入口，citty 命令注册
+│       │   ├── cli.ts              # citty 命令注册（bin.ts 为实际入口）
 │       │   ├── collectors/         # 5 个采集器 (shell, claude, opencode, homebrew, apps)
 │       │   │   └── base.ts         # BaseCollector 基类
 │       │   ├── commands/           # scan / config / backup / snapshot 命令逻辑

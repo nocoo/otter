@@ -80,6 +80,12 @@ otter/
 | `UploadResult` | 上传结果 |
 | `OtterConfig` | CLI 持久化配置 |
 
+CLI 包内还定义了以下类型（`packages/cli/src/storage/local.ts`）：
+
+| 类型 | 用途 |
+|------|------|
+| `SnapshotMeta` | 本地快照元数据（id、时间戳、大小、机器名） |
+
 ## 技术栈
 
 | 组件 | 选型 |

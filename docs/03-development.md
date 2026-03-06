@@ -35,9 +35,16 @@ bun run test
 | `bun run lint` | TypeScript 类型检查（`tsc --noEmit`） |
 | `node packages/cli/dist/bin.js scan` | 执行扫描（人类可读输出） |
 | `node packages/cli/dist/bin.js scan --json` | 执行扫描（JSON 输出） |
+| `node packages/cli/dist/bin.js scan --slim` | 精简模式扫描（排除 history.jsonl 等） |
+| `node packages/cli/dist/bin.js scan --save` | 扫描并保存快照到本地 |
 | `node packages/cli/dist/bin.js config show` | 查看当前配置 |
 | `node packages/cli/dist/bin.js config set webhookUrl <url>` | 设置 Webhook 地址 |
-| `node packages/cli/dist/bin.js backup` | 扫描并上传快照 |
+| `node packages/cli/dist/bin.js backup` | 扫描并上传快照（自动本地保存） |
+| `node packages/cli/dist/bin.js backup --slim` | 精简模式上传 |
+| `node packages/cli/dist/bin.js snapshot list` | 查看本地快照列表 |
+| `node packages/cli/dist/bin.js snapshot show <id>` | 查看快照详情 |
+| `node packages/cli/dist/bin.js snapshot diff <id1> <id2>` | 比较两个快照差异 |
+| `node packages/cli/dist/bin.js export-icons` | 导出应用图标为 PNG |
 
 ## 项目结构
 
@@ -50,7 +57,7 @@ packages/
 └── cli/                           # @otter/cli
     └── src/
         ├── bin.ts                 # CLI 入口
-        ├── cli.ts                 # 命令注册（scan / backup / config）
+        ├── cli.ts                 # 命令注册（scan / backup / config / snapshot / export-icons）
         ├── index.ts               # 库导出
         ├── collectors/
         │   ├── base.ts            # BaseCollector 抽象基类
@@ -62,15 +69,19 @@ packages/
         │   └── index.ts           # 采集器注册工厂
         ├── commands/
         │   ├── scan.ts            # scan 命令逻辑
-        │   └── config.ts          # config 命令逻辑
+        │   ├── config.ts          # config 命令逻辑
+        │   └── snapshot.ts        # snapshot list/show/diff 命令逻辑
         ├── config/
         │   └── manager.ts         # 配置文件管理器
         ├── snapshot/
         │   └── builder.ts         # 快照构建器
+        ├── storage/
+        │   └── local.ts           # 本地快照存储（SnapshotStore）
         ├── uploader/
         │   └── webhook.ts         # Webhook 上传器
         ├── utils/
-        │   └── redact.ts          # 凭据脱敏工具
+        │   ├── redact.ts          # 凭据脱敏工具
+        │   └── icons.ts           # 应用图标导出工具
         └── __tests__/             # 单元测试（镜像 src 结构）
             ├── collectors/
             ├── commands/
