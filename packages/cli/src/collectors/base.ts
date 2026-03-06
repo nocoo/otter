@@ -6,6 +6,7 @@ import type {
   CollectorResult,
   CollectedFile,
 } from "@otter/core";
+import { redactSecrets } from "../utils/redact.js";
 
 // ---------------------------------------------------------------------------
 // Constants for safety limits
@@ -72,6 +73,14 @@ const BINARY_EXTENSIONS = new Set([
 /** File basenames that are always binary regardless of extension */
 const BINARY_BASENAMES = new Set([".ds_store", "thumbs.db", "desktop.ini"]);
 
+/** Options for safeReadFile */
+export interface SafeReadOptions {
+  /** Override the default max file size (bytes) */
+  maxSize?: number;
+  /** If true, apply credential redaction based on file type */
+  redact?: boolean;
+}
+
 /** Options for collectDir to allow per-call customization */
 export interface CollectDirOptions {
   /** Custom filter — return false to skip a file */
@@ -123,11 +132,13 @@ export abstract class BaseCollector implements Collector {
   /**
    * Safely read a single file. Returns null if file doesn't exist,
    * can't be read, exceeds size limit, or is binary.
+   *
+   * @param redact If true, apply credential redaction based on file type
    */
   protected async safeReadFile(
     filePath: string,
     result: CollectorResult,
-    maxSize: number = MAX_FILE_SIZE_BYTES
+    { maxSize = MAX_FILE_SIZE_BYTES, redact = false }: SafeReadOptions = {}
   ): Promise<CollectedFile | null> {
     try {
       // Skip binary files
@@ -144,7 +155,13 @@ export abstract class BaseCollector implements Collector {
         return null;
       }
 
-      const content = await readFile(filePath, "utf-8");
+      let content = await readFile(filePath, "utf-8");
+
+      // Apply credential redaction if requested
+      if (redact) {
+        content = redactSecrets(content, filePath);
+      }
+
       return {
         path: filePath,
         content,
@@ -191,7 +208,9 @@ export abstract class BaseCollector implements Collector {
           files.push(...subFiles);
         } else if (entry.isFile()) {
           if (filter && !filter(fullPath)) continue;
-          const file = await this.safeReadFile(fullPath, result, maxFileSize);
+          const file = await this.safeReadFile(fullPath, result, {
+            maxSize: maxFileSize,
+          });
           if (file) files.push(file);
         }
       }
