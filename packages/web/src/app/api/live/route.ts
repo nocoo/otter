@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { queryFirst } from "@/lib/cf/d1";
+import { APP_VERSION } from "@/lib/version";
 
 interface CountRow {
   count: number;
@@ -20,7 +21,7 @@ export async function GET() {
 
   // System metadata (always available, no I/O)
   const system = {
-    version: process.env.npm_package_version ?? "0.1.0",
+    version: APP_VERSION,
     node: process.versions.node,
     uptime: Math.floor(process.uptime()),
     env: process.env.NODE_ENV ?? "development",

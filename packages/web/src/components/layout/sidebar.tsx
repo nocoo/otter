@@ -12,6 +12,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { APP_VERSION } from "@/lib/version";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Tooltip,
@@ -132,6 +133,9 @@ export function Sidebar() {
                 <div className="flex items-center gap-3">
                   <Image src="/logo-24.png" alt="Otter" width={24} height={24} className="shrink-0" />
                   <span className="text-lg font-bold tracking-tighter">otter</span>
+                  <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-muted-foreground font-mono leading-none">
+                    v{APP_VERSION}
+                  </span>
                 </div>
                 <button
                   onClick={toggle}

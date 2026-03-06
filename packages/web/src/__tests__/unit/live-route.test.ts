@@ -5,6 +5,11 @@ vi.mock("@/lib/cf/d1", () => ({
   queryFirst: vi.fn(),
 }));
 
+// Mock version
+vi.mock("@/lib/version", () => ({
+  APP_VERSION: "0.1.0",
+}));
+
 import { GET } from "@/app/api/live/route";
 import { queryFirst } from "@/lib/cf/d1";
 
@@ -30,10 +35,10 @@ describe("GET /api/live", () => {
 
     // System metadata
     expect(body.system).toBeDefined();
+    expect(body.system.version).toBe("0.1.0");
     expect(typeof body.system.node).toBe("string");
     expect(typeof body.system.uptime).toBe("number");
     expect(typeof body.system.env).toBe("string");
-    expect(typeof body.system.version).toBe("string");
   });
 
   it("returns status ok with zero snapshots when D1 returns null", async () => {
