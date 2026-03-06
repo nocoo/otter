@@ -51,11 +51,14 @@ __tests__/
 │   └── shell-config.test.ts
 ├── commands/
 │   ├── config.test.ts
-│   └── scan.test.ts
+│   ├── scan.test.ts
+│   └── snapshot.test.ts
 ├── config/
 │   └── manager.test.ts
 ├── snapshot/
 │   └── builder.test.ts
+├── storage/
+│   └── local.test.ts
 ├── uploader/
 │   └── webhook.test.ts
 └── utils/
@@ -135,8 +138,8 @@ collector._execCommand = async (cmd: string) => "package1\npackage2\n";
 
 | 指标 | 数值 |
 |------|------|
-| 测试文件 | 13 |
-| 测试用例 | 159 |
+| 测试文件 | 15 |
+| 测试用例 | 186 |
 | 通过率 | 100% |
 
 ## 相关文档

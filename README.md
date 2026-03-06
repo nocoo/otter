@@ -17,6 +17,7 @@
 - 🎨 **应用图标导出** — `otter export-icons` 命令将 app 图标提取为 PNG 文件（基于 macOS sips，无外部依赖）
 - 🔒 **四层安全机制** — 采集过滤 → Shell/JSON/JSONL 脱敏 → 值级凭据扫描 → gzip 压缩传输，详见 [安全文档](docs/05-security.md)
 - 📦 **JSON 快照** — 完整模式 ~1 MB，`--slim` 模式 ~130 KB，支持 gzip 压缩 Webhook 上传
+- 💾 **本地快照存储** — `scan --save` 本地保存快照，`backup` 上传成功后自动保存，`otter snapshot list` 查看历史快照
 
 ## 📁 项目结构
 
@@ -29,7 +30,9 @@ otter/
 │       │   ├── cli.ts              # 入口，citty 命令注册
 │       │   ├── collectors/         # 5 个采集器 (shell, claude, opencode, homebrew, apps)
 │       │   │   └── base.ts         # BaseCollector 基类
+│       │   ├── commands/           # scan / config / backup / snapshot 命令逻辑
 │       │   ├── snapshot/           # 快照构建器
+│       │   ├── storage/            # 本地快照存储 (SnapshotStore)
 │       │   ├── uploader/           # Webhook 上传器
 │       │   ├── config/             # 配置管理
 │       │   ├── utils/              # 工具函数 (redact.ts, icons.ts 等)
@@ -66,8 +69,18 @@ bun run --filter @otter/cli start -- scan
 # 精简模式（排除 history.jsonl 和会话摘要，~130 KB）
 bun run --filter @otter/cli start -- scan --slim
 
+# 扫描并本地保存快照
+bun run --filter @otter/cli start -- scan --save
+
 # 输出 JSON 到 stdout（进度信息转至 stderr）
 bun run --filter @otter/cli start -- scan --json
+```
+
+### 本地快照管理
+
+```bash
+# 查看本地保存的快照列表
+otter snapshot list
 ```
 
 ### 开发命令
@@ -142,6 +155,8 @@ otter export-icons --output ./my-icons --size 256
 | 凭据脱敏 | `packages/cli/src/utils/redact.ts` |
 | 图标导出 | `packages/cli/src/utils/icons.ts` |
 | 快照构建 | `packages/cli/src/snapshot/builder.ts` |
+| 本地快照存储 | `packages/cli/src/storage/local.ts` |
+| 快照命令逻辑 | `packages/cli/src/commands/snapshot.ts` |
 | 测试配置 | `vitest.config.ts` |
 
 ---

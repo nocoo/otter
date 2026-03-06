@@ -4,7 +4,7 @@
 
 ## 设计理念
 
-Otter 采用**采集-快照-上传**三层流水线架构，将 macOS 开发环境的配置文件、dotfiles、已安装应用和包列表汇总为一个 JSON 快照，再上传至 Webhook 端点。
+Otter 采用**采集-快照-存储/上传**三层流水线架构，将 macOS 开发环境的配置文件、dotfiles、已安装应用和包列表汇总为一个 JSON 快照，可本地保存和/或上传至 Webhook 端点。
 
 设计核心原则：
 
@@ -26,8 +26,9 @@ otter/
 │           ├── bin.ts         # 入口（#!/usr/bin/env node）
 │           ├── cli.ts         # 命令注册（citty 框架）
 │           ├── collectors/    # 5 个采集器
-│           ├── commands/      # scan / config / backup 命令逻辑
+│           ├── commands/      # scan / config / backup / snapshot 命令逻辑
 │           ├── config/        # ConfigManager（~/.config/otter/）
+│           ├── storage/       # SnapshotStore（~/.config/otter/snapshots/）
 │           ├── snapshot/      # 快照构建器
 │           ├── uploader/      # Webhook 上传
 │           └── utils/         # 工具函数（凭据脱敏等）
@@ -56,8 +57,9 @@ otter/
 │  ├── machine: MachineInfo                   │
 │  └── collectors: CollectorResult[]          │
 ├─────────────────────────────────────────────┤
-│               Layer 3: 上传                  │
+│               Layer 3: 存储 & 上传            │
 │                                             │
+│  SnapshotStore.save() → local JSON file     │
 │  uploadSnapshot() → gzip → POST Webhook     │
 └─────────────────────────────────────────────┘
 ```

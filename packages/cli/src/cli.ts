@@ -6,13 +6,15 @@ import { join } from "node:path";
 import { createDefaultCollectors } from "./collectors/index.js";
 import { executeScan } from "./commands/scan.js";
 import { executeConfig } from "./commands/config.js";
+import { formatSnapshotList } from "./commands/snapshot.js";
 import { ConfigManager } from "./config/manager.js";
+import { SnapshotStore } from "./storage/local.js";
 import { uploadSnapshot } from "./uploader/webhook.js";
 import { exportIcons } from "./utils/icons.js";
 
-const configManager = new ConfigManager(
-  join(homedir(), ".config", "otter")
-);
+const otterConfigDir = join(homedir(), ".config", "otter");
+const configManager = new ConfigManager(otterConfigDir);
+const snapshotStore = new SnapshotStore(join(otterConfigDir, "snapshots"));
 
 const scanCommand = defineCommand({
   meta: {
@@ -31,6 +33,11 @@ const scanCommand = defineCommand({
         "Exclude behavior data (history.jsonl, session summaries) for a smaller snapshot",
       default: false,
     },
+    save: {
+      type: "boolean",
+      description: "Save the snapshot locally after scanning",
+      default: false,
+    },
   },
   async run({ args }) {
     // When --json is set, redirect all progress output to stderr
@@ -45,7 +52,7 @@ const scanCommand = defineCommand({
       slim: args.slim,
     });
     const snapshot = await executeScan(collectors, {
-      onProgress: (id, result) => {
+      onProgress: (_id, result) => {
         const fileCount = result.files.length;
         const listCount = result.lists.length;
         const errorCount = result.errors.length;
@@ -57,6 +64,11 @@ const scanCommand = defineCommand({
         );
       },
     });
+
+    if (args.save) {
+      const filename = await snapshotStore.save(snapshot);
+      consola.success(`Snapshot saved locally: ${pc.dim(filename)}`);
+    }
 
     if (args.json) {
       process.stdout.write(JSON.stringify(snapshot, null, 2) + "\n");
@@ -126,6 +138,11 @@ const backupCommand = defineCommand({
       consola.success(
         `Backup uploaded successfully ${pc.dim(`(${uploadResult.durationMs}ms)`)}`
       );
+
+      // Auto-save locally after successful upload
+      const filename = await snapshotStore.save(snapshot);
+      consola.success(`Snapshot saved locally: ${pc.dim(filename)}`);
+
       consola.info(`Snapshot ID: ${pc.dim(snapshot.id)}`);
     } else {
       consola.error(`Upload failed: ${uploadResult.error}`);
@@ -205,6 +222,27 @@ const configCommand = defineCommand({
   },
 });
 
+const snapshotListCommand = defineCommand({
+  meta: {
+    name: "list",
+    description: "List locally-saved snapshots",
+  },
+  async run() {
+    const metas = await snapshotStore.list();
+    consola.log(formatSnapshotList(metas));
+  },
+});
+
+const snapshotCommand = defineCommand({
+  meta: {
+    name: "snapshot",
+    description: "Manage locally-saved snapshots",
+  },
+  subCommands: {
+    list: snapshotListCommand,
+  },
+});
+
 const exportIconsCommand = defineCommand({
   meta: {
     name: "export-icons",
@@ -266,6 +304,7 @@ export const main = defineCommand({
     scan: scanCommand,
     backup: backupCommand,
     config: configCommand,
+    snapshot: snapshotCommand,
     "export-icons": exportIconsCommand,
   },
 });
