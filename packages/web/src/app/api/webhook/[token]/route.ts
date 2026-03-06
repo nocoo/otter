@@ -10,6 +10,7 @@ interface Snapshot {
   createdAt: string;
   machine: {
     hostname: string;
+    computerName?: string;
     platform: string;
     arch: string;
     username: string;
@@ -58,7 +59,7 @@ function extractMetadata(snapshot: Snapshot) {
     listCount += collector.lists.length;
   }
   return {
-    hostname: machine.hostname,
+    hostname: machine.computerName || machine.hostname,
     platform: machine.platform,
     arch: machine.arch,
     username: machine.username,

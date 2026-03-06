@@ -1,6 +1,20 @@
 import { randomUUID } from "node:crypto";
+import { execSync } from "node:child_process";
 import { hostname, platform, release, arch, userInfo, homedir } from "node:os";
 import type { Collector, CollectorResult, MachineInfo, Snapshot } from "@otter/core";
+
+/**
+ * Get the user-friendly computer name on macOS via `scutil --get ComputerName`.
+ * Returns undefined on non-macOS platforms or if the command fails.
+ */
+function getComputerName(): string | undefined {
+  if (platform() !== "darwin") return undefined;
+  try {
+    return execSync("scutil --get ComputerName", { encoding: "utf-8" }).trim();
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * Gather current machine information for the snapshot.
@@ -9,6 +23,7 @@ function getMachineInfo(): MachineInfo {
   const user = userInfo();
   return {
     hostname: hostname(),
+    computerName: getComputerName(),
     platform: platform(),
     osVersion: release(),
     arch: arch(),

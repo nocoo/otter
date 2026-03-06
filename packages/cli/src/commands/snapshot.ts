@@ -56,10 +56,11 @@ export function formatSnapshotDetail(snapshot: Snapshot): string {
   const lines: string[] = [];
   const m = snapshot.machine;
 
+  const machineName = m.computerName || m.hostname;
   lines.push(`Snapshot ${pc.bold(snapshot.id.slice(0, 8))}`);
   lines.push(`  Created: ${formatDate(snapshot.createdAt)}`);
   lines.push(
-    `  Machine: ${m.hostname} (${m.platform}/${m.arch}, ${m.osVersion})`
+    `  Machine: ${machineName} (${m.platform}/${m.arch}, ${m.osVersion})`
   );
   lines.push(`  User:    ${m.username}`);
   lines.push("");

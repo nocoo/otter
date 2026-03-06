@@ -70,8 +70,10 @@ export interface Collector {
 
 /** Machine metadata captured at snapshot time */
 export interface MachineInfo {
-  /** Hostname */
+  /** Hostname (OS-level, e.g. "xxx.local") */
   hostname: string;
+  /** User-friendly computer name (macOS: scutil --get ComputerName) */
+  computerName?: string;
   /** OS platform (e.g. "darwin") */
   platform: string;
   /** OS release version */
