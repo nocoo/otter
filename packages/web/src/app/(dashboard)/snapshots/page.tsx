@@ -90,7 +90,10 @@ export default function SnapshotsPage() {
         params.set("before", String(before));
       }
       const res = await fetch(`/api/snapshots?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed to load snapshots");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error ?? `Failed to load snapshots (${res.status})`);
+      }
       const data = await res.json();
       setSnapshots(data.snapshots);
       setTotal(data.total);

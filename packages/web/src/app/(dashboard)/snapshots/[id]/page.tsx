@@ -204,11 +204,14 @@ export default function SnapshotDetailPage({
     async function fetchSnapshot() {
       try {
         const res = await fetch(`/api/snapshots/${id}`);
-        if (res.status === 404) {
-          setError("Snapshot not found");
-          return;
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          if (res.status === 404) {
+            setError(body?.error ?? "Snapshot not found");
+            return;
+          }
+          throw new Error(body?.error ?? `Failed to load snapshot (${res.status})`);
         }
-        if (!res.ok) throw new Error("Failed to load snapshot");
         const result = await res.json();
         setMeta(result.snapshot);
         setData(result.data);

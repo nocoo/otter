@@ -37,45 +37,56 @@ export async function GET(_request: Request, { params }: RouteParams) {
 
   const { id } = await params;
 
-  // 1. Fetch metadata from D1
-  const row = await queryFirst<SnapshotRow>(
-    `SELECT id, user_id, webhook_id, hostname, platform, arch, username,
-            collector_count, file_count, list_count, size_bytes, r2_key,
-            snapshot_at, uploaded_at
-     FROM snapshots
-     WHERE id = ?1 AND user_id = ?2`,
-    [id, user.id],
-  );
+  try {
+    // 1. Fetch metadata from D1
+    const row = await queryFirst<SnapshotRow>(
+      `SELECT id, user_id, webhook_id, hostname, platform, arch, username,
+              collector_count, file_count, list_count, size_bytes, r2_key,
+              snapshot_at, uploaded_at
+       FROM snapshots
+       WHERE id = ?1 AND user_id = ?2`,
+      [id, user.id],
+    );
 
-  if (!row) {
-    return NextResponse.json({ error: "Snapshot not found" }, { status: 404 });
-  }
+    if (!row) {
+      return NextResponse.json(
+        { error: "Snapshot not found" },
+        { status: 404 },
+      );
+    }
 
-  // 2. Fetch full snapshot JSON from R2
-  const r2Key = snapshotKey(user.id, id);
-  const data = await getSnapshot(r2Key);
+    // 2. Fetch full snapshot JSON from R2
+    const r2Key = snapshotKey(user.id, id);
+    const data = await getSnapshot(r2Key);
 
-  if (!data) {
+    if (!data) {
+      return NextResponse.json(
+        { error: "Snapshot data not found in storage" },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({
+      snapshot: {
+        id: row.id,
+        hostname: row.hostname,
+        platform: row.platform,
+        arch: row.arch,
+        username: row.username,
+        collectorCount: row.collector_count,
+        fileCount: row.file_count,
+        listCount: row.list_count,
+        sizeBytes: row.size_bytes,
+        snapshotAt: row.snapshot_at,
+        uploadedAt: row.uploaded_at,
+      },
+      data,
+    });
+  } catch (err) {
+    console.error(`GET /api/snapshots/${id} failed:`, err);
     return NextResponse.json(
-      { error: "Snapshot data not found in storage" },
-      { status: 404 },
+      { error: "Failed to fetch snapshot from database" },
+      { status: 500 },
     );
   }
-
-  return NextResponse.json({
-    snapshot: {
-      id: row.id,
-      hostname: row.hostname,
-      platform: row.platform,
-      arch: row.arch,
-      username: row.username,
-      collectorCount: row.collector_count,
-      fileCount: row.file_count,
-      listCount: row.list_count,
-      sizeBytes: row.size_bytes,
-      snapshotAt: row.snapshot_at,
-      uploadedAt: row.uploaded_at,
-    },
-    data,
-  });
 }

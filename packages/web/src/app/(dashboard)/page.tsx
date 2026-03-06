@@ -107,8 +107,15 @@ export default function DashboardPage() {
           fetch("/api/snapshots?limit=5"),
           fetch("/api/webhooks"),
         ]);
-        if (!snapshotsRes.ok) throw new Error("Failed to load snapshots");
-        if (!webhooksRes.ok) throw new Error("Failed to load webhooks");
+
+        if (!snapshotsRes.ok) {
+          const body = await snapshotsRes.json().catch(() => null);
+          throw new Error(body?.error ?? `Failed to load snapshots (${snapshotsRes.status})`);
+        }
+        if (!webhooksRes.ok) {
+          const body = await webhooksRes.json().catch(() => null);
+          throw new Error(body?.error ?? `Failed to load webhooks (${webhooksRes.status})`);
+        }
 
         const snapshotsData = await snapshotsRes.json();
         const webhooksData = await webhooksRes.json();

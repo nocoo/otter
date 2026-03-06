@@ -78,36 +78,44 @@ export async function GET(request: NextRequest) {
     params = [user.id, limit];
   }
 
-  const rows = await query<SnapshotRow>(sql, params);
+  try {
+    const rows = await query<SnapshotRow>(sql, params);
 
-  // Get total count for the user
-  const countRow = await queryFirst<CountRow>(
-    `SELECT COUNT(*) as total FROM snapshots WHERE user_id = ?1`,
-    [user.id],
-  );
-  const total = countRow?.total ?? 0;
+    // Get total count for the user
+    const countRow = await queryFirst<CountRow>(
+      `SELECT COUNT(*) as total FROM snapshots WHERE user_id = ?1`,
+      [user.id],
+    );
+    const total = countRow?.total ?? 0;
 
-  // Determine next cursor
-  const nextBefore =
-    rows.length === limit ? rows[rows.length - 1]!.uploaded_at : null;
+    // Determine next cursor
+    const nextBefore =
+      rows.length === limit ? rows[rows.length - 1]!.uploaded_at : null;
 
-  const snapshots = rows.map((row) => ({
-    id: row.id,
-    hostname: row.hostname,
-    platform: row.platform,
-    arch: row.arch,
-    username: row.username,
-    collectorCount: row.collector_count,
-    fileCount: row.file_count,
-    listCount: row.list_count,
-    sizeBytes: row.size_bytes,
-    snapshotAt: row.snapshot_at,
-    uploadedAt: row.uploaded_at,
-  }));
+    const snapshots = rows.map((row) => ({
+      id: row.id,
+      hostname: row.hostname,
+      platform: row.platform,
+      arch: row.arch,
+      username: row.username,
+      collectorCount: row.collector_count,
+      fileCount: row.file_count,
+      listCount: row.list_count,
+      sizeBytes: row.size_bytes,
+      snapshotAt: row.snapshot_at,
+      uploadedAt: row.uploaded_at,
+    }));
 
-  return NextResponse.json({
-    snapshots,
-    total,
-    nextBefore,
-  });
+    return NextResponse.json({
+      snapshots,
+      total,
+      nextBefore,
+    });
+  } catch (err) {
+    console.error("GET /api/snapshots failed:", err);
+    return NextResponse.json(
+      { error: "Failed to fetch snapshots from database" },
+      { status: 500 },
+    );
+  }
 }

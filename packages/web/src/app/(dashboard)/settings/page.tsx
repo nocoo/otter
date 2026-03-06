@@ -171,7 +171,10 @@ export default function SettingsPage() {
   const fetchWebhooks = useCallback(async () => {
     try {
       const res = await fetch("/api/webhooks");
-      if (!res.ok) throw new Error("Failed to load webhooks");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error ?? `Failed to load webhooks (${res.status})`);
+      }
       const data = await res.json();
       setWebhooks(data.webhooks);
       setError(null);
@@ -197,7 +200,10 @@ export default function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: !webhook.isActive }),
       });
-      if (!res.ok) throw new Error("Failed to update webhook");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error ?? `Failed to update webhook (${res.status})`);
+      }
       const data = await res.json();
       setWebhooks((prev) =>
         prev.map((wh) => (wh.id === id ? data.webhook : wh)),
@@ -216,7 +222,10 @@ export default function SettingsPage() {
       const res = await fetch(`/api/webhooks/${id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete webhook");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error ?? `Failed to delete webhook (${res.status})`);
+      }
       setWebhooks((prev) => prev.filter((wh) => wh.id !== id));
     } catch {
       await fetchWebhooks();
@@ -234,7 +243,10 @@ export default function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ label: newLabel.trim() }),
       });
-      if (!res.ok) throw new Error("Failed to create webhook");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error ?? `Failed to create webhook (${res.status})`);
+      }
       const data = await res.json();
       setWebhooks((prev) => [data.webhook, ...prev]);
       setNewLabel("");
