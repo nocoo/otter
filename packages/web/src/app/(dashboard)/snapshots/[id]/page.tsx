@@ -32,6 +32,7 @@ interface FileData {
 interface ListItem {
   name: string;
   version?: string;
+  meta?: Record<string, string>;
 }
 
 interface Collector {
@@ -157,9 +158,19 @@ function CollectorSection({ collector }: { collector: Collector }) {
                 {collector.lists.map((item) => (
                   <div
                     key={item.name}
-                    className="flex items-center justify-between rounded-lg bg-card px-3 py-2"
+                    className="flex items-center gap-2.5 rounded-lg bg-card px-3 py-2"
                   >
-                    <span className="text-sm">{item.name}</span>
+                    {item.meta?.iconUrl && (
+                      <img
+                        src={item.meta.iconUrl}
+                        alt=""
+                        width={20}
+                        height={20}
+                        className="shrink-0 rounded-[4px]"
+                        loading="lazy"
+                      />
+                    )}
+                    <span className="text-sm truncate flex-1">{item.name}</span>
                     {item.version && (
                       <code className="text-[10px] text-muted-foreground font-mono">{item.version}</code>
                     )}
