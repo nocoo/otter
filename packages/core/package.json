@@ -9,5 +9,8 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "files": ["dist"]
+  "files": ["dist"],
+  "devDependencies": {
+    "@types/node": "^25.3.4"
+  }
 }
