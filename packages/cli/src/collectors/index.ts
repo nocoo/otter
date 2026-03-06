@@ -13,12 +13,17 @@ import { HomebrewCollector } from "./homebrew.js";
 import { ApplicationsCollector } from "./applications.js";
 import { homedir } from "node:os";
 
+/** Default R2 public base URL for app icon assets */
+const DEFAULT_ICON_BASE_URL = "https://s.zhe.to/apps/otter";
+
 /**
  * Options for creating the default set of collectors.
  */
 export interface CollectorOptions {
   /** If true, exclude behavior data (history.jsonl, session summaries) */
   slim?: boolean;
+  /** Base URL for deterministic icon URLs (default: s.zhe.to/apps/otter) */
+  iconBaseUrl?: string;
 }
 
 /**
@@ -28,11 +33,12 @@ export function createDefaultCollectors(
   homeDir: string = homedir(),
   options: CollectorOptions = {}
 ): Collector[] {
+  const iconBaseUrl = options.iconBaseUrl ?? DEFAULT_ICON_BASE_URL;
   return [
     new ClaudeConfigCollector(homeDir, { slim: options.slim }),
     new OpenCodeConfigCollector(homeDir),
     new ShellConfigCollector(homeDir),
     new HomebrewCollector(homeDir),
-    new ApplicationsCollector(homeDir),
+    new ApplicationsCollector(homeDir, "/Applications", iconBaseUrl),
   ];
 }

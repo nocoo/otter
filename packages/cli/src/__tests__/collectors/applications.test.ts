@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtemp, mkdir, writeFile, rm, chmod } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ApplicationsCollector } from "../../collectors/applications.js";
@@ -87,5 +88,55 @@ describe("ApplicationsCollector", () => {
 
     // Restore permissions for cleanup
     await chmod(tempAppsDir, 0o755);
+  });
+
+  describe("icon URL generation", () => {
+    it("should include iconUrl in meta when iconBaseUrl is provided", async () => {
+      await mkdir(join(tempAppsDir, "Slack.app"), { recursive: true });
+
+      const collector = new ApplicationsCollector(
+        tempHome,
+        tempAppsDir,
+        "https://s.zhe.to/apps/otter",
+      );
+      const result = await collector.collect();
+
+      const hash = createHash("sha256").update("Slack").digest("hex").slice(0, 12);
+      expect(result.lists[0].meta).toEqual({
+        iconUrl: `https://s.zhe.to/apps/otter/${hash}.png`,
+      });
+    });
+
+    it("should not include meta when iconBaseUrl is omitted", async () => {
+      await mkdir(join(tempAppsDir, "Slack.app"), { recursive: true });
+
+      const collector = new ApplicationsCollector(tempHome, tempAppsDir);
+      const result = await collector.collect();
+
+      expect(result.lists[0].meta).toBeUndefined();
+    });
+
+    it("should generate deterministic URLs based on app name", async () => {
+      await mkdir(join(tempAppsDir, "App1.app"), { recursive: true });
+      await mkdir(join(tempAppsDir, "App2.app"), { recursive: true });
+
+      const collector = new ApplicationsCollector(
+        tempHome,
+        tempAppsDir,
+        "https://cdn.example.com/icons",
+      );
+      const result = await collector.collect();
+
+      // Each app should have a unique icon URL
+      const urls = result.lists.map((l) => l.meta?.iconUrl);
+      expect(new Set(urls).size).toBe(2);
+
+      // URLs should follow the expected pattern
+      for (const item of result.lists) {
+        expect(item.meta?.iconUrl).toMatch(
+          /^https:\/\/cdn\.example\.com\/icons\/[a-f0-9]{12}\.png$/,
+        );
+      }
+    });
   });
 });
