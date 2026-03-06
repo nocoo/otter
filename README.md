@@ -118,6 +118,7 @@ otter export-icons --output ./my-icons --size 256
 | [03-开发指南](docs/03-development.md) | 环境搭建、命令速查、Git Hooks、Commit 规范、文档同步要求 |
 | [04-测试规范](docs/04-testing.md) | 覆盖率目标、测试结构、编写规范、当前统计 |
 | [05-安全机制](docs/05-security.md) | 三层安全体系、脱敏模式、SSH 保护、安全审计清单 |
+| [06-Dashboard](docs/06-dashboard.md) | 服务端设计、技术决策、DB Schema、API 路由、四层测试、分阶段实施 |
 
 ## 🛠️ 技术栈
 
