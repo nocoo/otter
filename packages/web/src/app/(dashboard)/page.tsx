@@ -13,6 +13,7 @@ import {
   Loader2,
   type LucideIcon,
 } from "lucide-react";
+import { formatSize } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -63,11 +64,6 @@ function formatTimeAgo(ts: number): string {
   if (days < 30) return `${Math.floor(days / 7)}w ago`;
   if (days < 365) return `${Math.floor(days / 30)}mo ago`;
   return `${Math.floor(days / 365)}y ago`;
-}
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  return `${Math.round(bytes / 1024)} KB`;
 }
 
 // ---------------------------------------------------------------------------

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { formatSize } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -57,11 +58,6 @@ function formatDateTime(ts: number): string {
     hour: "2-digit",
     minute: "2-digit",
   });
-}
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  return `${Math.round(bytes / 1024)} KB`;
 }
 
 // ---------------------------------------------------------------------------
