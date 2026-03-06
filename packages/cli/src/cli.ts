@@ -8,6 +8,7 @@ import { executeScan } from "./commands/scan.js";
 import { executeConfig } from "./commands/config.js";
 import { ConfigManager } from "./config/manager.js";
 import { uploadSnapshot } from "./uploader/webhook.js";
+import { exportIcons } from "./utils/icons.js";
 
 const configManager = new ConfigManager(
   join(homedir(), ".config", "otter")
@@ -180,6 +181,56 @@ const configCommand = defineCommand({
   },
 });
 
+const exportIconsCommand = defineCommand({
+  meta: {
+    name: "export-icons",
+    description: "Export application icons as PNG files",
+  },
+  args: {
+    output: {
+      type: "string",
+      description: "Output directory for PNG icons",
+      alias: "o",
+      required: false,
+    },
+    size: {
+      type: "string",
+      description: "Icon size in pixels (default: 128)",
+      alias: "s",
+      required: false,
+    },
+  },
+  async run({ args }) {
+    const outputDir =
+      (args.output as string) || join(homedir(), ".otter", "icons");
+    const size = parseInt((args.size as string) || "128", 10);
+
+    consola.start(`Exporting app icons to ${pc.bold(outputDir)}...\n`);
+
+    const results = await exportIcons({
+      outputDir,
+      size,
+      onProgress: (result) => {
+        if (result.success) {
+          consola.log(`  ${pc.green("✓")} ${result.appName}`);
+        } else {
+          consola.log(
+            `  ${pc.yellow("⚠")} ${result.appName}: ${pc.dim(result.error ?? "unknown error")}`
+          );
+        }
+      },
+    });
+
+    const succeeded = results.filter((r) => r.success).length;
+    const failed = results.filter((r) => !r.success).length;
+    consola.success(
+      `\nExported ${pc.bold(String(succeeded))} icons` +
+        (failed > 0 ? ` (${pc.yellow(String(failed))} skipped)` : "")
+    );
+    consola.info(`Output: ${pc.dim(outputDir)}`);
+  },
+});
+
 export const main = defineCommand({
   meta: {
     name: "otter",
@@ -191,5 +242,6 @@ export const main = defineCommand({
     scan: scanCommand,
     backup: backupCommand,
     config: configCommand,
+    "export-icons": exportIconsCommand,
   },
 });
