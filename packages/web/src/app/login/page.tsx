@@ -1,5 +1,6 @@
 "use client";
 
+import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { Archive, Github } from "lucide-react";
@@ -27,8 +28,7 @@ function LoginContent() {
   const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
 
   const handleGoogleLogin = () => {
-    // Will be wired to signIn("google") in Commit #6
-    window.location.href = "/api/auth/signin/google";
+    signIn("google", { callbackUrl: "/" });
   };
 
   return (

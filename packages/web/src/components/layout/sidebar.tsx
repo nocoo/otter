@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import {
   LayoutDashboard,
   Archive,
@@ -10,7 +11,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Tooltip,
   TooltipContent,
@@ -28,10 +29,13 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const { collapsed, toggle } = useSidebar();
+  const { data: session } = useSession();
 
-  // Placeholder user — will be replaced by session in Commit #6
-  const userName = "User";
-  const userInitial = "U";
+  // Get user info from session (Google OAuth)
+  const userName = session?.user?.name ?? "User";
+  const userEmail = session?.user?.email ?? "";
+  const userImage = session?.user?.image;
+  const userInitial = userName[0] ?? "?";
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -96,12 +100,16 @@ export function Sidebar() {
               })}
             </nav>
 
-            {/* User avatar */}
+            {/* User avatar + sign out */}
             <div className="py-3 flex justify-center w-full">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button className="cursor-pointer">
+                  <button
+                    onClick={() => signOut({ callbackUrl: "/login" })}
+                    className="cursor-pointer"
+                  >
                     <Avatar className="h-9 w-9">
+                      {userImage && <AvatarImage src={userImage} alt={userName} />}
                       <AvatarFallback className="text-xs bg-primary text-primary-foreground">
                         {userInitial}
                       </AvatarFallback>
@@ -109,7 +117,7 @@ export function Sidebar() {
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right" sideOffset={8}>
-                  {userName}
+                  {userName} · Click to sign out
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -162,20 +170,23 @@ export function Sidebar() {
               </div>
             </nav>
 
-            {/* User info */}
+            {/* User info + sign out */}
             <div className="px-4 py-3">
               <div className="flex items-center gap-3">
                 <Avatar className="h-9 w-9 shrink-0">
+                  {userImage && <AvatarImage src={userImage} alt={userName} />}
                   <AvatarFallback className="text-xs bg-primary text-primary-foreground">
                     {userInitial}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{userName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
                 </div>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
+                      onClick={() => signOut({ callbackUrl: "/login" })}
                       aria-label="Sign out"
                       className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
                     >
