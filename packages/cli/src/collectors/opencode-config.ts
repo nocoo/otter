@@ -27,11 +27,9 @@ export class OpenCodeConfigCollector extends BaseCollector {
     return this.timed(async (result) => {
       // 1. Collect config files from ~/.config/opencode/ (excluding skills dir)
       const configDir = join(this.homeDir, ".config", "opencode");
-      const files = await this.collectDir(
-        configDir,
-        result,
-        (path) => !path.includes("/skills/")
-      );
+      const files = await this.collectDir(configDir, result, {
+        filter: (path) => !path.includes("/skills/"),
+      });
       result.files.push(...files);
 
       // 2. Collect skill names as list items

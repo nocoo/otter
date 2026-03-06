@@ -41,11 +41,9 @@ export class ClaudeConfigCollector extends BaseCollector {
 
       // 2. Collect ~/.claude/ directory (excluding sensitive files)
       const claudeDir = join(this.homeDir, ".claude");
-      const files = await this.collectDir(
-        claudeDir,
-        result,
-        (path) => !isExcluded(path)
-      );
+      const files = await this.collectDir(claudeDir, result, {
+        filter: (path) => !isExcluded(path),
+      });
       result.files.push(...files);
     });
   }
