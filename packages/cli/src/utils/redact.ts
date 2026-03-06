@@ -173,6 +173,132 @@ export function redactShellSecrets(content: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Value-pattern redaction (for history.jsonl and other freeform content)
+// ---------------------------------------------------------------------------
+
+/**
+ * Patterns that match credential-like values embedded in freeform text.
+ * These catch secrets that users may have pasted into CLI prompts.
+ * Each pattern replaces the matched portion with [REDACTED].
+ */
+const VALUE_CREDENTIAL_PATTERNS: RegExp[] = [
+  // JWT tokens (three base64 segments separated by dots)
+  /eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g,
+  // Bearer / token auth headers
+  /(?:Bearer|Token)\s+[A-Za-z0-9_\-.~+/]{20,}/gi,
+  // AWS access keys (AKIA...)
+  /AKIA[0-9A-Z]{16}/g,
+  // GitHub tokens (ghp_, gho_, ghu_, ghs_, ghr_)
+  /gh[pousr]_[A-Za-z0-9_]{36,}/g,
+  // Anthropic API keys
+  /sk-ant-[A-Za-z0-9_-]{20,}/g,
+  // OpenAI API keys
+  /sk-(?:proj-)?[A-Za-z0-9]{20,}/g,
+  // Slack tokens (xoxb-, xoxp-, xoxs-, xoxa-)
+  /xox[bpsa]-[A-Za-z0-9-]{20,}/g,
+  // Generic long hex secrets (e.g. 40+ hex chars, common for API keys/tokens)
+  /(?:(?:token|key|secret|password|auth|credential|cookie)\s*[=:]\s*)['"]*([A-Za-z0-9_\-+/.]{32,})['"]*$/gim,
+  // Cookie session values (session=xxx, sid=xxx, _session_id=xxx)
+  /(?:session|sid|_session_id|connect\.sid)\s*=\s*[A-Za-z0-9%_\-+/.]{16,}/gi,
+  // npm tokens
+  /npm_[A-Za-z0-9]{36,}/g,
+  // Private key content (if someone pasted it)
+  /-----BEGIN\s+(?:RSA\s+)?PRIVATE\s+KEY-----[\s\S]*?-----END\s+(?:RSA\s+)?PRIVATE\s+KEY-----/g,
+];
+
+/**
+ * Scan a string value and replace any credential-like patterns with [REDACTED].
+ * Returns [redactedString, didRedact].
+ */
+function redactValuePatterns(value: string): [string, boolean] {
+  let result = value;
+  let didRedact = false;
+
+  for (const pattern of VALUE_CREDENTIAL_PATTERNS) {
+    // Reset lastIndex for global regexes
+    pattern.lastIndex = 0;
+    if (pattern.test(result)) {
+      didRedact = true;
+      pattern.lastIndex = 0;
+      result = result.replace(pattern, REDACTED);
+    }
+  }
+
+  return [result, didRedact];
+}
+
+/**
+ * Deep-walk a parsed value and apply value-pattern redaction to all strings.
+ * Unlike redactObject (key-based), this inspects the VALUE content itself.
+ */
+function redactDeepValues(obj: unknown): [unknown, boolean] {
+  if (obj === null || obj === undefined) return [obj, false];
+
+  if (typeof obj === "string") {
+    return redactValuePatterns(obj);
+  }
+
+  if (Array.isArray(obj)) {
+    let anyRedacted = false;
+    const mapped = obj.map((item) => {
+      const [val, redacted] = redactDeepValues(item);
+      if (redacted) anyRedacted = true;
+      return val;
+    });
+    return [mapped, anyRedacted];
+  }
+
+  if (typeof obj === "object") {
+    let anyRedacted = false;
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(
+      obj as Record<string, unknown>
+    )) {
+      const [val, redacted] = redactDeepValues(value);
+      result[key] = val;
+      if (redacted) anyRedacted = true;
+    }
+    return [result, anyRedacted];
+  }
+
+  return [obj, false];
+}
+
+/**
+ * Redact credential-like values in JSONL content (one JSON object per line).
+ * Applies both key-based (sensitive key names) and value-based (credential
+ * patterns like JWTs, API keys, bearer tokens) redaction.
+ */
+export function redactJsonlSecrets(content: string): string {
+  return content
+    .split("\n")
+    .map((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return line;
+
+      try {
+        const parsed = JSON.parse(trimmed);
+
+        // Apply key-based redaction first
+        const [keyRedacted] = redactObject(parsed);
+        // Then apply value-pattern redaction
+        const [valueRedacted, didRedact] = redactDeepValues(keyRedacted);
+
+        // Also check if key-based redaction changed anything
+        const keyChanged = JSON.stringify(keyRedacted) !== JSON.stringify(parsed);
+
+        if (!didRedact && !keyChanged) return line;
+        return JSON.stringify(valueRedacted);
+      } catch {
+        // Not valid JSON line — apply value-pattern redaction as plain text
+        const [result, didRedact] = redactValuePatterns(trimmed);
+        return didRedact ? result : line;
+      }
+    })
+    .join("\n");
+}
+
+// ---------------------------------------------------------------------------
 // Public API: auto-detect format and redact
 // ---------------------------------------------------------------------------
 
@@ -189,6 +315,11 @@ export function redactSecrets(content: string, filePath: string): string {
 
   if (lower.endsWith(".json")) {
     return redactJsonSecrets(content);
+  }
+
+  // JSONL files (e.g. history.jsonl): value-pattern + key-based redaction
+  if (lower.endsWith(".jsonl")) {
+    return redactJsonlSecrets(content);
   }
 
   // Line-oriented configs: .npmrc, .gitconfig, .env, etc.
