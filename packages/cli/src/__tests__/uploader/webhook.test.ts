@@ -131,4 +131,18 @@ describe("uploadSnapshot", () => {
       .calls[0][1];
     expect(options.signal).toBeInstanceOf(AbortSignal);
   });
+
+  it("should return timeout error message on AbortError", async () => {
+    const abortError = new DOMException("The operation was aborted", "AbortError");
+    globalThis.fetch = vi.fn().mockRejectedValue(abortError);
+
+    const result = await uploadSnapshot(createTestSnapshot(), {
+      webhookUrl: "https://example.com/hook",
+      timeoutMs: 5000,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("timed out after 5000ms");
+    expect(result.statusCode).toBeUndefined();
+  });
 });

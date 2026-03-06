@@ -65,4 +65,48 @@ describe("executeScan", () => {
     expect(progress).toHaveBeenCalledWith("c2", expect.any(Object));
     expect(progress).toHaveBeenCalledWith("c3", expect.any(Object));
   });
+
+  it("should handle collector that throws an error", async () => {
+    const crashingCollector: Collector = {
+      id: "crasher",
+      label: "Crasher",
+      category: "config",
+      collect: vi.fn().mockRejectedValue(new Error("Boom!")),
+    };
+    const healthyCollector = mockCollector("healthy", 1, 0);
+
+    const snapshot = await executeScan([crashingCollector, healthyCollector]);
+
+    expect(snapshot.collectors).toHaveLength(2);
+    // Crashed collector should have a fallback result with errors
+    expect(snapshot.collectors[0].id).toBe("crasher");
+    expect(snapshot.collectors[0].errors).toHaveLength(1);
+    expect(snapshot.collectors[0].errors[0]).toContain("crashed");
+    expect(snapshot.collectors[0].errors[0]).toContain("Boom!");
+    expect(snapshot.collectors[0].files).toHaveLength(0);
+    expect(snapshot.collectors[0].lists).toHaveLength(0);
+    expect(snapshot.collectors[0].durationMs).toBe(0);
+    // Healthy collector should still succeed
+    expect(snapshot.collectors[1].id).toBe("healthy");
+    expect(snapshot.collectors[1].files).toHaveLength(1);
+    expect(snapshot.collectors[1].errors).toHaveLength(0);
+  });
+
+  it("should call onProgress even for crashed collector", async () => {
+    const crashingCollector: Collector = {
+      id: "crasher",
+      label: "Crasher",
+      category: "config",
+      collect: vi.fn().mockRejectedValue(new Error("fail")),
+    };
+    const progress = vi.fn();
+
+    await executeScan([crashingCollector], { onProgress: progress });
+
+    expect(progress).toHaveBeenCalledOnce();
+    expect(progress).toHaveBeenCalledWith(
+      "crasher",
+      expect.objectContaining({ errors: expect.arrayContaining([expect.stringContaining("crashed")]) })
+    );
+  });
 });

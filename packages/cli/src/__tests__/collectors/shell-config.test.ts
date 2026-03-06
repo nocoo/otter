@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtemp, writeFile, mkdir, rm } from "node:fs/promises";
+import { mkdtemp, writeFile, mkdir, rm, chmod } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -193,6 +193,26 @@ describe("ShellConfigCollector", () => {
 
     expect(result.lists).toHaveLength(0);
     expect(result.errors).toHaveLength(0);
+  });
+
+  it("should record error when SSH directory read fails with non-ENOENT", async () => {
+    const sshDir = join(tempHome, ".ssh");
+    await mkdir(sshDir, { recursive: true });
+    await writeFile(join(sshDir, "id_rsa"), "key");
+    // Remove read permissions from directory
+    await chmod(sshDir, 0o000);
+
+    const collector = new ShellConfigCollector(tempHome);
+    const result = await collector.collect();
+
+    const sshKeys = result.lists.filter((l) => l.meta?.source === ".ssh");
+    expect(sshKeys).toHaveLength(0);
+    expect(
+      result.errors.some((e) => e.includes("SSH directory"))
+    ).toBe(true);
+
+    // Restore permissions for cleanup
+    await chmod(sshDir, 0o755);
   });
 });
 

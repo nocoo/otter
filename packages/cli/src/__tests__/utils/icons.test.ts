@@ -1,8 +1,21 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdtemp, writeFile, mkdir, rm, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { extractIconFileName, exportIcons } from "../../utils/icons.js";
+
+// Mock child_process.execFile to avoid calling real sips
+vi.mock("node:child_process", () => ({
+  execFile: vi.fn(
+    (
+      _cmd: string,
+      _args: string[],
+      cb: (err: Error | null, stdout: string, stderr: string) => void
+    ) => {
+      cb(null, "", "");
+    }
+  ),
+}));
 
 describe("extractIconFileName", () => {
   it("should extract icon file from XML plist", () => {
@@ -142,5 +155,93 @@ describe("exportIcons", () => {
 
     const results = await exportIcons({ appsDir, outputDir });
     expect(results).toHaveLength(0);
+  });
+
+  it("should successfully export icon when plist and icns file exist", async () => {
+    const appPath = join(appsDir, "GoodApp.app");
+    await mkdir(join(appPath, "Contents", "Resources"), { recursive: true });
+    await writeFile(
+      join(appPath, "Contents", "Info.plist"),
+      `<?xml version="1.0"?>
+<plist><dict>
+  <key>CFBundleIconFile</key>
+  <string>AppIcon</string>
+</dict></plist>`
+    );
+    // Create the icns file so resolveIconPath's access() check passes
+    await writeFile(
+      join(appPath, "Contents", "Resources", "AppIcon.icns"),
+      "fake-icns-data"
+    );
+
+    const results = await exportIcons({ appsDir, outputDir });
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({
+      appName: "GoodApp",
+      success: true,
+      outputPath: join(outputDir, "GoodApp.png"),
+    });
+  });
+
+  it("should report sips conversion failure", async () => {
+    // Override the mock to make execFile fail
+    const { execFile } = await import("node:child_process");
+    const mockExecFile = vi.mocked(execFile);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (mockExecFile as any).mockImplementationOnce(
+      (_cmd: string, _args: string[], cb: (err: Error | null) => void) => {
+        cb(new Error("sips: could not convert"));
+      }
+    );
+
+    const appPath = join(appsDir, "BrokenApp.app");
+    await mkdir(join(appPath, "Contents", "Resources"), { recursive: true });
+    await writeFile(
+      join(appPath, "Contents", "Info.plist"),
+      `<?xml version="1.0"?>
+<plist><dict>
+  <key>CFBundleIconFile</key>
+  <string>BrokenIcon.icns</string>
+</dict></plist>`
+    );
+    await writeFile(
+      join(appPath, "Contents", "Resources", "BrokenIcon.icns"),
+      "corrupted-data"
+    );
+
+    const results = await exportIcons({ appsDir, outputDir });
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({
+      appName: "BrokenApp",
+      success: false,
+    });
+    expect(results[0].error).toContain("sips conversion failed");
+  });
+
+  it("should call onProgress with success result for valid icon", async () => {
+    const appPath = join(appsDir, "ProgressApp.app");
+    await mkdir(join(appPath, "Contents", "Resources"), { recursive: true });
+    await writeFile(
+      join(appPath, "Contents", "Info.plist"),
+      `<?xml version="1.0"?>
+<plist><dict>
+  <key>CFBundleIconFile</key>
+  <string>Icon.icns</string>
+</dict></plist>`
+    );
+    await writeFile(
+      join(appPath, "Contents", "Resources", "Icon.icns"),
+      "icns-data"
+    );
+
+    const progressResults: Array<{ appName: string; success: boolean }> = [];
+    await exportIcons({
+      appsDir,
+      outputDir,
+      onProgress: (r) => progressResults.push({ appName: r.appName, success: r.success }),
+    });
+
+    expect(progressResults).toHaveLength(1);
+    expect(progressResults[0]).toEqual({ appName: "ProgressApp", success: true });
   });
 });

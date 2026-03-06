@@ -8,14 +8,14 @@
 
 ## 覆盖率目标
 
-| 指标 | 当前配置阈值 | 目标阈值 |
-|------|-------------|----------|
-| Statements | 80% | **90%** |
-| Branches | 80% | **90%** |
-| Functions | 80% | **90%** |
-| Lines | 80% | **90%** |
+| 指标 | 当前配置阈值 |
+|------|-------------|
+| Statements | **90%** |
+| Branches | **90%** |
+| Functions | **90%** |
+| Lines | **90%** |
 
-> 覆盖率提升至 90% 是近期目标，需要逐步补充测试用例达成。
+> 覆盖率阈值已从 80% 提升至 90%，CI 构建中低于此阈值将失败。
 
 ## 覆盖率配置
 
@@ -44,6 +44,7 @@ coverage: {
 __tests__/
 ├── collectors/
 │   ├── applications.test.ts
+│   ├── base.test.ts
 │   ├── claude-config.test.ts
 │   ├── homebrew.test.ts
 │   ├── opencode-config.test.ts
@@ -134,8 +135,8 @@ collector._execCommand = async (cmd: string) => "package1\npackage2\n";
 
 | 指标 | 数值 |
 |------|------|
-| 测试文件 | 12 |
-| 测试用例 | 133 |
+| 测试文件 | 13 |
+| 测试用例 | 159 |
 | 通过率 | 100% |
 
 ## 相关文档

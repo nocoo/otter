@@ -357,6 +357,48 @@ describe("redactJsonlSecrets", () => {
     expect(parsed.auth_token).toBe("[REDACTED]");
     expect(parsed.display).toBe("normal");
   });
+
+  it("should redact credentials inside arrays in JSONL", () => {
+    const entry = {
+      tokens: [
+        "ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij",
+        "safe-value",
+        "sk-ant-api03-secret1234567890123456789012345678901234567890",
+      ],
+    };
+    const input = JSON.stringify(entry);
+    const result = redactJsonlSecrets(input);
+    const parsed = JSON.parse(result);
+
+    expect(parsed.tokens[0]).toContain("[REDACTED]");
+    expect(parsed.tokens[1]).toBe("safe-value");
+    expect(parsed.tokens[2]).toContain("[REDACTED]");
+  });
+
+  it("should redact credential patterns in non-JSON lines", () => {
+    const lines = [
+      JSON.stringify({ display: "normal" }),
+      "not-valid-json but has ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij inside",
+      JSON.stringify({ display: "also normal" }),
+    ].join("\n");
+
+    const result = redactJsonlSecrets(lines);
+    const outputLines = result.split("\n");
+
+    // First line unchanged
+    expect(outputLines[0]).toBe(lines.split("\n")[0]);
+    // Second line: non-JSON but credential pattern should be redacted
+    expect(outputLines[1]).toContain("[REDACTED]");
+    expect(outputLines[1]).not.toContain("ghp_");
+    // Third line unchanged
+    expect(outputLines[2]).toBe(lines.split("\n")[2]);
+  });
+
+  it("should preserve non-JSON lines without credentials", () => {
+    const input = "this is not json but has no secrets";
+    const result = redactJsonlSecrets(input);
+    expect(result).toBe(input);
+  });
 });
 
 describe("redactSecrets (auto-detect)", () => {

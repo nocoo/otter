@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile, rm, chmod } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ApplicationsCollector } from "../../collectors/applications.js";
@@ -72,5 +72,20 @@ describe("ApplicationsCollector", () => {
 
     expect(result.lists).toHaveLength(0);
     expect(result.errors).toHaveLength(0);
+  });
+
+  it("should record error when directory read fails with non-ENOENT", async () => {
+    // Remove read permissions from directory to trigger EACCES
+    await chmod(tempAppsDir, 0o000);
+
+    const collector = new ApplicationsCollector(tempHome, tempAppsDir);
+    const result = await collector.collect();
+
+    expect(result.lists).toHaveLength(0);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toContain("Failed to read applications directory");
+
+    // Restore permissions for cleanup
+    await chmod(tempAppsDir, 0o755);
   });
 });
