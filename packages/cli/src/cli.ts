@@ -10,6 +10,7 @@ import { formatSnapshotList, formatSnapshotDetail, diffSnapshots, formatSnapshot
 import { ConfigManager } from "./config/manager.js";
 import { SnapshotStore } from "./storage/local.js";
 import { uploadSnapshot } from "./uploader/webhook.js";
+import { uploadIcons, type IconUploadConfig } from "./uploader/icons.js";
 import { exportIcons } from "./utils/icons.js";
 
 const otterConfigDir = join(homedir(), ".config", "otter");
@@ -322,6 +323,12 @@ const exportIconsCommand = defineCommand({
       alias: "s",
       required: false,
     },
+    upload: {
+      type: "boolean",
+      description: "Upload icons to R2 after export",
+      alias: "u",
+      required: false,
+    },
   },
   async run({ args }) {
     const outputDir =
@@ -351,6 +358,54 @@ const exportIconsCommand = defineCommand({
         (failed > 0 ? ` (${pc.yellow(String(failed))} skipped)` : "")
     );
     consola.info(`Output: ${pc.dim(outputDir)}`);
+
+    // Upload to R2 if requested
+    if (args.upload) {
+      const config = await configManager.load();
+      const r2Endpoint = config.iconR2Endpoint;
+      const r2AccessKeyId = config.iconR2AccessKeyId;
+      const r2SecretAccessKey = config.iconR2SecretAccessKey;
+      const r2Bucket = config.iconR2Bucket;
+      const r2PublicDomain = config.iconR2PublicDomain;
+
+      if (!r2Endpoint || !r2AccessKeyId || !r2SecretAccessKey || !r2Bucket || !r2PublicDomain) {
+        consola.error(
+          "R2 icon upload config not set. Run:\n" +
+          `  otter config set iconR2Endpoint <endpoint>\n` +
+          `  otter config set iconR2AccessKeyId <key>\n` +
+          `  otter config set iconR2SecretAccessKey <secret>\n` +
+          `  otter config set iconR2Bucket <bucket>\n` +
+          `  otter config set iconR2PublicDomain <domain>`
+        );
+        process.exit(1);
+      }
+
+      const uploadConfig: IconUploadConfig = {
+        r2Endpoint,
+        r2AccessKeyId,
+        r2SecretAccessKey,
+        r2Bucket,
+        r2PublicDomain,
+      };
+
+      const exportedIcons = results
+        .filter((r) => r.success && r.outputPath)
+        .map((r) => ({ appName: r.appName, pngPath: r.outputPath! }));
+
+      consola.start(`\nUploading ${pc.bold(String(exportedIcons.length))} icons to R2...\n`);
+
+      const uploadResults = await uploadIcons(exportedIcons, uploadConfig, (result) => {
+        const status = result.uploaded ? pc.green("↑") : pc.dim("=");
+        consola.log(`  ${status} ${result.appName} ${pc.dim(result.publicUrl)}`);
+      });
+
+      const uploaded = uploadResults.filter((r) => r.uploaded).length;
+      const skipped = uploadResults.filter((r) => !r.uploaded).length;
+      consola.success(
+        `Uploaded ${pc.bold(String(uploaded))} icons` +
+          (skipped > 0 ? ` (${pc.dim(String(skipped))} unchanged)` : "")
+      );
+    }
   },
 });
 
