@@ -139,7 +139,7 @@ collector._execCommand = async (cmd: string) => "package1\npackage2\n";
 | 指标 | 数值 |
 |------|------|
 | 测试文件 | 15 |
-| 测试用例 | 186 |
+| 测试用例 | 207 |
 | 通过率 | 100% |
 
 ## 相关文档

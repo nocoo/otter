@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { createDefaultCollectors } from "./collectors/index.js";
 import { executeScan } from "./commands/scan.js";
 import { executeConfig } from "./commands/config.js";
-import { formatSnapshotList } from "./commands/snapshot.js";
+import { formatSnapshotList, formatSnapshotDetail, diffSnapshots, formatSnapshotDiff } from "./commands/snapshot.js";
 import { ConfigManager } from "./config/manager.js";
 import { SnapshotStore } from "./storage/local.js";
 import { uploadSnapshot } from "./uploader/webhook.js";
@@ -233,6 +233,65 @@ const snapshotListCommand = defineCommand({
   },
 });
 
+const snapshotShowCommand = defineCommand({
+  meta: {
+    name: "show",
+    description: "Show details of a saved snapshot",
+  },
+  args: {
+    id: {
+      type: "positional",
+      description: "Short ID (first 8 chars) or full UUID of the snapshot",
+      required: true,
+    },
+  },
+  async run({ args }) {
+    const snapshot = await snapshotStore.load(args.id as string);
+    if (!snapshot) {
+      consola.error(`Snapshot not found: ${pc.bold(args.id as string)}`);
+      process.exitCode = 1;
+      return;
+    }
+    consola.log(formatSnapshotDetail(snapshot));
+  },
+});
+
+const snapshotDiffCommand = defineCommand({
+  meta: {
+    name: "diff",
+    description: "Compare two snapshots (file + list level)",
+  },
+  args: {
+    id1: {
+      type: "positional",
+      description: "Short ID of the older snapshot",
+      required: true,
+    },
+    id2: {
+      type: "positional",
+      description: "Short ID of the newer snapshot",
+      required: true,
+    },
+  },
+  async run({ args }) {
+    const oldSnap = await snapshotStore.load(args.id1 as string);
+    if (!oldSnap) {
+      consola.error(`Snapshot not found: ${pc.bold(args.id1 as string)}`);
+      process.exitCode = 1;
+      return;
+    }
+    const newSnap = await snapshotStore.load(args.id2 as string);
+    if (!newSnap) {
+      consola.error(`Snapshot not found: ${pc.bold(args.id2 as string)}`);
+      process.exitCode = 1;
+      return;
+    }
+
+    const diff = diffSnapshots(oldSnap, newSnap);
+    consola.log(formatSnapshotDiff(diff));
+  },
+});
+
 const snapshotCommand = defineCommand({
   meta: {
     name: "snapshot",
@@ -240,6 +299,8 @@ const snapshotCommand = defineCommand({
   },
   subCommands: {
     list: snapshotListCommand,
+    show: snapshotShowCommand,
+    diff: snapshotDiffCommand,
   },
 });
 

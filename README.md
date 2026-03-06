@@ -81,6 +81,12 @@ bun run --filter @otter/cli start -- scan --json
 ```bash
 # 查看本地保存的快照列表
 otter snapshot list
+
+# 查看某个快照的详细内容（机器信息、采集器、文件列表）
+otter snapshot show <shortId>
+
+# 比较两个快照的差异（文件增删改 + 列表增删）
+otter snapshot diff <oldId> <newId>
 ```
 
 ### 开发命令
