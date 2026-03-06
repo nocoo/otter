@@ -38,13 +38,13 @@ interface ProjectSummary {
 // ---------------------------------------------------------------------------
 
 /** Files to collect as full content (small, valuable config files) */
-const TARGETED_FILES: Array<{ path: string; redact?: boolean; maxSize?: number }> = [
+const TARGETED_FILES: Array<{ path: string; redact?: boolean; maxSize?: number; slim?: boolean }> = [
   { path: "CLAUDE.md" }, // user-level instructions
   { path: "settings.json", redact: true }, // settings (contains API tokens)
   { path: "stats-cache.json" }, // aggregate usage stats
   { path: "plugins/installed_plugins.json" }, // plugin inventory
   { path: "plugins/blocklist.json" }, // plugin blocklist
-  { path: "history.jsonl", redact: true, maxSize: 2 * 1024 * 1024 }, // prompt history (can be large, up to 2 MB)
+  { path: "history.jsonl", redact: true, maxSize: 2 * 1024 * 1024, slim: true }, // prompt history (excluded in slim mode)
 ];
 
 /**
@@ -70,6 +70,13 @@ export class ClaudeConfigCollector extends BaseCollector {
   readonly label = "Claude Code Configuration";
   readonly category: CollectorCategory = "config";
 
+  private readonly slim: boolean;
+
+  constructor(homeDir: string, options?: { slim?: boolean }) {
+    super(homeDir);
+    this.slim = options?.slim ?? false;
+  }
+
   async collect(): Promise<CollectorResult> {
     return this.timed(async (result) => {
       const claudeDir = join(this.homeDir, ".claude");
@@ -82,7 +89,10 @@ export class ClaudeConfigCollector extends BaseCollector {
       if (homeMd) result.files.push(homeMd);
 
       // 2. Collect targeted config files from ~/.claude/
-      for (const { path: relativePath, redact, maxSize } of TARGETED_FILES) {
+      for (const { path: relativePath, redact, maxSize, slim: slimExclude } of TARGETED_FILES) {
+        // Skip files marked as slim-excluded when in slim mode
+        if (this.slim && slimExclude) continue;
+
         const file = await this.safeReadFile(
           join(claudeDir, relativePath),
           result,
@@ -91,12 +101,14 @@ export class ClaudeConfigCollector extends BaseCollector {
         if (file) result.files.push(file);
       }
 
-      // 3. Collect conversation metadata summaries (not full content)
-      const summaryFile = await this.collectSessionSummaries(
-        claudeDir,
-        result
-      );
-      if (summaryFile) result.files.push(summaryFile);
+      // 3. Collect conversation metadata summaries (skip in slim mode)
+      if (!this.slim) {
+        const summaryFile = await this.collectSessionSummaries(
+          claudeDir,
+          result
+        );
+        if (summaryFile) result.files.push(summaryFile);
+      }
     });
   }
 

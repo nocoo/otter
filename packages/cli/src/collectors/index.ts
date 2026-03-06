@@ -14,13 +14,22 @@ import { ApplicationsCollector } from "./applications.js";
 import { homedir } from "node:os";
 
 /**
+ * Options for creating the default set of collectors.
+ */
+export interface CollectorOptions {
+  /** If true, exclude behavior data (history.jsonl, session summaries) */
+  slim?: boolean;
+}
+
+/**
  * Create all default collectors targeting the current system.
  */
 export function createDefaultCollectors(
-  homeDir: string = homedir()
+  homeDir: string = homedir(),
+  options: CollectorOptions = {}
 ): Collector[] {
   return [
-    new ClaudeConfigCollector(homeDir),
+    new ClaudeConfigCollector(homeDir, { slim: options.slim }),
     new OpenCodeConfigCollector(homeDir),
     new ShellConfigCollector(homeDir),
     new HomebrewCollector(homeDir),

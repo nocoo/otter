@@ -25,6 +25,12 @@ const scanCommand = defineCommand({
       description: "Output snapshot as JSON to stdout",
       default: false,
     },
+    slim: {
+      type: "boolean",
+      description:
+        "Exclude behavior data (history.jsonl, session summaries) for a smaller snapshot",
+      default: false,
+    },
   },
   async run({ args }) {
     // When --json is set, redirect all progress output to stderr
@@ -35,7 +41,9 @@ const scanCommand = defineCommand({
 
     consola.start("Scanning your Mac environment...\n");
 
-    const collectors = createDefaultCollectors();
+    const collectors = createDefaultCollectors(homedir(), {
+      slim: args.slim,
+    });
     const snapshot = await executeScan(collectors, {
       onProgress: (id, result) => {
         const fileCount = result.files.length;
@@ -74,7 +82,15 @@ const backupCommand = defineCommand({
     name: "backup",
     description: "Scan, build snapshot, and upload to webhook",
   },
-  async run() {
+  args: {
+    slim: {
+      type: "boolean",
+      description:
+        "Exclude behavior data (history.jsonl, session summaries) for a smaller snapshot",
+      default: false,
+    },
+  },
+  async run({ args }) {
     const config = await configManager.load();
     if (!config.webhookUrl) {
       consola.error(
@@ -88,7 +104,9 @@ const backupCommand = defineCommand({
 
     consola.start("Scanning your Mac environment...\n");
 
-    const collectors = createDefaultCollectors();
+    const collectors = createDefaultCollectors(homedir(), {
+      slim: args.slim,
+    });
     const snapshot = await executeScan(collectors, {
       onProgress: (_id, result) => {
         const status =

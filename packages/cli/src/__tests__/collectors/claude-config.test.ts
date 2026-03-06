@@ -253,4 +253,68 @@ describe("ClaudeConfigCollector", () => {
     );
     expect(summaryFile).toBeUndefined();
   });
+
+  it("should exclude history.jsonl and session summaries in slim mode", async () => {
+    const claudeDir = join(tempHome, ".claude");
+    const projectDir = join(claudeDir, "projects", "abc123");
+    await mkdir(join(claudeDir, "plugins"), { recursive: true });
+    await mkdir(projectDir, { recursive: true });
+
+    // Create all files
+    await writeFile(join(claudeDir, "settings.json"), '{"env":{}}');
+    await writeFile(join(claudeDir, "CLAUDE.md"), "# Config");
+    await writeFile(
+      join(claudeDir, "history.jsonl"),
+      '{"display":"test prompt"}'
+    );
+    await writeFile(
+      join(projectDir, "sessions-index.json"),
+      JSON.stringify({
+        entries: [{ sessionId: "s1", firstPrompt: "hello" }],
+        originalPath: "/test",
+      })
+    );
+
+    const collector = new ClaudeConfigCollector(tempHome, { slim: true });
+    const result = await collector.collect();
+
+    const paths = result.files.map((f) => f.path);
+
+    // Config files should still be collected
+    expect(paths).toContain(join(claudeDir, "settings.json"));
+    expect(paths).toContain(join(claudeDir, "CLAUDE.md"));
+
+    // Behavior data should be excluded
+    expect(paths).not.toContain(join(claudeDir, "history.jsonl"));
+    expect(paths.some((p) => p.endsWith("__sessions-summary.json"))).toBe(
+      false
+    );
+  });
+
+  it("should include history.jsonl and session summaries without slim mode", async () => {
+    const claudeDir = join(tempHome, ".claude");
+    const projectDir = join(claudeDir, "projects", "abc123");
+    await mkdir(projectDir, { recursive: true });
+
+    await writeFile(
+      join(claudeDir, "history.jsonl"),
+      '{"display":"test prompt"}'
+    );
+    await writeFile(
+      join(projectDir, "sessions-index.json"),
+      JSON.stringify({
+        entries: [{ sessionId: "s1", firstPrompt: "hello" }],
+        originalPath: "/test",
+      })
+    );
+
+    const collector = new ClaudeConfigCollector(tempHome); // no slim
+    const result = await collector.collect();
+
+    const paths = result.files.map((f) => f.path);
+    expect(paths).toContain(join(claudeDir, "history.jsonl"));
+    expect(paths.some((p) => p.endsWith("__sessions-summary.json"))).toBe(
+      true
+    );
+  });
 });
