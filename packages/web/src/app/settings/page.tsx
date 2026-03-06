@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import {
   Webhook,
@@ -11,6 +11,7 @@ import {
   User,
   Mail,
   Shield,
+  Loader2,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // ---------------------------------------------------------------------------
-// Static placeholder data (Phase 1 — will be replaced by API calls)
+// Types
 // ---------------------------------------------------------------------------
 
 interface WebhookToken {
@@ -37,28 +38,31 @@ interface WebhookToken {
   token: string;
   label: string;
   isActive: boolean;
-  createdAt: string;
-  lastUsedAt: string | null;
+  createdAt: number;
+  lastUsedAt: number | null;
 }
 
-const initialWebhooks: WebhookToken[] = [
-  {
-    id: "wh-001",
-    token: "ott_k7x9m2p4q8r1s5t3v6w0y",
-    label: "dev-macbook",
-    isActive: true,
-    createdAt: "2026-02-15",
-    lastUsedAt: "2026-03-06 11:30",
-  },
-  {
-    id: "wh-002",
-    token: "ott_a1b2c3d4e5f6g7h8i9j0k",
-    label: "ci-pipeline",
-    isActive: false,
-    createdAt: "2026-01-20",
-    lastUsedAt: "2026-02-10 09:00",
-  },
-];
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatDate(ts: number): string {
+  return new Date(ts).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatDateTime(ts: number): string {
+  return new Date(ts).toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Components
@@ -93,11 +97,15 @@ function WebhookRow({
   baseUrl,
   onToggle,
   onDelete,
+  isToggling,
+  isDeleting,
 }: {
   webhook: WebhookToken;
   baseUrl: string;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
+  isToggling: boolean;
+  isDeleting: boolean;
 }) {
   const fullUrl = `${baseUrl}/api/webhook/${webhook.token}`;
 
@@ -118,11 +126,13 @@ function WebhookRow({
           <Switch
             checked={webhook.isActive}
             onCheckedChange={() => onToggle(webhook.id)}
+            disabled={isToggling}
             aria-label={`Toggle ${webhook.label}`}
           />
           <button
             onClick={() => onDelete(webhook.id)}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+            disabled={isDeleting}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
             aria-label={`Delete ${webhook.label}`}
           >
             <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -138,8 +148,8 @@ function WebhookRow({
 
       {/* Meta */}
       <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
-        <span>Created {webhook.createdAt}</span>
-        {webhook.lastUsedAt && <span>Last used {webhook.lastUsedAt}</span>}
+        <span>Created {formatDate(webhook.createdAt)}</span>
+        {webhook.lastUsedAt && <span>Last used {formatDateTime(webhook.lastUsedAt)}</span>}
       </div>
     </div>
   );
@@ -147,38 +157,95 @@ function WebhookRow({
 
 export default function SettingsPage() {
   const { data: session } = useSession();
-  const [webhooks, setWebhooks] = useState(initialWebhooks);
+  const [webhooks, setWebhooks] = useState<WebhookToken[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [newLabel, setNewLabel] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://otter.example.com";
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://otter.hexly.ai";
 
-  const handleToggle = (id: string) => {
-    setWebhooks((prev) =>
-      prev.map((wh) =>
-        wh.id === id ? { ...wh, isActive: !wh.isActive } : wh
-      )
-    );
+  // Fetch webhooks on mount
+  const fetchWebhooks = useCallback(async () => {
+    try {
+      const res = await fetch("/api/webhooks");
+      if (!res.ok) throw new Error("Failed to load webhooks");
+      const data = await res.json();
+      setWebhooks(data.webhooks);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchWebhooks();
+  }, [fetchWebhooks]);
+
+  const handleToggle = async (id: string) => {
+    const webhook = webhooks.find((wh) => wh.id === id);
+    if (!webhook) return;
+
+    setTogglingId(id);
+    try {
+      const res = await fetch(`/api/webhooks/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !webhook.isActive }),
+      });
+      if (!res.ok) throw new Error("Failed to update webhook");
+      const data = await res.json();
+      setWebhooks((prev) =>
+        prev.map((wh) => (wh.id === id ? data.webhook : wh)),
+      );
+    } catch {
+      // Revert optimistically if needed — for now just refetch
+      await fetchWebhooks();
+    } finally {
+      setTogglingId(null);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setWebhooks((prev) => prev.filter((wh) => wh.id !== id));
+  const handleDelete = async (id: string) => {
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/webhooks/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete webhook");
+      setWebhooks((prev) => prev.filter((wh) => wh.id !== id));
+    } catch {
+      await fetchWebhooks();
+    } finally {
+      setDeletingId(null);
+    }
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!newLabel.trim()) return;
-    const token = `ott_${Array.from({ length: 22 }, () => "abcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 36)]).join("")}`;
-    const newWebhook: WebhookToken = {
-      id: `wh-${Date.now()}`,
-      token,
-      label: newLabel.trim(),
-      isActive: true,
-      createdAt: new Date().toISOString().slice(0, 10),
-      lastUsedAt: null,
-    };
-    setWebhooks((prev) => [newWebhook, ...prev]);
-    setNewLabel("");
-    setDialogOpen(false);
+    setCreating(true);
+    try {
+      const res = await fetch("/api/webhooks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label: newLabel.trim() }),
+      });
+      if (!res.ok) throw new Error("Failed to create webhook");
+      const data = await res.json();
+      setWebhooks((prev) => [data.webhook, ...prev]);
+      setNewLabel("");
+      setDialogOpen(false);
+    } catch {
+      // Refetch to get latest state
+      await fetchWebhooks();
+    } finally {
+      setCreating(false);
+    }
   };
 
   const userName = session?.user?.name ?? "User";
@@ -264,8 +331,15 @@ export default function SettingsPage() {
                     <Button variant="ghost" onClick={() => setDialogOpen(false)}>
                       Cancel
                     </Button>
-                    <Button onClick={handleCreate} disabled={!newLabel.trim()}>
-                      Create
+                    <Button onClick={handleCreate} disabled={!newLabel.trim() || creating}>
+                      {creating ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                          Creating...
+                        </>
+                      ) : (
+                        "Create"
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -278,7 +352,27 @@ export default function SettingsPage() {
             with: <code className="text-[11px] bg-background/50 px-1.5 py-0.5 rounded">otter config set webhook.url &lt;url&gt;</code>
           </p>
 
-          {webhooks.length === 0 ? (
+          {loading ? (
+            <div className="rounded-xl bg-secondary p-8 text-center">
+              <Loader2 className="h-8 w-8 text-muted-foreground/40 mx-auto animate-spin" />
+              <p className="mt-3 text-sm text-muted-foreground">Loading webhooks...</p>
+            </div>
+          ) : error ? (
+            <div className="rounded-xl bg-secondary p-8 text-center">
+              <p className="text-sm text-destructive">{error}</p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-2"
+                onClick={() => {
+                  setLoading(true);
+                  void fetchWebhooks();
+                }}
+              >
+                Retry
+              </Button>
+            </div>
+          ) : webhooks.length === 0 ? (
             <div className="rounded-xl bg-secondary p-8 text-center">
               <Webhook className="h-8 w-8 text-muted-foreground/40 mx-auto" strokeWidth={1.5} />
               <p className="mt-3 text-sm text-muted-foreground">No webhook tokens yet</p>
@@ -295,6 +389,8 @@ export default function SettingsPage() {
                   baseUrl={baseUrl}
                   onToggle={handleToggle}
                   onDelete={handleDelete}
+                  isToggling={togglingId === wh.id}
+                  isDeleting={deletingId === wh.id}
                 />
               ))}
             </div>
