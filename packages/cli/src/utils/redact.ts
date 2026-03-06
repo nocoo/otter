@@ -29,37 +29,50 @@ function isSensitiveKey(key: string): boolean {
 /**
  * Deep-walk a parsed JSON value and redact any string values
  * whose keys match sensitive patterns.
+ *
+ * Returns [redactedValue, didRedact] tuple.
  */
-function redactObject(obj: unknown): unknown {
-  if (obj === null || obj === undefined) return obj;
-  if (typeof obj !== "object") return obj;
+function redactObject(obj: unknown): [unknown, boolean] {
+  if (obj === null || obj === undefined) return [obj, false];
+  if (typeof obj !== "object") return [obj, false];
 
   if (Array.isArray(obj)) {
-    return obj.map((item) => redactObject(item));
+    let anyRedacted = false;
+    const mapped = obj.map((item) => {
+      const [val, redacted] = redactObject(item);
+      if (redacted) anyRedacted = true;
+      return val;
+    });
+    return [mapped, anyRedacted];
   }
 
+  let anyRedacted = false;
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
     if (typeof value === "string" && isSensitiveKey(key)) {
       result[key] = REDACTED;
+      anyRedacted = true;
     } else if (typeof value === "object" && value !== null) {
-      result[key] = redactObject(value);
+      const [val, redacted] = redactObject(value);
+      result[key] = val;
+      if (redacted) anyRedacted = true;
     } else {
       result[key] = value;
     }
   }
-  return result;
+  return [result, anyRedacted];
 }
 
 /**
  * Redact sensitive values in a JSON string.
- * Returns the redacted JSON string, or the original if parsing fails.
+ * Returns the original string if no redaction was needed or parsing fails.
  */
 export function redactJsonSecrets(jsonContent: string): string {
   try {
     const parsed = JSON.parse(jsonContent);
-    const redacted = redactObject(parsed);
-    // Preserve original formatting style (2-space indent)
+    const [redacted, didRedact] = redactObject(parsed);
+    if (!didRedact) return jsonContent;
+    // Re-serialize with 2-space indent
     return JSON.stringify(redacted, null, 2);
   } catch {
     // If not valid JSON, return as-is

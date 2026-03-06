@@ -89,6 +89,8 @@ export interface CollectDirOptions {
   maxFileSize?: number;
   /** Additional directory names to exclude */
   excludeDirs?: Set<string>;
+  /** If true, apply credential redaction to collected files */
+  redact?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -190,7 +192,7 @@ export abstract class BaseCollector implements Collector {
     result: CollectorResult,
     opts: CollectDirOptions = {}
   ): Promise<CollectedFile[]> {
-    const { filter, maxFileSize = MAX_FILE_SIZE_BYTES, excludeDirs } = opts;
+    const { filter, maxFileSize = MAX_FILE_SIZE_BYTES, excludeDirs, redact } = opts;
     const files: CollectedFile[] = [];
     try {
       const entries = await readdir(dirPath, { withFileTypes: true });
@@ -210,6 +212,7 @@ export abstract class BaseCollector implements Collector {
           if (filter && !filter(fullPath)) continue;
           const file = await this.safeReadFile(fullPath, result, {
             maxSize: maxFileSize,
+            redact,
           });
           if (file) files.push(file);
         }

@@ -29,6 +29,7 @@ export class OpenCodeConfigCollector extends BaseCollector {
       const configDir = join(this.homeDir, ".config", "opencode");
       const files = await this.collectDir(configDir, result, {
         filter: (path) => !path.includes("/skills/"),
+        redact: true,
       });
       result.files.push(...files);
 
