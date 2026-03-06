@@ -15,7 +15,6 @@ import {
   Loader2,
   Download,
 } from "lucide-react";
-import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -236,22 +235,18 @@ export default function SnapshotDetailPage({
 
   if (loading) {
     return (
-      <AppShell breadcrumbs={[{ label: "Snapshots", href: "/snapshots" }, { label: id }]}>
-        <div className="flex flex-col items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 text-muted-foreground/40 animate-spin" />
-          <p className="mt-3 text-sm text-muted-foreground">Loading snapshot...</p>
-        </div>
-      </AppShell>
+      <div className="flex flex-col items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 text-muted-foreground/40 animate-spin" />
+        <p className="mt-3 text-sm text-muted-foreground">Loading snapshot...</p>
+      </div>
     );
   }
 
   if (error || !meta || !data) {
     return (
-      <AppShell breadcrumbs={[{ label: "Snapshots", href: "/snapshots" }, { label: id }]}>
-        <div className="flex flex-col items-center justify-center py-20">
-          <p className="text-sm text-destructive">{error ?? "Snapshot not found"}</p>
-        </div>
-      </AppShell>
+      <div className="flex flex-col items-center justify-center py-20">
+        <p className="text-sm text-destructive">{error ?? "Snapshot not found"}</p>
+      </div>
     );
   }
 
@@ -260,88 +255,86 @@ export default function SnapshotDetailPage({
   const totalLists = collectors.reduce((sum, c) => sum + c.lists.length, 0);
 
   return (
-    <AppShell breadcrumbs={[{ label: "Snapshots", href: "/snapshots" }, { label: id.slice(0, 8) }]}>
-      <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Snapshot <code className="font-mono text-lg">{id.slice(0, 8)}</code>
-            </h1>
-          </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Captured {formatDateTime(meta.snapshotAt)}
-          </p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Snapshot <code className="font-mono text-lg">{id.slice(0, 8)}</code>
+          </h1>
         </div>
+        <p className="text-sm text-muted-foreground mt-1">
+          Captured {formatDateTime(meta.snapshotAt)}
+        </p>
+      </div>
 
-        {/* Machine info cards */}
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <div className="rounded-xl bg-secondary p-4 flex items-center gap-3">
-            <Monitor className="h-4 w-4 text-primary shrink-0" strokeWidth={1.5} />
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Host</p>
-              <p className="text-sm font-medium">{meta.hostname}</p>
-            </div>
-          </div>
-          <div className="rounded-xl bg-secondary p-4 flex items-center gap-3">
-            <Cpu className="h-4 w-4 text-primary shrink-0" strokeWidth={1.5} />
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Platform</p>
-              <p className="text-sm font-medium">{meta.platform}/{meta.arch}</p>
-            </div>
-          </div>
-          <div className="rounded-xl bg-secondary p-4 flex items-center gap-3">
-            <User className="h-4 w-4 text-primary shrink-0" strokeWidth={1.5} />
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">User</p>
-              <p className="text-sm font-medium">{meta.username}</p>
-            </div>
-          </div>
-          <div className="rounded-xl bg-secondary p-4 flex items-center gap-3">
-            <Archive className="h-4 w-4 text-primary shrink-0" strokeWidth={1.5} />
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Content</p>
-              <p className="text-sm font-medium">{totalFiles} files, {totalLists} items</p>
-            </div>
-          </div>
-          <div className="rounded-xl bg-secondary p-4 flex items-center gap-3">
-            <HardDrive className="h-4 w-4 text-primary shrink-0" strokeWidth={1.5} />
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Size</p>
-              <p className="text-sm font-medium">{formatSize(meta.sizeBytes)}</p>
-            </div>
+      {/* Machine info cards */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="rounded-xl bg-secondary p-4 flex items-center gap-3">
+          <Monitor className="h-4 w-4 text-primary shrink-0" strokeWidth={1.5} />
+          <div>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Host</p>
+            <p className="text-sm font-medium">{meta.hostname}</p>
           </div>
         </div>
-
-        {/* Collectors */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-medium text-foreground">Collectors</h2>
-            <Badge variant="secondary" className="text-[10px] font-normal">
-              {collectors.length}
-            </Badge>
+        <div className="rounded-xl bg-secondary p-4 flex items-center gap-3">
+          <Cpu className="h-4 w-4 text-primary shrink-0" strokeWidth={1.5} />
+          <div>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Platform</p>
+            <p className="text-sm font-medium">{meta.platform}/{meta.arch}</p>
           </div>
-          {collectors.map((collector) => (
-            <CollectorSection key={collector.id} collector={collector} />
-          ))}
         </div>
-
-        {/* Raw JSON download */}
-        <div className="rounded-xl bg-secondary p-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
-              <span className="text-sm text-muted-foreground">
-                Download the full snapshot as JSON
-              </span>
-            </div>
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={handleDownload}>
-              <Download className="h-3.5 w-3.5" strokeWidth={1.5} />
-              Export JSON
-            </Button>
+        <div className="rounded-xl bg-secondary p-4 flex items-center gap-3">
+          <User className="h-4 w-4 text-primary shrink-0" strokeWidth={1.5} />
+          <div>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">User</p>
+            <p className="text-sm font-medium">{meta.username}</p>
+          </div>
+        </div>
+        <div className="rounded-xl bg-secondary p-4 flex items-center gap-3">
+          <Archive className="h-4 w-4 text-primary shrink-0" strokeWidth={1.5} />
+          <div>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Content</p>
+            <p className="text-sm font-medium">{totalFiles} files, {totalLists} items</p>
+          </div>
+        </div>
+        <div className="rounded-xl bg-secondary p-4 flex items-center gap-3">
+          <HardDrive className="h-4 w-4 text-primary shrink-0" strokeWidth={1.5} />
+          <div>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Size</p>
+            <p className="text-sm font-medium">{formatSize(meta.sizeBytes)}</p>
           </div>
         </div>
       </div>
-    </AppShell>
+
+      {/* Collectors */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-medium text-foreground">Collectors</h2>
+          <Badge variant="secondary" className="text-[10px] font-normal">
+            {collectors.length}
+          </Badge>
+        </div>
+        {collectors.map((collector) => (
+          <CollectorSection key={collector.id} collector={collector} />
+        ))}
+      </div>
+
+      {/* Raw JSON download */}
+      <div className="rounded-xl bg-secondary p-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+            <span className="text-sm text-muted-foreground">
+              Download the full snapshot as JSON
+            </span>
+          </div>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={handleDownload}>
+            <Download className="h-3.5 w-3.5" strokeWidth={1.5} />
+            Export JSON
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -13,7 +13,6 @@ import {
   Shield,
   Loader2,
 } from "lucide-react";
-import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -254,169 +253,167 @@ export default function SettingsPage() {
   const userInitial = userName[0] ?? "?";
 
   return (
-    <AppShell breadcrumbs={[{ label: "Settings" }]}>
-      <div className="max-w-3xl space-y-8">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage your account and webhook tokens
-          </p>
+    <div className="max-w-3xl space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+        <p className="text-sm text-muted-foreground">
+          Manage your account and webhook tokens
+        </p>
+      </div>
+
+      {/* Account Section */}
+      <section className="space-y-4">
+        <h2 className="text-sm font-medium text-foreground flex items-center gap-2">
+          <User className="h-4 w-4" strokeWidth={1.5} />
+          Account
+        </h2>
+        <div className="rounded-xl bg-secondary p-5">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-14 w-14">
+              {userImage && <AvatarImage src={userImage} alt={userName} />}
+              <AvatarFallback className="text-lg bg-primary text-primary-foreground">
+                {userInitial}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-lg font-medium text-foreground">{userName}</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <Mail className="h-3 w-3 text-muted-foreground" strokeWidth={1.5} />
+                <p className="text-sm text-muted-foreground">{userEmail}</p>
+              </div>
+            </div>
+            <Badge variant="secondary" className="text-xs flex items-center gap-1">
+              <Shield className="h-3 w-3" strokeWidth={1.5} />
+              Google OAuth
+            </Badge>
+          </div>
+        </div>
+      </section>
+
+      <Separator />
+
+      {/* Webhooks Section */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium text-foreground flex items-center gap-2">
+            <Webhook className="h-4 w-4" strokeWidth={1.5} />
+            Webhook Tokens
+          </h2>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+                New Token
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Webhook Token</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label htmlFor="webhook-label">Label</Label>
+                  <Input
+                    id="webhook-label"
+                    placeholder="e.g. dev-macbook, ci-pipeline"
+                    value={newLabel}
+                    onChange={(e) => setNewLabel(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    A friendly name to identify this token.
+                  </p>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="ghost" onClick={() => setDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleCreate} disabled={!newLabel.trim() || creating}>
+                    {creating ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                        Creating...
+                      </>
+                    ) : (
+                      "Create"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
-        {/* Account Section */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-medium text-foreground flex items-center gap-2">
-            <User className="h-4 w-4" strokeWidth={1.5} />
-            Account
-          </h2>
-          <div className="rounded-xl bg-secondary p-5">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-14 w-14">
-                {userImage && <AvatarImage src={userImage} alt={userName} />}
-                <AvatarFallback className="text-lg bg-primary text-primary-foreground">
-                  {userInitial}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-lg font-medium text-foreground">{userName}</p>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <Mail className="h-3 w-3 text-muted-foreground" strokeWidth={1.5} />
-                  <p className="text-sm text-muted-foreground">{userEmail}</p>
-                </div>
-              </div>
-              <Badge variant="secondary" className="text-xs flex items-center gap-1">
-                <Shield className="h-3 w-3" strokeWidth={1.5} />
-                Google OAuth
-              </Badge>
-            </div>
+        <p className="text-xs text-muted-foreground">
+          Use webhook tokens to authenticate CLI uploads. Configure in your CLI
+          with: <code className="text-[11px] bg-background/50 px-1.5 py-0.5 rounded">otter config set webhook.url &lt;url&gt;</code>
+        </p>
+
+        {loading ? (
+          <div className="rounded-xl bg-secondary p-8 text-center">
+            <Loader2 className="h-8 w-8 text-muted-foreground/40 mx-auto animate-spin" />
+            <p className="mt-3 text-sm text-muted-foreground">Loading webhooks...</p>
           </div>
-        </section>
+        ) : error ? (
+          <div className="rounded-xl bg-secondary p-8 text-center">
+            <p className="text-sm text-destructive">{error}</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-2"
+              onClick={() => {
+                setLoading(true);
+                void fetchWebhooks();
+              }}
+            >
+              Retry
+            </Button>
+          </div>
+        ) : webhooks.length === 0 ? (
+          <div className="rounded-xl bg-secondary p-8 text-center">
+            <Webhook className="h-8 w-8 text-muted-foreground/40 mx-auto" strokeWidth={1.5} />
+            <p className="mt-3 text-sm text-muted-foreground">No webhook tokens yet</p>
+            <p className="mt-1 text-xs text-muted-foreground/60">
+              Create a token to start receiving backups from the CLI
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {webhooks.map((wh) => (
+              <WebhookRow
+                key={wh.id}
+                webhook={wh}
+                baseUrl={baseUrl}
+                onToggle={handleToggle}
+                onDelete={handleDelete}
+                isToggling={togglingId === wh.id}
+                isDeleting={deletingId === wh.id}
+              />
+            ))}
+          </div>
+        )}
+      </section>
 
-        <Separator />
+      <Separator />
 
-        {/* Webhooks Section */}
-        <section className="space-y-4">
+      {/* Danger Zone */}
+      <section className="space-y-4">
+        <h2 className="text-sm font-medium text-destructive">Danger Zone</h2>
+        <div className="rounded-xl border border-destructive/20 p-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium text-foreground flex items-center gap-2">
-              <Webhook className="h-4 w-4" strokeWidth={1.5} />
-              Webhook Tokens
-            </h2>
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  New Token
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create Webhook Token</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 pt-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="webhook-label">Label</Label>
-                    <Input
-                      id="webhook-label"
-                      placeholder="e.g. dev-macbook, ci-pipeline"
-                      value={newLabel}
-                      onChange={(e) => setNewLabel(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      A friendly name to identify this token.
-                    </p>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="ghost" onClick={() => setDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleCreate} disabled={!newLabel.trim() || creating}>
-                      {creating ? (
-                        <>
-                          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-                          Creating...
-                        </>
-                      ) : (
-                        "Create"
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          <p className="text-xs text-muted-foreground">
-            Use webhook tokens to authenticate CLI uploads. Configure in your CLI
-            with: <code className="text-[11px] bg-background/50 px-1.5 py-0.5 rounded">otter config set webhook.url &lt;url&gt;</code>
-          </p>
-
-          {loading ? (
-            <div className="rounded-xl bg-secondary p-8 text-center">
-              <Loader2 className="h-8 w-8 text-muted-foreground/40 mx-auto animate-spin" />
-              <p className="mt-3 text-sm text-muted-foreground">Loading webhooks...</p>
-            </div>
-          ) : error ? (
-            <div className="rounded-xl bg-secondary p-8 text-center">
-              <p className="text-sm text-destructive">{error}</p>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mt-2"
-                onClick={() => {
-                  setLoading(true);
-                  void fetchWebhooks();
-                }}
-              >
-                Retry
-              </Button>
-            </div>
-          ) : webhooks.length === 0 ? (
-            <div className="rounded-xl bg-secondary p-8 text-center">
-              <Webhook className="h-8 w-8 text-muted-foreground/40 mx-auto" strokeWidth={1.5} />
-              <p className="mt-3 text-sm text-muted-foreground">No webhook tokens yet</p>
-              <p className="mt-1 text-xs text-muted-foreground/60">
-                Create a token to start receiving backups from the CLI
+            <div>
+              <p className="text-sm font-medium text-foreground">Delete all snapshots</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Permanently remove all stored backups. This cannot be undone.
               </p>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {webhooks.map((wh) => (
-                <WebhookRow
-                  key={wh.id}
-                  webhook={wh}
-                  baseUrl={baseUrl}
-                  onToggle={handleToggle}
-                  onDelete={handleDelete}
-                  isToggling={togglingId === wh.id}
-                  isDeleting={deletingId === wh.id}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-
-        <Separator />
-
-        {/* Danger Zone */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-medium text-destructive">Danger Zone</h2>
-          <div className="rounded-xl border border-destructive/20 p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-foreground">Delete all snapshots</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Permanently remove all stored backups. This cannot be undone.
-                </p>
-              </div>
-              <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" disabled>
-                Delete All
-              </Button>
-            </div>
+            <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" disabled>
+              Delete All
+            </Button>
           </div>
-        </section>
-      </div>
-    </AppShell>
+        </div>
+      </section>
+    </div>
   );
 }

@@ -9,12 +9,40 @@ import { ThemeToggle } from "./theme-toggle";
 import { Breadcrumbs } from "./breadcrumbs";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-interface AppShellProps {
-  children: React.ReactNode;
-  breadcrumbs?: { label: string; href?: string }[];
+// ---------------------------------------------------------------------------
+// URL-based breadcrumb generation
+// ---------------------------------------------------------------------------
+
+const ROUTE_LABELS: Record<string, string> = {
+  snapshots: "Snapshots",
+  settings: "Settings",
+};
+
+function breadcrumbsFromPathname(pathname: string) {
+  const segments = pathname.split("/").filter(Boolean);
+  const items: { label: string; href?: string }[] = [{ label: "Home", href: "/" }];
+
+  let href = "";
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i]!;
+    href += `/${seg}`;
+    const isLast = i === segments.length - 1;
+    const label = ROUTE_LABELS[seg] ?? seg.slice(0, 8); // short-id fallback for dynamic segments
+    items.push(isLast ? { label } : { label, href });
+  }
+
+  return items;
 }
 
-function AppShellInner({ children, breadcrumbs = [] }: AppShellProps) {
+// ---------------------------------------------------------------------------
+// AppShell
+// ---------------------------------------------------------------------------
+
+interface AppShellProps {
+  children: React.ReactNode;
+}
+
+function AppShellInner({ children }: AppShellProps) {
   const isMobile = useIsMobile();
   const { mobileOpen, setMobileOpen } = useSidebar();
   const pathname = usePathname();
@@ -35,6 +63,8 @@ function AppShellInner({ children, breadcrumbs = [] }: AppShellProps) {
       document.body.style.overflow = "";
     };
   }, [mobileOpen]);
+
+  const breadcrumbs = breadcrumbsFromPathname(pathname);
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -67,7 +97,7 @@ function AppShellInner({ children, breadcrumbs = [] }: AppShellProps) {
                 <Menu className="h-5 w-5" aria-hidden="true" strokeWidth={1.5} />
               </button>
             )}
-            <Breadcrumbs items={[{ label: "Home", href: "/" }, ...breadcrumbs]} />
+            <Breadcrumbs items={breadcrumbs} />
           </div>
           <div className="flex items-center gap-1">
             <a
@@ -94,10 +124,10 @@ function AppShellInner({ children, breadcrumbs = [] }: AppShellProps) {
   );
 }
 
-export function AppShell({ children, breadcrumbs = [] }: AppShellProps) {
+export function AppShell({ children }: AppShellProps) {
   return (
     <SidebarProvider>
-      <AppShellInner breadcrumbs={breadcrumbs}>
+      <AppShellInner>
         {children}
       </AppShellInner>
     </SidebarProvider>
