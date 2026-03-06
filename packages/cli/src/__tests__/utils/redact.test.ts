@@ -3,6 +3,7 @@ import {
   redactSecrets,
   redactJsonSecrets,
   redactLineSecrets,
+  redactShellSecrets,
 } from "../../utils/redact.js";
 
 describe("redactJsonSecrets", () => {
@@ -126,6 +127,88 @@ describe("redactLineSecrets", () => {
   });
 });
 
+describe("redactShellSecrets", () => {
+  it("should redact export KEY=value patterns", () => {
+    const input = [
+      "# Load environment",
+      'export Z_AI_API_KEY="sk-ant-secret-123"',
+      "export PATH=/usr/local/bin:$PATH",
+      "export GITHUB_TOKEN=ghp_abc123def456",
+    ].join("\n");
+
+    const result = redactShellSecrets(input);
+
+    expect(result).toContain("# Load environment");
+    expect(result).toContain("export Z_AI_API_KEY=[REDACTED]");
+    expect(result).toContain("export PATH=/usr/local/bin:$PATH");
+    expect(result).toContain("export GITHUB_TOKEN=[REDACTED]");
+    expect(result).not.toContain("sk-ant-secret-123");
+    expect(result).not.toContain("ghp_abc123def456");
+  });
+
+  it("should redact plain assignments (no export)", () => {
+    const input = [
+      'MY_SECRET="super-secret-value"',
+      "NORMAL_VAR=hello",
+      "API_KEY=key-123-abc",
+    ].join("\n");
+
+    const result = redactShellSecrets(input);
+
+    expect(result).toContain("MY_SECRET=[REDACTED]");
+    expect(result).toContain("NORMAL_VAR=hello");
+    expect(result).toContain("API_KEY=[REDACTED]");
+    expect(result).not.toContain("super-secret-value");
+    expect(result).not.toContain("key-123-abc");
+  });
+
+  it("should skip comment lines even with sensitive keywords", () => {
+    const input = [
+      "# export MY_TOKEN=old-value",
+      "  # GITHUB_SECRET=should-stay",
+    ].join("\n");
+
+    const result = redactShellSecrets(input);
+
+    expect(result).toContain("# export MY_TOKEN=old-value");
+    expect(result).toContain("# GITHUB_SECRET=should-stay");
+  });
+
+  it("should handle indented export statements", () => {
+    const input = '  export AUTH_TOKEN="bearer-xyz"';
+    const result = redactShellSecrets(input);
+    expect(result).toBe("  export AUTH_TOKEN=[REDACTED]");
+  });
+
+  it("should not redact non-sensitive variables", () => {
+    const input = [
+      "export EDITOR=nvim",
+      "export LANG=en_US.UTF-8",
+      "HISTSIZE=10000",
+    ].join("\n");
+
+    const result = redactShellSecrets(input);
+    expect(result).toBe(input);
+  });
+
+  it("should handle empty content", () => {
+    expect(redactShellSecrets("")).toBe("");
+  });
+
+  it("should handle single-quoted values", () => {
+    const input = "export OPENAI_API_KEY='sk-proj-abc123'";
+    const result = redactShellSecrets(input);
+    expect(result).toBe("export OPENAI_API_KEY=[REDACTED]");
+    expect(result).not.toContain("sk-proj-abc123");
+  });
+
+  it("should catch PASSWORD patterns", () => {
+    const input = "export DB_PASSWORD=hunter2";
+    const result = redactShellSecrets(input);
+    expect(result).toBe("export DB_PASSWORD=[REDACTED]");
+  });
+});
+
 describe("redactSecrets (auto-detect)", () => {
   it("should use JSON redaction for .json files", () => {
     const input = JSON.stringify({ api_key: "secret" });
@@ -157,5 +240,26 @@ describe("redactSecrets (auto-detect)", () => {
     const input = "some random content with api_key=secret";
     const result = redactSecrets(input, "/path/to/file.txt");
     expect(result).toBe(input);
+  });
+
+  it("should use shell redaction for .zshrc files", () => {
+    const input = 'export MY_API_KEY="secret-value"';
+    const result = redactSecrets(input, "/Users/test/.zshrc");
+    expect(result).toContain("[REDACTED]");
+    expect(result).not.toContain("secret-value");
+  });
+
+  it("should use shell redaction for .bashrc files", () => {
+    const input = "export GITHUB_TOKEN=ghp_secret123";
+    const result = redactSecrets(input, "/home/user/.bashrc");
+    expect(result).toContain("[REDACTED]");
+    expect(result).not.toContain("ghp_secret123");
+  });
+
+  it("should use shell redaction for .profile files", () => {
+    const input = 'export AUTH_SECRET="my-secret"';
+    const result = redactSecrets(input, "/home/user/.profile");
+    expect(result).toContain("[REDACTED]");
+    expect(result).not.toContain("my-secret");
   });
 });

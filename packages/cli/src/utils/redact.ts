@@ -96,6 +96,37 @@ const LINE_REDACTION_PATTERNS = [
   /^(\s*(?:.*(?:token|secret|password|api.?key|credential|auth)\w*)\s*=\s*).+$/i,
 ];
 
+// ---------------------------------------------------------------------------
+// Shell script redaction (for .zshrc, .bashrc, .profile, etc.)
+// ---------------------------------------------------------------------------
+
+/**
+ * Patterns that match sensitive variable assignments in shell scripts.
+ * Captures the prefix (everything before the secret value) so we can
+ * replace just the value portion with [REDACTED].
+ */
+const SHELL_REDACTION_PATTERNS = [
+  // export KEY="value" or export KEY='value' or export KEY=value
+  // where KEY contains: TOKEN, SECRET, KEY, PASSWORD, CREDENTIAL, AUTH
+  /^(\s*export\s+\w*(?:TOKEN|SECRET|KEY|PASSWORD|CREDENTIAL|AUTH)\w*=).*$/i,
+  // Plain assignment (no export): KEY="value"
+  /^(\s*\w*(?:TOKEN|SECRET|KEY|PASSWORD|CREDENTIAL|AUTH)\w*=).*$/i,
+];
+
+/** Shell config filenames that should receive shell-script redaction */
+const SHELL_CONFIG_NAMES = new Set([
+  ".zshrc",
+  ".zprofile",
+  ".zshenv",
+  ".zlogin",
+  ".bashrc",
+  ".bash_profile",
+  ".profile",
+  ".tmux.conf",
+  ".wgetrc",
+  ".curlrc",
+]);
+
 /**
  * Redact sensitive lines in ini-style / line-oriented config files.
  * Each matching line has its value portion replaced with [REDACTED].
@@ -115,13 +146,39 @@ export function redactLineSecrets(content: string): string {
     .join("\n");
 }
 
+/**
+ * Redact sensitive variable assignments in shell scripts.
+ * Catches patterns like:
+ *   export MY_API_KEY="sk-..."
+ *   GITHUB_TOKEN=ghp_xxx
+ *   export Z_AI_API_KEY="..."
+ */
+export function redactShellSecrets(content: string): string {
+  return content
+    .split("\n")
+    .map((line) => {
+      // Skip comments
+      const trimmed = line.trimStart();
+      if (trimmed.startsWith("#")) return line;
+
+      for (const pattern of SHELL_REDACTION_PATTERNS) {
+        const match = line.match(pattern);
+        if (match) {
+          return `${match[1]}${REDACTED}`;
+        }
+      }
+      return line;
+    })
+    .join("\n");
+}
+
 // ---------------------------------------------------------------------------
 // Public API: auto-detect format and redact
 // ---------------------------------------------------------------------------
 
 /**
  * Redact credentials from file content.
- * Auto-detects format based on file path extension.
+ * Auto-detects format based on file path extension or filename.
  *
  * @param content  Raw file content
  * @param filePath File path (used to determine format)
@@ -143,6 +200,12 @@ export function redactSecrets(content: string, filePath: string): string {
     lower.endsWith(".netrc")
   ) {
     return redactLineSecrets(content);
+  }
+
+  // Shell config files: .zshrc, .bashrc, .profile, etc.
+  const fileName = lower.split("/").pop() ?? "";
+  if (SHELL_CONFIG_NAMES.has(fileName)) {
+    return redactShellSecrets(content);
   }
 
   return content;
