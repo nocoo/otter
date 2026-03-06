@@ -367,12 +367,12 @@ describe("formatSize", () => {
     expect(formatSize(71_000)).toBe("69.3 KB");
   });
 
-  it("should format large kilobytes without decimals", () => {
-    expect(formatSize(512_000)).toBe("500 KB");
+  it("should format large kilobytes with decimals", () => {
+    expect(formatSize(512_000)).toBe("500.0 KB");
   });
 
   it("should format megabytes", () => {
-    expect(formatSize(1_153_000)).toBe("1.1 MB");
+    expect(formatSize(1_153_000)).toBe("1.10 MB");
   });
 });
 
