@@ -107,7 +107,20 @@ interface CollectDirOptions {
 **采集内容**：
 
 - `~/.config/opencode/` 下所有配置文件（排除 `skills/` 子目录），启用 `redact: true`
-- `~/.config/opencode/skills/` 和 `~/.agents/skills/` 下的技能名称（仅目录名，不采集内容）
+- `~/.config/opencode/skills/` 和 `~/.agents/skills/` 下的技能信息
+
+**技能列表增强**：
+
+每个技能目录会尝试读取 `SKILL.md` 的 YAML frontmatter，提取以下元数据到 `meta` 字段：
+
+| meta 字段 | 来源 | 说明 |
+|-----------|------|------|
+| `source` | 目录路径 | `.config/opencode/skills` 或 `.agents/skills` |
+| `location` | 推算 | `file://` 协议的 SKILL.md 完整路径 |
+| `description` | frontmatter | 技能描述（来自 `description:` 字段） |
+| `skillName` | frontmatter | 技能注册名称（来自 `name:` 字段） |
+
+如果 SKILL.md 不存在或没有 frontmatter，仅记录 `source` 和 `location`。
 
 ### 3. ShellConfigCollector
 
@@ -130,6 +143,22 @@ interface CollectDirOptions {
 | `.yarnrc`, `.wgetrc`, `.curlrc`, `.hushlogin` | 否 |
 | `.netrc` | **是** |
 | `.ssh/config`, `.ssh/known_hosts` | 否（不采集密钥文件） |
+
+**SSH 密钥存在性检测**：
+
+扫描 `~/.ssh/` 目录，将发现的密钥文件记录为 `lists`（`CollectedListItem[]`），**不读取密钥内容**：
+
+| meta 字段 | 说明 |
+|-----------|------|
+| `type` | `private-key` 或 `public-key` |
+| `source` | `.ssh` |
+| `modifiedAt` | 文件最后修改时间（ISO 8601） |
+
+分类逻辑（`classifySshFile` 函数）：
+- `id_*` 开头 → `private-key`
+- `identity` → `private-key`
+- `*.pub` → `public-key`
+- `config`, `known_hosts`, `authorized_keys`, `agent` 等 → 跳过
 
 ### 4. HomebrewCollector
 

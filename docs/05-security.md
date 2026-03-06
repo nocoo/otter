@@ -107,11 +107,24 @@ shell-snapshots/, session-env/, statsig/
 
 ## SSH 密钥保护
 
-`ShellConfigCollector` 仅采集 `~/.ssh/config` 和 `~/.ssh/known_hosts`，绝不采集以下文件：
+`ShellConfigCollector` 对 `~/.ssh/` 采取分级策略：
 
-- `id_rsa`, `id_ed25519` 等私钥
-- `id_rsa.pub` 等公钥
-- `authorized_keys`
+**采集内容（文件）**：`config`, `known_hosts` — 不含敏感信息
+
+**不采集内容（仅存在性报告）**：
+- `id_rsa`, `id_ed25519` 等私钥 → 记录为 `{ type: "private-key" }`
+- `id_rsa.pub` 等公钥 → 记录为 `{ type: "public-key" }`
+- 同时记录 `modifiedAt` 时间戳，帮助识别过期密钥
+
+**完全排除**：`authorized_keys`, `agent`, `environment`, `rc`
+
+快照中密钥的表现形式（仅在 `lists` 中，无 `files` 内容）：
+```json
+{
+  "name": "id_rsa",
+  "meta": { "type": "private-key", "source": ".ssh", "modifiedAt": "2026-01-15T..." }
+}
+```
 
 ## 安全审查检查清单
 
