@@ -4,3 +4,13 @@ coverage/
 *.tsbuildinfo
 .DS_Store
 bun.lock
+
+# Next.js
+.next/
+.next-e2e/
+.next-e2e-ui/
+
+# Environment
+.env
+.env.local
+.env.*.local

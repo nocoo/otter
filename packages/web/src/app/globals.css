@@ -1,0 +1,36 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Minimal globals.css for scaffold commit.
+ * Full Basalt design tokens will be added in Commit #2.
+ */
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+}
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 12%;
+  --border: 220 13% 88%;
+}
+
+.dark {
+  --background: 0 0% 9%;
+  --foreground: 0 0% 93%;
+  --border: 0 0% 16%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+}
