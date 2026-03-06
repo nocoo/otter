@@ -27,6 +27,12 @@ const scanCommand = defineCommand({
     },
   },
   async run({ args }) {
+    // When --json is set, redirect all progress output to stderr
+    // so that stdout contains only valid JSON
+    if (args.json) {
+      consola.options.stdout = process.stderr;
+    }
+
     consola.start("Scanning your Mac environment...\n");
 
     const collectors = createDefaultCollectors();
