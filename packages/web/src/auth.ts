@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
+import { execute } from "@/lib/cf/d1";
 
 // Get allowed emails from environment variable
 const allowedEmails = (process.env.ALLOWED_EMAILS ?? "")
@@ -83,15 +84,49 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
   callbacks: {
-    async signIn({ user }) {
+    async signIn({ user, profile }) {
       // Only allow specific emails
       const email = user.email?.toLowerCase();
       if (!email || !allowedEmails.includes(email)) {
         return false;
       }
+
+      // Upsert user to D1 on every sign-in
+      // Use Google's `sub` claim as the stable user ID
+      const userId = profile?.sub ?? user.id;
+      if (userId) {
+        const now = Date.now();
+        try {
+          await execute(
+            `INSERT INTO users (id, email, name, image, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+             ON CONFLICT (id) DO UPDATE SET
+               email = excluded.email,
+               name = excluded.name,
+               image = excluded.image,
+               updated_at = excluded.updated_at`,
+            [userId, email, user.name ?? null, user.image ?? null, now, now],
+          );
+        } catch (error) {
+          // Log but don't block sign-in if D1 sync fails
+          console.error("[auth] Failed to sync user to D1:", error);
+        }
+      }
+
       return true;
     },
-    async session({ session }) {
+    async jwt({ token, profile }) {
+      // On initial sign-in, persist Google sub as user ID in JWT
+      if (profile?.sub) {
+        token.userId = profile.sub;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      // Expose user ID on the session object
+      if (token.userId) {
+        session.user.id = token.userId as string;
+      }
       return session;
     },
   },
