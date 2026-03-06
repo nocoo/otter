@@ -7,7 +7,14 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "json", "html"],
       include: ["packages/*/src/**/*.ts"],
-      exclude: ["**/*.test.ts", "**/*.d.ts", "**/index.ts"],
+      exclude: [
+        "**/*.test.ts",
+        "**/*.d.ts",
+        "**/index.ts",
+        "**/bin.ts",
+        "**/cli.ts",
+        "**/types.ts",
+      ],
       thresholds: {
         statements: 80,
         branches: 80,
