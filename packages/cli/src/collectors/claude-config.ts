@@ -38,13 +38,13 @@ interface ProjectSummary {
 // ---------------------------------------------------------------------------
 
 /** Files to collect as full content (small, valuable config files) */
-const TARGETED_FILES: Array<{ path: string; redact?: boolean }> = [
+const TARGETED_FILES: Array<{ path: string; redact?: boolean; maxSize?: number }> = [
   { path: "CLAUDE.md" }, // user-level instructions
   { path: "settings.json", redact: true }, // settings (contains API tokens)
   { path: "stats-cache.json" }, // aggregate usage stats
   { path: "plugins/installed_plugins.json" }, // plugin inventory
   { path: "plugins/blocklist.json" }, // plugin blocklist
-  { path: "history.jsonl" }, // prompt history
+  { path: "history.jsonl", maxSize: 2 * 1024 * 1024 }, // prompt history (can be large, up to 2 MB)
 ];
 
 /**
@@ -82,11 +82,11 @@ export class ClaudeConfigCollector extends BaseCollector {
       if (homeMd) result.files.push(homeMd);
 
       // 2. Collect targeted config files from ~/.claude/
-      for (const { path: relativePath, redact } of TARGETED_FILES) {
+      for (const { path: relativePath, redact, maxSize } of TARGETED_FILES) {
         const file = await this.safeReadFile(
           join(claudeDir, relativePath),
           result,
-          { redact }
+          { redact, maxSize }
         );
         if (file) result.files.push(file);
       }
