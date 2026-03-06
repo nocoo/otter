@@ -2,7 +2,10 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtemp, writeFile, mkdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { OpenCodeConfigCollector } from "../../collectors/opencode-config.js";
+import {
+  OpenCodeConfigCollector,
+  parseSkillFrontmatter,
+} from "../../collectors/opencode-config.js";
 
 describe("OpenCodeConfigCollector", () => {
   let tempHome: string;
@@ -38,21 +41,25 @@ describe("OpenCodeConfigCollector", () => {
     );
   });
 
-  it("should collect opencode skills directory", async () => {
+  it("should collect opencode skills with frontmatter description", async () => {
     const skillsDir = join(tempHome, ".config", "opencode", "skills");
     await mkdir(join(skillsDir, "my-skill"), { recursive: true });
     await writeFile(
       join(skillsDir, "my-skill", "SKILL.md"),
-      "# My Skill\nDoes stuff"
+      "---\nname: my-skill\ndescription: Does amazing stuff\n---\n# My Skill\nDoes stuff"
     );
 
     const collector = new OpenCodeConfigCollector(tempHome);
     const result = await collector.collect();
 
-    // Skills should be collected as list items (name only), not full files
     expect(result.lists).toContainEqual(
       expect.objectContaining({
         name: "my-skill",
+        meta: expect.objectContaining({
+          description: "Does amazing stuff",
+          skillName: "my-skill",
+          location: `file://${join(skillsDir, "my-skill", "SKILL.md")}`,
+        }),
       })
     );
   });
@@ -72,12 +79,12 @@ describe("OpenCodeConfigCollector", () => {
     expect(names).toContain("skill-b");
   });
 
-  it("should collect .agents/skills as skill list items", async () => {
+  it("should collect .agents/skills with frontmatter and location", async () => {
     const agentsSkillsDir = join(tempHome, ".agents", "skills");
     await mkdir(join(agentsSkillsDir, "memory-skill"), { recursive: true });
     await writeFile(
       join(agentsSkillsDir, "memory-skill", "SKILL.md"),
-      "# Memory"
+      "---\nname: memory-skill\ndescription: Manages memory\nallowed-tools: Bash(*)\n---\n# Memory"
     );
 
     const collector = new OpenCodeConfigCollector(tempHome);
@@ -86,7 +93,11 @@ describe("OpenCodeConfigCollector", () => {
     expect(result.lists).toContainEqual(
       expect.objectContaining({
         name: "memory-skill",
-        meta: expect.objectContaining({ source: ".agents/skills" }),
+        meta: expect.objectContaining({
+          source: ".agents/skills",
+          description: "Manages memory",
+          location: `file://${join(agentsSkillsDir, "memory-skill", "SKILL.md")}`,
+        }),
       })
     );
   });
@@ -121,9 +132,65 @@ describe("OpenCodeConfigCollector", () => {
     );
     expect(skillFiles).toHaveLength(0);
 
-    // But skill should be in the lists array
+    // But skill should be in the lists array with location
     expect(result.lists).toContainEqual(
-      expect.objectContaining({ name: "big-skill" })
+      expect.objectContaining({
+        name: "big-skill",
+        meta: expect.objectContaining({
+          location: `file://${join(skillsDir, "big-skill", "SKILL.md")}`,
+        }),
+      })
     );
+  });
+
+  it("should still list skill when SKILL.md is missing", async () => {
+    const skillsDir = join(tempHome, ".config", "opencode", "skills");
+    await mkdir(join(skillsDir, "no-readme"), { recursive: true });
+    // No SKILL.md file
+
+    const collector = new OpenCodeConfigCollector(tempHome);
+    const result = await collector.collect();
+
+    // Skill should be listed with location but no description
+    const skill = result.lists.find((l) => l.name === "no-readme");
+    expect(skill).toBeDefined();
+    expect(skill!.meta?.location).toContain("no-readme/SKILL.md");
+    expect(skill!.meta?.description).toBeUndefined();
+  });
+});
+
+describe("parseSkillFrontmatter", () => {
+  it("should parse standard frontmatter", () => {
+    const content =
+      '---\nname: deploy\ndescription: Deploy code to Railway\nallowed-tools: Bash(railway:*)\n---\n# Deploy';
+    const meta = parseSkillFrontmatter(content);
+    expect(meta).toEqual({
+      name: "deploy",
+      description: "Deploy code to Railway",
+      "allowed-tools": "Bash(railway:*)",
+    });
+  });
+
+  it("should return empty object when no frontmatter", () => {
+    const content = "# Just a heading\nSome content";
+    expect(parseSkillFrontmatter(content)).toEqual({});
+  });
+
+  it("should return empty object for empty string", () => {
+    expect(parseSkillFrontmatter("")).toEqual({});
+  });
+
+  it("should handle description with colons", () => {
+    const content =
+      '---\nname: test\ndescription: Use when user says: deploy now\n---';
+    const meta = parseSkillFrontmatter(content);
+    expect(meta.description).toBe("Use when user says: deploy now");
+  });
+
+  it("should ignore nested YAML structures", () => {
+    const content = "---\nname: test\n  nested: value\n---";
+    const meta = parseSkillFrontmatter(content);
+    expect(meta.name).toBe("test");
+    expect(meta).not.toHaveProperty("nested");
   });
 });
