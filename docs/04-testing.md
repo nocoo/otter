@@ -1,0 +1,140 @@
+# 测试规范
+
+> 返回 [README](../README.md) · 上一篇 [开发指南](./03-development.md)
+
+## 测试框架
+
+项目使用 **Vitest** 作为测试框架，配置文件为根目录 `vitest.config.ts`。
+
+## 覆盖率目标
+
+| 指标 | 当前配置阈值 | 目标阈值 |
+|------|-------------|----------|
+| Statements | 80% | **90%** |
+| Branches | 80% | **90%** |
+| Functions | 80% | **90%** |
+| Lines | 80% | **90%** |
+
+> 覆盖率提升至 90% 是近期目标，需要逐步补充测试用例达成。
+
+## 覆盖率配置
+
+```typescript
+// vitest.config.ts
+coverage: {
+  provider: "v8",
+  reporter: ["text", "json", "html"],
+  include: ["packages/*/src/**/*.ts"],
+  exclude: [
+    "**/*.test.ts",    // 测试文件本身
+    "**/*.d.ts",       // 类型声明
+    "**/index.ts",     // 纯导出文件
+    "**/bin.ts",       // CLI 入口
+    "**/cli.ts",       // CLI 注册
+    "**/types.ts",     // 类型定义
+  ],
+}
+```
+
+## 测试目录结构
+
+测试文件镜像源码结构，统一放在 `packages/cli/src/__tests__/` 下：
+
+```
+__tests__/
+├── collectors/
+│   ├── applications.test.ts
+│   ├── claude-config.test.ts
+│   ├── homebrew.test.ts
+│   ├── opencode-config.test.ts
+│   └── shell-config.test.ts
+├── commands/
+│   ├── config.test.ts
+│   └── scan.test.ts
+├── config/
+│   └── manager.test.ts
+├── snapshot/
+│   └── builder.test.ts
+├── uploader/
+│   └── webhook.test.ts
+└── utils/
+    └── redact.test.ts
+```
+
+## 测试命令
+
+```bash
+# 运行全部测试
+bun run test
+
+# 监听模式
+bun run test:watch
+
+# 生成覆盖率报告
+bun run test:coverage
+
+# 运行单个测试文件
+npx vitest run packages/cli/src/__tests__/collectors/claude-config.test.ts
+```
+
+## 测试编写规范
+
+### 1. 文件系统隔离
+
+所有涉及文件操作的测试必须使用临时目录，不依赖真实用户文件系统：
+
+```typescript
+let tempHome: string;
+
+beforeEach(async () => {
+  tempHome = await mkdtemp(join(tmpdir(), "otter-test-"));
+});
+
+afterEach(async () => {
+  await rm(tempHome, { recursive: true, force: true });
+});
+```
+
+### 2. 命令注入
+
+依赖外部命令的采集器（如 HomebrewCollector）通过可替换的执行函数进行测试：
+
+```typescript
+const collector = new HomebrewCollector(tempHome);
+collector._execCommand = async (cmd: string) => "package1\npackage2\n";
+```
+
+### 3. 必测场景
+
+每个采集器测试必须覆盖以下场景：
+
+| 场景 | 说明 |
+|------|------|
+| 元数据正确性 | `id`, `label`, `category` 符合预期 |
+| 正常采集 | 文件/列表项数量和内容正确 |
+| 空数据 | 目标目录不存在时返回空结果 |
+| 权限错误 | 目录不可读时优雅降级，记录 `errors` |
+| 文件大小 | `sizeBytes` 计算正确 |
+| 耗时记录 | `durationMs` 有合理值 |
+
+### 4. 脱敏测试
+
+凭据脱敏工具的测试必须验证：
+
+- JSON 中敏感键值被替换为 `[REDACTED]`
+- 无敏感数据时保持原文不变
+- 非 JSON 格式的行级脱敏正确工作
+- 无效 JSON 返回原文
+
+## 当前测试统计
+
+| 指标 | 数值 |
+|------|------|
+| 测试文件 | 11 |
+| 测试用例 | 80 |
+| 通过率 | 100% |
+
+## 相关文档
+
+- [开发指南](./03-development.md)
+- [安全机制](./05-security.md)
