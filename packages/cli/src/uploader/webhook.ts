@@ -1,9 +1,11 @@
+import { gzipSync } from "node:zlib";
 import type { Snapshot, UploaderConfig, UploadResult } from "@otter/core";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 
 /**
  * Upload a snapshot to the configured webhook URL via HTTP POST.
+ * The payload is gzip-compressed to reduce transfer size.
  */
 export async function uploadSnapshot(
   snapshot: Snapshot,
@@ -16,12 +18,16 @@ export async function uploadSnapshot(
   const start = performance.now();
 
   try {
+    const jsonBody = JSON.stringify(snapshot);
+    const compressed = gzipSync(jsonBody);
+
     const response = await fetch(config.webhookUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Content-Encoding": "gzip",
       },
-      body: JSON.stringify(snapshot),
+      body: compressed,
       signal: controller.signal,
     });
 

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { gunzipSync } from "node:zlib";
 import { uploadSnapshot } from "../../uploader/webhook.js";
 import type { Snapshot } from "@otter/core";
 
@@ -32,7 +33,7 @@ describe("uploadSnapshot", () => {
     globalThis.fetch = originalFetch;
   });
 
-  it("should POST snapshot as JSON to webhook URL", async () => {
+  it("should POST gzip-compressed snapshot to webhook URL", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -47,8 +48,11 @@ describe("uploadSnapshot", () => {
     expect(url).toBe("https://example.com/hook");
     expect(options.method).toBe("POST");
     expect(options.headers["Content-Type"]).toBe("application/json");
+    expect(options.headers["Content-Encoding"]).toBe("gzip");
 
-    const body = JSON.parse(options.body);
+    // Body should be gzip-compressed; decompress to verify JSON content
+    const decompressed = gunzipSync(Buffer.from(options.body));
+    const body = JSON.parse(decompressed.toString("utf-8"));
     expect(body.id).toBe("test-uuid-1234");
   });
 
