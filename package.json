@@ -8,6 +8,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "dev": "bun run --cwd packages/web dev",
     "build": "bun run --filter '*' build",
     "lint": "tsc --noEmit -p packages/core/tsconfig.json && tsc --noEmit -p packages/cli/tsconfig.json && tsc --noEmit -p packages/web/tsconfig.json",
     "prepare": "husky"
