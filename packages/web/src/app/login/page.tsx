@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import Image from "next/image";
 import { Archive, Github } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 
@@ -112,7 +113,7 @@ function LoginContent() {
           <div className="flex flex-1 flex-col items-center px-6 pt-6 pb-14">
             {/* Avatar placeholder */}
             <div className="h-24 w-24 overflow-hidden rounded-full bg-secondary dark:bg-[#171717] ring-1 ring-border flex items-center justify-center">
-              <span className="text-5xl">🦦</span>
+              <Image src="/logo-80.png" alt="Otter" width={80} height={80} />
             </div>
 
             <p className="mt-5 text-lg font-semibold text-foreground">Dev Environment Backup</p>
