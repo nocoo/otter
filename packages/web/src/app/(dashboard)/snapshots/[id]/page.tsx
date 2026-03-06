@@ -85,14 +85,60 @@ function formatDateTime(ts: number): string {
   });
 }
 
+const ICON_BASE_URL = "https://s.zhe.to/apps/otter";
+
+/**
+ * Resolve the icon URL for a list item.
+ * Uses meta.iconUrl if present, otherwise falls back to computing
+ * a deterministic URL from the app name (for legacy snapshots).
+ */
+async function computeIconUrl(appName: string): Promise<string> {
+  const data = new TextEncoder().encode(appName);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hex = Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  return `${ICON_BASE_URL}/${hex.slice(0, 12)}.png`;
+}
+
+function resolveIconUrl(item: ListItem): string | undefined {
+  return item.meta?.iconUrl;
+}
+
 // ---------------------------------------------------------------------------
 // Components
 // ---------------------------------------------------------------------------
 
 function CollectorSection({ collector }: { collector: Collector }) {
   const [expanded, setExpanded] = useState(true);
+  const [iconUrls, setIconUrls] = useState<Record<string, string>>({});
   const totalFiles = collector.files.length;
   const totalLists = collector.lists.length;
+  const isApps = collector.id === "applications";
+
+  // Resolve icon URLs for application list items (handles legacy snapshots without meta.iconUrl)
+  useEffect(() => {
+    if (!isApps || totalLists === 0) return;
+    const urls: Record<string, string> = {};
+    const pending: Promise<void>[] = [];
+    for (const item of collector.lists) {
+      const existing = resolveIconUrl(item);
+      if (existing) {
+        urls[item.name] = existing;
+      } else {
+        pending.push(
+          computeIconUrl(item.name).then((url) => {
+            urls[item.name] = url;
+          }),
+        );
+      }
+    }
+    if (pending.length === 0) {
+      setIconUrls(urls);
+    } else {
+      Promise.all(pending).then(() => setIconUrls({ ...urls }));
+    }
+  }, [isApps, collector.lists, totalLists]);
 
   return (
     <div className="rounded-xl bg-secondary overflow-hidden">
@@ -155,27 +201,30 @@ function CollectorSection({ collector }: { collector: Collector }) {
             <div className="space-y-2">
               <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Items</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
-                {collector.lists.map((item) => (
-                  <div
-                    key={item.name}
-                    className="flex items-center gap-2.5 rounded-lg bg-card px-3 py-2"
-                  >
-                    {item.meta?.iconUrl && (
-                      <img
-                        src={item.meta.iconUrl}
-                        alt=""
-                        width={20}
-                        height={20}
-                        className="shrink-0 rounded-[4px]"
-                        loading="lazy"
-                      />
-                    )}
-                    <span className="text-sm truncate flex-1">{item.name}</span>
-                    {item.version && (
-                      <code className="text-[10px] text-muted-foreground font-mono">{item.version}</code>
-                    )}
-                  </div>
-                ))}
+                {collector.lists.map((item) => {
+                  const icon = isApps ? iconUrls[item.name] : item.meta?.iconUrl;
+                  return (
+                    <div
+                      key={item.name}
+                      className="flex items-center gap-2.5 rounded-lg bg-card px-3 py-2"
+                    >
+                      {icon && (
+                        <img
+                          src={icon}
+                          alt=""
+                          width={20}
+                          height={20}
+                          className="shrink-0 rounded-[4px]"
+                          loading="lazy"
+                        />
+                      )}
+                      <span className="text-sm truncate flex-1">{item.name}</span>
+                      {item.version && (
+                        <code className="text-[10px] text-muted-foreground font-mono">{item.version}</code>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
