@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { createDefaultCollectors } from "./collectors/index.js";
 import { executeScan } from "./commands/scan.js";
 import { executeConfig } from "./commands/config.js";
-import { executeLogin } from "./commands/login.js";
+import { executeLogin, resolveHost, buildWebhookUrl } from "./commands/login.js";
 import { formatSnapshotList, formatSnapshotDetail, diffSnapshots, formatSnapshotDiff } from "./commands/snapshot.js";
 import { ConfigManager } from "./config/manager.js";
 import { SnapshotStore } from "./storage/local.js";
@@ -15,8 +15,20 @@ import { uploadIcons, type IconUploadConfig } from "./uploader/icons.js";
 import { exportIcons } from "./utils/icons.js";
 
 const otterConfigDir = join(homedir(), ".config", "otter");
-const configManager = new ConfigManager(otterConfigDir);
 const snapshotStore = new SnapshotStore(join(otterConfigDir, "snapshots"));
+
+/**
+ * Detect whether --dev is set from process.argv.
+ * citty doesn't provide a global args mechanism, so we parse manually.
+ */
+function isDevMode(): boolean {
+  return process.argv.includes("--dev");
+}
+
+/** Lazily create ConfigManager based on dev flag. */
+function getConfigManager(): ConfigManager {
+  return new ConfigManager(otterConfigDir, isDevMode());
+}
 
 const scanCommand = defineCommand({
   meta: {
@@ -97,6 +109,11 @@ const backupCommand = defineCommand({
     description: "Scan, build snapshot, and upload to webhook",
   },
   args: {
+    dev: {
+      type: "boolean",
+      description: "Use the dev host (otter.dev.hexly.ai)",
+      default: false,
+    },
     slim: {
       type: "boolean",
       description:
@@ -105,16 +122,20 @@ const backupCommand = defineCommand({
     },
   },
   async run({ args }) {
+    const configManager = getConfigManager();
     const config = await configManager.load();
-    if (!config.webhookUrl) {
+    if (!config.token) {
       consola.error(
-        "No webhook URL configured. Run " +
-          pc.bold("otter config set webhookUrl <url>") +
+        "Not logged in. Run " +
+          pc.bold("otter login") +
           " first."
       );
       process.exitCode = 1;
       return;
     }
+
+    const host = resolveHost({ dev: args.dev });
+    const webhookUrl = buildWebhookUrl(host, config.token);
 
     consola.start("Scanning your Mac environment...\n");
 
@@ -132,9 +153,7 @@ const backupCommand = defineCommand({
     });
 
     consola.start("\nUploading snapshot...");
-    const uploadResult = await uploadSnapshot(snapshot, {
-      webhookUrl: config.webhookUrl,
-    });
+    const uploadResult = await uploadSnapshot(snapshot, { webhookUrl });
 
     if (uploadResult.success) {
       consola.success(
@@ -166,7 +185,7 @@ const configCommand = defineCommand({
     },
     key: {
       type: "positional",
-      description: "Config key (e.g., webhookUrl)",
+      description: "Config key (e.g., token)",
       required: false,
     },
     value: {
@@ -176,6 +195,7 @@ const configCommand = defineCommand({
     },
   },
   async run({ args }) {
+    const configManager = getConfigManager();
     const action = (args.action as string) || "show";
 
     if (action === "show") {
@@ -194,7 +214,7 @@ const configCommand = defineCommand({
       }
       const result = await executeConfig(configManager, {
         action: "get",
-        key: args.key as "webhookUrl",
+        key: args.key as "token",
       });
       if (result !== undefined) {
         consola.log(result as string);
@@ -212,7 +232,7 @@ const configCommand = defineCommand({
       }
       await executeConfig(configManager, {
         action: "set",
-        key: args.key as "webhookUrl",
+        key: args.key as "token",
         value: args.value as string,
       });
       consola.success(`Set ${pc.bold(args.key as string)} = ${args.value}`);
@@ -362,6 +382,7 @@ const exportIconsCommand = defineCommand({
 
     // Upload to R2 if requested
     if (args.upload) {
+      const configManager = getConfigManager();
       const config = await configManager.load();
       const r2Endpoint = config.iconR2Endpoint;
       const r2AccessKeyId = config.iconR2AccessKeyId;
@@ -424,6 +445,7 @@ const loginCommand = defineCommand({
     },
   },
   async run({ args }) {
+    const configManager = getConfigManager();
     consola.start("Starting login flow...\n");
 
     const result = await executeLogin(configManager, { dev: args.dev }, {
@@ -436,9 +458,9 @@ const loginCommand = defineCommand({
           pc.dim("Waiting for you to connect in the browser (30s timeout)...")
         );
       },
-      onSuccess: (webhookUrl) => {
-        consola.success(`\nConnected! Webhook URL saved.`);
-        consola.info(`Webhook: ${pc.dim(webhookUrl)}`);
+      onSuccess: (token) => {
+        consola.success(`\nConnected! Token saved.`);
+        consola.info(`Token: ${pc.dim(token.slice(0, 8))}...`);
         consola.info(
           `\nRun ${pc.bold("otter backup")} to create your first backup.`
         );
