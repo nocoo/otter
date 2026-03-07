@@ -92,10 +92,11 @@ async function main() {
       "playwright",
       "test",
       "--config",
-      "packages/web/e2e/playwright.config.ts",
+      "e2e/playwright.config.ts",
       ...process.argv.slice(2), // pass through CLI args (e.g. --headed, --grep)
     ],
     {
+      cwd: "packages/web",
       stdout: "inherit",
       stderr: "inherit",
       env: {

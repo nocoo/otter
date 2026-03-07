@@ -9,6 +9,8 @@ bun.lock
 .next/
 .next-e2e/
 .next-e2e-ui/
+packages/web/playwright-report/
+packages/web/test-results/
 
 # Environment
 .env

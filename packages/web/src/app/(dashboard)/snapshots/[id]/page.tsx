@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatSize } from "@/lib/utils";
+import { cn, formatSize } from "@/lib/utils";
 import { FileViewerDialog } from "@/components/file-viewer-dialog";
 
 // ---------------------------------------------------------------------------
@@ -109,6 +109,25 @@ async function computeIconUrl(appName: string): Promise<string> {
 
 function resolveIconUrl(item: ListItem): string | undefined {
   return item.meta?.iconUrl;
+}
+
+function metaEntries(meta?: Record<string, string>): Array<[string, string]> {
+  if (!meta) return [];
+  return Object.entries(meta).filter(([key]) => key !== "iconUrl");
+}
+
+function formatMetaLabel(key: string): string {
+  return key.replace(/[-_]/g, " ");
+}
+
+function badgeClassName(key: string): string {
+  if (key === "pinned" || key === "default" || key === "current") {
+    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+  }
+  if (key === "type") {
+    return "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300";
+  }
+  return "border-border/60 bg-background/40 text-muted-foreground";
 }
 
 // ---------------------------------------------------------------------------
@@ -280,19 +299,29 @@ function CollectorSection({ collector }: { collector: Collector }) {
                           className="shrink-0 rounded-[4px]"
                           loading="lazy"
                         />
-                      ) : null}
-                      <span className="text-sm truncate flex-1">{item.name}</span>
-                      {item.version && (
-                        <code className="text-[10px] text-muted-foreground font-mono">{item.version}</code>
-                      )}
-                      {isSshKey && item.meta?.type && (
-                        <Badge variant="secondary" className="text-[10px] font-normal">
-                          {item.meta.type}
-                        </Badge>
-                      )}
-                    </div>
-                  );
-                })}
+                       ) : null}
+                       <div className="min-w-0 flex-1">
+                         <span className="text-sm truncate block">{item.name}</span>
+                         {metaEntries(item.meta).length > 0 && (
+                           <div className="mt-1 flex flex-wrap gap-1">
+                             {metaEntries(item.meta).map(([key, value]) => (
+                               <Badge
+                                 key={`${item.name}-${key}`}
+                                 variant="outline"
+                                 className={cn("text-[10px] font-normal", badgeClassName(key))}
+                               >
+                                 {key === "type" ? value : `${formatMetaLabel(key)}: ${value}`}
+                               </Badge>
+                             ))}
+                           </div>
+                         )}
+                       </div>
+                       {item.version && (
+                         <code className="text-[10px] text-muted-foreground font-mono">{item.version}</code>
+                       )}
+                     </div>
+                   );
+                 })}
               </div>
             </div>
           )}
