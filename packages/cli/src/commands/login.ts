@@ -126,6 +126,8 @@ export async function executeLogin(
   const port = await findAvailablePort();
   const callbackBase = `http://localhost:${port}`;
 
+  callbacks?.onPortReady?.(port);
+
   return new Promise<LoginResult>((resolve) => {
     let settled = false;
 
