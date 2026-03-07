@@ -17,7 +17,7 @@
 | Phase P0 | Homebrew + Applications 增强 | 已完成 | Homebrew 已补版本 / taps / pinned，Applications 已补 ~/Applications 与版本 |
 | Phase P1 | Dev Toolchain / VS Code / Docker / Cloud CLI | 已完成 | 已完成 collector、注册、dashboard metadata 展示、L1/L2/L3/L4 验证 |
 | Phase P2 | macOS Defaults / Launch Agents / Fonts | 已完成 | 已完成系统级 collector 与轻量环境 collector，并纳入默认注册 |
-| Dashboard | Snapshot detail 同步适配新元数据 | 进行中 | 需要支持 version 与 meta badges 展示 |
+| Dashboard | Snapshot detail 同步适配新元数据 | 已完成 | 已支持 version / meta badges、collector 搜索、分类过滤与概览统计 |
 | Testing | 四层测试补强 | 进行中 | L1/L2 现有基线可复用，L3/L4 补 rich snapshot 验证 |
 
 ### 进度日志
@@ -27,6 +27,8 @@
 - 2026-03-07 3) 完成 P1：新增 `vscode` / `docker` / `dev-toolchain` / `cloud-cli` collector，注册到默认扫描链路，并同步 dashboard metadata badge 展示
 - 2026-03-07 4) 完成 P2：新增 `fonts` / `macos-defaults` / `launch-agents` collector，补充单元测试与默认注册
 - 2026-03-07 5) 完成四层验证：L1 `bun run test`、L2 `bun run lint`、L3 `bun run test:e2e`、L4 `bun run test:e2e:ui`
+- 2026-03-07 6) 开始补 dashboard 第二轮：为 snapshot detail 增加 collector 搜索、分类过滤和概览统计，缓解 12 个 collector 下的信息密度问题
+- 2026-03-07 7) 完成 dashboard 第二轮：snapshot detail 已支持 collector 搜索、分类过滤和概览统计，并重新通过四层测试
 
 ---
 

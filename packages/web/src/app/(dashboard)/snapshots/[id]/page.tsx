@@ -22,33 +22,22 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn, formatSize } from "@/lib/utils";
 import { FileViewerDialog } from "@/components/file-viewer-dialog";
+import {
+  filterCollectors,
+  getCollectorOverview,
+  type SnapshotCollector,
+} from "@/lib/snapshot-collectors";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-interface FileData {
-  path: string;
-  sizeBytes: number;
-  content?: string;
-}
-
-interface ListItem {
-  name: string;
-  version?: string;
-  meta?: Record<string, string>;
-}
-
-interface Collector {
-  id: string;
-  label: string;
-  category: string;
-  files: FileData[];
-  lists: ListItem[];
-  errors: string[];
-}
+type FileData = SnapshotCollector["files"][number];
+type ListItem = SnapshotCollector["lists"][number];
+type Collector = SnapshotCollector;
 
 interface SnapshotMeta {
   id: string;
@@ -351,6 +340,8 @@ export default function SnapshotDetailPage({
   const [data, setData] = useState<SnapshotData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [collectorQuery, setCollectorQuery] = useState("");
+  const [collectorCategory, setCollectorCategory] = useState("all");
 
   useEffect(() => {
     async function fetchSnapshot() {
@@ -406,6 +397,11 @@ export default function SnapshotDetailPage({
   }
 
   const collectors = data.collectors ?? [];
+  const filteredCollectors = filterCollectors(collectors, {
+    query: collectorQuery,
+    category: collectorCategory,
+  });
+  const overview = getCollectorOverview(collectors, filteredCollectors);
   const totalFiles = collectors.reduce((sum, c) => sum + c.files.length, 0);
   const totalLists = collectors.reduce((sum, c) => sum + c.lists.length, 0);
 
@@ -464,13 +460,57 @@ export default function SnapshotDetailPage({
 
       {/* Collectors */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <h2 className="text-sm font-medium text-foreground">Collectors</h2>
-          <Badge variant="secondary" className="text-[10px] font-normal">
-            {collectors.length}
-          </Badge>
+        <div className="flex flex-col gap-3 rounded-xl bg-secondary p-4 sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-medium text-foreground">Collectors</h2>
+              <Badge variant="secondary" className="text-[10px] font-normal">
+                {overview.visible}/{overview.total}
+              </Badge>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline" className="text-[10px] font-normal">config {overview.config}</Badge>
+              <Badge variant="outline" className="text-[10px] font-normal">environment {overview.environment}</Badge>
+              <Badge variant="outline" className="text-[10px] font-normal">errors {overview.withErrors}</Badge>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <Input
+              value={collectorQuery}
+              onChange={(event) => setCollectorQuery(event.target.value)}
+              placeholder="Search collectors, files, items, or metadata..."
+              className="bg-background/70"
+            />
+            <div className="flex rounded-lg border border-border bg-background/60 p-1">
+              {[
+                { label: "All", value: "all" },
+                { label: "Config", value: "config" },
+                { label: "Environment", value: "environment" },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setCollectorCategory(option.value)}
+                  className={cn(
+                    "rounded-md px-3 py-1.5 text-xs transition-colors",
+                    collectorCategory === option.value
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-        {collectors.map((collector) => (
+
+        {filteredCollectors.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border bg-secondary/60 px-5 py-8 text-center">
+            <p className="text-sm text-muted-foreground">No collectors match the current filters.</p>
+          </div>
+        ) : filteredCollectors.map((collector) => (
           <CollectorSection key={collector.id} collector={collector} />
         ))}
       </div>

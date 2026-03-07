@@ -90,4 +90,9 @@ test("dashboard snapshot detail renders rich collector metadata", async ({ page 
   await expect(page.getByText("pinned: true")).toBeVisible();
   await expect(page.getByText("editor: vscode")).toBeVisible();
   await expect(page.getByText("current: true")).toBeVisible();
+  await page.getByPlaceholder("Search collectors, files, items, or metadata...").fill("copilot");
+  await expect(page.getByText("VS Code / Cursor Configuration")).toBeVisible();
+  await expect(page.getByText("Homebrew Packages")).not.toBeVisible();
+  await page.getByRole("button", { name: "Environment" }).click();
+  await expect(page.getByText("No collectors match the current filters.")).toBeVisible();
 });
