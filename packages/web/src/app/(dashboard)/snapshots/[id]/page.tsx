@@ -120,6 +120,17 @@ function badgeClassName(key: string): string {
   return "border-border/60 bg-background/40 text-muted-foreground";
 }
 
+function listItemKey(item: ListItem, index: number): string {
+  const meta = item.meta
+    ? Object.entries(item.meta)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, value]) => `${key}:${value}`)
+        .join("|")
+    : "";
+
+  return [item.name, item.version ?? "", meta, String(index)].join("::");
+}
+
 // ---------------------------------------------------------------------------
 // Components
 // ---------------------------------------------------------------------------
@@ -270,12 +281,12 @@ function CollectorSection({ collector }: { collector: Collector }) {
                 </p>
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
-                {collector.lists.map((item) => {
+                {collector.lists.map((item, index) => {
                   const icon = isApps ? iconUrls[item.name] : item.meta?.iconUrl;
                   const isSshKey = item.meta?.source === ".ssh";
                   return (
                     <div
-                      key={item.name}
+                      key={listItemKey(item, index)}
                       className="flex items-center gap-2.5 rounded-lg bg-card px-3 py-2"
                     >
                       {isSshKey ? (
