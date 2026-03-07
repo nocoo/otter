@@ -55,7 +55,7 @@ function LoginContent() {
       {/* Top-right controls */}
       <div className="absolute top-4 right-4 z-10 flex items-center gap-1">
         <a
-          href="https://github.com/nicholasgasior/otter"
+          href="https://github.com/nocoo/otter"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="GitHub repository"

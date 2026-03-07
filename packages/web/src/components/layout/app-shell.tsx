@@ -101,7 +101,7 @@ function AppShellInner({ children }: AppShellProps) {
           </div>
           <div className="flex items-center gap-1">
             <a
-              href="https://github.com/nicholasgasior/otter"
+              href="https://github.com/nocoo/otter"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="GitHub repository"
