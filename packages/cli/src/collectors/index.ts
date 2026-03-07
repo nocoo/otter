@@ -4,6 +4,13 @@ export { OpenCodeConfigCollector } from "./opencode-config.js";
 export { ShellConfigCollector } from "./shell-config.js";
 export { HomebrewCollector } from "./homebrew.js";
 export { ApplicationsCollector } from "./applications.js";
+export { VSCodeCollector } from "./vscode.js";
+export { DockerCollector } from "./docker.js";
+export { FontsCollector } from "./fonts.js";
+export { DevToolchainCollector } from "./dev-toolchain.js";
+export { CloudCLICollector } from "./cloud-cli.js";
+export { MacOSDefaultsCollector } from "./macos-defaults.js";
+export { LaunchAgentsCollector } from "./launch-agents.js";
 
 import type { Collector } from "@otter/core";
 import { ClaudeConfigCollector } from "./claude-config.js";
@@ -11,6 +18,13 @@ import { OpenCodeConfigCollector } from "./opencode-config.js";
 import { ShellConfigCollector } from "./shell-config.js";
 import { HomebrewCollector } from "./homebrew.js";
 import { ApplicationsCollector } from "./applications.js";
+import { VSCodeCollector } from "./vscode.js";
+import { DockerCollector } from "./docker.js";
+import { FontsCollector } from "./fonts.js";
+import { DevToolchainCollector } from "./dev-toolchain.js";
+import { CloudCLICollector } from "./cloud-cli.js";
+import { MacOSDefaultsCollector } from "./macos-defaults.js";
+import { LaunchAgentsCollector } from "./launch-agents.js";
 import { homedir } from "node:os";
 
 /** Default R2 public base URL for app icon assets */
@@ -40,5 +54,12 @@ export function createDefaultCollectors(
     new ShellConfigCollector(homeDir),
     new HomebrewCollector(homeDir),
     new ApplicationsCollector(homeDir, "/Applications", iconBaseUrl),
+    new VSCodeCollector(homeDir),
+    new DockerCollector(homeDir),
+    new FontsCollector(homeDir),
+    new DevToolchainCollector(homeDir),
+    new CloudCLICollector(homeDir),
+    new MacOSDefaultsCollector(homeDir),
+    new LaunchAgentsCollector(homeDir),
   ];
 }
