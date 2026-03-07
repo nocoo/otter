@@ -4,15 +4,22 @@
 
 ## 采集器体系
 
-Otter 内置 5 个采集器，均继承自 `BaseCollector` 抽象类。采集器分为两类：
+Otter 当前内置 12 个采集器，均继承自 `BaseCollector` 抽象类。采集器分为两类：
 
 | 分类 | 采集器 | 输出类型 |
 |------|--------|----------|
 | `config` | ClaudeConfigCollector | 文件 + 会话摘要 |
 | `config` | OpenCodeConfigCollector | 文件 + 技能列表 |
+| `config` | VSCodeCollector | 编辑器配置 + 扩展列表 |
+| `config` | CloudCLICollector | 云 CLI 配置 + profile 列表 |
 | `environment` | ShellConfigCollector | 文件 |
 | `environment` | HomebrewCollector | 列表 |
 | `environment` | ApplicationsCollector | 列表 |
+| `environment` | DockerCollector | Docker 配置 + context 列表 |
+| `environment` | FontsCollector | 用户字体列表 |
+| `environment` | DevToolchainCollector | 开发工具链版本 + 全局包 |
+| `environment` | MacOSDefaultsCollector | 系统偏好文件 + 登录项 |
+| `environment` | LaunchAgentsCollector | 启动项列表 + crontab |
 
 ## BaseCollector 基类
 
@@ -167,10 +174,12 @@ interface CollectDirOptions {
 **ID**: `homebrew`
 **分类**: `environment`
 
-通过 `brew list --formula` 和 `brew list --cask` 获取已安装包名称列表。
+通过 `brew list --formula --versions`、`brew list --cask --versions`、`brew tap` 和 `brew list --pinned` 获取 Homebrew 环境信息。
 
 - 仅输出 `lists`（`CollectedListItem[]`），不采集文件内容
-- 每项含 `meta.type`（`formula` 或 `cask`）
+- 每项含 `meta.type`（`formula`、`cask` 或 `tap`）
+- formula / cask 会尽量填充 `version`
+- pinned formula 会额外带上 `meta.pinned = "true"`
 
 ### 5. ApplicationsCollector
 
@@ -178,10 +187,98 @@ interface CollectDirOptions {
 **ID**: `applications`
 **分类**: `environment`
 
-扫描 `/Applications/` 目录，收集 `.app` 目录名称列表。
+扫描 `/Applications/` 与 `~/Applications/` 目录，收集 `.app` 目录名称列表。
 
 - 仅输出 `lists`，不采集文件内容
 - 自动去除 `.app` 后缀
+- 尝试从 `Contents/Info.plist` 读取 `CFBundleShortVersionString`
+- 如配置了 icon base URL，会在 `meta.iconUrl` 中输出确定性图标地址
+
+### 6. VSCodeCollector
+
+**文件**: `packages/cli/src/collectors/vscode.ts`
+**ID**: `vscode`
+**分类**: `config`
+
+采集 VS Code 与 Cursor 的用户配置与扩展列表。
+
+- 扩展优先通过 `code --list-extensions --show-versions` / `cursor --list-extensions --show-versions` 获取
+- CLI 不可用时，回退扫描 `~/.vscode/extensions/` 与 `~/.cursor/extensions/`
+- 配置文件采集 `settings.json`、`keybindings.json`、`snippets/*`
+- `settings.json` 开启 `redact: true`
+
+### 7. DockerCollector
+
+**文件**: `packages/cli/src/collectors/docker.ts`
+**ID**: `docker`
+**分类**: `environment`
+
+采集 Docker CLI 配置和 Docker contexts。
+
+- `~/.docker/config.json` 启用 `redact: true`
+- `docker context ls --format json` 解析为 `lists`
+
+### 8. FontsCollector
+
+**文件**: `packages/cli/src/collectors/fonts.ts`
+**ID**: `fonts`
+**分类**: `environment`
+
+采集 `~/Library/Fonts/` 下的用户字体文件名。
+
+- 仅输出 `lists`
+- `meta.format` 记录字体扩展名
+
+### 9. DevToolchainCollector
+
+**文件**: `packages/cli/src/collectors/dev-toolchain.ts`
+**ID**: `dev-toolchain`
+**分类**: `environment`
+
+采集开发工具链版本与全局工具。
+
+- Node 管理器：`fnm list`、`volta list all`
+- 全局包：`npm list -g --depth=0 --json`、`bun pm ls -g`
+- Rust：`rustup show`、`cargo install --list`
+- 其他语言：`pyenv versions --bare`、`rbenv versions --bare`、`go version`
+- 工具缺失时记录非致命错误并继续其他子项
+
+### 10. CloudCLICollector
+
+**文件**: `packages/cli/src/collectors/cloud-cli.ts`
+**ID**: `cloud-cli`
+**分类**: `config`
+
+采集 Azure / AWS / GCloud / Railway CLI 的安全配置子集。
+
+- Azure: `config`、`azureProfile.json`、`clouds.config`
+- AWS: 仅采集 `~/.aws/config`，并解析 profile 列表
+- GCloud: `properties`、`configurations/*`
+- Railway: `~/.config/railway/config.json`
+- 明确排除 token / session / credentials 数据库与凭据文件
+
+### 11. MacOSDefaultsCollector
+
+**文件**: `packages/cli/src/collectors/macos-defaults.ts`
+**ID**: `macos-defaults`
+**分类**: `environment`
+
+导出一组白名单 macOS defaults 域，并记录登录项。
+
+- 通过 `defaults export <domain> -` 生成虚拟 plist 文件
+- 通过 `osascript` 读取 login items
+
+### 12. LaunchAgentsCollector
+
+**文件**: `packages/cli/src/collectors/launch-agents.ts`
+**ID**: `launch-agents`
+**分类**: `environment`
+
+采集用户级启动项与 crontab。
+
+- 扫描 `~/Library/LaunchAgents/*.plist`
+- `crontab -l` 输出为单个虚拟文件 `crontab`
+- crontab 内容走脱敏流程
 
 ---
 

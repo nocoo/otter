@@ -144,6 +144,10 @@ shell-snapshots/, session-env/, statsig/
 | OpenCodeConfigCollector | 全部 JSON 配置 | `collectDir({ redact: true })` |
 | ShellConfigCollector | `.zshrc`, `.bashrc`, `.profile` 等 | `safeReadFile({ redact: true })` — Shell 脚本脱敏 |
 | ShellConfigCollector | `.gitconfig`, `.npmrc`, `.netrc` | `safeReadFile({ redact: true })` — 行级脱敏 |
+| VSCodeCollector | `settings.json` | `safeReadFile({ redact: true })` — JSON 键名脱敏 |
+| DockerCollector | `~/.docker/config.json` | `safeReadFile({ redact: true })` — 覆盖 `auths` / helper 配置 |
+| CloudCLICollector | Azure / AWS / GCloud / Railway 配置文件 | `safeReadFile({ redact: true })` 或 `collectDir({ redact: true })` |
+| LaunchAgentsCollector | `crontab` | 输出前走 `redactSecrets()`，避免泄露 URL / token |
 
 ## `--slim` 精简模式
 
@@ -187,6 +191,7 @@ shell-snapshots/, session-env/, statsig/
 - [ ] 不采集 SSH 密钥、GPG 密钥等私密文件
 - [ ] 超大文件有合理的大小限制
 - [ ] 编写了验证脱敏效果的测试用例
+- [ ] 对云 CLI、Docker、编辑器配置等新增来源明确列出排除项
 
 ## 本地快照存储安全
 

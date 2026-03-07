@@ -232,6 +232,7 @@ Server:
 - 独立 Dev Server，端口隔离
 - `E2E_SKIP_AUTH=1` 环境变量绕开登录
 - 启动前检查端口占用，已占用则先清理
+- Snapshot detail 需展示 collector `version` 与 `meta`（如 pinned、editor、current）
 
 ## 分阶段实施计划
 

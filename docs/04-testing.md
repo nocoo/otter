@@ -38,7 +38,7 @@ coverage: {
 
 ## 测试目录结构
 
-测试文件镜像源码结构，统一放在 `packages/cli/src/__tests__/` 下：
+测试文件镜像源码结构，CLI 单元 / 集成测试统一放在 `packages/cli/src/__tests__/` 下：
 
 ```
 __tests__/
@@ -46,11 +46,20 @@ __tests__/
 │   ├── applications.test.ts
 │   ├── base.test.ts
 │   ├── claude-config.test.ts
+│   ├── cloud-cli.test.ts
+│   ├── dev-toolchain.test.ts
+│   ├── docker.test.ts
+│   ├── fonts.test.ts
 │   ├── homebrew.test.ts
+│   ├── index.test.ts
+│   ├── launch-agents.test.ts
+│   ├── macos-defaults.test.ts
 │   ├── opencode-config.test.ts
-│   └── shell-config.test.ts
+│   ├── shell-config.test.ts
+│   └── vscode.test.ts
 ├── commands/
 │   ├── config.test.ts
+│   ├── scan-rich.e2e.test.ts
 │   ├── scan.test.ts
 │   └── snapshot.test.ts
 ├── config/
@@ -121,6 +130,24 @@ collector._execCommand = async (cmd: string) => "package1\npackage2\n";
 | 权限错误 | 目录不可读时优雅降级，记录 `errors` |
 | 文件大小 | `sizeBytes` 计算正确 |
 | 耗时记录 | `durationMs` 有合理值 |
+| 命令降级 | 外部命令不可用时优雅降级或回退 |
+| 元数据完整性 | `version` / `meta` / 虚拟路径等增强字段正确 |
+
+## 四层测试执行
+
+| 层 | 命令 | 目标 |
+|---|---|---|
+| L1 | `bun run test` | Collector、CLI、Web 单元测试与轻量集成测试 |
+| L2 | `bun run lint` | core / cli / web 全量类型检查 |
+| L3 | `bun run test:e2e` | Web API E2E，验证 webhook → D1/R2 → snapshots API |
+| L4 | `bun run test:e2e:ui` | Playwright BDD，验证 dashboard 主干流程与 rich metadata 展示 |
+
+### L3 / L4 约定
+
+- L3 使用独立 dev server，端口默认 `17029`
+- L4 使用独立 dev server，端口默认 `27029`
+- 两层都通过 `E2E_SKIP_AUTH=true` 绕过真实登录
+- L4 新增 rich snapshot fixture，验证 collector `meta` 在 dashboard 中可视化
 
 ### 4. 脱敏测试
 
@@ -138,8 +165,8 @@ collector._execCommand = async (cmd: string) => "package1\npackage2\n";
 
 | 指标 | 数值 |
 |------|------|
-| 测试文件 | 15 |
-| 测试用例 | 207 |
+| 测试文件 | 34 |
+| 测试用例 | 338 |
 | 通过率 | 100% |
 
 ## 相关文档
