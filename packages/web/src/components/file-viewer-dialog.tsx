@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { formatSize } from "@/lib/utils";
-import { codeToHtml } from "shiki";
+import { codeToTokens, type ThemedToken, type BundledLanguage } from "shiki";
 
 // ---------------------------------------------------------------------------
 // Language detection
@@ -61,7 +61,7 @@ const EXT_LANG_MAP: Record<string, string> = {
 
   // SSH
   ".pub": "plaintext",
-  "config": "ssh-config",
+  config: "ssh-config",
 };
 
 /** Known full filenames that map to a language */
@@ -75,7 +75,7 @@ const FILENAME_LANG_MAP: Record<string, string> = {
   ".gitconfig": "ini",
   ".gitignore": "gitignore",
   "settings.json": "json",
-  "config": "ssh-config",
+  config: "ssh-config",
 };
 
 function detectLanguage(filePath: string): string {
@@ -114,6 +114,86 @@ function computeFileStats(content: string, sizeBytes: number): FileStats {
 }
 
 // ---------------------------------------------------------------------------
+// Code editor renderer
+// ---------------------------------------------------------------------------
+
+function CodeEditor({
+  tokens,
+  lineCount,
+}: {
+  tokens: ThemedToken[][] | null;
+  lineCount: number;
+}) {
+  // Width of the gutter based on number of digits
+  const gutterWidth = `${Math.max(String(lineCount).length, 2)}ch`;
+
+  if (!tokens) {
+    return null;
+  }
+
+  return (
+    <div className="font-mono text-xs leading-[1.7]">
+      {tokens.map((lineTokens, lineIdx) => (
+        <div key={lineIdx} className="flex hover:bg-[#161b22]">
+          {/* Line number gutter */}
+          <span
+            className="shrink-0 select-none text-right text-[#484f58] pr-4 pl-4 sticky left-0 bg-[#0d1117]"
+            style={{ minWidth: `calc(${gutterWidth} + 2rem)` }}
+          >
+            {lineIdx + 1}
+          </span>
+          {/* Code content — wraps */}
+          <span className="flex-1 whitespace-pre-wrap break-all pr-4 py-0">
+            {lineTokens.length === 0 ? (
+              "\n"
+            ) : (
+              lineTokens.map((token, tokenIdx) => (
+                <span key={tokenIdx} style={{ color: token.color }}>
+                  {token.content}
+                </span>
+              ))
+            )}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Fallback plain text editor (no syntax highlighting)
+// ---------------------------------------------------------------------------
+
+function PlainEditor({
+  content,
+  lineCount,
+}: {
+  content: string;
+  lineCount: number;
+}) {
+  const gutterWidth = `${Math.max(String(lineCount).length, 2)}ch`;
+  const lines = content.split("\n");
+
+  return (
+    <div className="font-mono text-xs leading-[1.7]">
+      {lines.map((line, lineIdx) => (
+        <div key={lineIdx} className="flex hover:bg-[#161b22]">
+          <span
+            className="shrink-0 select-none text-right text-[#484f58] pr-4 pl-4 sticky left-0 bg-[#0d1117]"
+            style={{ minWidth: `calc(${gutterWidth} + 2rem)` }}
+          >
+            {lineIdx + 1}
+          </span>
+          <span className="flex-1 whitespace-pre-wrap break-all pr-4 py-0 text-[#e6edf3]">
+            {line || "\n"}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -128,16 +208,17 @@ export function FileViewerDialog({
   open,
   onOpenChange,
 }: FileViewerDialogProps) {
-  const [highlightedHtml, setHighlightedHtml] = useState<string>("");
+  const [tokens, setTokens] = useState<ThemedToken[][] | null>(null);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const content = file?.content ?? "";
   const stats = file ? computeFileStats(content, file.sizeBytes) : null;
+  const lineCount = content ? content.split("\n").length : 0;
 
   useEffect(() => {
     if (!open || !file?.content) {
-      setHighlightedHtml("");
+      setTokens(null);
       return;
     }
 
@@ -146,22 +227,26 @@ export function FileViewerDialog({
 
     const lang = detectLanguage(file.path);
 
-    codeToHtml(file.content, {
-      lang,
+    codeToTokens(file.content, {
+      lang: lang as BundledLanguage,
       theme: "github-dark-default",
     })
-      .then((html) => {
-        if (!cancelled) setHighlightedHtml(html);
+      .then((result) => {
+        if (!cancelled) setTokens(result.tokens);
       })
       .catch(() => {
-        // Fallback: if the language isn't supported, try plaintext
+        // Fallback: try plaintext tokenization
         if (!cancelled) {
-          codeToHtml(file.content!, { lang: "plaintext", theme: "github-dark-default" })
-            .then((html) => {
-              if (!cancelled) setHighlightedHtml(html);
+          codeToTokens(file.content!, {
+            lang: "plaintext",
+            theme: "github-dark-default",
+          })
+            .then((result) => {
+              if (!cancelled) setTokens(result.tokens);
             })
             .catch(() => {
-              if (!cancelled) setHighlightedHtml("");
+              // Give up on tokenization, will render PlainEditor
+              if (!cancelled) setTokens(null);
             });
         }
       })
@@ -185,15 +270,15 @@ export function FileViewerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-0 gap-0">
+      <DialogContent className="max-w-6xl max-h-[85vh] flex flex-col p-0 gap-0 bg-[#0d1117] border-[#30363d] text-[#e6edf3] [&_[data-slot=dialog-close]]:text-[#8b949e] [&_[data-slot=dialog-close]]:hover:text-[#e6edf3]">
         {/* Header */}
-        <DialogHeader className="px-5 pt-5 pb-3 border-b border-border/50 shrink-0">
+        <DialogHeader className="px-5 pt-5 pb-3 border-b border-[#30363d] shrink-0">
           <div className="flex items-center justify-between gap-3 pr-8">
             <div className="min-w-0">
-              <DialogTitle className="text-sm font-medium truncate font-mono">
+              <DialogTitle className="text-sm font-medium truncate font-mono text-[#e6edf3]">
                 {filename}
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-1 truncate">
+              <DialogDescription className="text-xs text-[#8b949e] mt-1 truncate">
                 {file?.path}
               </DialogDescription>
             </div>
@@ -201,10 +286,10 @@ export function FileViewerDialog({
               variant="outline"
               size="xs"
               onClick={handleCopy}
-              className="shrink-0 gap-1"
+              className="shrink-0 gap-1 border-[#30363d] bg-[#21262d] text-[#e6edf3] hover:bg-[#30363d] hover:text-[#e6edf3]"
             >
               {copied ? (
-                <Check className="h-3 w-3 text-green-500" strokeWidth={1.5} />
+                <Check className="h-3 w-3 text-green-400" strokeWidth={1.5} />
               ) : (
                 <Copy className="h-3 w-3" strokeWidth={1.5} />
               )}
@@ -213,23 +298,18 @@ export function FileViewerDialog({
           </div>
         </DialogHeader>
 
-        {/* Code content */}
-        <div className="flex-1 overflow-auto min-h-0">
+        {/* Code editor area */}
+        <div className="flex-1 overflow-auto min-h-0 py-2">
           {loading ? (
-            <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center py-12 text-sm text-[#8b949e]">
               Loading...
             </div>
-          ) : highlightedHtml ? (
-            <div
-              className="text-xs leading-relaxed [&_pre]:!bg-transparent [&_pre]:p-4 [&_pre]:m-0 [&_code]:!text-xs overflow-x-auto"
-              dangerouslySetInnerHTML={{ __html: highlightedHtml }}
-            />
+          ) : tokens ? (
+            <CodeEditor tokens={tokens} lineCount={lineCount} />
           ) : content ? (
-            <pre className="text-xs text-muted-foreground font-mono whitespace-pre-wrap leading-relaxed p-4 overflow-x-auto">
-              {content}
-            </pre>
+            <PlainEditor content={content} lineCount={lineCount} />
           ) : (
-            <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center py-12 text-sm text-[#8b949e]">
               No content available
             </div>
           )}
@@ -237,7 +317,7 @@ export function FileViewerDialog({
 
         {/* Footer stats */}
         {stats && (
-          <div className="px-5 py-3 border-t border-border/50 flex items-center gap-4 text-xs text-muted-foreground shrink-0 bg-muted/30">
+          <div className="px-5 py-3 border-t border-[#30363d] flex items-center gap-4 text-xs text-[#8b949e] shrink-0">
             <span className="flex items-center gap-1.5">
               <FileText className="h-3 w-3" strokeWidth={1.5} />
               {formatSize(stats.size)}
