@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useSyncExternalStore } from "react";
 import { Copy, Check, FileText, Hash, Type } from "lucide-react";
 import {
   Dialog,
@@ -12,6 +12,41 @@ import {
 import { Button } from "@/components/ui/button";
 import { formatSize } from "@/lib/utils";
 import { codeToTokens, type ThemedToken, type BundledLanguage } from "shiki";
+
+// ---------------------------------------------------------------------------
+// Theme detection (reuses the app's class-based dark mode)
+// ---------------------------------------------------------------------------
+
+function subscribeTheme(cb: () => void) {
+  // Listen to manual toggle via custom event
+  window.addEventListener("theme-change", cb);
+  // Listen to OS-level scheme change
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  mq.addEventListener("change", cb);
+  // Also observe class changes on <html> as a fallback
+  const observer = new MutationObserver(cb);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
+  return () => {
+    window.removeEventListener("theme-change", cb);
+    mq.removeEventListener("change", cb);
+    observer.disconnect();
+  };
+}
+
+function getIsDark() {
+  return document.documentElement.classList.contains("dark");
+}
+
+function getServerIsDark() {
+  return false;
+}
+
+function useIsDark() {
+  return useSyncExternalStore(subscribeTheme, getIsDark, getServerIsDark);
+}
 
 // ---------------------------------------------------------------------------
 // Language detection
@@ -80,20 +115,13 @@ const FILENAME_LANG_MAP: Record<string, string> = {
 
 function detectLanguage(filePath: string): string {
   const filename = filePath.split("/").pop() ?? "";
-
-  // Check full filename first
   if (FILENAME_LANG_MAP[filename]) return FILENAME_LANG_MAP[filename];
-
-  // Check extension
   const dotIndex = filename.lastIndexOf(".");
   if (dotIndex !== -1) {
     const ext = filename.slice(dotIndex).toLowerCase();
     if (EXT_LANG_MAP[ext]) return EXT_LANG_MAP[ext];
   }
-
-  // Dotfiles without extension are usually shell config
   if (filename.startsWith(".")) return "shellscript";
-
   return "plaintext";
 }
 
@@ -120,39 +148,47 @@ function computeFileStats(content: string, sizeBytes: number): FileStats {
 function CodeEditor({
   tokens,
   lineCount,
+  isDark,
 }: {
   tokens: ThemedToken[][] | null;
   lineCount: number;
+  isDark: boolean;
 }) {
-  // Width of the gutter based on number of digits
   const gutterWidth = `${Math.max(String(lineCount).length, 2)}ch`;
 
-  if (!tokens) {
-    return null;
-  }
+  if (!tokens) return null;
 
   return (
     <div className="font-mono text-xs leading-[1.7]">
       {tokens.map((lineTokens, lineIdx) => (
-        <div key={lineIdx} className="flex hover:bg-[#161b22]">
+        <div
+          key={lineIdx}
+          className={
+            isDark
+              ? "flex hover:bg-[#161b22]"
+              : "flex hover:bg-[#f3f4f6]"
+          }
+        >
           {/* Line number gutter */}
           <span
-            className="shrink-0 select-none text-right text-[#484f58] pr-4 pl-4 sticky left-0 bg-[#0d1117]"
+            className={`shrink-0 select-none text-right pr-4 pl-4 sticky left-0 ${
+              isDark
+                ? "text-[#484f58] bg-[#0d1117]"
+                : "text-[#afb8c1] bg-[#ffffff]"
+            }`}
             style={{ minWidth: `calc(${gutterWidth} + 2rem)` }}
           >
             {lineIdx + 1}
           </span>
           {/* Code content — wraps */}
           <span className="flex-1 whitespace-pre-wrap break-all pr-4 py-0">
-            {lineTokens.length === 0 ? (
-              "\n"
-            ) : (
-              lineTokens.map((token, tokenIdx) => (
-                <span key={tokenIdx} style={{ color: token.color }}>
-                  {token.content}
-                </span>
-              ))
-            )}
+            {lineTokens.length === 0
+              ? "\n"
+              : lineTokens.map((token, tokenIdx) => (
+                  <span key={tokenIdx} style={{ color: token.color }}>
+                    {token.content}
+                  </span>
+                ))}
           </span>
         </div>
       ))}
@@ -167,9 +203,11 @@ function CodeEditor({
 function PlainEditor({
   content,
   lineCount,
+  isDark,
 }: {
   content: string;
   lineCount: number;
+  isDark: boolean;
 }) {
   const gutterWidth = `${Math.max(String(lineCount).length, 2)}ch`;
   const lines = content.split("\n");
@@ -177,14 +215,29 @@ function PlainEditor({
   return (
     <div className="font-mono text-xs leading-[1.7]">
       {lines.map((line, lineIdx) => (
-        <div key={lineIdx} className="flex hover:bg-[#161b22]">
+        <div
+          key={lineIdx}
+          className={
+            isDark
+              ? "flex hover:bg-[#161b22]"
+              : "flex hover:bg-[#f3f4f6]"
+          }
+        >
           <span
-            className="shrink-0 select-none text-right text-[#484f58] pr-4 pl-4 sticky left-0 bg-[#0d1117]"
+            className={`shrink-0 select-none text-right pr-4 pl-4 sticky left-0 ${
+              isDark
+                ? "text-[#484f58] bg-[#0d1117]"
+                : "text-[#afb8c1] bg-[#ffffff]"
+            }`}
             style={{ minWidth: `calc(${gutterWidth} + 2rem)` }}
           >
             {lineIdx + 1}
           </span>
-          <span className="flex-1 whitespace-pre-wrap break-all pr-4 py-0 text-[#e6edf3]">
+          <span
+            className={`flex-1 whitespace-pre-wrap break-all pr-4 py-0 ${
+              isDark ? "text-[#e6edf3]" : "text-[#1f2328]"
+            }`}
+          >
             {line || "\n"}
           </span>
         </div>
@@ -208,6 +261,7 @@ export function FileViewerDialog({
   open,
   onOpenChange,
 }: FileViewerDialogProps) {
+  const isDark = useIsDark();
   const [tokens, setTokens] = useState<ThemedToken[][] | null>(null);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -216,6 +270,7 @@ export function FileViewerDialog({
   const stats = file ? computeFileStats(content, file.sizeBytes) : null;
   const lineCount = content ? content.split("\n").length : 0;
 
+  // Re-tokenize when file or theme changes
   useEffect(() => {
     if (!open || !file?.content) {
       setTokens(null);
@@ -226,26 +281,22 @@ export function FileViewerDialog({
     setLoading(true);
 
     const lang = detectLanguage(file.path);
+    const theme = isDark ? "github-dark-default" : "github-light-default";
 
     codeToTokens(file.content, {
       lang: lang as BundledLanguage,
-      theme: "github-dark-default",
+      theme,
     })
       .then((result) => {
         if (!cancelled) setTokens(result.tokens);
       })
       .catch(() => {
-        // Fallback: try plaintext tokenization
         if (!cancelled) {
-          codeToTokens(file.content!, {
-            lang: "plaintext",
-            theme: "github-dark-default",
-          })
+          codeToTokens(file.content!, { lang: "plaintext", theme })
             .then((result) => {
               if (!cancelled) setTokens(result.tokens);
             })
             .catch(() => {
-              // Give up on tokenization, will render PlainEditor
               if (!cancelled) setTokens(null);
             });
         }
@@ -257,7 +308,7 @@ export function FileViewerDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, file?.path, file?.content]);
+  }, [open, file?.path, file?.content, isDark]);
 
   const handleCopy = useCallback(async () => {
     if (!content) return;
@@ -268,17 +319,31 @@ export function FileViewerDialog({
 
   const filename = file?.path.split("/").pop() ?? "";
 
+  // Adaptive color tokens
+  const bg = isDark ? "bg-[#0d1117]" : "bg-[#ffffff]";
+  const border = isDark ? "border-[#30363d]" : "border-[#d1d9e0]";
+  const textPrimary = isDark ? "text-[#e6edf3]" : "text-[#1f2328]";
+  const textSecondary = isDark ? "text-[#8b949e]" : "text-[#656d76]";
+  const btnBg = isDark
+    ? "border-[#30363d] bg-[#21262d] text-[#e6edf3] hover:bg-[#30363d] hover:text-[#e6edf3]"
+    : "border-[#d1d9e0] bg-[#f6f8fa] text-[#1f2328] hover:bg-[#eaeef2] hover:text-[#1f2328]";
+  const closeBtn = isDark
+    ? "[&_[data-slot=dialog-close]]:text-[#8b949e] [&_[data-slot=dialog-close]]:hover:text-[#e6edf3]"
+    : "[&_[data-slot=dialog-close]]:text-[#656d76] [&_[data-slot=dialog-close]]:hover:text-[#1f2328]";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[85vh] flex flex-col p-0 gap-0 bg-[#0d1117] border-[#30363d] text-[#e6edf3] [&_[data-slot=dialog-close]]:text-[#8b949e] [&_[data-slot=dialog-close]]:hover:text-[#e6edf3]">
+      <DialogContent
+        className={`sm:max-w-6xl max-h-[85vh] flex flex-col p-0 gap-0 ${bg} ${border} ${textPrimary} ${closeBtn}`}
+      >
         {/* Header */}
-        <DialogHeader className="px-5 pt-5 pb-3 border-b border-[#30363d] shrink-0">
+        <DialogHeader className={`px-5 pt-5 pb-3 border-b ${border} shrink-0`}>
           <div className="flex items-center justify-between gap-3 pr-8">
             <div className="min-w-0">
-              <DialogTitle className="text-sm font-medium truncate font-mono text-[#e6edf3]">
+              <DialogTitle className={`text-sm font-medium truncate font-mono ${textPrimary}`}>
                 {filename}
               </DialogTitle>
-              <DialogDescription className="text-xs text-[#8b949e] mt-1 truncate">
+              <DialogDescription className={`text-xs mt-1 truncate ${textSecondary}`}>
                 {file?.path}
               </DialogDescription>
             </div>
@@ -286,10 +351,10 @@ export function FileViewerDialog({
               variant="outline"
               size="xs"
               onClick={handleCopy}
-              className="shrink-0 gap-1 border-[#30363d] bg-[#21262d] text-[#e6edf3] hover:bg-[#30363d] hover:text-[#e6edf3]"
+              className={`shrink-0 gap-1 ${btnBg}`}
             >
               {copied ? (
-                <Check className="h-3 w-3 text-green-400" strokeWidth={1.5} />
+                <Check className="h-3 w-3 text-green-500" strokeWidth={1.5} />
               ) : (
                 <Copy className="h-3 w-3" strokeWidth={1.5} />
               )}
@@ -301,15 +366,15 @@ export function FileViewerDialog({
         {/* Code editor area */}
         <div className="flex-1 overflow-auto min-h-0 py-2">
           {loading ? (
-            <div className="flex items-center justify-center py-12 text-sm text-[#8b949e]">
+            <div className={`flex items-center justify-center py-12 text-sm ${textSecondary}`}>
               Loading...
             </div>
           ) : tokens ? (
-            <CodeEditor tokens={tokens} lineCount={lineCount} />
+            <CodeEditor tokens={tokens} lineCount={lineCount} isDark={isDark} />
           ) : content ? (
-            <PlainEditor content={content} lineCount={lineCount} />
+            <PlainEditor content={content} lineCount={lineCount} isDark={isDark} />
           ) : (
-            <div className="flex items-center justify-center py-12 text-sm text-[#8b949e]">
+            <div className={`flex items-center justify-center py-12 text-sm ${textSecondary}`}>
               No content available
             </div>
           )}
@@ -317,7 +382,7 @@ export function FileViewerDialog({
 
         {/* Footer stats */}
         {stats && (
-          <div className="px-5 py-3 border-t border-[#30363d] flex items-center gap-4 text-xs text-[#8b949e] shrink-0">
+          <div className={`px-5 py-3 border-t ${border} flex items-center gap-4 text-xs ${textSecondary} shrink-0`}>
             <span className="flex items-center gap-1.5">
               <FileText className="h-3 w-3" strokeWidth={1.5} />
               {formatSize(stats.size)}
