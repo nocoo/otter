@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-03-07
+
+### Features
+
+- **Collector expansion**: Added VS Code, Docker, Fonts, Dev Toolchain, Cloud CLI, macOS Defaults, and Launch Agents collectors, while enhancing Homebrew and Applications coverage
+- **Dashboard upgrades**: Snapshot detail now supports rich metadata badges, collector search/filter/grouping, and more stable list rendering for duplicate item names
+
+### Fixes
+
+- **Icon storage split**: Snapshot blobs continue writing to `otter-snapshots`, while app icons now write to the dedicated `zhe/apps/otter` bucket path
+- **Icon extraction**: Application icon export now handles binary plist metadata so apps like Setapp, Outlook, Google Drive, and Xcode can be exported and uploaded correctly
+- **Dev toolchain noise cleanup**: Removed spurious `fnm`, `rustup`, and `bun` output from collector results so the dashboard shows cleaner toolchain data
+
 ## [1.0.3] - 2026-03-07
 
 ### Features
