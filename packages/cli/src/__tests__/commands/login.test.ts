@@ -5,6 +5,7 @@ import { join } from "node:path";
 import {
   parseCallbackParams,
   resolveHost,
+  buildWebhookUrl,
   checkPortAvailable,
   findAvailablePort,
   executeLogin,
@@ -16,36 +17,15 @@ import { ConfigManager } from "../../config/manager.js";
 // ---------------------------------------------------------------------------
 
 describe("parseCallbackParams", () => {
-  it("should parse valid callback with token and webhookUrl", () => {
-    const result = parseCallbackParams(
-      "/callback?token=abc-123&webhookUrl=https%3A%2F%2Fotter.hexly.ai%2Fapi%2Fwebhook%2Fabc-123"
-    );
-    expect(result).toEqual({
-      token: "abc-123",
-      webhookUrl: "https://otter.hexly.ai/api/webhook/abc-123",
-    });
+  it("should parse valid callback with token", () => {
+    const result = parseCallbackParams("/callback?token=abc-123");
+    expect(result).toEqual({ token: "abc-123" });
   });
 
   it("should return error when token is missing", () => {
-    const result = parseCallbackParams(
-      "/callback?webhookUrl=https%3A%2F%2Fexample.com"
-    );
-    expect(result).toEqual({
-      error: "Missing token or webhookUrl in callback",
-    });
-  });
-
-  it("should return error when webhookUrl is missing", () => {
-    const result = parseCallbackParams("/callback?token=abc-123");
-    expect(result).toEqual({
-      error: "Missing token or webhookUrl in callback",
-    });
-  });
-
-  it("should return error when both params are missing", () => {
     const result = parseCallbackParams("/callback");
     expect(result).toEqual({
-      error: "Missing token or webhookUrl in callback",
+      error: "Missing token in callback",
     });
   });
 
@@ -56,9 +36,9 @@ describe("parseCallbackParams", () => {
     expect(result).toEqual({ error: "User cancelled" });
   });
 
-  it("should prioritize error over token/webhookUrl", () => {
+  it("should prioritize error over token", () => {
     const result = parseCallbackParams(
-      "/callback?error=bad&token=abc&webhookUrl=http://x"
+      "/callback?error=bad&token=abc"
     );
     expect(result).toEqual({ error: "bad" });
   });
@@ -69,27 +49,30 @@ describe("parseCallbackParams", () => {
 // ---------------------------------------------------------------------------
 
 describe("resolveHost", () => {
-  it("should return default host when no config or options", () => {
-    const host = resolveHost({}, {});
+  it("should return default host when --dev is not set", () => {
+    const host = resolveHost({});
     expect(host).toBe("https://otter.hexly.ai");
   });
 
   it("should return dev host when --dev is set", () => {
-    const host = resolveHost({}, { dev: true });
+    const host = resolveHost({ dev: true });
     expect(host).toBe("https://otter.dev.hexly.ai");
   });
+});
 
-  it("should return config host when set", () => {
-    const host = resolveHost({ host: "https://custom.example.com" }, {});
-    expect(host).toBe("https://custom.example.com");
+// ---------------------------------------------------------------------------
+// buildWebhookUrl
+// ---------------------------------------------------------------------------
+
+describe("buildWebhookUrl", () => {
+  it("should build webhook URL from host and token", () => {
+    const url = buildWebhookUrl("https://otter.hexly.ai", "abc-123");
+    expect(url).toBe("https://otter.hexly.ai/api/webhook/abc-123");
   });
 
-  it("should prefer --dev over config host", () => {
-    const host = resolveHost(
-      { host: "https://custom.example.com" },
-      { dev: true }
-    );
-    expect(host).toBe("https://otter.dev.hexly.ai");
+  it("should build dev webhook URL", () => {
+    const url = buildWebhookUrl("https://otter.dev.hexly.ai", "dev-token");
+    expect(url).toBe("https://otter.dev.hexly.ai/api/webhook/dev-token");
   });
 });
 
@@ -146,9 +129,9 @@ describe("executeLogin", () => {
         const callbackMatch = url.match(/callback=([^&]+)/);
         if (callbackMatch) {
           const callbackBase = decodeURIComponent(callbackMatch[1]);
-          // Hit the callback with token + webhookUrl
+          // Hit the callback with token only
           fetch(
-            `${callbackBase}/callback?token=test-token&webhookUrl=${encodeURIComponent("https://otter.hexly.ai/api/webhook/test-token")}`
+            `${callbackBase}/callback?token=test-token`
           ).catch(() => {});
         }
       },
@@ -161,20 +144,18 @@ describe("executeLogin", () => {
 
     expect(result.success).toBe(true);
     expect(result.host).toBe("https://otter.hexly.ai");
-    expect(result.webhookUrl).toBe(
-      "https://otter.hexly.ai/api/webhook/test-token"
-    );
+    expect(result.token).toBe("test-token");
     expect(browserUrl).toContain("https://otter.hexly.ai/cli/connect?callback=");
   });
 
-  it("should save webhookUrl and host to config after success", async () => {
+  it("should save token to config after success", async () => {
     const loginPromise = executeLogin(configManager, {}, {
       openBrowser: (url) => {
         const callbackMatch = url.match(/callback=([^&]+)/);
         if (callbackMatch) {
           const callbackBase = decodeURIComponent(callbackMatch[1]);
           fetch(
-            `${callbackBase}/callback?token=saved-token&webhookUrl=${encodeURIComponent("https://otter.hexly.ai/api/webhook/saved-token")}`
+            `${callbackBase}/callback?token=saved-token`
           ).catch(() => {});
         }
       },
@@ -186,10 +167,7 @@ describe("executeLogin", () => {
     await loginPromise;
 
     const config = await configManager.load();
-    expect(config.webhookUrl).toBe(
-      "https://otter.hexly.ai/api/webhook/saved-token"
-    );
-    expect(config.host).toBe("https://otter.hexly.ai");
+    expect(config.token).toBe("saved-token");
   });
 
   it("should use dev host when --dev is set", async () => {
@@ -199,7 +177,7 @@ describe("executeLogin", () => {
         if (callbackMatch) {
           const callbackBase = decodeURIComponent(callbackMatch[1]);
           fetch(
-            `${callbackBase}/callback?token=dev-token&webhookUrl=${encodeURIComponent("https://otter.dev.hexly.ai/api/webhook/dev-token")}`
+            `${callbackBase}/callback?token=dev-token`
           ).catch(() => {});
         }
       },
@@ -245,7 +223,7 @@ describe("executeLogin", () => {
         if (callbackMatch) {
           const callbackBase = decodeURIComponent(callbackMatch[1]);
           fetch(
-            `${callbackBase}/callback?token=t&webhookUrl=${encodeURIComponent("https://x.com/api/webhook/t")}`
+            `${callbackBase}/callback?token=t`
           ).catch(() => {});
         }
       },
@@ -281,7 +259,7 @@ describe("executeLogin", () => {
 
           // Then hit the correct path to let the test finish
           fetch(
-            `${callbackBase}/callback?token=t&webhookUrl=${encodeURIComponent("https://x.com/api/webhook/t")}`
+            `${callbackBase}/callback?token=t`
           ).catch(() => {});
         }
       },

@@ -22,45 +22,64 @@ describe("ConfigManager", () => {
     expect(config).toEqual({});
   });
 
-  it("should save and load webhook URL", async () => {
+  it("should save and load token", async () => {
     const manager = new ConfigManager(tempDir);
-    await manager.save({ webhookUrl: "https://example.com/hook" });
+    await manager.save({ token: "abc-123" });
 
     const loaded = await manager.load();
-    expect(loaded.webhookUrl).toBe("https://example.com/hook");
+    expect(loaded.token).toBe("abc-123");
   });
 
   it("should create config directory if it does not exist", async () => {
     const configDir = join(tempDir, "nested", "config");
     const manager = new ConfigManager(configDir);
 
-    await manager.save({ webhookUrl: "https://test.com" });
+    await manager.save({ token: "test-token" });
 
     const loaded = await manager.load();
-    expect(loaded.webhookUrl).toBe("https://test.com");
+    expect(loaded.token).toBe("test-token");
   });
 
   it("should write valid JSON to disk", async () => {
     const manager = new ConfigManager(tempDir);
-    await manager.save({ webhookUrl: "https://example.com" });
+    await manager.save({ token: "abc-123" });
 
     const raw = await readFile(join(tempDir, "config.json"), "utf-8");
     const parsed = JSON.parse(raw);
-    expect(parsed.webhookUrl).toBe("https://example.com");
+    expect(parsed.token).toBe("abc-123");
   });
 
-  it("should merge partial updates", async () => {
+  it("should overwrite on subsequent saves", async () => {
     const manager = new ConfigManager(tempDir);
-    await manager.save({ webhookUrl: "https://first.com" });
-    await manager.save({ webhookUrl: "https://second.com" });
+    await manager.save({ token: "first" });
+    await manager.save({ token: "second" });
 
     const config = await manager.load();
-    expect(config.webhookUrl).toBe("https://second.com");
+    expect(config.token).toBe("second");
   });
 
-  it("should return config path", () => {
+  it("should return config path for production", () => {
     const manager = new ConfigManager(tempDir);
     expect(manager.configPath).toBe(join(tempDir, "config.json"));
+  });
+
+  it("should return config path for dev", () => {
+    const manager = new ConfigManager(tempDir, true);
+    expect(manager.configPath).toBe(join(tempDir, "config.dev.json"));
+  });
+
+  it("should isolate dev config from production config", async () => {
+    const prod = new ConfigManager(tempDir);
+    const dev = new ConfigManager(tempDir, true);
+
+    await prod.save({ token: "prod-token" });
+    await dev.save({ token: "dev-token" });
+
+    const prodConfig = await prod.load();
+    const devConfig = await dev.load();
+
+    expect(prodConfig.token).toBe("prod-token");
+    expect(devConfig.token).toBe("dev-token");
   });
 
   it("should handle corrupted config file gracefully", async () => {

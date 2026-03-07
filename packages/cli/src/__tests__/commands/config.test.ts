@@ -18,42 +18,42 @@ describe("executeConfig", () => {
     await rm(tempDir, { recursive: true, force: true });
   });
 
-  it("should set webhook URL", async () => {
+  it("should set token", async () => {
     await executeConfig(manager, {
       action: "set",
-      key: "webhookUrl",
-      value: "https://example.com/hook",
+      key: "token",
+      value: "abc-123",
     });
 
     const config = await manager.load();
-    expect(config.webhookUrl).toBe("https://example.com/hook");
+    expect(config.token).toBe("abc-123");
   });
 
-  it("should get webhook URL", async () => {
-    await manager.save({ webhookUrl: "https://saved.com" });
+  it("should get token", async () => {
+    await manager.save({ token: "saved-token" });
 
     const result = await executeConfig(manager, {
       action: "get",
-      key: "webhookUrl",
+      key: "token",
     });
 
-    expect(result).toBe("https://saved.com");
+    expect(result).toBe("saved-token");
   });
 
   it("should return undefined for unset keys", async () => {
     const result = await executeConfig(manager, {
       action: "get",
-      key: "webhookUrl",
+      key: "token",
     });
 
     expect(result).toBeUndefined();
   });
 
   it("should show all config when action is show", async () => {
-    await manager.save({ webhookUrl: "https://show.com" });
+    await manager.save({ token: "show-token" });
 
     const result = await executeConfig(manager, { action: "show" });
 
-    expect(result).toEqual({ webhookUrl: "https://show.com" });
+    expect(result).toEqual({ token: "show-token" });
   });
 });
