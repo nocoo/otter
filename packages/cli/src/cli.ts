@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { createDefaultCollectors } from "./collectors/index.js";
 import { executeScan } from "./commands/scan.js";
 import { executeConfig } from "./commands/config.js";
+import { executeLogin } from "./commands/login.js";
 import { formatSnapshotList, formatSnapshotDetail, diffSnapshots, formatSnapshotDiff } from "./commands/snapshot.js";
 import { ConfigManager } from "./config/manager.js";
 import { SnapshotStore } from "./storage/local.js";
@@ -409,6 +410,53 @@ const exportIconsCommand = defineCommand({
   },
 });
 
+const loginCommand = defineCommand({
+  meta: {
+    name: "login",
+    description:
+      "Connect your CLI to the Otter dashboard via browser-based OAuth",
+  },
+  args: {
+    dev: {
+      type: "boolean",
+      description: "Use the dev host (otter.dev.hexly.ai)",
+      default: false,
+    },
+  },
+  async run({ args }) {
+    consola.start("Starting login flow...\n");
+
+    const result = await executeLogin(configManager, { dev: args.dev }, {
+      onPortReady: (port) => {
+        consola.info(`Local server listening on port ${pc.bold(String(port))}`);
+      },
+      onBrowserOpen: (url) => {
+        consola.info(`Opening browser: ${pc.dim(url)}`);
+        consola.info(
+          pc.dim("Waiting for you to connect in the browser (30s timeout)...")
+        );
+      },
+      onSuccess: (webhookUrl) => {
+        consola.success(`\nConnected! Webhook URL saved.`);
+        consola.info(`Webhook: ${pc.dim(webhookUrl)}`);
+        consola.info(
+          `\nRun ${pc.bold("otter backup")} to create your first backup.`
+        );
+      },
+      onError: (error) => {
+        consola.error(`\nLogin failed: ${error}`);
+      },
+      onTimeout: () => {
+        consola.warn("\nLogin timed out (30s). Please try again.");
+      },
+    });
+
+    if (!result.success) {
+      process.exitCode = 1;
+    }
+  },
+});
+
 export const main = defineCommand({
   meta: {
     name: "otter",
@@ -417,6 +465,7 @@ export const main = defineCommand({
       "Backup and restore your Mac development environment configuration",
   },
   subCommands: {
+    login: loginCommand,
     scan: scanCommand,
     backup: backupCommand,
     config: configCommand,
