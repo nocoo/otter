@@ -8,11 +8,14 @@ import { ApplicationsCollector } from "../../collectors/applications.js";
 describe("ApplicationsCollector", () => {
   let tempHome: string;
   let tempAppsDir: string;
+  let tempUserAppsDir: string;
 
   beforeEach(async () => {
     tempHome = await mkdtemp(join(tmpdir(), "otter-test-"));
     tempAppsDir = join(tempHome, "Applications");
+    tempUserAppsDir = join(tempHome, "UserApplications");
     await mkdir(tempAppsDir, { recursive: true });
+    await mkdir(tempUserAppsDir, { recursive: true });
   });
 
   afterEach(async () => {
@@ -20,7 +23,7 @@ describe("ApplicationsCollector", () => {
   });
 
   it("should have correct metadata", () => {
-    const collector = new ApplicationsCollector(tempHome, tempAppsDir);
+    const collector = new ApplicationsCollector(tempHome, tempAppsDir, undefined, tempUserAppsDir);
     expect(collector.id).toBe("applications");
     expect(collector.label).toBe("Installed Applications");
     expect(collector.category).toBe("environment");
@@ -30,7 +33,8 @@ describe("ApplicationsCollector", () => {
     await mkdir(join(tempAppsDir, "Safari.app"), { recursive: true });
     await mkdir(join(tempAppsDir, "Chrome.app"), { recursive: true });
 
-    const collector = new ApplicationsCollector(tempHome, tempAppsDir);
+    const collector = new ApplicationsCollector(tempHome, tempAppsDir, undefined, tempUserAppsDir);
+    collector._execCommand = async () => "";
     const result = await collector.collect();
 
     const names = result.lists.map((l) => l.name);
@@ -43,7 +47,8 @@ describe("ApplicationsCollector", () => {
     await writeFile(join(tempAppsDir, "readme.txt"), "not an app");
     await mkdir(join(tempAppsDir, "NotAnApp"), { recursive: true });
 
-    const collector = new ApplicationsCollector(tempHome, tempAppsDir);
+    const collector = new ApplicationsCollector(tempHome, tempAppsDir, undefined, tempUserAppsDir);
+    collector._execCommand = async () => "";
     const result = await collector.collect();
 
     expect(result.lists).toHaveLength(1);
@@ -51,7 +56,8 @@ describe("ApplicationsCollector", () => {
   });
 
   it("should return empty list when no apps exist", async () => {
-    const collector = new ApplicationsCollector(tempHome, tempAppsDir);
+    const collector = new ApplicationsCollector(tempHome, tempAppsDir, undefined, tempUserAppsDir);
+    collector._execCommand = async () => "";
     const result = await collector.collect();
 
     expect(result.lists).toHaveLength(0);
@@ -61,14 +67,16 @@ describe("ApplicationsCollector", () => {
   it("should not include files array (list-only collector)", async () => {
     await mkdir(join(tempAppsDir, "VSCode.app"), { recursive: true });
 
-    const collector = new ApplicationsCollector(tempHome, tempAppsDir);
+    const collector = new ApplicationsCollector(tempHome, tempAppsDir, undefined, tempUserAppsDir);
+    collector._execCommand = async () => "";
     const result = await collector.collect();
 
     expect(result.files).toHaveLength(0);
   });
 
   it("should handle missing applications directory", async () => {
-    const collector = new ApplicationsCollector(tempHome, "/nonexistent/path");
+    const collector = new ApplicationsCollector(tempHome, "/nonexistent/path", undefined, tempUserAppsDir);
+    collector._execCommand = async () => "";
     const result = await collector.collect();
 
     expect(result.lists).toHaveLength(0);
@@ -79,12 +87,16 @@ describe("ApplicationsCollector", () => {
     // Remove read permissions from directory to trigger EACCES
     await chmod(tempAppsDir, 0o000);
 
-    const collector = new ApplicationsCollector(tempHome, tempAppsDir);
+    const collector = new ApplicationsCollector(tempHome, tempAppsDir, undefined, tempUserAppsDir);
+    collector._execCommand = async () => "";
     const result = await collector.collect();
 
     expect(result.lists).toHaveLength(0);
-    expect(result.errors).toHaveLength(1);
-    expect(result.errors[0]).toContain("Failed to read applications directory");
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(`Failed to read applications directory ${tempAppsDir}`),
+      ])
+    );
 
     // Restore permissions for cleanup
     await chmod(tempAppsDir, 0o755);
@@ -98,7 +110,9 @@ describe("ApplicationsCollector", () => {
         tempHome,
         tempAppsDir,
         "https://s.zhe.to/apps/otter",
+        tempUserAppsDir,
       );
+      collector._execCommand = async () => "";
       const result = await collector.collect();
 
       const hash = createHash("sha256").update("Slack").digest("hex").slice(0, 12);
@@ -110,7 +124,8 @@ describe("ApplicationsCollector", () => {
     it("should not include meta when iconBaseUrl is omitted", async () => {
       await mkdir(join(tempAppsDir, "Slack.app"), { recursive: true });
 
-      const collector = new ApplicationsCollector(tempHome, tempAppsDir);
+      const collector = new ApplicationsCollector(tempHome, tempAppsDir, undefined, tempUserAppsDir);
+      collector._execCommand = async () => "";
       const result = await collector.collect();
 
       expect(result.lists[0].meta).toBeUndefined();
@@ -124,7 +139,9 @@ describe("ApplicationsCollector", () => {
         tempHome,
         tempAppsDir,
         "https://cdn.example.com/icons",
+        tempUserAppsDir,
       );
+      collector._execCommand = async () => "";
       const result = await collector.collect();
 
       // Each app should have a unique icon URL
@@ -138,5 +155,59 @@ describe("ApplicationsCollector", () => {
         );
       }
     });
+  });
+
+  it("should merge system and user Applications directories", async () => {
+    await mkdir(join(tempAppsDir, "Safari.app"), { recursive: true });
+    await mkdir(join(tempUserAppsDir, "Cursor.app"), { recursive: true });
+
+    const collector = new ApplicationsCollector(tempHome, tempAppsDir, undefined, tempUserAppsDir);
+    collector._execCommand = async () => "";
+    const result = await collector.collect();
+
+    expect(result.lists.map((item) => item.name)).toEqual(["Cursor", "Safari"]);
+  });
+
+  it("should deduplicate apps that exist in both directories", async () => {
+    await mkdir(join(tempAppsDir, "Slack.app"), { recursive: true });
+    await mkdir(join(tempUserAppsDir, "Slack.app"), { recursive: true });
+
+    const collector = new ApplicationsCollector(tempHome, tempAppsDir, undefined, tempUserAppsDir);
+    collector._execCommand = async () => "";
+    const result = await collector.collect();
+
+    expect(result.lists).toHaveLength(1);
+    expect(result.lists[0].name).toBe("Slack");
+  });
+
+  it("should capture app versions from Info.plist", async () => {
+    await mkdir(join(tempAppsDir, "Docker.app", "Contents"), { recursive: true });
+
+    const collector = new ApplicationsCollector(tempHome, tempAppsDir, undefined, tempUserAppsDir);
+    collector._execCommand = async (cmd: string) => {
+      expect(cmd).toContain('defaults read');
+      expect(cmd).toContain('Docker.app/Contents/Info.plist');
+      return "4.39.0\n";
+    };
+
+    const result = await collector.collect();
+
+    expect(result.lists).toEqual([
+      { name: "Docker", version: "4.39.0" },
+    ]);
+  });
+
+  it("should ignore version lookup failures", async () => {
+    await mkdir(join(tempAppsDir, "Docker.app", "Contents"), { recursive: true });
+
+    const collector = new ApplicationsCollector(tempHome, tempAppsDir, undefined, tempUserAppsDir);
+    collector._execCommand = async () => {
+      throw new Error("missing plist key");
+    };
+
+    const result = await collector.collect();
+
+    expect(result.lists).toEqual([{ name: "Docker" }]);
+    expect(result.errors).toHaveLength(0);
   });
 });

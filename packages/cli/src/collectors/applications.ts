@@ -1,11 +1,16 @@
 import { createHash } from "node:crypto";
+import { exec } from "node:child_process";
 import { readdir } from "node:fs/promises";
+import { join } from "node:path";
+import { promisify } from "node:util";
 import { BaseCollector } from "./base.js";
 import type {
   CollectorCategory,
   CollectorResult,
   CollectedListItem,
 } from "@otter/core";
+
+const execAsync = promisify(exec);
 
 /** Generate a deterministic icon URL from an app name and base URL */
 function iconUrl(appName: string, baseUrl: string): string {
@@ -21,13 +26,23 @@ function iconUrl(appName: string, baseUrl: string): string {
  * to a deterministic R2 URL (SHA-256 hash of app name).
  */
 export class ApplicationsCollector extends BaseCollector {
+  private readonly userAppsDir: string;
+
   constructor(
     homeDir: string,
-    private readonly appsDir: string = "/Applications",
+    private readonly systemAppsDir: string = "/Applications",
     private readonly iconBaseUrl?: string,
+    userAppsDir?: string,
   ) {
     super(homeDir);
+    this.userAppsDir = userAppsDir ?? join(homeDir, "Applications");
   }
+
+  /** Overridable for testing — executes a shell command and returns stdout */
+  _execCommand = async (cmd: string): Promise<string> => {
+    const { stdout } = await execAsync(cmd);
+    return stdout;
+  };
 
   readonly id = "applications";
   readonly label = "Installed Applications";
@@ -35,28 +50,63 @@ export class ApplicationsCollector extends BaseCollector {
 
   async collect(): Promise<CollectorResult> {
     return this.timed(async (result) => {
-      try {
-        const entries = await readdir(this.appsDir, { withFileTypes: true });
-        const apps: CollectedListItem[] = entries
-          .filter(
-            (entry) => entry.isDirectory() && entry.name.endsWith(".app")
-          )
-          .map((entry) => {
-            const name = entry.name.replace(/\.app$/, "");
-            const item: CollectedListItem = { name };
-            if (this.iconBaseUrl) {
-              item.meta = { iconUrl: iconUrl(name, this.iconBaseUrl) };
-            }
-            return item;
-          });
-        result.lists.push(...apps);
-      } catch (err) {
-        if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
-          result.errors.push(
-            `Failed to read applications directory: ${(err as Error).message}`
-          );
-        }
-      }
+      const apps = new Map<string, CollectedListItem>();
+
+      await this.collectFromDir(this.systemAppsDir, apps, result);
+      await this.collectFromDir(this.userAppsDir, apps, result);
+
+      result.lists.push(
+        ...Array.from(apps.values()).sort((a, b) => a.name.localeCompare(b.name))
+      );
     });
+  }
+
+  private async collectFromDir(
+    appsDir: string,
+    apps: Map<string, CollectedListItem>,
+    result: CollectorResult
+  ): Promise<void> {
+    try {
+      const entries = await readdir(appsDir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isDirectory() || !entry.name.endsWith(".app")) continue;
+
+        const name = entry.name.replace(/\.app$/, "");
+        const existing = apps.get(name);
+        if (existing) continue;
+
+        const version = await this.getAppVersion(appsDir, entry.name);
+        const item: CollectedListItem = {
+          name,
+          ...(version ? { version } : {}),
+        };
+        if (this.iconBaseUrl) {
+          item.meta = { iconUrl: iconUrl(name, this.iconBaseUrl) };
+        }
+        apps.set(name, item);
+      }
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+        result.errors.push(
+          `Failed to read applications directory ${appsDir}: ${(err as Error).message}`
+        );
+      }
+    }
+  }
+
+  private async getAppVersion(
+    appsDir: string,
+    entryName: string
+  ): Promise<string | undefined> {
+    const plistPath = join(appsDir, entryName, "Contents", "Info.plist");
+    try {
+      const version = await this._execCommand(
+        `defaults read ${JSON.stringify(plistPath)} CFBundleShortVersionString`
+      );
+      const trimmed = version.trim();
+      return trimmed.length > 0 ? trimmed : undefined;
+    } catch {
+      return undefined;
+    }
   }
 }
