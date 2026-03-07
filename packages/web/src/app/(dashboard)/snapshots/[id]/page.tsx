@@ -17,6 +17,8 @@ import {
   Eye,
   Copy,
   Check,
+  CircleCheck,
+  Info,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -178,6 +180,7 @@ function CollectorSection({ collector }: { collector: Collector }) {
   const totalFiles = collector.files.length;
   const totalLists = collector.lists.length;
   const isApps = collector.id === "applications";
+  const hasSshKeys = collector.lists.some((item) => item.meta?.source === ".ssh");
 
   // Resolve icon URLs for application list items (handles legacy snapshots without meta.iconUrl)
   useEffect(() => {
@@ -251,15 +254,24 @@ function CollectorSection({ collector }: { collector: Collector }) {
           {collector.lists.length > 0 && (
             <div className="space-y-2">
               <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Items</h4>
+              {hasSshKeys && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <Info className="h-3 w-3 shrink-0" strokeWidth={1.5} />
+                  Keys are detected only — content is never backed up.
+                </p>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
                 {collector.lists.map((item) => {
                   const icon = isApps ? iconUrls[item.name] : item.meta?.iconUrl;
+                  const isSshKey = item.meta?.source === ".ssh";
                   return (
                     <div
                       key={item.name}
                       className="flex items-center gap-2.5 rounded-lg bg-card px-3 py-2"
                     >
-                      {icon && (
+                      {isSshKey ? (
+                        <CircleCheck className="h-4 w-4 text-green-500 shrink-0" strokeWidth={1.5} />
+                      ) : icon ? (
                         <img
                           src={icon}
                           alt=""
@@ -268,10 +280,15 @@ function CollectorSection({ collector }: { collector: Collector }) {
                           className="shrink-0 rounded-[4px]"
                           loading="lazy"
                         />
-                      )}
+                      ) : null}
                       <span className="text-sm truncate flex-1">{item.name}</span>
                       {item.version && (
                         <code className="text-[10px] text-muted-foreground font-mono">{item.version}</code>
+                      )}
+                      {isSshKey && item.meta?.type && (
+                        <Badge variant="secondary" className="text-[10px] font-normal">
+                          {item.meta.type}
+                        </Badge>
                       )}
                     </div>
                   );
