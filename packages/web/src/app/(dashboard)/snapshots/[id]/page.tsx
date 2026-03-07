@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, useCallback, use } from "react";
 import {
   Monitor,
   FileText,
@@ -14,10 +14,14 @@ import {
   Archive,
   Loader2,
   Download,
+  Eye,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatSize } from "@/lib/utils";
+import { FileViewerDialog } from "@/components/file-viewer-dialog";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -109,6 +113,65 @@ function resolveIconUrl(item: ListItem): string | undefined {
 // Components
 // ---------------------------------------------------------------------------
 
+function FileRow({ file }: { file: FileData }) {
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const filename = file.path.split("/").pop() ?? file.path;
+
+  const handleCopy = useCallback(async () => {
+    if (!file.content) return;
+    await navigator.clipboard.writeText(file.content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [file.content]);
+
+  return (
+    <>
+      <div className="flex items-center gap-3 rounded-lg bg-card px-3 py-2">
+        <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" strokeWidth={1.5} />
+        <code className="text-xs font-mono text-foreground truncate flex-1" title={file.path}>
+          {filename}
+        </code>
+        <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
+          {formatSize(file.sizeBytes)}
+        </span>
+        <div className="flex items-center gap-1 shrink-0">
+          {file.content && (
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={handleCopy}
+              title={copied ? "Copied!" : "Copy content"}
+            >
+              {copied ? (
+                <Check className="h-3 w-3 text-green-500" strokeWidth={1.5} />
+              ) : (
+                <Copy className="h-3 w-3" strokeWidth={1.5} />
+              )}
+            </Button>
+          )}
+          {file.content && (
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => setViewerOpen(true)}
+              title="View file"
+            >
+              <Eye className="h-3 w-3" strokeWidth={1.5} />
+            </Button>
+          )}
+        </div>
+      </div>
+      <FileViewerDialog
+        file={file}
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
+      />
+    </>
+  );
+}
+
 function CollectorSection({ collector }: { collector: Collector }) {
   const [expanded, setExpanded] = useState(true);
   const [iconUrls, setIconUrls] = useState<Record<string, string>>({});
@@ -176,22 +239,10 @@ function CollectorSection({ collector }: { collector: Collector }) {
         <div className="border-t border-border/50 px-5 py-4 space-y-4">
           {/* Files */}
           {collector.files.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Files</h4>
               {collector.files.map((file) => (
-                <div key={file.path} className="rounded-lg bg-card p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <code className="text-xs font-mono text-foreground">{file.path}</code>
-                    <span className="text-[10px] text-muted-foreground tabular-nums">
-                      {formatSize(file.sizeBytes)}
-                    </span>
-                  </div>
-                  {file.content && (
-                    <pre className="text-xs text-muted-foreground font-mono whitespace-pre-wrap leading-relaxed bg-background/50 rounded-md p-2.5 overflow-x-auto max-h-32">
-                      {file.content}
-                    </pre>
-                  )}
-                </div>
+                <FileRow key={file.path} file={file} />
               ))}
             </div>
           )}
