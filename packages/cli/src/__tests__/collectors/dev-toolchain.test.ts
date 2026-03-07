@@ -54,4 +54,66 @@ describe("DevToolchainCollector", () => {
       meta: { type: "go-version" },
     });
   });
+
+  it("should ignore fnm system alias and parse active rust toolchain only", async () => {
+    const collector = new DevToolchainCollector("/fake/home");
+    collector._execCommand = async (cmd: string) => {
+      switch (cmd) {
+        case "fnm list":
+          return "* v24.13.0 default\n* system\n";
+        case "volta list all":
+          throw new Error("command not found");
+        case "npm list -g --depth=0 --json":
+          return '{"dependencies":{}}';
+        case "bun pm ls -g":
+          throw new Error(
+            'No package.json was found for directory "/Users/test/.bun/install/global"\nRun "bun init" to initialize a project'
+          );
+        case "rustup show":
+          return [
+            "Default host: aarch64-apple-darwin",
+            "rustup home: /Users/test/.rustup",
+            "",
+            "installed toolchains",
+            "--------------------",
+            "stable-aarch64-apple-darwin (active, default)",
+            "",
+            "active toolchain",
+            "----------------",
+            "name: stable-aarch64-apple-darwin",
+            "installed targets:",
+            "  aarch64-apple-darwin",
+          ].join("\n");
+        case "cargo install --list":
+          return "cargo-llvm-cov v0.8.4:\n";
+        case "pyenv versions --bare":
+          throw new Error("command not found");
+        case "rbenv versions --bare":
+          throw new Error("command not found");
+        case "go version":
+          throw new Error("command not found");
+        default:
+          throw new Error(`unexpected cmd: ${cmd}`);
+      }
+    };
+
+    const result = await collector.collect();
+
+    expect(result.lists).toContainEqual({
+      name: "node/v24.13.0",
+      version: "24.13.0",
+      meta: { type: "node-version", manager: "fnm", default: "true" },
+    });
+    expect(result.lists).not.toContainEqual(
+      expect.objectContaining({ name: expect.stringContaining("system") })
+    );
+    expect(result.lists).toContainEqual({
+      name: "stable-aarch64-apple-darwin",
+      meta: { type: "rust-toolchain", active: "true", default: "true" },
+    });
+    expect(result.lists).not.toContainEqual(
+      expect.objectContaining({ name: "name: stable-aarch64-apple-darwin" })
+    );
+    expect(result.errors).not.toContainEqual(expect.stringContaining("Failed to collect bun"));
+  });
 });

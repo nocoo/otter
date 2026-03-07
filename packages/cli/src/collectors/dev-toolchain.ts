@@ -16,6 +16,31 @@ function lines(output: string): string[] {
     .filter((line) => line.length > 0);
 }
 
+function parseFnmVersion(line: string): string | null {
+  const versionMatch = line.match(/v(\d+\.\d+\.\d+)/);
+  return versionMatch?.[1] ?? null;
+}
+
+function parseInstalledRustToolchains(output: string): string[] {
+  const allLines = output.split("\n");
+  const startIndex = allLines.findIndex((line) => line.trim() === "installed toolchains");
+  if (startIndex === -1) return [];
+
+  const toolchains: string[] = [];
+  for (const rawLine of allLines.slice(startIndex + 1)) {
+    const line = rawLine.trim();
+    if (!line) {
+      if (toolchains.length > 0) break;
+      continue;
+    }
+    if (/^-+$/.test(line)) continue;
+    if (line.endsWith(":")) break;
+    toolchains.push(line);
+  }
+
+  return toolchains;
+}
+
 export class DevToolchainCollector extends BaseCollector {
   readonly id = "dev-toolchain";
   readonly label = "Development Toolchain";
@@ -43,20 +68,23 @@ export class DevToolchainCollector extends BaseCollector {
   private async collectFnm(result: CollectorResult): Promise<CollectedListItem[]> {
     try {
       const output = await this._execCommand("fnm list");
-      return lines(output).map((line) => {
-        const isDefault = line.includes("default");
-        const versionMatch = line.match(/v?(\d+\.\d+\.\d+)/);
-        const version = versionMatch?.[1] ?? line.replace(/^\*\s*/, "");
-        return {
-          name: `node/v${version}`,
-          version,
-          meta: {
-            type: "node-version",
-            manager: "fnm",
-            ...(isDefault ? { default: "true" } : {}),
-          },
-        };
-      });
+      return lines(output)
+        .flatMap((line) => {
+          const version = parseFnmVersion(line);
+          if (!version) return [];
+
+          return [
+            {
+              name: `node/v${version}`,
+              version,
+              meta: {
+                type: "node-version",
+                manager: "fnm",
+                ...(line.includes("default") ? { default: "true" } : {}),
+              },
+            },
+          ];
+        });
     } catch (err) {
       this.pushMissingToolError(result, "fnm", err);
       return [];
@@ -116,6 +144,9 @@ export class DevToolchainCollector extends BaseCollector {
           };
         });
     } catch (err) {
+      if (this.shouldIgnoreBunGlobalError(err)) {
+        return [];
+      }
       this.pushMissingToolError(result, "bun", err);
       return [];
     }
@@ -124,16 +155,16 @@ export class DevToolchainCollector extends BaseCollector {
   private async collectRustup(result: CollectorResult): Promise<CollectedListItem[]> {
     try {
       const output = await this._execCommand("rustup show");
-      return lines(output)
-        .filter((line) => /-apple-darwin|stable|beta|nightly/.test(line))
-        .filter((line) => !line.endsWith(":"))
+      return parseInstalledRustToolchains(output)
         .map((line) => {
-          const isDefault = line.includes("(default)");
-          const name = line.replace(/\s*\(default\)/, "").trim();
+          const isDefault = line.includes("default");
+          const isActive = line.includes("active");
+          const name = line.replace(/\s*\((?:active(?:,\s*)?)?default\)/, "").trim();
           return {
             name,
             meta: {
               type: "rust-toolchain",
+              ...(isActive ? { active: "true" } : {}),
               ...(isDefault ? { default: "true" } : {}),
             },
           };
@@ -226,5 +257,13 @@ export class DevToolchainCollector extends BaseCollector {
     } else {
       result.errors.push(`Failed to collect ${tool}: ${message}`);
     }
+  }
+
+  private shouldIgnoreBunGlobalError(err: unknown): boolean {
+    const message = (err as Error).message;
+    return (
+      message.includes('No package.json was found for directory') ||
+      message.includes('Run "bun init" to initialize a project')
+    );
   }
 }
