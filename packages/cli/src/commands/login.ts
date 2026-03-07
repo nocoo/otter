@@ -1,11 +1,10 @@
 import { createServer } from "node:http";
 import { exec } from "node:child_process";
 import { createConnection } from "node:net";
-import type { OtterConfig } from "@otter/core";
 import type { ConfigManager } from "../config/manager.js";
 
-const DEFAULT_HOST = "https://otter.hexly.ai";
-const DEV_HOST = "https://otter.dev.hexly.ai";
+export const DEFAULT_HOST = "https://otter.hexly.ai";
+export const DEV_HOST = "https://otter.dev.hexly.ai";
 const TIMEOUT_MS = 30_000;
 const PORT_RANGE_START = 49152;
 const PORT_RANGE_END = 65535;
@@ -19,8 +18,8 @@ export interface LoginResult {
   success: boolean;
   /** The host that was used */
   host?: string;
-  /** The webhook URL that was configured */
-  webhookUrl?: string;
+  /** The token obtained from the dashboard */
+  token?: string;
   /** Error message if failed */
   error?: string;
 }
@@ -67,47 +66,49 @@ function openBrowser(url: string): void {
 
 /**
  * Parse callback query parameters from the URL.
- * Expected: /callback?token=<uuid>&webhookUrl=<encoded-url>
+ * Expected: /callback?token=<uuid>
  */
 export function parseCallbackParams(
   url: string
-): { token: string; webhookUrl: string } | { error: string } {
+): { token: string } | { error: string } {
   try {
     const parsed = new URL(url, "http://localhost");
     const token = parsed.searchParams.get("token");
-    const webhookUrl = parsed.searchParams.get("webhookUrl");
     const error = parsed.searchParams.get("error");
 
     if (error) {
       return { error };
     }
-    if (!token || !webhookUrl) {
-      return { error: "Missing token or webhookUrl in callback" };
+    if (!token) {
+      return { error: "Missing token in callback" };
     }
-    return { token, webhookUrl };
+    return { token };
   } catch {
     return { error: `Invalid callback URL: ${url}` };
   }
 }
 
 /**
- * Determine the host URL based on options and existing config.
+ * Determine the host URL based on the --dev flag.
+ * No longer reads from config — host is purely determined at runtime.
  */
-export function resolveHost(
-  config: OtterConfig,
-  options: LoginOptions
-): string {
-  if (options.dev) return DEV_HOST;
-  if (config.host) return config.host;
-  return DEFAULT_HOST;
+export function resolveHost(options: LoginOptions): string {
+  return options.dev ? DEV_HOST : DEFAULT_HOST;
+}
+
+/**
+ * Build a webhook URL from host and token.
+ */
+export function buildWebhookUrl(host: string, token: string): string {
+  return `${host}/api/webhook/${token}`;
 }
 
 /**
  * Execute the login flow:
  * 1. Start local HTTP server on a random available port
  * 2. Open browser to the connect page
- * 3. Wait for callback with token + webhookUrl
- * 4. Save config and close server
+ * 3. Wait for callback with token
+ * 4. Save token to config and close server
  */
 export async function executeLogin(
   configManager: ConfigManager,
@@ -115,18 +116,15 @@ export async function executeLogin(
   callbacks?: {
     onPortReady?: (port: number) => void;
     onBrowserOpen?: (url: string) => void;
-    onSuccess?: (webhookUrl: string) => void;
+    onSuccess?: (token: string) => void;
     onError?: (error: string) => void;
     onTimeout?: () => void;
     openBrowser?: (url: string) => void;
   }
 ): Promise<LoginResult> {
-  const config = await configManager.load();
-  const host = resolveHost(config, options);
+  const host = resolveHost(options);
   const port = await findAvailablePort();
   const callbackBase = `http://localhost:${port}`;
-
-  callbacks?.onPortReady?.(port);
 
   return new Promise<LoginResult>((resolve) => {
     let settled = false;
@@ -157,10 +155,9 @@ export async function executeLogin(
         return;
       }
 
-      // Save the webhook URL and host to config
+      // Save the token to config
       const updatedConfig = await configManager.load();
-      updatedConfig.webhookUrl = params.webhookUrl;
-      updatedConfig.host = host;
+      updatedConfig.token = params.token;
       await configManager.save(updatedConfig);
 
       // Return success page
@@ -169,12 +166,12 @@ export async function executeLogin(
 
       if (!settled) {
         settled = true;
-        callbacks?.onSuccess?.(params.webhookUrl);
+        callbacks?.onSuccess?.(params.token);
         server.close();
         resolve({
           success: true,
           host,
-          webhookUrl: params.webhookUrl,
+          token: params.token,
         });
       }
     });
