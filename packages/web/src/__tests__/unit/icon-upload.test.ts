@@ -7,14 +7,25 @@ vi.mock("@/lib/cf/d1", () => ({
 
 vi.mock("@/lib/cf/r2", () => ({
   putIcon: vi.fn(),
+  __resetR2ClientsForTests: vi.fn(),
 }));
 
 import { POST } from "@/app/api/webhook/[token]/icons/route";
 import { queryFirst } from "@/lib/cf/d1";
 import { putIcon } from "@/lib/cf/r2";
 
-const mockQueryFirst = vi.mocked(queryFirst);
-const mockPutIcon = vi.mocked(putIcon);
+const mockQueryFirst = queryFirst as unknown as {
+  mockResolvedValue: (value: unknown) => void;
+};
+const mockPutIcon = putIcon as unknown as {
+  mockResolvedValue: (value: unknown) => void;
+  mockRejectedValue: (value: unknown) => void;
+  mockResolvedValueOnce: (value: unknown) => typeof mockPutIcon;
+  mockRejectedValueOnce: (value: unknown) => typeof mockPutIcon;
+  mockReset: () => void;
+  mockClear: () => void;
+  mock: { calls: Array<unknown[]> };
+};
 
 // A tiny 1x1 transparent PNG as base64
 const TINY_PNG_BASE64 =

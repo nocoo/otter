@@ -38,7 +38,7 @@ export interface ExportIconsOptions {
 export function extractIconFileName(plistContent: string): string | null {
   // Match <key>CFBundleIconFile</key> followed by <string>value</string>
   const pattern =
-    /<key>CFBundleIconFile<\/key>\s*<string>([^<]+)<\/string>/;
+    /<key>CFBundleIconFile<\/key>\s*<string>([^<]+)<\/string>/i;
   const match = plistContent.match(pattern);
   if (!match) return null;
 
@@ -50,6 +50,51 @@ export function extractIconFileName(plistContent: string): string | null {
   return iconFile;
 }
 
+function extractIconCandidates(plistContent: string): string[] {
+  const keys = ["CFBundleIconFile", "CFBundleIconName"];
+  const candidates: string[] = [];
+
+  for (const key of keys) {
+    const pattern = new RegExp(
+      `<key>${key}<\\/key>\\s*<string>([^<]+)<\\/string>`,
+      "i"
+    );
+    const match = plistContent.match(pattern);
+    if (!match) continue;
+
+    let iconFile = match[1].trim();
+    if (!iconFile.endsWith(".icns")) {
+      iconFile += ".icns";
+    }
+    candidates.push(iconFile);
+  }
+
+  return [...new Set(candidates)];
+}
+
+async function readPlistAsXml(plistPath: string): Promise<string | null> {
+  try {
+    const { stdout } = await execFileAsync("/usr/bin/plutil", [
+      "-convert",
+      "xml1",
+      "-o",
+      "-",
+      plistPath,
+    ]);
+    if (stdout) {
+      return stdout;
+    }
+  } catch {
+    // Fall back to direct read below.
+  }
+
+  try {
+    return await readFile(plistPath, "utf-8");
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Resolve the .icns file path for a given .app bundle.
  * Returns null if the icon cannot be found.
@@ -58,13 +103,27 @@ async function resolveIconPath(appPath: string): Promise<string | null> {
   const plistPath = join(appPath, "Contents", "Info.plist");
 
   try {
-    const plistContent = await readFile(plistPath, "utf-8");
-    const iconFile = extractIconFileName(plistContent);
-    if (!iconFile) return null;
+    const plistContent = await readPlistAsXml(plistPath);
+    if (!plistContent) return null;
 
-    const iconPath = join(appPath, "Contents", "Resources", iconFile);
-    await access(iconPath);
-    return iconPath;
+    for (const iconFile of extractIconCandidates(plistContent)) {
+      const iconPath = join(appPath, "Contents", "Resources", iconFile);
+      try {
+        await access(iconPath);
+        return iconPath;
+      } catch {
+        continue;
+      }
+    }
+
+    const fallback = extractIconFileName(plistContent);
+    if (fallback) {
+      const iconPath = join(appPath, "Contents", "Resources", fallback);
+      await access(iconPath);
+      return iconPath;
+    }
+
+    return null;
   } catch {
     return null;
   }

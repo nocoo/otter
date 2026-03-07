@@ -2,22 +2,32 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdtemp, writeFile, mkdir, rm, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { extractIconFileName, exportIcons } from "../../utils/icons.js";
 
-// Mock child_process.execFile to avoid calling real sips
-vi.mock("node:child_process", () => ({
-  execFile: vi.fn(
-    (
-      _cmd: string,
-      _args: string[],
-      cb: (err: Error | null, stdout: string, stderr: string) => void
-    ) => {
+const mockExecFile = vi.fn(
+  (
+    cmd: string,
+    _args: string[],
+    cb: (err: Error | null, stdout: string, stderr: string) => void
+  ) => {
+    if (cmd === "/usr/bin/sips") {
       cb(null, "", "");
+      return;
     }
-  ),
+    if (cmd === "/usr/bin/plutil") {
+      cb(new Error("unexpected plutil call"), "", "");
+      return;
+    }
+    cb(new Error(`unexpected command: ${cmd}`), "", "");
+  }
+);
+
+vi.mock("node:child_process", () => ({
+  execFile: mockExecFile,
 }));
 
-describe("extractIconFileName", () => {
+describe("extractIconFileName", async () => {
+  const { extractIconFileName } = await import("../../utils/icons.js");
+
   it("should extract icon file from XML plist", () => {
     const plist = `<?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0">
@@ -38,6 +48,17 @@ describe("extractIconFileName", () => {
   <string>electron.icns</string>
 </dict></plist>`;
     expect(extractIconFileName(plist)).toBe("electron.icns");
+  });
+
+  it("should still extract icon file when plist also contains CFBundleIconName", () => {
+    const plist = `<?xml version="1.0"?>
+<plist><dict>
+  <key>CFBundleIconName</key>
+  <string>Xcode</string>
+  <key>CFBundleIconFile</key>
+  <string>Xcode</string>
+</dict></plist>`;
+    expect(extractIconFileName(plist)).toBe("Xcode.icns");
   });
 
   it("should return null when no CFBundleIconFile key", () => {
@@ -62,7 +83,9 @@ describe("extractIconFileName", () => {
   });
 });
 
-describe("exportIcons", () => {
+describe("exportIcons", async () => {
+  const { exportIcons } = await import("../../utils/icons.js");
+
   let tempDir: string;
   let appsDir: string;
   let outputDir: string;
@@ -72,6 +95,24 @@ describe("exportIcons", () => {
     appsDir = join(tempDir, "Applications");
     outputDir = join(tempDir, "output");
     await mkdir(appsDir, { recursive: true });
+    mockExecFile.mockReset();
+    mockExecFile.mockImplementation(
+      (
+        cmd: string,
+        _args: string[],
+        cb: (err: Error | null, stdout: string, stderr: string) => void
+      ) => {
+        if (cmd === "/usr/bin/sips") {
+          cb(null, "", "");
+          return;
+        }
+        if (cmd === "/usr/bin/plutil") {
+          cb(new Error("unexpected plutil call"), "", "");
+          return;
+        }
+        cb(new Error(`unexpected command: ${cmd}`), "", "");
+      }
+    );
   });
 
   afterEach(async () => {
@@ -168,7 +209,6 @@ describe("exportIcons", () => {
   <string>AppIcon</string>
 </dict></plist>`
     );
-    // Create the icns file so resolveIconPath's access() check passes
     await writeFile(
       join(appPath, "Contents", "Resources", "AppIcon.icns"),
       "fake-icns-data"
@@ -184,13 +224,13 @@ describe("exportIcons", () => {
   });
 
   it("should report sips conversion failure", async () => {
-    // Override the mock to make execFile fail
-    const { execFile } = await import("node:child_process");
-    const mockExecFile = vi.mocked(execFile);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (mockExecFile as any).mockImplementationOnce(
-      (_cmd: string, _args: string[], cb: (err: Error | null) => void) => {
-        cb(new Error("sips: could not convert"));
+    mockExecFile.mockImplementation(
+      (cmd: string, _args: string[], cb: (err: Error | null, stdout: string, stderr: string) => void) => {
+        if (cmd === "/usr/bin/plutil") {
+          cb(new Error("unexpected plutil call"), "", "");
+          return;
+        }
+        cb(new Error("sips: could not convert"), "", "");
       }
     );
 

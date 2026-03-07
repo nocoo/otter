@@ -99,8 +99,11 @@ Otter Dashboard 是 Otter 备份系统的 Web 服务端，提供 Webhook 接收�
 ## R2 存储结构
 
 ```
-otter-snapshots/
+Snapshots bucket (configurable, e.g. otter-snapshots)
   {user_id}/{snapshot_id}.json     # 原始完整 JSON，解压后存储
+
+Icons bucket (configurable, expected: zhe)
+  apps/otter/{hash}.png            # 正式应用图标公开对象（供 s.zhe.to/apps/otter/* 读取）
 ```
 
 ## 页面结构
@@ -143,10 +146,24 @@ CLI: otter backup
 Server:
   1. 从 URL 提取 token → D1 查询 webhooks 表验证 → 获取 user_id
   2. 解压 gzip → 解析 JSON → Zod 验证 Snapshot 结构
-  3. 存 R2: otter-snapshots/{user_id}/{snapshot.id}.json
+  3. 存 R2 snapshots bucket: {user_id}/{snapshot.id}.json
   4. 写 D1 snapshots 表: 提取 metadata (hostname, 文件数等)
   5. 更新 webhooks.last_used_at
   6. 返回 201 { success: true, snapshotId }
+
+图标上传流程：
+
+```
+CLI: otter backup
+  → POST /api/webhook/{token}/icons
+
+Server:
+  1. 验证 webhook token
+  2. 解码 base64 PNG
+  3. 存 R2 icons bucket:
+     - production / dev: zhe/apps/otter/{hash}.png
+  4. 返回 200 { stored }
+```
 ```
 
 ## 设计系统
