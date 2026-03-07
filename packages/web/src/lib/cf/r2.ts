@@ -127,3 +127,51 @@ export async function snapshotExists(key: string): Promise<boolean> {
 export function snapshotKey(userId: string, snapshotId: string): string {
   return `${userId}/${snapshotId}.json`;
 }
+
+// --- Icon storage ---
+
+/** Default R2 key prefix for app icons */
+const ICON_PREFIX = "apps/otter";
+
+/** Generate the R2 object key for an app icon */
+export function iconKey(hash: string): string {
+  return `${ICON_PREFIX}/${hash}.png`;
+}
+
+/** Store a PNG icon in R2 with immutable caching */
+export async function putIcon(
+  hash: string,
+  data: Buffer,
+): Promise<void> {
+  const { client, bucket } = getClient();
+
+  await client.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: iconKey(hash),
+      Body: data,
+      ContentType: "image/png",
+      CacheControl: "public, max-age=31536000, immutable",
+    }),
+  );
+}
+
+/** Check if an icon already exists in R2 */
+export async function iconExists(hash: string): Promise<boolean> {
+  const { client, bucket } = getClient();
+
+  try {
+    await client.send(
+      new HeadObjectCommand({
+        Bucket: bucket,
+        Key: iconKey(hash),
+      }),
+    );
+    return true;
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "NotFound") {
+      return false;
+    }
+    throw error;
+  }
+}
