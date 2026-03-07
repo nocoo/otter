@@ -482,7 +482,7 @@ const loginCommand = defineCommand({
 export const main = defineCommand({
   meta: {
     name: "otter",
-    version: "1.0.1",
+    version: "1.0.2",
     description:
       "Backup and restore your Mac development environment configuration",
   },

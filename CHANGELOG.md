@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.2] - 2026-03-07
+
+### Refactoring
+
+- **Config simplification**: `OtterConfig` now stores only `token` — removed `host` and `webhookUrl` fields
+- **Dev/prod config separation**: `config.json` for production, `config.dev.json` for dev mode — `--dev` flag no longer leaks dev host into production config
+- **Runtime URL construction**: `webhookUrl` is now built at runtime via `buildWebhookUrl(host, token)` instead of being persisted
+- **Login flow streamlined**: CLI connect callback only returns `token`; `resolveHost` no longer reads from config
+
 ## [1.0.0] - 2026-03-07
 
 ### Features
