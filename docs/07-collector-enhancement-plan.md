@@ -31,6 +31,8 @@
 - 2026-03-07 7) 完成 dashboard 第二轮：snapshot detail 已支持 collector 搜索、分类过滤和概览统计，并重新通过四层测试
 - 2026-03-07 8) 开始补 dashboard 第三轮：按 collector category 分组折叠，减少长页滚动成本并强化信息分层
 - 2026-03-07 9) 完成 dashboard 第三轮：snapshot detail 已按 category 分组折叠展示 collector，并再次通过四层测试
+- 2026-03-07 10) 开始补 CLI ↔ API ↔ Dashboard 连调覆盖：新增 rich snapshot fixture，目标覆盖全部新 collector 的 webhook 入库、detail API 返回和 dashboard 渲染
+- 2026-03-07 11) 完成 rich collector 连调覆盖：L3 已验证全部新 collector 的 webhook 入库与 detail API 返回，L4 已验证 dashboard 对 rich fixture 的完整渲染、搜索和分组交互
 
 ---
 

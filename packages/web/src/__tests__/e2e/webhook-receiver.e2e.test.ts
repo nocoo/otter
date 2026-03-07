@@ -13,6 +13,11 @@
 
 import { describe, it, expect, afterAll } from "bun:test";
 import { gzipSync } from "bun";
+import {
+  ALL_COLLECTOR_IDS,
+  buildRichSnapshotFixture,
+  getRichSnapshotCounts,
+} from "../../../test-support/rich-snapshot";
 
 const BASE_URL = `http://localhost:${process.env.E2E_PORT || "17029"}`;
 
@@ -23,6 +28,7 @@ let snapshotId: string | null = null;
 
 // Generate a unique snapshot ID for this test run to avoid D1 PK conflicts
 const testSnapshotId = `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+const richSnapshotId = `e2e-rich-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 // Minimal valid snapshot payload matching the webhook receiver's validation:
 //   - version: 1 (required)
@@ -61,6 +67,8 @@ const testSnapshot = {
     },
   ],
 };
+
+const richSnapshot = buildRichSnapshotFixture(richSnapshotId);
 
 afterAll(async () => {
   // Clean up snapshot from D1 (no delete API yet, but we can verify it exists)
@@ -194,5 +202,81 @@ describe("L3 API E2E: Webhook Receiver", () => {
     const data = await res.json();
     expect(data).toHaveProperty("success", true);
     expect(data).toHaveProperty("snapshotId", rawSnapshot.id);
+  });
+
+  it("POST /api/webhook/:token accepts rich collector snapshot", async () => {
+    expect(webhookToken).not.toBeNull();
+
+    const jsonBytes = new TextEncoder().encode(JSON.stringify(richSnapshot));
+    const compressed = gzipSync(jsonBytes);
+
+    const res = await fetch(`${BASE_URL}/api/webhook/${webhookToken}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Encoding": "gzip",
+      },
+      body: compressed,
+    });
+
+    expect(res.status).toBe(201);
+    const data = await res.json();
+    expect(data).toHaveProperty("snapshotId", richSnapshotId);
+  });
+
+  it("rich snapshot list metadata includes collector, file, and list totals", async () => {
+    const res = await fetch(`${BASE_URL}/api/snapshots?limit=20`);
+    expect(res.status).toBe(200);
+
+    const data = await res.json();
+    const found = data.snapshots.find(
+      (s: { id: string }) => s.id === richSnapshotId,
+    );
+
+    expect(found).toBeDefined();
+    expect(found.hostname).toBe("Otter Rich Mac");
+
+    const counts = getRichSnapshotCounts(richSnapshot);
+    expect(found.collectorCount).toBe(counts.collectorCount);
+    expect(found.fileCount).toBe(counts.fileCount);
+    expect(found.listCount).toBe(counts.listCount);
+  });
+
+  it("rich snapshot detail returns all new collectors and metadata", async () => {
+    const res = await fetch(`${BASE_URL}/api/snapshots/${richSnapshotId}`);
+    expect(res.status).toBe(200);
+
+    const data = await res.json();
+    expect(data.snapshot.hostname).toBe("Otter Rich Mac");
+    expect(data.data.collectors).toHaveLength(ALL_COLLECTOR_IDS.length);
+
+    const ids = data.data.collectors.map((collector: { id: string }) => collector.id);
+    expect(ids).toEqual(ALL_COLLECTOR_IDS);
+
+    const vscode = data.data.collectors.find(
+      (collector: { id: string }) => collector.id === "vscode",
+    );
+    expect(vscode.files[0].content).toContain("[REDACTED]");
+    expect(vscode.lists[0].meta.editor).toBe("vscode");
+
+    const docker = data.data.collectors.find(
+      (collector: { id: string }) => collector.id === "docker",
+    );
+    expect(docker.lists[0].meta.current).toBe("true");
+
+    const cloudCli = data.data.collectors.find(
+      (collector: { id: string }) => collector.id === "cloud-cli",
+    );
+    expect(cloudCli.lists).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "default" }),
+        expect.objectContaining({ name: "work" }),
+      ]),
+    );
+
+    const devToolchain = data.data.collectors.find(
+      (collector: { id: string }) => collector.id === "dev-toolchain",
+    );
+    expect(devToolchain.errors).toContain("Skipped pyenv: not installed");
   });
 });
