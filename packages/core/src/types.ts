@@ -132,10 +132,8 @@ export interface UploadResult {
 
 /** Persisted CLI configuration (stored at ~/.config/otter/config.json) */
 export interface OtterConfig {
-  /** Otter web dashboard host (e.g. "https://otter.hexly.ai") */
-  host?: string;
-  /** Webhook URL for uploads */
-  webhookUrl?: string;
+  /** Webhook token obtained via `otter login` */
+  token?: string;
   /** R2 endpoint for icon uploads */
   iconR2Endpoint?: string;
   /** R2 access key ID for icon uploads */
