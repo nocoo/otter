@@ -134,14 +134,4 @@ export interface UploadResult {
 export interface OtterConfig {
   /** Webhook token obtained via `otter login` */
   token?: string;
-  /** R2 endpoint for icon uploads */
-  iconR2Endpoint?: string;
-  /** R2 access key ID for icon uploads */
-  iconR2AccessKeyId?: string;
-  /** R2 secret access key for icon uploads */
-  iconR2SecretAccessKey?: string;
-  /** R2 bucket name for icon uploads */
-  iconR2Bucket?: string;
-  /** R2 public domain for icon URLs (e.g. "https://s.zhe.to") */
-  iconR2PublicDomain?: string;
 }
