@@ -95,13 +95,12 @@ export default function CliConnectPage() {
     }
   }, [callbackValid, fetchWebhooks]);
 
-  // Handle connect: redirect to CLI's local server
+  // Handle connect: redirect to CLI's local server with token only
   const handleConnect = (webhook: WebhookToken) => {
     if (!callback) return;
     setConnectingId(webhook.id);
 
-    const webhookUrl = `${baseUrl}/api/webhook/${webhook.token}`;
-    const redirectUrl = `${callback}/callback?token=${encodeURIComponent(webhook.token)}&webhookUrl=${encodeURIComponent(webhookUrl)}`;
+    const redirectUrl = `${callback}/callback?token=${encodeURIComponent(webhook.token)}`;
     window.location.href = redirectUrl;
   };
 
