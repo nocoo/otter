@@ -7,4 +7,4 @@
  * Works in both server and client components.
  */
 export const APP_VERSION: string =
-  process.env.NEXT_PUBLIC_APP_VERSION ?? "1.0.2";
+  process.env.NEXT_PUBLIC_APP_VERSION ?? "1.0.3";

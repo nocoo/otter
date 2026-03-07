@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.3] - 2026-03-07
+
+### Features
+
+- **Server-side icon upload**: `otter backup` now exports app icons and uploads them to the server via `POST /api/webhook/[token]/icons` — users no longer need to configure R2 credentials
+- **Icon upload endpoint**: New `POST /api/webhook/[token]/icons` route on the web server that validates, stores icons in R2 with immutable caching
+
+### Refactoring
+
+- **Removed 5 R2 config fields**: `iconR2Endpoint`, `iconR2AccessKeyId`, `iconR2SecretAccessKey`, `iconR2Bucket`, `iconR2PublicDomain` removed from `OtterConfig` — zero config needed
+- **Removed `@aws-sdk/client-s3` from CLI**: Icons go through the server now, so the CLI no longer needs the AWS SDK — significantly smaller package
+- **Removed `--upload` flag from `export-icons`**: Command now only does local PNG export; upload happens automatically during `otter backup`
+- **Deleted direct R2 uploader**: `packages/cli/src/uploader/icons.ts` and its 17 tests replaced by server-side flow
+
 ## [1.0.2] - 2026-03-07
 
 ### Refactoring
