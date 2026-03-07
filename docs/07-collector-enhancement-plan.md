@@ -29,6 +29,8 @@
 - 2026-03-07 5) 完成四层验证：L1 `bun run test`、L2 `bun run lint`、L3 `bun run test:e2e`、L4 `bun run test:e2e:ui`
 - 2026-03-07 6) 开始补 dashboard 第二轮：为 snapshot detail 增加 collector 搜索、分类过滤和概览统计，缓解 12 个 collector 下的信息密度问题
 - 2026-03-07 7) 完成 dashboard 第二轮：snapshot detail 已支持 collector 搜索、分类过滤和概览统计，并重新通过四层测试
+- 2026-03-07 8) 开始补 dashboard 第三轮：按 collector category 分组折叠，减少长页滚动成本并强化信息分层
+- 2026-03-07 9) 完成 dashboard 第三轮：snapshot detail 已按 category 分组折叠展示 collector，并再次通过四层测试
 
 ---
 

@@ -27,6 +27,7 @@ import { cn, formatSize } from "@/lib/utils";
 import { FileViewerDialog } from "@/components/file-viewer-dialog";
 import {
   filterCollectors,
+  groupCollectorsByCategory,
   getCollectorOverview,
   type SnapshotCollector,
 } from "@/lib/snapshot-collectors";
@@ -330,6 +331,62 @@ function CollectorSection({ collector }: { collector: Collector }) {
   );
 }
 
+function CollectorGroupSection({
+  category,
+  collectors,
+  totalFiles,
+  totalLists,
+  withErrors,
+}: {
+  category: string;
+  collectors: Collector[];
+  totalFiles: number;
+  totalLists: number;
+  withErrors: number;
+}) {
+  const [expanded, setExpanded] = useState(true);
+
+  return (
+    <section className="space-y-3 rounded-2xl border border-border/60 bg-secondary/70 p-3 sm:p-4">
+      <button
+        type="button"
+        onClick={() => setExpanded((value) => !value)}
+        className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-accent/40 transition-colors"
+      >
+        {expanded ? (
+          <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
+        ) : (
+          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
+        )}
+        <div>
+          <p className="text-sm font-medium capitalize">{category}</p>
+          <p className="text-xs text-muted-foreground">
+            {collectors.length} collector{collectors.length !== 1 ? "s" : ""} · {totalFiles} files · {totalLists} items
+          </p>
+        </div>
+        <div className="ml-auto flex flex-wrap gap-2">
+          <Badge variant="secondary" className="text-[10px] font-normal">
+            {collectors.length}
+          </Badge>
+          {withErrors > 0 && (
+            <Badge variant="outline" className="text-[10px] font-normal border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+              {withErrors} with errors
+            </Badge>
+          )}
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="space-y-3">
+          {collectors.map((collector) => (
+            <CollectorSection key={collector.id} collector={collector} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function SnapshotDetailPage({
   params,
 }: {
@@ -401,6 +458,7 @@ export default function SnapshotDetailPage({
     query: collectorQuery,
     category: collectorCategory,
   });
+  const groupedCollectors = groupCollectorsByCategory(filteredCollectors);
   const overview = getCollectorOverview(collectors, filteredCollectors);
   const totalFiles = collectors.reduce((sum, c) => sum + c.files.length, 0);
   const totalLists = collectors.reduce((sum, c) => sum + c.lists.length, 0);
@@ -510,8 +568,8 @@ export default function SnapshotDetailPage({
           <div className="rounded-xl border border-dashed border-border bg-secondary/60 px-5 py-8 text-center">
             <p className="text-sm text-muted-foreground">No collectors match the current filters.</p>
           </div>
-        ) : filteredCollectors.map((collector) => (
-          <CollectorSection key={collector.id} collector={collector} />
+        ) : groupedCollectors.map((group) => (
+          <CollectorGroupSection key={group.category} {...group} />
         ))}
       </div>
 

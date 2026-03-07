@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   filterCollectors,
+  groupCollectorsByCategory,
   getCollectorOverview,
   matchesCollectorQuery,
   type SnapshotCollector,
@@ -62,5 +63,24 @@ describe("snapshot collector helpers", () => {
       environment: 1,
       withErrors: 1,
     });
+  });
+
+  it("groups collectors by category with aggregate totals", () => {
+    expect(groupCollectorsByCategory(collectors)).toEqual([
+      {
+        category: "config",
+        collectors: [vscodeCollector],
+        totalFiles: 1,
+        totalLists: 1,
+        withErrors: 1,
+      },
+      {
+        category: "environment",
+        collectors: [homebrewCollector],
+        totalFiles: 0,
+        totalLists: 1,
+        withErrors: 0,
+      },
+    ]);
   });
 });

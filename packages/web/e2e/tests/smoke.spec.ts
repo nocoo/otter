@@ -87,6 +87,8 @@ test("dashboard snapshot detail renders rich collector metadata", async ({ page 
   });
 
   await page.goto("/snapshots/rich-meta");
+  await expect(page.getByRole("button", { name: /config 1 collector/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /environment 1 collector/i })).toBeVisible();
   await expect(page.getByText("pinned: true")).toBeVisible();
   await expect(page.getByText("editor: vscode")).toBeVisible();
   await expect(page.getByText("current: true")).toBeVisible();

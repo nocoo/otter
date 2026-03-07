@@ -32,6 +32,14 @@ export interface CollectorOverview {
   withErrors: number;
 }
 
+export interface CollectorGroup {
+  category: string;
+  collectors: SnapshotCollector[];
+  totalFiles: number;
+  totalLists: number;
+  withErrors: number;
+}
+
 function normalize(value: string): string {
   return value.trim().toLowerCase();
 }
@@ -83,4 +91,26 @@ export function getCollectorOverview(
     environment: collectors.filter((collector) => collector.category === "environment").length,
     withErrors: collectors.filter((collector) => collector.errors.length > 0).length,
   };
+}
+
+export function groupCollectorsByCategory(
+  collectors: SnapshotCollector[]
+): CollectorGroup[] {
+  const grouped = new Map<string, SnapshotCollector[]>();
+
+  for (const collector of collectors) {
+    const current = grouped.get(collector.category) ?? [];
+    current.push(collector);
+    grouped.set(collector.category, current);
+  }
+
+  return Array.from(grouped.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([category, items]) => ({
+      category,
+      collectors: items.sort((a, b) => a.label.localeCompare(b.label)),
+      totalFiles: items.reduce((sum, collector) => sum + collector.files.length, 0),
+      totalLists: items.reduce((sum, collector) => sum + collector.lists.length, 0),
+      withErrors: items.filter((collector) => collector.errors.length > 0).length,
+    }));
 }
