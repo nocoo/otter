@@ -65,7 +65,7 @@ function makeSnapshot(overrides: Partial<Snapshot> = {}): Snapshot {
 describe("formatSnapshotList", () => {
   it("should show 'no snapshots' message when list is empty", () => {
     const output = formatSnapshotList([]);
-    expect(output).toBe("No local snapshots found.");
+    expect(output).toContain("No local snapshots found.");
   });
 
   it("should show count header with single snapshot", () => {
@@ -80,9 +80,11 @@ describe("formatSnapshotList", () => {
 
   it("should include collector, file, and item counts", () => {
     const output = formatSnapshotList([makeMeta()]);
-    expect(output).toContain("5 collectors");
-    expect(output).toContain("21 files");
-    expect(output).toContain("201 items");
+    // Table columns: Collectors, Files, Items (header) + numeric values
+    expect(output).toContain("Collectors");
+    expect(output).toContain("5");
+    expect(output).toContain("21");
+    expect(output).toContain("201");
   });
 
   it("should list multiple snapshots with correct count", () => {
@@ -123,7 +125,8 @@ describe("formatSnapshotDetail", () => {
 
   it("should show file paths", () => {
     const output = formatSnapshotDetail(makeSnapshot());
-    expect(output).toContain("/Users/tester/.zshrc");
+    // Paths are shortened: /Users/tester/.zshrc → ~/.zshrc
+    expect(output).toContain("~/.zshrc");
   });
 
   it("should preview list items", () => {

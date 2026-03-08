@@ -1,28 +1,17 @@
 import pc from "picocolors";
 import type { Snapshot } from "@otter/core";
 import type { SnapshotMeta } from "../storage/local.js";
+import {
+  formatSize,
+  formatDate,
+  table,
+  tree,
+  S,
+  type TreeChild,
+  type Column,
+} from "../ui.js";
 
-/**
- * Format a file size in bytes to a human-readable string.
- */
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  const kb = bytes / 1024;
-  if (kb < 1024) return `${kb.toFixed(1)} KB`;
-  const mb = kb / 1024;
-  if (mb < 1024) return `${mb.toFixed(2)} MB`;
-  const gb = mb / 1024;
-  return `${gb.toFixed(2)} GB`;
-}
-
-/**
- * Format an ISO 8601 date string to a short "YYYY-MM-DD HH:MM" format.
- */
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
+// ── snapshot list ───────────────────────────────────────────────────
 
 /**
  * Format the snapshot list output for the terminal.
@@ -30,26 +19,31 @@ function formatDate(iso: string): string {
  */
 export function formatSnapshotList(metas: SnapshotMeta[]): string {
   if (metas.length === 0) {
-    return "No local snapshots found.";
+    return "\n  No local snapshots found.\n";
   }
 
-  const header = `Local snapshots (${metas.length}):\n`;
-  const rows = metas.map((m) => {
-    const id = pc.bold(m.shortId);
-    const date = pc.dim(formatDate(m.createdAt));
-    const collectors = `${m.collectorCount} collectors`;
-    const files = `${m.fileCount} files`;
-    const lists = `${m.listCount} items`;
-    const size = pc.dim(formatSize(m.sizeBytes));
-    return `  ${id}  ${date}  ${collectors}  ${files}  ${lists}  ${size}`;
-  });
+  const columns: Column[] = [
+    { label: "ID" },
+    { label: "Date" },
+    { label: "Collectors", align: "right" },
+    { label: "Files", align: "right" },
+    { label: "Items", align: "right" },
+    { label: "Size", align: "right" },
+  ];
 
-  return header + rows.join("\n");
+  const rows = metas.map((m) => [
+    pc.bold(m.shortId),
+    pc.dim(formatDate(m.createdAt)),
+    String(m.collectorCount),
+    String(m.fileCount),
+    String(m.listCount),
+    formatSize(m.sizeBytes),
+  ]);
+
+  return `\n  Local snapshots (${metas.length}):\n\n${table(columns, rows)}\n`;
 }
 
-// ---------------------------------------------------------------------------
-// snapshot show
-// ---------------------------------------------------------------------------
+// ── snapshot show ───────────────────────────────────────────────────
 
 /**
  * Format a detailed view of a single snapshot.
@@ -57,48 +51,61 @@ export function formatSnapshotList(metas: SnapshotMeta[]): string {
 export function formatSnapshotDetail(snapshot: Snapshot): string {
   const lines: string[] = [];
   const m = snapshot.machine;
-
   const machineName = m.computerName || m.hostname;
-  lines.push(`Snapshot ${pc.bold(snapshot.id.slice(0, 8))}`);
-  lines.push(`  Created: ${formatDate(snapshot.createdAt)}`);
+
+  lines.push("");
+  lines.push(`  Snapshot ${pc.bold(snapshot.id.slice(0, 8))}`);
+  lines.push(`  Created: ${pc.dim(formatDate(snapshot.createdAt))}`);
   lines.push(
-    `  Machine: ${machineName} (${m.platform}/${m.arch}, ${m.osVersion})`
+    `  Machine: ${pc.dim(`${machineName} (${m.platform}/${m.arch}, ${m.osVersion})`)}`
   );
-  lines.push(`  User:    ${m.username}`);
+  lines.push(`  User:    ${pc.dim(m.username)}`);
   lines.push("");
 
   for (const c of snapshot.collectors) {
-    const status = c.errors.length > 0 ? pc.yellow("⚠") : pc.green("✓");
-    lines.push(
-      `${status} ${pc.bold(c.label)} [${c.id}]  ${c.files.length} files, ${c.lists.length} items`
+    const status = c.errors.length > 0 ? S.warning : S.success;
+    const meta = pc.dim(
+      `${c.files.length} files, ${c.lists.length} items`
     );
+    lines.push(`  ${status}  ${pc.bold(c.label)}  ${meta}`);
 
+    // Build tree children
+    const children: TreeChild[] = [];
+
+    // Files
     for (const f of c.files) {
-      lines.push(`    ${pc.dim(f.path)} (${formatSize(f.sizeBytes)})`);
+      // Shorten home dir paths for readability
+      const shortPath = f.path.replace(/^\/Users\/[^/]+/, "~");
+      children.push({ text: shortPath, detail: formatSize(f.sizeBytes) });
     }
 
+    // List items preview
     if (c.lists.length > 0) {
       const preview = c.lists
         .slice(0, 10)
         .map((l) => l.name)
         .join(", ");
-      const suffix = c.lists.length > 10 ? `, ... +${c.lists.length - 10} more` : "";
-      lines.push(`    ${pc.dim(`items: ${preview}${suffix}`)}`);
+      const suffix =
+        c.lists.length > 10 ? `, ... +${c.lists.length - 10} more` : "";
+      children.push({ text: `items: ${preview}${suffix}`, dim: true });
     }
 
-    if (c.errors.length > 0) {
-      for (const e of c.errors) {
-        lines.push(`    ${pc.yellow(`error: ${e}`)}`);
-      }
+    // Errors
+    for (const e of c.errors) {
+      children.push({ text: e, color: "yellow" });
     }
+
+    if (children.length > 0) {
+      lines.push(tree(children));
+    }
+
+    lines.push("");
   }
 
   return lines.join("\n");
 }
 
-// ---------------------------------------------------------------------------
-// snapshot diff
-// ---------------------------------------------------------------------------
+// ── snapshot diff ───────────────────────────────────────────────────
 
 /** A single diff entry describing an added, removed, or changed item */
 export interface DiffEntry {
@@ -136,7 +143,10 @@ export function diffSnapshots(
   const oldCollectorMap = new Map(oldSnap.collectors.map((c) => [c.id, c]));
   const newCollectorMap = new Map(newSnap.collectors.map((c) => [c.id, c]));
 
-  const allIds = new Set([...oldCollectorMap.keys(), ...newCollectorMap.keys()]);
+  const allIds = new Set([
+    ...oldCollectorMap.keys(),
+    ...newCollectorMap.keys(),
+  ]);
 
   const addedCollectors: string[] = [];
   const removedCollectors: string[] = [];
@@ -228,13 +238,14 @@ function diffLists(
 }
 
 /**
- * Format a diff result for terminal output.
+ * Format a diff result for terminal output using tree views.
  */
 export function formatSnapshotDiff(diff: SnapshotDiffResult): string {
   const lines: string[] = [];
 
+  lines.push("");
   lines.push(
-    `Diff: ${pc.bold(diff.oldId)} → ${pc.bold(diff.newId)}`
+    `  Diff: ${pc.bold(diff.oldId)} \u2192 ${pc.bold(diff.newId)}`
   );
   lines.push("");
 
@@ -244,39 +255,55 @@ export function formatSnapshotDiff(diff: SnapshotDiffResult): string {
     diff.collectors.length > 0;
 
   if (!hasChanges) {
-    lines.push("No differences found.");
+    lines.push("  No differences found.");
+    lines.push("");
     return lines.join("\n");
   }
 
   if (diff.addedCollectors.length > 0) {
-    lines.push(`${pc.green("+ Collectors added:")} ${diff.addedCollectors.join(", ")}`);
+    lines.push(
+      `  ${pc.green("+")} Collectors added: ${diff.addedCollectors.join(", ")}`
+    );
   }
   if (diff.removedCollectors.length > 0) {
-    lines.push(`${pc.red("- Collectors removed:")} ${diff.removedCollectors.join(", ")}`);
+    lines.push(
+      `  ${pc.red("-")} Collectors removed: ${diff.removedCollectors.join(", ")}`
+    );
   }
 
   for (const c of diff.collectors) {
     if (c.files.length === 0 && c.lists.length === 0) continue;
 
     lines.push("");
-    lines.push(`${pc.bold(c.collectorLabel)} [${c.collectorId}]`);
+    lines.push(`  ${pc.bold(c.collectorLabel)}`);
+
+    const children: TreeChild[] = [];
 
     for (const f of c.files) {
       const prefix =
+        f.type === "added" ? "+" : f.type === "removed" ? "-" : "~";
+      const color: TreeChild["color"] =
         f.type === "added"
-          ? pc.green("+")
+          ? "green"
           : f.type === "removed"
-            ? pc.red("-")
-            : pc.yellow("~");
-      lines.push(`  ${prefix} ${f.label}`);
+            ? "red"
+            : "yellow";
+      children.push({ text: `${prefix} ${f.label}`, color });
     }
 
     for (const l of c.lists) {
-      const prefix = l.type === "added" ? pc.green("+") : pc.red("-");
-      lines.push(`  ${prefix} ${l.label}`);
+      const prefix = l.type === "added" ? "+" : "-";
+      const color: TreeChild["color"] =
+        l.type === "added" ? "green" : "red";
+      children.push({ text: `${prefix} ${l.label}`, color });
+    }
+
+    if (children.length > 0) {
+      lines.push(tree(children));
     }
   }
 
+  lines.push("");
   return lines.join("\n");
 }
 

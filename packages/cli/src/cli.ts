@@ -1,18 +1,29 @@
 import { defineCommand } from "citty";
-import { consola } from "consola";
-import pc from "picocolors";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import yoctoSpinner from "yocto-spinner";
 import { createDefaultCollectors } from "./collectors/index.js";
 import { executeScan } from "./commands/scan.js";
 import { executeConfig } from "./commands/config.js";
-import { executeLogin, resolveHost, buildWebhookUrl } from "./commands/login.js";
-import { formatSnapshotList, formatSnapshotDetail, diffSnapshots, formatSnapshotDiff } from "./commands/snapshot.js";
+import {
+  executeLogin,
+  resolveHost,
+  buildWebhookUrl,
+} from "./commands/login.js";
+import {
+  formatSnapshotList,
+  formatSnapshotDetail,
+  diffSnapshots,
+  formatSnapshotDiff,
+} from "./commands/snapshot.js";
 import { ConfigManager } from "./config/manager.js";
 import { SnapshotStore } from "./storage/local.js";
 import { uploadSnapshot } from "./uploader/webhook.js";
 import { uploadIconsToServer } from "./uploader/icons-server.js";
 import { exportIcons } from "./utils/icons.js";
+import * as ui from "./ui.js";
+
+const CLI_VERSION = "1.1.0";
 
 const otterConfigDir = join(homedir(), ".config", "otter");
 const snapshotStore = new SnapshotStore(join(otterConfigDir, "snapshots"));
@@ -29,6 +40,8 @@ function isDevMode(): boolean {
 function getConfigManager(): ConfigManager {
   return new ConfigManager(otterConfigDir, isDevMode());
 }
+
+// ── scan ────────────────────────────────────────────────────────────
 
 const scanCommand = defineCommand({
   meta: {
@@ -57,31 +70,30 @@ const scanCommand = defineCommand({
     // When --json is set, redirect all progress output to stderr
     // so that stdout contains only valid JSON
     if (args.json) {
-      consola.options.stdout = process.stderr;
+      ui.consola.options.stdout = process.stderr;
     }
 
-    consola.start("Scanning your Mac environment...\n");
+    ui.banner(CLI_VERSION);
+    console.log("  Scanning environment...\n");
 
     const collectors = createDefaultCollectors(homedir(), {
       slim: args.slim,
     });
     const snapshot = await executeScan(collectors, {
       onProgress: (_id, result) => {
-        const fileCount = result.files.length;
-        const listCount = result.lists.length;
-        const errorCount = result.errors.length;
-        const status = errorCount > 0 ? pc.yellow("⚠") : pc.green("✓");
-        consola.log(
-          `  ${status} ${pc.bold(result.label)}: ${fileCount} files, ${listCount} list items${
-            errorCount > 0 ? `, ${pc.yellow(`${errorCount} errors`)}` : ""
-          } ${pc.dim(`(${result.durationMs}ms)`)}`
-        );
+        ui.item({
+          label: result.label,
+          fileCount: result.files.length,
+          listCount: result.lists.length,
+          errorCount: result.errors.length,
+          durationMs: result.durationMs,
+        });
       },
     });
 
     if (args.save) {
       const filename = await snapshotStore.save(snapshot);
-      consola.success(`Snapshot saved locally: ${pc.dim(filename)}`);
+      ui.statusLine(ui.S.success, `Saved locally: ${ui.pc.dim(filename)}`);
     }
 
     if (args.json) {
@@ -95,13 +107,20 @@ const scanCommand = defineCommand({
         (sum, c) => sum + c.lists.length,
         0
       );
-      consola.success(
-        `\nScan complete: ${pc.bold(String(totalFiles))} files, ${pc.bold(String(totalLists))} list items from ${pc.bold(String(snapshot.collectors.length))} collectors`
-      );
-      consola.info(`Snapshot ID: ${pc.dim(snapshot.id)}`);
+
+      ui.blank();
+      ui.box({
+        title: "Scan complete",
+        lines: [
+          `${totalFiles} files \u00b7 ${totalLists} items \u00b7 ${snapshot.collectors.length} collectors`,
+          ui.pc.dim(`Snapshot: ${snapshot.id.slice(0, 8)}`),
+        ],
+      });
     }
   },
 });
+
+// ── backup ──────────────────────────────────────────────────────────
 
 const backupCommand = defineCommand({
   meta: {
@@ -125,10 +144,9 @@ const backupCommand = defineCommand({
     const configManager = getConfigManager();
     const config = await configManager.load();
     if (!config.token) {
-      consola.error(
-        "Not logged in. Run " +
-          pc.bold("otter login") +
-          " first."
+      ui.banner(CLI_VERSION);
+      ui.error(
+        `Not logged in. Run ${ui.pc.bold("otter login")} first.`
       );
       process.exitCode = 1;
       return;
@@ -137,74 +155,111 @@ const backupCommand = defineCommand({
     const host = resolveHost({ dev: args.dev });
     const webhookUrl = buildWebhookUrl(host, config.token);
 
-    consola.start("Scanning your Mac environment...\n");
+    ui.banner(CLI_VERSION);
+
+    // ── Step 1: Scan ──
+    ui.step("Scanning environment", 1, 3);
+    ui.blank();
 
     const collectors = createDefaultCollectors(homedir(), {
       slim: args.slim,
     });
     const snapshot = await executeScan(collectors, {
       onProgress: (_id, result) => {
-        const status =
-          result.errors.length > 0 ? pc.yellow("⚠") : pc.green("✓");
-        consola.log(
-          `  ${status} ${pc.bold(result.label)} ${pc.dim(`(${result.durationMs}ms)`)}`
-        );
+        ui.item({
+          label: result.label,
+          fileCount: result.files.length,
+          listCount: result.lists.length,
+          errorCount: result.errors.length,
+          durationMs: result.durationMs,
+        });
       },
     });
 
-    consola.start("\nUploading snapshot...");
+    ui.blank();
+
+    // ── Step 2: Upload snapshot ──
+    ui.step("Uploading snapshot", 2, 3);
+
+    const spinner = yoctoSpinner({ text: "Uploading..." }).start();
     const uploadResult = await uploadSnapshot(snapshot, { webhookUrl });
 
-    if (uploadResult.success) {
-      consola.success(
-        `Backup uploaded successfully ${pc.dim(`(${uploadResult.durationMs}ms)`)}`
+    if (!uploadResult.success) {
+      spinner.error(`Upload failed: ${uploadResult.error}`);
+      process.exitCode = 1;
+      return;
+    }
+
+    spinner.success("Uploaded");
+
+    // Auto-save locally after successful upload
+    const filename = await snapshotStore.save(snapshot);
+    ui.statusLine(ui.S.success, `Saved locally`, 0);
+
+    ui.blank();
+
+    // ── Step 3: Icons ──
+    ui.step("Uploading icons", 3, 3);
+
+    const iconDir = join(otterConfigDir, "icons");
+    const iconResults = await exportIcons({ outputDir: iconDir, size: 128 });
+    const exported = iconResults.filter((r) => r.success && r.outputPath);
+
+    if (exported.length > 0) {
+      ui.statusLine(
+        ui.S.success,
+        `${exported.length} icons exported`
       );
 
-      // Auto-save locally after successful upload
-      const filename = await snapshotStore.save(snapshot);
-      consola.success(`Snapshot saved locally: ${pc.dim(filename)}`);
+      const iconsUrl = `${webhookUrl}/icons`;
+      const icons = exported.map((r) => ({
+        appName: r.appName,
+        pngPath: r.outputPath!,
+      }));
 
-      consola.info(`Snapshot ID: ${pc.dim(snapshot.id)}`);
+      const iconSpinner = yoctoSpinner({ text: "Uploading icons..." }).start();
+      const iconUpload = await uploadIconsToServer(icons, { iconsUrl });
 
-      // Export and upload app icons via server endpoint
-      consola.start("\nExporting app icons...");
-      const iconDir = join(otterConfigDir, "icons");
-      const iconResults = await exportIcons({ outputDir: iconDir, size: 128 });
-      const exported = iconResults.filter((r) => r.success && r.outputPath);
-      if (exported.length > 0) {
-        consola.success(
-          `Exported ${pc.bold(String(exported.length))} icons`
+      if (iconUpload.success) {
+        iconSpinner.success(
+          `${iconUpload.stored} icons uploaded`
         );
-
-        const iconsUrl = `${webhookUrl}/icons`;
-        const icons = exported.map((r) => ({
-          appName: r.appName,
-          pngPath: r.outputPath!,
-        }));
-
-        consola.start("Uploading icons to server...");
-        const iconUpload = await uploadIconsToServer(icons, { iconsUrl });
-        if (iconUpload.success) {
-          consola.success(
-            `Icons uploaded: ${pc.bold(String(iconUpload.stored))} stored ${pc.dim(`(${iconUpload.durationMs}ms)`)}`
-          );
-        } else {
-          consola.warn(
-            `Icon upload issue: ${iconUpload.error ?? "partial failure"}` +
-              (iconUpload.stored > 0
-                ? ` (${iconUpload.stored}/${iconUpload.total} stored)`
-                : "")
-          );
-        }
       } else {
-        consola.info("No app icons found to upload");
+        iconSpinner.warning(
+          `Icon upload issue: ${iconUpload.error ?? "partial failure"}` +
+            (iconUpload.stored > 0
+              ? ` (${iconUpload.stored}/${iconUpload.total} stored)`
+              : "")
+        );
       }
     } else {
-      consola.error(`Upload failed: ${uploadResult.error}`);
-      process.exitCode = 1;
+      ui.statusLine(ui.S.info, "No app icons found to upload");
     }
+
+    // ── Summary ──
+    const totalFiles = snapshot.collectors.reduce(
+      (sum, c) => sum + c.files.length,
+      0
+    );
+    const totalLists = snapshot.collectors.reduce(
+      (sum, c) => sum + c.lists.length,
+      0
+    );
+
+    ui.blank();
+    ui.box({
+      title: "Backup complete",
+      lines: [
+        `${totalFiles} files \u00b7 ${totalLists} items \u00b7 ${snapshot.collectors.length} collectors`,
+        ...(exported.length > 0 ? [`${exported.length} icons uploaded`] : []),
+        "",
+        ui.pc.dim(`Snapshot: ${snapshot.id.slice(0, 8)}`),
+      ],
+    });
   },
 });
+
+// ── config ──────────────────────────────────────────────────────────
 
 const configCommand = defineCommand({
   meta: {
@@ -234,15 +289,21 @@ const configCommand = defineCommand({
 
     if (action === "show") {
       const result = await executeConfig(configManager, { action: "show" });
-      consola.info("Current configuration:");
-      consola.log(JSON.stringify(result, null, 2));
-      consola.log(pc.dim(`\nConfig file: ${configManager.configPath}`));
+      const entries = Object.entries(result as Record<string, unknown>);
+      const lines = entries.map(
+        ([k, v]) => `${ui.pc.bold(k)}: ${ui.pc.dim(String(v))}`
+      );
+      lines.push("", ui.pc.dim(`Config file: ${configManager.configPath}`));
+      ui.consola.box({
+        title: "Configuration",
+        message: lines.join("\n"),
+      });
       return;
     }
 
     if (action === "get") {
       if (!args.key) {
-        consola.error("Usage: otter config get <key>");
+        ui.error("Usage: otter config get <key>");
         process.exitCode = 1;
         return;
       }
@@ -251,16 +312,16 @@ const configCommand = defineCommand({
         key: args.key as "token",
       });
       if (result !== undefined) {
-        consola.log(result as string);
+        console.log(result as string);
       } else {
-        consola.warn(`Key '${args.key}' is not set`);
+        ui.warn(`Key '${args.key}' is not set`);
       }
       return;
     }
 
     if (action === "set") {
       if (!args.key || !args.value) {
-        consola.error("Usage: otter config set <key> <value>");
+        ui.error("Usage: otter config set <key> <value>");
         process.exitCode = 1;
         return;
       }
@@ -269,14 +330,16 @@ const configCommand = defineCommand({
         key: args.key as "token",
         value: args.value as string,
       });
-      consola.success(`Set ${pc.bold(args.key as string)} = ${args.value}`);
+      ui.success(`Set ${ui.pc.bold(args.key as string)} = ${args.value}`);
       return;
     }
 
-    consola.error(`Unknown action: ${action}. Use get, set, or show.`);
+    ui.error(`Unknown action: ${action}. Use get, set, or show.`);
     process.exitCode = 1;
   },
 });
+
+// ── snapshot ────────────────────────────────────────────────────────
 
 const snapshotListCommand = defineCommand({
   meta: {
@@ -285,7 +348,7 @@ const snapshotListCommand = defineCommand({
   },
   async run() {
     const metas = await snapshotStore.list();
-    consola.log(formatSnapshotList(metas));
+    console.log(formatSnapshotList(metas));
   },
 });
 
@@ -304,11 +367,11 @@ const snapshotShowCommand = defineCommand({
   async run({ args }) {
     const snapshot = await snapshotStore.load(args.id as string);
     if (!snapshot) {
-      consola.error(`Snapshot not found: ${pc.bold(args.id as string)}`);
+      ui.error(`Snapshot not found: ${ui.pc.bold(args.id as string)}`);
       process.exitCode = 1;
       return;
     }
-    consola.log(formatSnapshotDetail(snapshot));
+    console.log(formatSnapshotDetail(snapshot));
   },
 });
 
@@ -332,19 +395,19 @@ const snapshotDiffCommand = defineCommand({
   async run({ args }) {
     const oldSnap = await snapshotStore.load(args.id1 as string);
     if (!oldSnap) {
-      consola.error(`Snapshot not found: ${pc.bold(args.id1 as string)}`);
+      ui.error(`Snapshot not found: ${ui.pc.bold(args.id1 as string)}`);
       process.exitCode = 1;
       return;
     }
     const newSnap = await snapshotStore.load(args.id2 as string);
     if (!newSnap) {
-      consola.error(`Snapshot not found: ${pc.bold(args.id2 as string)}`);
+      ui.error(`Snapshot not found: ${ui.pc.bold(args.id2 as string)}`);
       process.exitCode = 1;
       return;
     }
 
     const diff = diffSnapshots(oldSnap, newSnap);
-    consola.log(formatSnapshotDiff(diff));
+    console.log(formatSnapshotDiff(diff));
   },
 });
 
@@ -359,6 +422,8 @@ const snapshotCommand = defineCommand({
     diff: snapshotDiffCommand,
   },
 });
+
+// ── export-icons ────────────────────────────────────────────────────
 
 const exportIconsCommand = defineCommand({
   meta: {
@@ -384,17 +449,18 @@ const exportIconsCommand = defineCommand({
       (args.output as string) || join(homedir(), ".otter", "icons");
     const size = parseInt((args.size as string) || "128", 10);
 
-    consola.start(`Exporting app icons to ${pc.bold(outputDir)}...\n`);
+    ui.banner(CLI_VERSION);
+    console.log(`  Exporting app icons to ${ui.pc.bold(outputDir)}...\n`);
 
     const results = await exportIcons({
       outputDir,
       size,
       onProgress: (result) => {
         if (result.success) {
-          consola.log(`  ${pc.green("✓")} ${result.appName}`);
+          console.log(`    ${ui.S.success}  ${result.appName}`);
         } else {
-          consola.log(
-            `  ${pc.yellow("⚠")} ${result.appName}: ${pc.dim(result.error ?? "unknown error")}`
+          console.log(
+            `    ${ui.S.warning}  ${result.appName}: ${ui.pc.dim(result.error ?? "unknown error")}`
           );
         }
       },
@@ -402,13 +468,20 @@ const exportIconsCommand = defineCommand({
 
     const succeeded = results.filter((r) => r.success).length;
     const failed = results.filter((r) => !r.success).length;
-    consola.success(
-      `\nExported ${pc.bold(String(succeeded))} icons` +
-        (failed > 0 ? ` (${pc.yellow(String(failed))} skipped)` : "")
-    );
-    consola.info(`Output: ${pc.dim(outputDir)}`);
+
+    ui.blank();
+    ui.box({
+      title: "Export complete",
+      lines: [
+        `${succeeded} icons exported` +
+          (failed > 0 ? `  ${ui.pc.yellow(`${failed} skipped`)}` : ""),
+        ui.pc.dim(`Output: ${outputDir}`),
+      ],
+    });
   },
 });
+
+// ── login ───────────────────────────────────────────────────────────
 
 const loginCommand = defineCommand({
   meta: {
@@ -425,32 +498,41 @@ const loginCommand = defineCommand({
   },
   async run({ args }) {
     const configManager = getConfigManager();
-    consola.start("Starting login flow...\n");
 
-    const result = await executeLogin(configManager, { dev: args.dev }, {
-      onPortReady: (port) => {
-        consola.info(`Local server listening on port ${pc.bold(String(port))}`);
-      },
-      onBrowserOpen: (url) => {
-        consola.info(`Opening browser: ${pc.dim(url)}`);
-        consola.info(
-          pc.dim("Waiting for you to connect in the browser (30s timeout)...")
-        );
-      },
-      onSuccess: (token) => {
-        consola.success(`\nConnected! Token saved.`);
-        consola.info(`Token: ${pc.dim(token.slice(0, 8))}...`);
-        consola.info(
-          `\nRun ${pc.bold("otter backup")} to create your first backup.`
-        );
-      },
-      onError: (error) => {
-        consola.error(`\nLogin failed: ${error}`);
-      },
-      onTimeout: () => {
-        consola.warn("\nLogin timed out (30s). Please try again.");
-      },
-    });
+    ui.banner(CLI_VERSION);
+
+    const spinner = yoctoSpinner({ text: "Starting login flow..." }).start();
+
+    const result = await executeLogin(
+      configManager,
+      { dev: args.dev },
+      {
+        onPortReady: (port) => {
+          spinner.text = `Local server listening on port ${ui.pc.bold(String(port))}`;
+        },
+        onBrowserOpen: (url) => {
+          spinner.text = `Waiting for browser connection...`;
+          ui.info(`Opening browser: ${ui.pc.dim(url)}`);
+          console.log(
+            `  ${ui.pc.dim("Waiting for you to connect in the browser (30s timeout)...")}`
+          );
+        },
+        onSuccess: (token) => {
+          spinner.success("Connected! Token saved.");
+          ui.blank();
+          ui.info(`Token: ${ui.pc.dim(token.slice(0, 8))}...`);
+          ui.info(
+            `Run ${ui.pc.bold("otter backup")} to create your first backup.`
+          );
+        },
+        onError: (err) => {
+          spinner.error(`Login failed: ${err}`);
+        },
+        onTimeout: () => {
+          spinner.warning("Login timed out (30s). Please try again.");
+        },
+      }
+    );
 
     if (!result.success) {
       process.exitCode = 1;
@@ -458,10 +540,12 @@ const loginCommand = defineCommand({
   },
 });
 
+// ── main ────────────────────────────────────────────────────────────
+
 export const main = defineCommand({
   meta: {
     name: "otter",
-    version: "1.1.0",
+    version: CLI_VERSION,
     description:
       "Backup and restore your Mac development environment configuration",
   },
