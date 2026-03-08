@@ -90,7 +90,7 @@ export function item(opts: ItemOptions): void {
   const timing = formatDuration(durationMs).padStart(8);
 
   console.log(
-    `${status}  ${label.padEnd(w)}${pc.dim(files)}  ${pc.dim(items)}${errors}${skipped}  ${pc.dim(timing)}`
+    `${status}  ${label.padEnd(w)}${pc.dim(files)}  ${pc.dim(items)}${errors}  ${pc.dim(timing)}${skipped}`
   );
 }
 
