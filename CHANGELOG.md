@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-03-08
+
+### Features
+
+- **Scan spinner**: Each collector now shows a spinning indicator while running, replaced by the result line on completion — slow collectors like Homebrew no longer feel stalled
+- **Skipped vs errors**: Tools that aren't installed (volta, pyenv, rbenv, go, etc.) are now reported as "skipped" instead of "errors" — clean separation between real failures and safe skips
+- **UI primitives**: New `ui.ts` module centralizes all terminal output formatting (banner, items, tables, trees, boxes, status lines) for consistent styling
+
+### Refactoring
+
+- **CLI output rewrite**: Migrated all `cli.ts` output from inline `console.log` + `consola` calls to the centralized `ui.ts` primitives
+- **Flush-left output**: Removed all left margin/indentation from UI output — checkmarks, steps, tables, trees, and boxes now render flush to the terminal edge
+
+### Dependencies
+
+- Added `yocto-spinner` (~3KB) for lightweight terminal spinners
+
 ## [1.1.0] - 2026-03-07
 
 ### Features
