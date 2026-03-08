@@ -51,6 +51,25 @@ describe("executeScan", () => {
     expect(snapshot.collectors).toEqual([]);
   });
 
+  it("should call onStart callback before each collector runs", async () => {
+    const collectors = [
+      mockCollector("c1", 1, 0),
+      mockCollector("c2", 0, 1),
+    ];
+    const onStart = vi.fn();
+    const onProgress = vi.fn();
+
+    await executeScan(collectors, { onStart, onProgress });
+
+    expect(onStart).toHaveBeenCalledTimes(2);
+    expect(onStart).toHaveBeenCalledWith("c1", "c1");
+    expect(onStart).toHaveBeenCalledWith("c2", "c2");
+    // onStart should be called before onProgress for each collector
+    expect(onStart.mock.invocationCallOrder[0]).toBeLessThan(
+      onProgress.mock.invocationCallOrder[0]
+    );
+  });
+
   it("should call onProgress callback for each collector", async () => {
     const collectors = [
       mockCollector("c1", 1, 0),
@@ -100,10 +119,14 @@ describe("executeScan", () => {
       category: "config",
       collect: vi.fn().mockRejectedValue(new Error("fail")),
     };
+    const onStart = vi.fn();
     const progress = vi.fn();
 
-    await executeScan([crashingCollector], { onProgress: progress });
+    await executeScan([crashingCollector], { onStart, onProgress: progress });
 
+    // onStart should fire even for a collector that crashes
+    expect(onStart).toHaveBeenCalledOnce();
+    expect(onStart).toHaveBeenCalledWith("crasher", "Crasher");
     expect(progress).toHaveBeenCalledOnce();
     expect(progress).toHaveBeenCalledWith(
       "crasher",

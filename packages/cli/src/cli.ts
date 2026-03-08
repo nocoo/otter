@@ -79,8 +79,14 @@ const scanCommand = defineCommand({
     const collectors = createDefaultCollectors(homedir(), {
       slim: args.slim,
     });
+    let scanSpinner: ReturnType<typeof yoctoSpinner> | null = null;
     const snapshot = await executeScan(collectors, {
+      onStart: (_id, label) => {
+        scanSpinner = yoctoSpinner({ text: `Scanning ${label}...` }).start();
+      },
       onProgress: (_id, result) => {
+        scanSpinner?.stop();
+        scanSpinner = null;
         ui.item({
           label: result.label,
           fileCount: result.files.length,
@@ -165,8 +171,14 @@ const backupCommand = defineCommand({
     const collectors = createDefaultCollectors(homedir(), {
       slim: args.slim,
     });
+    let backupSpinner: ReturnType<typeof yoctoSpinner> | null = null;
     const snapshot = await executeScan(collectors, {
+      onStart: (_id, label) => {
+        backupSpinner = yoctoSpinner({ text: `Scanning ${label}...` }).start();
+      },
       onProgress: (_id, result) => {
+        backupSpinner?.stop();
+        backupSpinner = null;
         ui.item({
           label: result.label,
           fileCount: result.files.length,

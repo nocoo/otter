@@ -2,6 +2,8 @@ import type { Collector, CollectorResult, Snapshot } from "@otter/core";
 import { buildSnapshot } from "../snapshot/builder.js";
 
 export interface ScanOptions {
+  /** Called when a collector is about to start */
+  onStart?: (collectorId: string, label: string) => void;
   /** Called after each collector finishes */
   onProgress?: (collectorId: string, result: CollectorResult) => void;
 }
@@ -17,6 +19,7 @@ export async function executeScan(
   // Run collectors sequentially to allow progress reporting
   const results: CollectorResult[] = [];
   for (const collector of collectors) {
+    options.onStart?.(collector.id, collector.label);
     let result: CollectorResult;
     try {
       result = await collector.collect();
