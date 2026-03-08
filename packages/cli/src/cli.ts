@@ -74,7 +74,7 @@ const scanCommand = defineCommand({
     }
 
     ui.banner(CLI_VERSION);
-    console.log("  Scanning environment...\n");
+    console.log("Scanning environment...\n");
 
     const collectors = createDefaultCollectors(homedir(), {
       slim: args.slim,
@@ -320,7 +320,7 @@ const configCommand = defineCommand({
       ui.consola.box({
         title: "Configuration",
         message: lines.join("\n"),
-        style: { marginLeft: 2 },
+        style: { marginLeft: 0 },
       });
       return;
     }
@@ -474,17 +474,17 @@ const exportIconsCommand = defineCommand({
     const size = parseInt((args.size as string) || "128", 10);
 
     ui.banner(CLI_VERSION);
-    console.log(`  Exporting app icons to ${ui.pc.bold(outputDir)}...\n`);
+    console.log(`Exporting app icons to ${ui.pc.bold(outputDir)}...\n`);
 
     const results = await exportIcons({
       outputDir,
       size,
       onProgress: (result) => {
         if (result.success) {
-          console.log(`    ${ui.S.success}  ${result.appName}`);
+          console.log(`${ui.S.success}  ${result.appName}`);
         } else {
           console.log(
-            `    ${ui.S.warning}  ${result.appName}: ${ui.pc.dim(result.error ?? "unknown error")}`
+            `${ui.S.warning}  ${result.appName}: ${ui.pc.dim(result.error ?? "unknown error")}`
           );
         }
       },
@@ -538,7 +538,7 @@ const loginCommand = defineCommand({
           spinner.text = `Waiting for browser connection...`;
           ui.info(`Opening browser: ${ui.pc.dim(url)}`);
           console.log(
-            `  ${ui.pc.dim("Waiting for you to connect in the browser (30s timeout)...")}`
+            `${ui.pc.dim("Waiting for you to connect in the browser (30s timeout)...")}`
           );
         },
         onSuccess: (token) => {

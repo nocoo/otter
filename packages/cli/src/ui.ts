@@ -60,7 +60,7 @@ export function banner(version: string): void {
 export function step(message: string, current?: number, total?: number): void {
   const counter =
     current != null && total != null ? ` ${pc.dim(`(${current}/${total})`)}` : "";
-  console.log(`  ${S.step}  ${message}${counter}`);
+  console.log(`${S.step}  ${message}${counter}`);
 }
 
 // ── Collector result item ───────────────────────────────────────────
@@ -90,7 +90,7 @@ export function item(opts: ItemOptions): void {
   const timing = formatDuration(durationMs).padStart(8);
 
   console.log(
-    `    ${status}  ${label.padEnd(w)}${pc.dim(files)}  ${pc.dim(items)}${errors}${skipped}  ${pc.dim(timing)}`
+    `${status}  ${label.padEnd(w)}${pc.dim(files)}  ${pc.dim(items)}${errors}${skipped}  ${pc.dim(timing)}`
   );
 }
 
@@ -102,7 +102,7 @@ export function statusLine(
   timing?: number
 ): void {
   const t = timing != null ? `  ${pc.dim(formatDuration(timing).padStart(8))}` : "";
-  console.log(`    ${icon}  ${message}${t}`);
+  console.log(`${icon}  ${message}${t}`);
 }
 
 // ── Summary box (wraps consola.box) ─────────────────────────────────
@@ -119,7 +119,7 @@ export function box(opts: BoxOptions): void {
     message: opts.lines.join("\n"),
     style: {
       borderColor: (opts.borderColor ?? "green") as "green",
-      marginLeft: 2,
+      marginLeft: 0,
     },
   });
 }
@@ -132,7 +132,7 @@ export function errorBox(title: string, lines: string[]): void {
     message: lines.join("\n"),
     style: {
       borderColor: "red" as "red",
-      marginLeft: 2,
+      marginLeft: 0,
     },
   });
 }
@@ -167,9 +167,9 @@ export function table(columns: Column[], rows: string[][]): string {
   );
 
   return [
-    "  " + headerLine,
-    "  " + separator,
-    ...dataLines.map((l) => "  " + l),
+    headerLine,
+    separator,
+    ...dataLines,
   ].join("\n");
 }
 
@@ -207,10 +207,10 @@ export function tree(children: TreeChild[]): string {
       const plainTextLen = child.text.length;
       const padding = Math.max(1, detailPad - plainTextLen);
       lines.push(
-        `  ${S.bar}  ${branch} ${text}${" ".repeat(padding)}${pc.dim(child.detail)}`
+        `${S.bar}  ${branch} ${text}${" ".repeat(padding)}${pc.dim(child.detail)}`
       );
     } else {
-      lines.push(`  ${S.bar}  ${branch} ${text}`);
+      lines.push(`${S.bar}  ${branch} ${text}`);
     }
   }
 
@@ -226,19 +226,19 @@ export function blank(): void {
 // ── Info / warning / error one-liners ───────────────────────────────
 
 export function info(message: string): void {
-  console.log(`  ${S.info}  ${message}`);
+  console.log(`${S.info}  ${message}`);
 }
 
 export function warn(message: string): void {
-  console.log(`  ${S.warning}  ${pc.yellow(message)}`);
+  console.log(`${S.warning}  ${pc.yellow(message)}`);
 }
 
 export function error(message: string): void {
-  console.log(`  ${S.error}  ${pc.red(message)}`);
+  console.log(`${S.error}  ${pc.red(message)}`);
 }
 
 export function success(message: string): void {
-  console.log(`  ${S.success}  ${message}`);
+  console.log(`${S.success}  ${message}`);
 }
 
 // ── Re-export for convenience ───────────────────────────────────────
