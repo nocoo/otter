@@ -48,6 +48,7 @@ async function runCollector(collector: Collector): Promise<CollectorResult> {
       files: [],
       lists: [],
       errors: [`Collector '${collector.id}' crashed: ${(err as Error).message}`],
+      skipped: [],
       durationMs: 0,
     };
   }

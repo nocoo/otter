@@ -70,22 +70,27 @@ export interface ItemOptions {
   fileCount: number;
   listCount: number;
   errorCount: number;
+  skippedCount: number;
   durationMs: number;
   /** Max label width for alignment. Defaults to 30. */
   labelWidth?: number;
 }
 
 export function item(opts: ItemOptions): void {
-  const { label, fileCount, listCount, errorCount, durationMs } = opts;
+  const { label, fileCount, listCount, errorCount, skippedCount, durationMs } = opts;
   const w = opts.labelWidth ?? 30;
   const status = errorCount > 0 ? S.warning : S.success;
   const files = `${fileCount} files`.padStart(8);
   const items = `${listCount} items`.padStart(9);
   const errors = errorCount > 0 ? `  ${pc.yellow(`${errorCount} err`)}` : "";
+  const skipped =
+    skippedCount > 0 && errorCount === 0
+      ? `  ${pc.dim(`${skippedCount} skip`)}`
+      : "";
   const timing = formatDuration(durationMs).padStart(8);
 
   console.log(
-    `    ${status}  ${label.padEnd(w)}${pc.dim(files)}  ${pc.dim(items)}${errors}  ${pc.dim(timing)}`
+    `    ${status}  ${label.padEnd(w)}${pc.dim(files)}  ${pc.dim(items)}${errors}${skipped}  ${pc.dim(timing)}`
   );
 }
 

@@ -336,6 +336,16 @@ function CollectorSection({ collector }: { collector: Collector }) {
               ))}
             </div>
           )}
+
+          {/* Skipped (tools not installed — informational) */}
+          {(collector.skipped ?? []).length > 0 && (
+            <div className="space-y-1">
+              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Skipped</h4>
+              {(collector.skipped ?? []).map((msg, i) => (
+                <p key={i} className="text-xs text-muted-foreground">{msg}</p>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

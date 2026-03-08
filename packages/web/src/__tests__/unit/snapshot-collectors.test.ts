@@ -17,6 +17,7 @@ const collectors: SnapshotCollector[] = [
       { name: "bun", version: "1.3.9", meta: { type: "formula", pinned: "true" } },
     ],
     errors: [],
+    skipped: [],
   },
   {
     id: "vscode",
@@ -30,7 +31,8 @@ const collectors: SnapshotCollector[] = [
         meta: { type: "vscode-extension", editor: "vscode" },
       },
     ],
-    errors: ["Skipped cursor: not installed"],
+    errors: [],
+    skipped: ["Skipped cursor: not installed"],
   },
 ];
 
@@ -61,7 +63,7 @@ describe("snapshot collector helpers", () => {
       visible: 1,
       config: 1,
       environment: 1,
-      withErrors: 1,
+      withErrors: 0,
     });
   });
 
@@ -72,7 +74,7 @@ describe("snapshot collector helpers", () => {
         collectors: [vscodeCollector],
         totalFiles: 1,
         totalLists: 1,
-        withErrors: 1,
+        withErrors: 0,
       },
       {
         category: "environment",

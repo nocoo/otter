@@ -53,6 +53,7 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
         ],
         lists: [{ name: "claude-session-count", version: "4", meta: { type: "summary" } }],
         errors: [],
+        skipped: [],
         durationMs: 25,
       },
       {
@@ -67,6 +68,7 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
         ],
         lists: [{ name: "web-design-guidelines", meta: { type: "skill" } }],
         errors: [],
+        skipped: [],
         durationMs: 18,
       },
       {
@@ -83,6 +85,7 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
           { name: "~/.ssh/id_ed25519", meta: { type: "ssh-key", source: ".ssh" } },
         ],
         errors: [],
+        skipped: [],
         durationMs: 20,
       },
       {
@@ -96,6 +99,7 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
           { name: "homebrew/cask", meta: { type: "tap" } },
         ],
         errors: [],
+        skipped: [],
         durationMs: 42,
       },
       {
@@ -116,6 +120,7 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
           },
         ],
         errors: [],
+        skipped: [],
         durationMs: 28,
       },
       {
@@ -145,6 +150,7 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
           },
         ],
         errors: [],
+        skipped: [],
         durationMs: 37,
       },
       {
@@ -168,6 +174,7 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
           },
         ],
         errors: [],
+        skipped: [],
         durationMs: 21,
       },
       {
@@ -180,6 +187,7 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
           { name: "JetBrainsMono", meta: { type: "font", format: "ttf" } },
         ],
         errors: [],
+        skipped: [],
         durationMs: 9,
       },
       {
@@ -196,7 +204,8 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
           { name: "vercel", version: "50.2.1", meta: { type: "npm-global" } },
           { name: "go", version: "1.24.0", meta: { type: "go-version" } },
         ],
-        errors: ["Skipped pyenv: not installed"],
+        errors: [],
+        skipped: ["Skipped pyenv: not installed"],
         durationMs: 33,
       },
       {
@@ -218,6 +227,7 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
           { name: "work", meta: { type: "aws-profile" } },
         ],
         errors: [],
+        skipped: [],
         durationMs: 19,
       },
       {
@@ -235,6 +245,7 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
           { name: "CleanShot X", meta: { type: "login-item" } },
         ],
         errors: [],
+        skipped: [],
         durationMs: 45,
       },
       {
@@ -251,6 +262,7 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
           { name: "com.example.sync.plist", meta: { type: "user-agent" } },
         ],
         errors: [],
+        skipped: [],
         durationMs: 14,
       },
     ],

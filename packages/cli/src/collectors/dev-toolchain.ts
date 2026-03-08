@@ -253,7 +253,7 @@ export class DevToolchainCollector extends BaseCollector {
       message.includes("command not found") ||
       message.includes("No such file")
     ) {
-      result.errors.push(`Skipped ${tool}: not installed`);
+      result.skipped.push(`Skipped ${tool}: not installed`);
     } else {
       result.errors.push(`Failed to collect ${tool}: ${message}`);
     }

@@ -47,6 +47,7 @@ const validSnapshot = {
       ],
       lists: [],
       errors: [],
+      skipped: [],
       durationMs: 50,
     },
     {
@@ -59,6 +60,7 @@ const validSnapshot = {
         { name: "node", version: "22.0" },
       ],
       errors: [],
+      skipped: [],
       durationMs: 100,
     },
   ],

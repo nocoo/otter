@@ -17,6 +17,7 @@ export interface SnapshotCollector {
   files: SnapshotFileData[];
   lists: SnapshotListItem[];
   errors: string[];
+  skipped?: string[];
 }
 
 export interface CollectorFilterState {
@@ -62,6 +63,7 @@ export function matchesCollectorQuery(
       ...Object.entries(item.meta ?? {}).flatMap(([key, value]) => [key, value]),
     ]),
     ...collector.errors,
+    ...(collector.skipped ?? []),
   ]
     .join(" ")
     .toLowerCase();

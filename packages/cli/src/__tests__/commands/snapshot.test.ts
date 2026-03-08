@@ -34,6 +34,7 @@ function makeCollector(overrides: Partial<CollectorResult> = {}): CollectorResul
     ],
     lists: [{ name: "zsh" }, { name: "bash" }],
     errors: [],
+    skipped: [],
     durationMs: 42,
     ...overrides,
   };

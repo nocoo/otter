@@ -30,6 +30,7 @@ export async function executeScan(
         errors: [
           `Collector '${collector.id}' crashed: ${(err as Error).message}`,
         ],
+        skipped: [],
         durationMs: 0,
       };
     }

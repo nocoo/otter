@@ -33,6 +33,7 @@ function makeSnapshot(overrides: Partial<Snapshot> = {}): Snapshot {
           { name: "bash" },
         ],
         errors: [],
+        skipped: [],
         durationMs: 42,
       },
       {
@@ -45,6 +46,7 @@ function makeSnapshot(overrides: Partial<Snapshot> = {}): Snapshot {
           { name: "node", version: "22.0" },
         ],
         errors: [],
+        skipped: [],
         durationMs: 100,
       },
     ],

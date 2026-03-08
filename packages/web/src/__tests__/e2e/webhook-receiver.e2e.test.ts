@@ -277,6 +277,6 @@ describe("L3 API E2E: Webhook Receiver", () => {
     const devToolchain = data.data.collectors.find(
       (collector: { id: string }) => collector.id === "dev-toolchain",
     );
-    expect(devToolchain.errors).toContain("Skipped pyenv: not installed");
+    expect(devToolchain.skipped).toContain("Skipped pyenv: not installed");
   });
 });

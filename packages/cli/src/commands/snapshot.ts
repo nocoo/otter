@@ -90,9 +90,14 @@ export function formatSnapshotDetail(snapshot: Snapshot): string {
       children.push({ text: `items: ${preview}${suffix}`, dim: true });
     }
 
-    // Errors
+    // Errors (real failures)
     for (const e of c.errors) {
       children.push({ text: e, color: "yellow" });
+    }
+
+    // Skipped (tools not installed — informational, not errors)
+    for (const s of c.skipped ?? []) {
+      children.push({ text: s, dim: true });
     }
 
     if (children.length > 0) {

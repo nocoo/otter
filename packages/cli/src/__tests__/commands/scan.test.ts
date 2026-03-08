@@ -16,6 +16,7 @@ function mockCollector(id: string, files: number, lists: number): Collector {
       name: `item-${i}`,
     })),
     errors: [],
+    skipped: [],
     durationMs: 5,
   };
   return {

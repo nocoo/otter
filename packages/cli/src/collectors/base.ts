@@ -127,6 +127,7 @@ export abstract class BaseCollector implements Collector {
       files: [],
       lists: [],
       errors: [],
+      skipped: [],
       durationMs: 0,
     };
   }

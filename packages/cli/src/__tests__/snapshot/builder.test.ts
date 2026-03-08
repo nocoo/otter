@@ -13,6 +13,7 @@ function mockCollector(
     files: overrides.files ?? [],
     lists: overrides.lists ?? [],
     errors: overrides.errors ?? [],
+    skipped: overrides.skipped ?? [],
     durationMs: overrides.durationMs ?? 10,
   };
 

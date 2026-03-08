@@ -48,6 +48,8 @@ export interface CollectorResult {
   lists: CollectedListItem[];
   /** Errors encountered during collection (non-fatal) */
   errors: string[];
+  /** Tools/features that were safely skipped (e.g. "not installed") */
+  skipped: string[];
   /** Duration of collection in milliseconds */
   durationMs: number;
 }

@@ -75,6 +75,7 @@ const mockSnapshotData = {
       files: [{ path: "/Users/testuser/.zshrc", content: "# zshrc", sizeBytes: 7 }],
       lists: [],
       errors: [],
+      skipped: [],
     },
   ],
 };

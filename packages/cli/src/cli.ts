@@ -86,6 +86,7 @@ const scanCommand = defineCommand({
           fileCount: result.files.length,
           listCount: result.lists.length,
           errorCount: result.errors.length,
+          skippedCount: result.skipped?.length ?? 0,
           durationMs: result.durationMs,
         });
       },
@@ -171,6 +172,7 @@ const backupCommand = defineCommand({
           fileCount: result.files.length,
           listCount: result.lists.length,
           errorCount: result.errors.length,
+          skippedCount: result.skipped?.length ?? 0,
           durationMs: result.durationMs,
         });
       },
