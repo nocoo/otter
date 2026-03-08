@@ -23,7 +23,7 @@ import { uploadIconsToServer } from "./uploader/icons-server.js";
 import { exportIcons } from "./utils/icons.js";
 import * as ui from "./ui.js";
 
-const CLI_VERSION = "1.2.0";
+const CLI_VERSION = "1.2.1";
 
 const otterConfigDir = join(homedir(), ".config", "otter");
 const snapshotStore = new SnapshotStore(join(otterConfigDir, "snapshots"));

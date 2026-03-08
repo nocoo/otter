@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - 2026-03-08
+
+### Fixes
+
+- **Spacing consistency**: Fixed spacing alignment across all CLI output elements
+
 ## [1.2.0] - 2026-03-08
 
 ### Features
