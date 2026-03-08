@@ -1,0 +1,67 @@
+"use client";
+
+import { useState, useCallback } from "react";
+import { FileText, Copy, Check, Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { formatSize } from "@/lib/utils";
+import { FileViewerDialog } from "@/components/file-viewer-dialog";
+import type { FileData } from "./types";
+
+export function FileRow({ file }: { file: FileData }) {
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const filename = file.path.split("/").pop() ?? file.path;
+
+  const handleCopy = useCallback(async () => {
+    if (!file.content) return;
+    await navigator.clipboard.writeText(file.content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [file.content]);
+
+  return (
+    <>
+      <div className="flex items-center gap-3 rounded-lg bg-card px-3 py-2">
+        <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" strokeWidth={1.5} />
+        <code className="text-xs font-mono text-foreground truncate flex-1" title={file.path}>
+          {filename}
+        </code>
+        <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
+          {formatSize(file.sizeBytes)}
+        </span>
+        <div className="flex items-center gap-1 shrink-0">
+          {file.content && (
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={handleCopy}
+              title={copied ? "Copied!" : "Copy content"}
+            >
+              {copied ? (
+                <Check className="h-3 w-3 text-success" strokeWidth={1.5} />
+              ) : (
+                <Copy className="h-3 w-3" strokeWidth={1.5} />
+              )}
+            </Button>
+          )}
+          {file.content && (
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => setViewerOpen(true)}
+              title="View file"
+            >
+              <Eye className="h-3 w-3" strokeWidth={1.5} />
+            </Button>
+          )}
+        </div>
+      </div>
+      <FileViewerDialog
+        file={file}
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
+      />
+    </>
+  );
+}
