@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2026-03-09
+
+### Refactoring
+
+- **Snapshot detail page rewrite**: Decomposed monolithic 614-line page into 8 focused modules with Radix Tabs (Overview, Config, Environment) replacing the custom Segment Bar
+- **Consistent Card component usage**: Replaced hand-built divs with shadcn Card throughout snapshot detail, following the project's 3-tier luminance system (L0 background → L1 card → L2 secondary)
+- **Metadata icons convention**: Migrated `icon.png`, `apple-icon.png`, and `opengraph-image.png` to Next.js file-based metadata convention
+
+### Fixes
+
+- **Sub-card visual separation**: Inner cards now use `bg-secondary` + `border-border/50` to properly stand out from their Card containers
+- **Card shadow reduction**: Lightened global Card shadow from `shadow-sm` to `shadow-xs` for a cleaner aesthetic
+- **Section padding**: Increased divider section padding in collector cards for better readability
+- **Login page logos**: Added 80px and 160px to allowed image sizes for login page provider logos
+
 ## [1.2.1] - 2026-03-08
 
 ### Fixes
