@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FileText, List, Info } from "lucide-react";
+import { FileText, List, Info, AlertTriangle, SkipForward } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -76,75 +76,87 @@ export function CollectorCard({ collector }: { collector: Collector }) {
       </CardHeader>
 
       {/* Content */}
-      <CardContent className="px-5 py-4 space-y-4">
-        {/* Files */}
-        {totalFiles > 0 && (
-          <div className="space-y-1.5">
-            <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-              Files
-            </h4>
-            {collector.files.map((file) => (
-              <FileRow key={file.path} file={file} />
-            ))}
-          </div>
-        )}
-
-        {/* List items */}
-        {totalLists > 0 && (
-          <div className="space-y-2">
-            <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-              Items
-            </h4>
-            {hasSshKeys && (
-              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <Info className="h-3 w-3 shrink-0" strokeWidth={1.5} />
-                Keys are detected only — content is never backed up.
-              </p>
-            )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
-              {collector.lists.map((item, index) => {
-                const icon = isApps ? iconUrls[item.name] : item.meta?.iconUrl;
-                const isSshKey = item.meta?.source === ".ssh";
-                return (
-                  <ListItemRow
-                    key={listItemKey(item, index)}
-                    item={item}
-                    iconUrl={icon}
-                    isSshKey={isSshKey}
-                  />
-                );
-              })}
+      <CardContent className="px-5 py-5">
+        <div className="divide-y divide-border/30 [&>*]:py-4 first:[&>*]:pt-0 last:[&>*]:pb-0">
+          {/* Files */}
+          {totalFiles > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <FileText className="h-3 w-3" strokeWidth={1.5} />
+                Files
+              </h4>
+              <div className="space-y-2">
+                {collector.files.map((file) => (
+                  <FileRow key={file.path} file={file} />
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Errors */}
-        {hasErrors && (
-          <div className="space-y-1">
-            <h4 className="text-[11px] font-medium text-destructive uppercase tracking-wider">
-              Errors
-            </h4>
-            {collector.errors.map((err, i) => (
-              <p key={i} className="text-xs text-destructive/80">
-                {err}
-              </p>
-            ))}
-          </div>
-        )}
+          {/* Items */}
+          {totalLists > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <List className="h-3 w-3" strokeWidth={1.5} />
+                Items
+              </h4>
+              {hasSshKeys && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <Info className="h-3 w-3 shrink-0" strokeWidth={1.5} />
+                  Keys are detected only — content is never backed up.
+                </p>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {collector.lists.map((item, index) => {
+                  const icon = isApps ? iconUrls[item.name] : item.meta?.iconUrl;
+                  const isSshKey = item.meta?.source === ".ssh";
+                  return (
+                    <ListItemRow
+                      key={listItemKey(item, index)}
+                      item={item}
+                      iconUrl={icon}
+                      isSshKey={isSshKey}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-        {/* Skipped */}
-        {hasSkipped && (
-          <div className="space-y-1">
-            <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-              Skipped
-            </h4>
-            {(collector.skipped ?? []).map((msg, i) => (
-              <p key={i} className="text-xs text-muted-foreground">
-                {msg}
-              </p>
-            ))}
-          </div>
-        )}
+          {/* Errors */}
+          {hasErrors && (
+            <div className="space-y-2">
+              <h4 className="text-[11px] font-medium text-destructive uppercase tracking-wider flex items-center gap-1.5">
+                <AlertTriangle className="h-3 w-3" strokeWidth={1.5} />
+                Errors
+              </h4>
+              <div className="space-y-1.5">
+                {collector.errors.map((err, i) => (
+                  <div key={i} className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2">
+                    <p className="text-xs text-destructive/90">{err}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Skipped */}
+          {hasSkipped && (
+            <div className="space-y-2">
+              <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <SkipForward className="h-3 w-3" strokeWidth={1.5} />
+                Skipped
+              </h4>
+              <div className="space-y-1.5">
+                {(collector.skipped ?? []).map((msg, i) => (
+                  <div key={i} className="rounded-lg border border-border/50 bg-secondary px-3 py-2">
+                    <p className="text-xs text-muted-foreground">{msg}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
