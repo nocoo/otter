@@ -117,7 +117,10 @@ export function box(opts: BoxOptions): void {
   consola.box({
     title: pc.green(opts.title),
     message: opts.lines.join("\n"),
-    style: { borderColor: (opts.borderColor ?? "green") as "green" },
+    style: {
+      borderColor: (opts.borderColor ?? "green") as "green",
+      marginLeft: 2,
+    },
   });
 }
 
@@ -127,7 +130,10 @@ export function errorBox(title: string, lines: string[]): void {
   consola.box({
     title: pc.red(title),
     message: lines.join("\n"),
-    style: { borderColor: "red" as "red" },
+    style: {
+      borderColor: "red" as "red",
+      marginLeft: 2,
+    },
   });
 }
 

@@ -80,9 +80,15 @@ const scanCommand = defineCommand({
       slim: args.slim,
     });
     let scanSpinner: ReturnType<typeof yoctoSpinner> | null = null;
+    const useSpinner = !args.json;
     const snapshot = await executeScan(collectors, {
       onStart: (_id, label) => {
-        scanSpinner = yoctoSpinner({ text: `Scanning ${label}...` }).start();
+        if (useSpinner) {
+          scanSpinner = yoctoSpinner({
+            text: `Scanning ${label}...`,
+            stream: process.stdout,
+          }).start();
+        }
       },
       onProgress: (_id, result) => {
         scanSpinner?.stop();
@@ -174,7 +180,10 @@ const backupCommand = defineCommand({
     let backupSpinner: ReturnType<typeof yoctoSpinner> | null = null;
     const snapshot = await executeScan(collectors, {
       onStart: (_id, label) => {
-        backupSpinner = yoctoSpinner({ text: `Scanning ${label}...` }).start();
+        backupSpinner = yoctoSpinner({
+          text: `Scanning ${label}...`,
+          stream: process.stdout,
+        }).start();
       },
       onProgress: (_id, result) => {
         backupSpinner?.stop();
@@ -311,6 +320,7 @@ const configCommand = defineCommand({
       ui.consola.box({
         title: "Configuration",
         message: lines.join("\n"),
+        style: { marginLeft: 2 },
       });
       return;
     }
