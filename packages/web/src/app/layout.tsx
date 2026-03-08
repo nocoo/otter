@@ -15,15 +15,13 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXTAUTH_URL || "http://localhost:3000"),
   title: "Otter Dashboard",
   description: "Server-side companion for Otter CLI — snapshot browsing and management",
-  icons: {
-    icon: [
-      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon.ico", sizes: "32x32" },
-    ],
-    apple: { url: "/apple-touch-icon.png", sizes: "180x180" },
+  openGraph: {
+    title: "Otter Dashboard",
+    description: "Server-side companion for Otter CLI — snapshot browsing and management",
+    type: "website",
   },
 };
 
