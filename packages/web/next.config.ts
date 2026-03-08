@@ -23,6 +23,7 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["localhost", "otter.dev.hexly.ai"],
   // Allow loading images from external domains (e.g., Google avatars)
   images: {
+    imageSizes: [16, 32, 48, 64, 80, 96, 128, 160, 256, 384],
     remotePatterns: [
       {
         protocol: "https",
