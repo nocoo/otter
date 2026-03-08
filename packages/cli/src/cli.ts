@@ -85,7 +85,7 @@ const scanCommand = defineCommand({
       onStart: (_id, label) => {
         if (useSpinner) {
           scanSpinner = yoctoSpinner({
-            text: `Scanning ${label}...`,
+            text: ` Scanning ${label}...`,
             stream: process.stdout,
           }).start();
         }
@@ -181,7 +181,7 @@ const backupCommand = defineCommand({
     const snapshot = await executeScan(collectors, {
       onStart: (_id, label) => {
         backupSpinner = yoctoSpinner({
-          text: `Scanning ${label}...`,
+          text: ` Scanning ${label}...`,
           stream: process.stdout,
         }).start();
       },
@@ -204,16 +204,16 @@ const backupCommand = defineCommand({
     // ── Step 2: Upload snapshot ──
     ui.step("Uploading snapshot", 2, 3);
 
-    const spinner = yoctoSpinner({ text: "Uploading..." }).start();
+    const spinner = yoctoSpinner({ text: " Uploading..." }).start();
     const uploadResult = await uploadSnapshot(snapshot, { webhookUrl });
 
     if (!uploadResult.success) {
-      spinner.error(`Upload failed: ${uploadResult.error}`);
+      spinner.error(` Upload failed: ${uploadResult.error}`);
       process.exitCode = 1;
       return;
     }
 
-    spinner.success("Uploaded");
+    spinner.success(" Uploaded");
 
     // Auto-save locally after successful upload
     const filename = await snapshotStore.save(snapshot);
@@ -240,16 +240,16 @@ const backupCommand = defineCommand({
         pngPath: r.outputPath!,
       }));
 
-      const iconSpinner = yoctoSpinner({ text: "Uploading icons..." }).start();
+      const iconSpinner = yoctoSpinner({ text: " Uploading icons..." }).start();
       const iconUpload = await uploadIconsToServer(icons, { iconsUrl });
 
       if (iconUpload.success) {
         iconSpinner.success(
-          `${iconUpload.stored} icons uploaded`
+          ` ${iconUpload.stored} icons uploaded`
         );
       } else {
         iconSpinner.warning(
-          `Icon upload issue: ${iconUpload.error ?? "partial failure"}` +
+          ` Icon upload issue: ${iconUpload.error ?? "partial failure"}` +
             (iconUpload.stored > 0
               ? ` (${iconUpload.stored}/${iconUpload.total} stored)`
               : "")
@@ -525,24 +525,24 @@ const loginCommand = defineCommand({
 
     ui.banner(CLI_VERSION);
 
-    const spinner = yoctoSpinner({ text: "Starting login flow..." }).start();
+    const spinner = yoctoSpinner({ text: " Starting login flow..." }).start();
 
     const result = await executeLogin(
       configManager,
       { dev: args.dev },
       {
         onPortReady: (port) => {
-          spinner.text = `Local server listening on port ${ui.pc.bold(String(port))}`;
+          spinner.text = ` Local server listening on port ${ui.pc.bold(String(port))}`;
         },
         onBrowserOpen: (url) => {
-          spinner.text = `Waiting for browser connection...`;
+          spinner.text = ` Waiting for browser connection...`;
           ui.info(`Opening browser: ${ui.pc.dim(url)}`);
           console.log(
             `${ui.pc.dim("Waiting for you to connect in the browser (30s timeout)...")}`
           );
         },
         onSuccess: (token) => {
-          spinner.success("Connected! Token saved.");
+          spinner.success(" Connected! Token saved.");
           ui.blank();
           ui.info(`Token: ${ui.pc.dim(token.slice(0, 8))}...`);
           ui.info(
@@ -550,10 +550,10 @@ const loginCommand = defineCommand({
           );
         },
         onError: (err) => {
-          spinner.error(`Login failed: ${err}`);
+          spinner.error(` Login failed: ${err}`);
         },
         onTimeout: () => {
-          spinner.warning("Login timed out (30s). Please try again.");
+          spinner.warning(" Login timed out (30s). Please try again.");
         },
       }
     );
