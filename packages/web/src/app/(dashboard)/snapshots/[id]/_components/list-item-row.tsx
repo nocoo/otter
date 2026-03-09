@@ -1,6 +1,7 @@
 "use client";
 
-import { CircleCheck } from "lucide-react";
+import { useState } from "react";
+import { AppWindow, CircleCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { metaEntries, formatMetaLabel, badgeClassName } from "./helpers";
@@ -14,12 +15,13 @@ interface ListItemRowProps {
 
 export function ListItemRow({ item, iconUrl, isSshKey }: ListItemRowProps) {
   const entries = metaEntries(item.meta);
+  const [iconError, setIconError] = useState(false);
 
   return (
     <div className="flex items-center gap-2.5 rounded-lg border border-border/50 bg-secondary px-3 py-2.5">
       {isSshKey ? (
         <CircleCheck className="h-4 w-4 text-success shrink-0" strokeWidth={1.5} />
-      ) : iconUrl ? (
+      ) : iconUrl && !iconError ? (
         <img
           src={iconUrl}
           alt=""
@@ -27,7 +29,10 @@ export function ListItemRow({ item, iconUrl, isSshKey }: ListItemRowProps) {
           height={20}
           className="shrink-0 rounded-[4px]"
           loading="lazy"
+          onError={() => setIconError(true)}
         />
+      ) : iconUrl ? (
+        <AppWindow className="h-5 w-5 text-muted-foreground shrink-0" strokeWidth={1.5} />
       ) : null}
       <div className="min-w-0 flex-1">
         <span className="text-sm truncate block">{item.name}</span>
