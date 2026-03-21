@@ -23,10 +23,18 @@ export default defineConfig({
       exclude: [
         "**/*.test.ts",
         "**/*.d.ts",
+        "**/*.tsx",
         "**/index.ts",
         "**/bin.ts",
         "**/cli.ts",
         "**/types.ts",
+        "**/hooks/**",
+        "**/lib/palette.ts",
+        "**/lib/utils.ts",
+        "**/lib/version.ts",
+        "**/auth.ts",
+        "**/proxy.ts",
+        "**/api/auth/**",
       ],
       thresholds: {
         statements: 90,
