@@ -21,7 +21,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
   providers: [
     Google({
+      // biome-ignore lint/style/noNonNullAssertion: required env vars — app won't start without them
       clientId: process.env.GOOGLE_CLIENT_ID!,
+      // biome-ignore lint/style/noNonNullAssertion: required env vars — app won't start without them
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],

@@ -132,12 +132,12 @@ describe("executeLogin", () => {
           // Hit the callback with token only
           fetch(
             `${callbackBase}/callback?token=test-token`
-          ).catch(() => {});
+          ).catch(() => { /* fire-and-forget */ });
         }
       },
-      onBrowserOpen: () => {},
-      onPortReady: () => {},
-      onSuccess: () => {},
+      onBrowserOpen: () => { /* no-op */ },
+      onPortReady: () => { /* no-op */ },
+      onSuccess: () => { /* no-op */ },
     });
 
     const result = await loginPromise;
@@ -156,12 +156,12 @@ describe("executeLogin", () => {
           const callbackBase = decodeURIComponent(callbackMatch[1]);
           fetch(
             `${callbackBase}/callback?token=saved-token`
-          ).catch(() => {});
+          ).catch(() => { /* fire-and-forget */ });
         }
       },
-      onBrowserOpen: () => {},
-      onPortReady: () => {},
-      onSuccess: () => {},
+      onBrowserOpen: () => { /* no-op */ },
+      onPortReady: () => { /* no-op */ },
+      onSuccess: () => { /* no-op */ },
     });
 
     await loginPromise;
@@ -178,12 +178,12 @@ describe("executeLogin", () => {
           const callbackBase = decodeURIComponent(callbackMatch[1]);
           fetch(
             `${callbackBase}/callback?token=dev-token`
-          ).catch(() => {});
+          ).catch(() => { /* fire-and-forget */ });
         }
       },
-      onBrowserOpen: () => {},
-      onPortReady: () => {},
-      onSuccess: () => {},
+      onBrowserOpen: () => { /* no-op */ },
+      onPortReady: () => { /* no-op */ },
+      onSuccess: () => { /* no-op */ },
     });
 
     const result = await loginPromise;
@@ -200,12 +200,12 @@ describe("executeLogin", () => {
           const callbackBase = decodeURIComponent(callbackMatch[1]);
           fetch(
             `${callbackBase}/callback?error=${encodeURIComponent("User cancelled")}`
-          ).catch(() => {});
+          ).catch(() => { /* fire-and-forget */ });
         }
       },
-      onBrowserOpen: () => {},
-      onPortReady: () => {},
-      onError: () => {},
+      onBrowserOpen: () => { /* no-op */ },
+      onPortReady: () => { /* no-op */ },
+      onError: () => { /* no-op */ },
     });
 
     const result = await loginPromise;
@@ -224,14 +224,14 @@ describe("executeLogin", () => {
           const callbackBase = decodeURIComponent(callbackMatch[1]);
           fetch(
             `${callbackBase}/callback?token=t`
-          ).catch(() => {});
+          ).catch(() => { /* fire-and-forget */ });
         }
       },
-      onBrowserOpen: () => {},
+      onBrowserOpen: () => { /* no-op */ },
       onPortReady: (port) => {
         reportedPort = port;
       },
-      onSuccess: () => {},
+      onSuccess: () => { /* no-op */ },
     });
 
     await loginPromise;
@@ -260,12 +260,12 @@ describe("executeLogin", () => {
           // Then hit the correct path to let the test finish
           fetch(
             `${callbackBase}/callback?token=t`
-          ).catch(() => {});
+          ).catch(() => { /* fire-and-forget */ });
         }
       },
-      onBrowserOpen: () => {},
-      onPortReady: () => {},
-      onSuccess: () => {},
+      onBrowserOpen: () => { /* no-op */ },
+      onPortReady: () => { /* no-op */ },
+      onSuccess: () => { /* no-op */ },
     });
 
     await loginPromise;

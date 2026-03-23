@@ -92,7 +92,7 @@ export class SnapshotStore {
     await mkdir(this.storageDir, { recursive: true });
     const filename = buildFilename(snapshot);
     const filePath = join(this.storageDir, filename);
-    await writeFile(filePath, JSON.stringify(snapshot, null, 2) + "\n");
+    await writeFile(filePath, `${JSON.stringify(snapshot, null, 2)}\n`);
     return filename;
   }
 

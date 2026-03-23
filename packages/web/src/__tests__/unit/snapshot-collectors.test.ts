@@ -36,7 +36,9 @@ const collectors: SnapshotCollector[] = [
   },
 ];
 
+// biome-ignore lint/style/noNonNullAssertion: test fixtures — array has known length
 const homebrewCollector = collectors[0]!;
+// biome-ignore lint/style/noNonNullAssertion: test fixtures — array has known length
 const vscodeCollector = collectors[1]!;
 
 describe("snapshot collector helpers", () => {

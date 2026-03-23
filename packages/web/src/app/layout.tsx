@@ -14,6 +14,7 @@ const dmSans = DM_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
+// biome-ignore lint/style/useComponentExportOnlyModules: Next.js page metadata convention
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXTAUTH_URL || "http://localhost:3000"),
   title: "Otter Dashboard",
@@ -35,6 +36,7 @@ export default function RootLayout({
       <head>
         {/* Apply dark class before first paint to prevent FOUC */}
         <script
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: inline script prevents FOUC — content is a static string, not user input
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var s=localStorage.getItem("theme");var d=window.matchMedia("(prefers-color-scheme:dark)").matches;if(s==="dark"||(s!=="light"&&d))document.documentElement.classList.add("dark")}catch(e){}})()`,
           }}

@@ -110,7 +110,7 @@ const scanCommand = defineCommand({
     }
 
     if (args.json) {
-      process.stdout.write(JSON.stringify(snapshot, null, 2) + "\n");
+      process.stdout.write(`${JSON.stringify(snapshot, null, 2)}\n`);
     } else {
       const totalFiles = snapshot.collectors.reduce(
         (sum, c) => sum + c.files.length,
@@ -216,7 +216,7 @@ const backupCommand = defineCommand({
     spinner.success(" Uploaded");
 
     // Auto-save locally after successful upload
-    const filename = await snapshotStore.save(snapshot);
+    const _filename = await snapshotStore.save(snapshot);
     ui.statusLine(ui.S.success, `Saved locally`, 0);
 
     ui.blank();
@@ -226,7 +226,9 @@ const backupCommand = defineCommand({
 
     const iconDir = join(otterConfigDir, "icons");
     const iconResults = await exportIcons({ outputDir: iconDir, size: 128 });
-    const exported = iconResults.filter((r) => r.success && r.outputPath);
+    const exported = iconResults.filter(
+      (r): r is typeof r & { outputPath: string } => r.success && r.outputPath != null,
+    );
 
     if (exported.length > 0) {
       ui.statusLine(
@@ -237,7 +239,7 @@ const backupCommand = defineCommand({
       const iconsUrl = `${webhookUrl}/icons`;
       const icons = exported.map((r) => ({
         appName: r.appName,
-        pngPath: r.outputPath!,
+        pngPath: r.outputPath,
       }));
 
       const iconSpinner = yoctoSpinner({ text: " Uploading icons..." }).start();

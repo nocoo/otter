@@ -313,7 +313,7 @@ describe("redactJsonlSecrets", () => {
   });
 
   it("should handle empty lines gracefully", () => {
-    const input = JSON.stringify({ display: "hello" }) + "\n\n";
+    const input = `${JSON.stringify({ display: "hello" })}\n\n`;
     const result = redactJsonlSecrets(input);
     expect(result).toContain('"hello"');
   });

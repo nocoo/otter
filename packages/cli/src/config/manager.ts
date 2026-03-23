@@ -32,6 +32,6 @@ export class ConfigManager {
   async save(config: OtterConfig): Promise<void> {
     const dir = dirname(this.configPath);
     await mkdir(dir, { recursive: true });
-    await writeFile(this.configPath, JSON.stringify(config, null, 2) + "\n");
+    await writeFile(this.configPath, `${JSON.stringify(config, null, 2)}\n`);
   }
 }

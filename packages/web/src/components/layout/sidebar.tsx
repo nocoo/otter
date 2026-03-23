@@ -59,6 +59,7 @@ export function Sidebar() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
+                  type="button"
                   onClick={toggle}
                   aria-label="Expand sidebar"
                   className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors mb-2"
@@ -107,6 +108,7 @@ export function Sidebar() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
+                    type="button"
                     onClick={() => signOut({ callbackUrl: "/login" })}
                     className="cursor-pointer"
                   >
@@ -138,6 +140,7 @@ export function Sidebar() {
                   </span>
                 </div>
                 <button
+                  type="button"
                   onClick={toggle}
                   aria-label="Collapse sidebar"
                   className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground transition-colors"
@@ -191,6 +194,7 @@ export function Sidebar() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
+                      type="button"
                       onClick={() => signOut({ callbackUrl: "/login" })}
                       aria-label="Sign out"
                       className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"

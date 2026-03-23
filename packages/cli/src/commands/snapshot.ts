@@ -171,12 +171,15 @@ export function diffSnapshots(
     }
 
     // Both exist — diff files and lists
+    // biome-ignore lint/style/noNonNullAssertion: guaranteed non-null — early returns above handle the null cases
     const fileDiffs = diffFiles(oldC!.files, newC!.files);
+    // biome-ignore lint/style/noNonNullAssertion: guaranteed non-null — early returns above handle the null cases
     const listDiffs = diffLists(oldC!.lists, newC!.lists);
 
     if (fileDiffs.length > 0 || listDiffs.length > 0) {
       collectors.push({
         collectorId: id,
+        // biome-ignore lint/style/noNonNullAssertion: guaranteed non-null — early returns above handle the null cases
         collectorLabel: newC!.label,
         files: fileDiffs,
         lists: listDiffs,

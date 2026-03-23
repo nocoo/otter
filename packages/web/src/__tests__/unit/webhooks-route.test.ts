@@ -93,7 +93,9 @@ describe("GET /api/webhooks", () => {
       createdAt: 1700000000000,
       lastUsedAt: 1700001000000,
     });
+    // biome-ignore lint/style/noNonNullAssertion: test array access after known length
     expect(data.webhooks[1]!.isActive).toBe(false);
+    // biome-ignore lint/style/noNonNullAssertion: test array access after known length
     expect(data.webhooks[1]!.lastUsedAt).toBeNull();
   });
 

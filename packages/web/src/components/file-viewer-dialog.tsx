@@ -162,6 +162,7 @@ function CodeEditor({
     <div className="font-mono text-xs leading-[1.7]">
       {tokens.map((lineTokens, lineIdx) => (
         <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: lines are positional, index is the natural key
           key={lineIdx}
           className={
             isDark
@@ -185,6 +186,7 @@ function CodeEditor({
             {lineTokens.length === 0
               ? "\n"
               : lineTokens.map((token, tokenIdx) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: tokens within a line are positional
                   <span key={tokenIdx} style={{ color: token.color }}>
                     {token.content}
                   </span>
@@ -216,6 +218,7 @@ function PlainEditor({
     <div className="font-mono text-xs leading-[1.7]">
       {lines.map((line, lineIdx) => (
         <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: lines are positional, index is the natural key
           key={lineIdx}
           className={
             isDark
@@ -292,7 +295,7 @@ export function FileViewerDialog({
       })
       .catch(() => {
         if (!cancelled) {
-          codeToTokens(file.content!, { lang: "plaintext", theme })
+          codeToTokens(file.content ?? "", { lang: "plaintext", theme })
             .then((result) => {
               if (!cancelled) setTokens(result.tokens);
             })

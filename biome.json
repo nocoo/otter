@@ -8,6 +8,7 @@
   "files": {
     "includes": [
       "packages/*/src/**",
+      "!**/*.css",
       "packages/web/e2e/**",
       "packages/web/test-support/**",
       "scripts/**",
@@ -38,14 +39,40 @@
     "rules": {
       "recommended": true,
       "a11y": "error",
-      "complexity": "error",
-      "correctness": "error",
-      "performance": "error",
-      "security": "error",
-      "suspicious": "error",
+      "complexity": {
+        "recommended": true,
+        "noExcessiveLinesPerFunction": "off",
+        "noVoid": "off"
+      },
+      "correctness": {
+        "recommended": true,
+        "noNodejsModules": "off",
+        "noUnresolvedImports": "off",
+        "noUndeclaredDependencies": "off"
+      },
+      "performance": {
+        "recommended": true,
+        "useTopLevelRegex": "warn",
+        "noAwaitInLoops": "warn",
+        "noDelete": "warn",
+        "noBarrelFile": "off",
+        "noReExportAll": "off"
+      },
+      "security": {
+        "recommended": true
+      },
+      "suspicious": {
+        "recommended": true,
+        "noConsole": "off",
+        "useAwait": "warn",
+        "noEmptyBlockStatements": "error",
+        "noArrayIndexKey": "error"
+      },
       "style": {
         "recommended": true,
-        "noDefaultExport": "off"
+        "noDefaultExport": "off",
+        "noNonNullAssertion": "error",
+        "useComponentExportOnlyModules": "error"
       }
     },
     "domains": {
@@ -68,7 +95,8 @@
         "rules": {
           "a11y": "off",
           "style": {
-            "useNamingConvention": "off"
+            "useNamingConvention": "off",
+            "useComponentExportOnlyModules": "off"
           }
         }
       }
@@ -87,6 +115,9 @@
           },
           "complexity": {
             "noExcessiveCognitiveComplexity": "off"
+          },
+          "security": {
+            "noSecrets": "off"
           }
         }
       }

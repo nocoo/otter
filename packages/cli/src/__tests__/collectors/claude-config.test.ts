@@ -147,6 +147,7 @@ describe("ClaudeConfigCollector", () => {
     );
     expect(summaryFile).toBeDefined();
 
+    // biome-ignore lint/style/noNonNullAssertion: asserted defined above
     const summaries = JSON.parse(summaryFile!.content);
     expect(summaries).toHaveLength(1);
     expect(summaries[0].projectPath).toBe("/Users/test/myproject");
@@ -231,6 +232,7 @@ describe("ClaudeConfigCollector", () => {
     );
     expect(summaryFile).toBeDefined();
 
+    // biome-ignore lint/style/noNonNullAssertion: asserted defined above
     const summaries = JSON.parse(summaryFile!.content);
     expect(summaries).toHaveLength(2);
   });

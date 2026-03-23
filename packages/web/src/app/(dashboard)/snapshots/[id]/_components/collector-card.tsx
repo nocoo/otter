@@ -132,6 +132,7 @@ export function CollectorCard({ collector }: { collector: Collector }) {
               </h4>
               <div className="space-y-1.5">
                 {collector.errors.map((err, i) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: static error list, no reordering
                   <div key={i} className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2">
                     <p className="text-xs text-destructive/90">{err}</p>
                   </div>
@@ -149,6 +150,7 @@ export function CollectorCard({ collector }: { collector: Collector }) {
               </h4>
               <div className="space-y-1.5">
                 {(collector.skipped ?? []).map((msg, i) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: static display list, no reordering
                   <div key={i} className="rounded-lg border border-border/50 bg-secondary px-3 py-2">
                     <p className="text-xs text-muted-foreground">{msg}</p>
                   </div>

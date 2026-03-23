@@ -165,8 +165,10 @@ describe("ShellConfigCollector", () => {
 
     const key = result.lists.find((l) => l.name === "id_rsa");
     expect(key).toBeDefined();
+    // biome-ignore lint/style/noNonNullAssertion: asserted defined above
     expect(key!.meta?.modifiedAt).toBeDefined();
     // Should be a valid ISO date
+    // biome-ignore lint/style/noNonNullAssertion: asserted defined above
     expect(new Date(key!.meta!.modifiedAt!).getTime()).not.toBeNaN();
   });
 

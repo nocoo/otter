@@ -74,6 +74,7 @@ describe("R2 client", () => {
     await putSnapshot("user-1/snap-1.json", { foo: "bar" });
 
     expect(mockSend).toHaveBeenCalledOnce();
+    // biome-ignore lint/style/noNonNullAssertion: mock array access in test
     const cmd = mockSend.mock.calls[0]![0];
     expect(cmd.Bucket).toBe("otter-snapshots");
     expect(cmd.Key).toBe("user-1/snap-1.json");
@@ -133,6 +134,7 @@ describe("R2 client", () => {
     await deleteSnapshot("user-1/snap-1.json");
 
     expect(mockSend).toHaveBeenCalledOnce();
+    // biome-ignore lint/style/noNonNullAssertion: mock array access in test
     const cmd = mockSend.mock.calls[0]![0];
     expect(cmd.Bucket).toBe("otter-snapshots");
     expect(cmd.Key).toBe("user-1/snap-1.json");
@@ -177,6 +179,7 @@ describe("R2 client", () => {
     await putIcon("abc123", buf);
 
     expect(mockSend).toHaveBeenCalledOnce();
+    // biome-ignore lint/style/noNonNullAssertion: mock array access in test
     const cmd = mockSend.mock.calls[0]![0];
     expect(cmd.Key).toBe("apps/otter/abc123.png");
     expect(cmd.ContentType).toBe("image/png");
@@ -223,6 +226,7 @@ describe("R2 client", () => {
     const { putIcon } = await import("@/lib/cf/r2");
     await putIcon("hash123", Buffer.from("png"));
 
+    // biome-ignore lint/style/noNonNullAssertion: mock array access in test
     const cmd = mockSend.mock.calls[0]![0];
     expect(cmd.Bucket).toBe("icons-bucket");
     expect(cmd.Key).toBe("custom/icons/hash123.png");

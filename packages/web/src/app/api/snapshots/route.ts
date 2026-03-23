@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/session";
 import { query, queryFirst } from "@/lib/cf/d1";
 
@@ -89,8 +89,8 @@ export async function GET(request: NextRequest) {
     const total = countRow?.total ?? 0;
 
     // Determine next cursor
-    const nextBefore =
-      rows.length === limit ? rows[rows.length - 1]!.uploaded_at : null;
+    const lastRow = rows.length === limit ? rows[rows.length - 1] : null;
+    const nextBefore = lastRow?.uploaded_at ?? null;
 
     const snapshots = rows.map((row) => ({
       id: row.id,

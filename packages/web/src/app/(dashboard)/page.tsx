@@ -183,6 +183,7 @@ export default function DashboardPage() {
         <div className="rounded-xl bg-secondary p-12 text-center">
           <p className="text-sm text-destructive">{error}</p>
           <button
+            type="button"
             onClick={() => window.location.reload()}
             className="mt-2 text-xs text-muted-foreground hover:text-foreground underline"
           >
@@ -268,6 +269,7 @@ export default function DashboardPage() {
               ) : (
                 <div className="space-y-3">
                   {activities.map((item, i) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: static display list with no reordering
                     <div key={i} className="flex gap-3">
                       <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
                       <div className="min-w-0">

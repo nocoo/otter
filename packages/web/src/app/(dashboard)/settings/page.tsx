@@ -78,6 +78,7 @@ function CopyButton({ text }: { text: string }) {
 
   return (
     <button
+      type="button"
       onClick={handleCopy}
       className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
       aria-label="Copy to clipboard"
@@ -129,6 +130,7 @@ function WebhookRow({
             aria-label={`Toggle ${webhook.label}`}
           />
           <button
+            type="button"
             onClick={() => onDelete(webhook.id)}
             disabled={isDeleting}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
@@ -326,6 +328,7 @@ export default function SettingsPage() {
               <div className="space-y-4 pt-2">
                 <div className="space-y-2">
                   <Label htmlFor="webhook-label">Label</Label>
+                  {/* biome-ignore lint/correctness/useUniqueElementIds: single dialog instance, no duplicate IDs */}
                   <Input
                     id="webhook-label"
                     placeholder="e.g. dev-macbook, ci-pipeline"

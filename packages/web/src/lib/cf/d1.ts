@@ -56,7 +56,7 @@ async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       if (attempt < MAX_RETRIES - 1) {
-        const delay = BASE_DELAY_MS * Math.pow(2, attempt);
+        const delay = BASE_DELAY_MS * 2 ** attempt;
         await sleep(delay);
       }
     }
@@ -99,6 +99,7 @@ async function executeRaw<T = Record<string, unknown>>(
     );
   }
 
+  // biome-ignore lint/style/noNonNullAssertion: D1 API always returns at least one result set on success
   return data.result[0]!;
 }
 

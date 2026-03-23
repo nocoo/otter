@@ -20,7 +20,7 @@ class TestCollector extends BaseCollector {
   readonly category: CollectorCategory = "config";
 
   async collect(): Promise<CollectorResult> {
-    return this.timed(async () => {});
+    return this.timed(async () => { /* no-op — stub for testing */ });
   }
 
   // Expose protected methods for testing
@@ -63,7 +63,9 @@ describe("BaseCollector", () => {
       const file = await collector.testSafeReadFile(filePath, result);
 
       expect(file).not.toBeNull();
+      // biome-ignore lint/style/noNonNullAssertion: asserted non-null above
       expect(file!.content).toBe("hello world");
+      // biome-ignore lint/style/noNonNullAssertion: asserted non-null above
       expect(file!.path).toBe(filePath);
       expect(result.errors).toHaveLength(0);
     });
@@ -144,7 +146,9 @@ describe("BaseCollector", () => {
       });
 
       expect(file).not.toBeNull();
+      // biome-ignore lint/style/noNonNullAssertion: asserted non-null above
       expect(file!.content).toContain("[REDACTED]");
+      // biome-ignore lint/style/noNonNullAssertion: asserted non-null above
       expect(file!.content).not.toContain("my-secret-123");
     });
   });

@@ -27,6 +27,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// biome-ignore lint/style/useComponentExportOnlyModules: hook co-located with its context provider
 export function useSidebar() {
   const context = useContext(SidebarContext);
   if (!context) {

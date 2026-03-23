@@ -115,7 +115,8 @@ export default function SnapshotsPage() {
     if (nextBefore === null) return;
     // Push current first item's uploadedAt as cursor for "back"
     if (snapshots.length > 0) {
-      setCursors((prev) => [...prev, snapshots[0]!.uploadedAt + 1]);
+      const first = snapshots[0];
+      if (first) setCursors((prev) => [...prev, first.uploadedAt + 1]);
     }
     void fetchPage(nextBefore);
   };
@@ -166,6 +167,7 @@ export default function SnapshotsPage() {
         <div className="rounded-xl bg-secondary p-12 text-center">
           <p className="text-sm text-destructive">{error}</p>
           <button
+            type="button"
             onClick={() => {
               setCursors([]);
               void fetchPage();
@@ -251,6 +253,7 @@ export default function SnapshotsPage() {
             </p>
             <div className="flex items-center gap-1">
               <button
+                type="button"
                 disabled={currentPage === 1}
                 onClick={currentPage === 2 ? handlePrevToFirst : handlePrev}
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-40 transition-colors"
@@ -259,6 +262,7 @@ export default function SnapshotsPage() {
               </button>
               <span className="px-2 text-xs text-muted-foreground">Page {currentPage} of {totalPages}</span>
               <button
+                type="button"
                 disabled={nextBefore === null}
                 onClick={handleNext}
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-40 transition-colors"

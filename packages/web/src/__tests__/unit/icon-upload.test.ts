@@ -228,6 +228,7 @@ describe("POST /api/webhook/[token]/icons", () => {
       makeParams("test-token"),
     );
 
+    // biome-ignore lint/style/noNonNullAssertion: mock array access in test
     const storedBuffer = mockPutIcon.mock.calls[0]![1] as Buffer;
     // PNG magic bytes: 0x89 0x50 0x4E 0x47
     expect(storedBuffer[0]).toBe(0x89);

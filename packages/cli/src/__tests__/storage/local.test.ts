@@ -222,7 +222,9 @@ describe("SnapshotStore", () => {
     const loaded = await store.load("abcdef12");
 
     expect(loaded).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: asserted non-null above
     expect(loaded!.id).toBe("abcdef12-3456-7890-abcd-ef1234567890");
+    // biome-ignore lint/style/noNonNullAssertion: asserted non-null above
     expect(loaded!.collectors).toHaveLength(2);
   });
 
@@ -233,6 +235,7 @@ describe("SnapshotStore", () => {
     const loaded = await store.load("abcdef12-3456-7890-abcd-ef1234567890");
 
     expect(loaded).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: asserted non-null above
     expect(loaded!.id).toBe("abcdef12-3456-7890-abcd-ef1234567890");
   });
 
@@ -271,7 +274,9 @@ describe("SnapshotStore", () => {
     const loaded = await store.load("bbbb2222");
 
     expect(loaded).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: asserted non-null above
     expect(loaded!.id).toBe("bbbb2222-0000-0000-0000-000000000000");
+    // biome-ignore lint/style/noNonNullAssertion: asserted non-null above
     expect(loaded!.createdAt).toBe("2026-03-06T15:00:00.000Z");
   });
 });

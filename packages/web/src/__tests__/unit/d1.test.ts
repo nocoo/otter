@@ -81,6 +81,7 @@ describe("D1 client", () => {
     expect(result).toEqual(rows);
     expect(fetchMock).toHaveBeenCalledOnce();
 
+    // biome-ignore lint/style/noNonNullAssertion: mock array access in test
     const [url, opts] = fetchMock.mock.calls[0]!;
     expect(url).toContain("test-account");
     expect(url).toContain("test-db");
@@ -101,6 +102,7 @@ describe("D1 client", () => {
     const { query } = await import("@/lib/cf/d1");
     await query("SELECT * FROM users WHERE id = ?1", ["user-1"]);
 
+    // biome-ignore lint/style/noNonNullAssertion: mock array access in test
     const body = JSON.parse(fetchMock.mock.calls[0]![1].body);
     expect(body.params).toEqual(["user-1"]);
   });
@@ -166,10 +168,12 @@ describe("D1 client", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
 
+    // biome-ignore lint/style/noNonNullAssertion: mock array access in test
     const body1 = JSON.parse(fetchMock.mock.calls[0]![1].body);
     expect(body1.sql).toBe("INSERT INTO a (x) VALUES (?1)");
     expect(body1.params).toEqual([1]);
 
+    // biome-ignore lint/style/noNonNullAssertion: mock array access in test
     const body2 = JSON.parse(fetchMock.mock.calls[1]![1].body);
     expect(body2.sql).toBe("INSERT INTO b (y) VALUES (?1)");
     expect(body2.params).toEqual([2]);
@@ -184,6 +188,7 @@ describe("D1 client", () => {
     const { batch } = await import("@/lib/cf/d1");
     await batch([{ sql: "DELETE FROM cache" }]);
 
+    // biome-ignore lint/style/noNonNullAssertion: mock array access in test
     const body = JSON.parse(fetchMock.mock.calls[0]![1].body);
     expect(body.params).toBeUndefined();
   });

@@ -60,7 +60,7 @@ export function matchesCollectorQuery(
     ...collector.lists.flatMap((item) => [
       item.name,
       item.version ?? "",
-      ...Object.entries(item.meta ?? {}).flatMap(([key, value]) => [key, value]),
+      ...Object.entries(item.meta ?? {}).flat(),
     ]),
     ...collector.errors,
     ...(collector.skipped ?? []),

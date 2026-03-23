@@ -2,7 +2,7 @@
  * Shared E2E utilities for test runner scripts.
  */
 
-import { existsSync, rmSync } from "fs";
+import { existsSync, rmSync } from "node:fs";
 
 /**
  * Ensure a TCP port is free before starting a server.

@@ -186,6 +186,7 @@ describe("GET /api/snapshots", () => {
 
     const response = await GET(makeRequest());
     const data = await response.json();
+    // biome-ignore lint/style/noNonNullAssertion: test array has known length
     expect(data.nextBefore).toBe(twentyRows[19]!.uploaded_at);
     expect(data.total).toBe(50);
   });

@@ -154,7 +154,9 @@ describe("OpenCodeConfigCollector", () => {
     // Skill should be listed with location but no description
     const skill = result.lists.find((l) => l.name === "no-readme");
     expect(skill).toBeDefined();
+    // biome-ignore lint/style/noNonNullAssertion: asserted defined above
     expect(skill!.meta?.location).toContain("no-readme/SKILL.md");
+    // biome-ignore lint/style/noNonNullAssertion: asserted defined above
     expect(skill!.meta?.description).toBeUndefined();
   });
 });

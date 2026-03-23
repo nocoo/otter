@@ -22,6 +22,8 @@ export function ListItemRow({ item, iconUrl, isSshKey }: ListItemRowProps) {
       {isSshKey ? (
         <CircleCheck className="h-4 w-4 text-success shrink-0" strokeWidth={1.5} />
       ) : iconUrl && !iconError ? (
+        // biome-ignore lint/performance/noImgElement: external CDN icons, not local assets
+        // biome-ignore lint/a11y/noNoninteractiveElementInteractions: onError is for image load fallback, not user interaction
         <img
           src={iconUrl}
           alt=""

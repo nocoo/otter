@@ -1,6 +1,6 @@
 import { readdir, readFile, mkdir, access } from "node:fs/promises";
 import type { Dirent } from "node:fs";
-import { join, basename } from "node:path";
+import { join, } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
@@ -111,9 +111,7 @@ async function resolveIconPath(appPath: string): Promise<string | null> {
       try {
         await access(iconPath);
         return iconPath;
-      } catch {
-        continue;
-      }
+      } catch { /* file not accessible, try next candidate */ }
     }
 
     const fallback = extractIconFileName(plistContent);

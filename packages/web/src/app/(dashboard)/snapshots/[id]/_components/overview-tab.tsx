@@ -153,6 +153,7 @@ function IssuesCard({ collectors }: { collectors: Collector[] }) {
               Errors
             </h4>
             {errors.map((err, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: static error list, no reordering
               <div key={i} className="rounded-lg bg-destructive/5 border border-destructive/10 px-3 py-2">
                 <p className="text-xs font-medium text-foreground">{err.collector}</p>
                 <p className="text-xs text-destructive/80 mt-0.5">{err.message}</p>
@@ -167,6 +168,7 @@ function IssuesCard({ collectors }: { collectors: Collector[] }) {
               Skipped
             </h4>
             {skipped.map((item, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: static display list, no reordering
               <div key={i} className="rounded-lg bg-card px-3 py-2">
                 <p className="text-xs font-medium text-foreground">{item.collector}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{item.message}</p>
