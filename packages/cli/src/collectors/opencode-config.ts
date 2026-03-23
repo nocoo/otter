@@ -19,11 +19,11 @@ export function parseSkillFrontmatter(content: string): Record<string, string> {
   const match = content.match(/^---\s*\n([\s\S]*?)\n---/);
   if (!match) return meta;
 
-  for (const line of match[1].split("\n")) {
+  for (const line of match[1]!.split("\n")) {
     // Match simple key: value (not nested YAML)
     const kv = line.match(/^(\w[\w-]*)\s*:\s*(.+)$/);
     if (kv) {
-      meta[kv[1].trim()] = kv[2].trim();
+      meta[kv[1]!.trim()] = kv[2]!.trim();
     }
   }
   return meta;

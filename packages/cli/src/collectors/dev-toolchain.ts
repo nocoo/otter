@@ -91,13 +91,18 @@ export class DevToolchainCollector extends BaseCollector {
       const output = await this._execCommand("volta list all");
       return lines(output)
         .filter((line) => /^(node|npm|yarn|pnpm)\s+/.test(line))
-        .map((line) => {
-          const [tool, version] = line.split(/\s+/);
-          return {
-            name: tool,
-            version,
-            meta: { type: "tool-version", manager: "volta" },
-          };
+        .flatMap((line) => {
+          const parts = line.split(/\s+/);
+          const tool = parts[0];
+          const version = parts[1];
+          if (!tool) return [];
+          return [
+            {
+              name: tool,
+              ...(version ? { version } : {}),
+              meta: { type: "tool-version", manager: "volta" },
+            },
+          ];
         });
     } catch (err) {
       this.pushMissingToolError(result, "volta", err);
@@ -177,9 +182,12 @@ export class DevToolchainCollector extends BaseCollector {
         if (!line.includes(" v")) continue;
         const match = line.match(/^([^\s]+) v([^:]+):?$/);
         if (!match) continue;
+        const matchedName = match[1];
+        const matchedVersion = match[2];
+        if (!matchedName) continue;
         items.push({
-          name: match[1],
-          version: match[2],
+          name: matchedName,
+          ...(matchedVersion ? { version: matchedVersion } : {}),
           meta: { type: "cargo-global" },
         });
       }
@@ -222,7 +230,7 @@ export class DevToolchainCollector extends BaseCollector {
     try {
       const output = await this._execCommand("go version");
       const match = output.match(/go version go([^\s]+)/);
-      if (!match) return [];
+      if (!match?.[1]) return [];
       return [
         {
           name: "go",

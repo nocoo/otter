@@ -21,9 +21,10 @@ function getComputerName(): string | undefined {
  */
 function getMachineInfo(): MachineInfo {
   const user = userInfo();
+  const computerName = getComputerName();
   return {
     hostname: hostname(),
-    computerName: getComputerName(),
+    ...(computerName !== undefined ? { computerName } : {}),
     platform: platform(),
     osVersion: release(),
     arch: arch(),

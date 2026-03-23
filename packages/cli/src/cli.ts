@@ -204,7 +204,7 @@ const backupCommand = defineCommand({
     spinner.success(" Uploaded");
 
     // Auto-save locally after successful upload
-    const _filename = await snapshotStore.save(snapshot);
+    await snapshotStore.save(snapshot);
     ui.statusLine(ui.S.success, `Saved locally`, 0);
 
     ui.blank();
@@ -445,7 +445,7 @@ const exportIconsCommand = defineCommand({
   },
   async run({ args }) {
     const outputDir = (args.output as string) || join(homedir(), ".otter", "icons");
-    const size = parseInt((args.size as string) || "128", 10);
+    const size = Number.parseInt((args.size as string) || "128", 10);
 
     ui.banner(CLI_VERSION);
     console.log(`Exporting app icons to ${ui.pc.bold(outputDir)}...\n`);

@@ -49,7 +49,7 @@ export function createDefaultCollectors(
 ): Collector[] {
   const iconBaseUrl = options.iconBaseUrl ?? DEFAULT_ICON_BASE_URL;
   return [
-    new ClaudeConfigCollector(homeDir, { slim: options.slim }),
+    new ClaudeConfigCollector(homeDir, { slim: options.slim ?? false }),
     new OpenCodeConfigCollector(homeDir),
     new ShellConfigCollector(homeDir),
     new HomebrewCollector(homeDir),

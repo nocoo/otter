@@ -88,8 +88,8 @@ export class ClaudeConfigCollector extends BaseCollector {
         if (this.slim && slimExclude) continue;
 
         const file = await this.safeReadFile(join(claudeDir, relativePath), result, {
-          redact,
-          maxSize,
+          ...(redact !== undefined ? { redact } : {}),
+          ...(maxSize !== undefined ? { maxSize } : {}),
         });
         if (file) result.files.push(file);
       }
@@ -133,16 +133,17 @@ export class ClaudeConfigCollector extends BaseCollector {
 
           summaries.push({
             projectPath: index.originalPath ?? entry.name,
-            sessions: index.entries.map((e) => ({
-              sessionId: e.sessionId,
-              firstPrompt: e.firstPrompt,
-              messageCount: e.messageCount,
-              created: e.created,
-              modified: e.modified,
-              gitBranch: e.gitBranch,
-              projectPath: e.projectPath,
-              isSidechain: e.isSidechain,
-            })),
+            sessions: index.entries.map((e) => {
+              const session: SessionEntry = { sessionId: e.sessionId };
+              if (e.firstPrompt !== undefined) session.firstPrompt = e.firstPrompt;
+              if (e.messageCount !== undefined) session.messageCount = e.messageCount;
+              if (e.created !== undefined) session.created = e.created;
+              if (e.modified !== undefined) session.modified = e.modified;
+              if (e.gitBranch !== undefined) session.gitBranch = e.gitBranch;
+              if (e.projectPath !== undefined) session.projectPath = e.projectPath;
+              if (e.isSidechain !== undefined) session.isSidechain = e.isSidechain;
+              return session;
+            }),
           });
         } catch {
           // sessions-index.json missing or malformed — skip silently

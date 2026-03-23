@@ -206,7 +206,7 @@ export abstract class BaseCollector implements Collector {
           if (filter && !filter(fullPath)) continue;
           const file = await this.safeReadFile(fullPath, result, {
             maxSize: maxFileSize,
-            redact,
+            ...(redact !== undefined ? { redact } : {}),
           });
           if (file) files.push(file);
         }

@@ -41,7 +41,7 @@ export function extractIconFileName(plistContent: string): string | null {
   const match = plistContent.match(pattern);
   if (!match) return null;
 
-  let iconFile = match[1].trim();
+  let iconFile = match[1]!.trim();
   // Ensure .icns extension (some plists omit it)
   if (!iconFile.endsWith(".icns")) {
     iconFile += ".icns";
@@ -58,7 +58,7 @@ function extractIconCandidates(plistContent: string): string[] {
     const match = plistContent.match(pattern);
     if (!match) continue;
 
-    let iconFile = match[1].trim();
+    let iconFile = match[1]!.trim();
     if (!iconFile.endsWith(".icns")) {
       iconFile += ".icns";
     }

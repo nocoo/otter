@@ -149,11 +149,11 @@ export function table(columns: Column[], rows: string[][]): string {
 
   const gap = "  ";
   const headerLine = columns
-    .map((col, i) => pc.dim(pad(col.label, widths[i], col.align ?? "left")))
+    .map((col, i) => pc.dim(pad(col.label, widths[i] ?? 0, col.align ?? "left")))
     .join(gap);
   const separator = widths.map((w) => pc.dim("\u2500".repeat(w))).join(gap);
   const dataLines = rows.map((row) =>
-    row.map((cell, i) => pad(cell, widths[i], columns[i].align ?? "left")).join(gap),
+    row.map((cell, i) => pad(cell, widths[i] ?? 0, columns[i]?.align ?? "left")).join(gap),
   );
 
   return [headerLine, separator, ...dataLines].join("\n");
@@ -179,7 +179,7 @@ export function tree(children: TreeChild[]): string {
   const detailPad = Math.min(maxTextLen + 4, 50);
 
   for (let i = 0; i < children.length; i++) {
-    const child = children[i];
+    const child = children[i]!;
     const isLast = i === children.length - 1;
     const branch = isLast ? S.treeLast : S.treeItem;
 

@@ -47,9 +47,10 @@ function parseExtensionDirName(name: string): { name: string; version?: string }
     return name.length > 0 ? { name } : null;
   }
 
+  const parsedVersion = match[2];
   return {
-    name: match[1],
-    version: match[2],
+    name: match[1]!,
+    ...(parsedVersion ? { version: parsedVersion } : {}),
   };
 }
 

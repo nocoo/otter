@@ -83,7 +83,9 @@ export class ShellConfigCollector extends BaseCollector {
     return this.timed(async (result) => {
       // 1. Collect well-known dotfiles
       for (const { name: dotfile, redact } of DOTFILES) {
-        const file = await this.safeReadFile(join(this.homeDir, dotfile), result, { redact });
+        const file = await this.safeReadFile(join(this.homeDir, dotfile), result, {
+          ...(redact !== undefined ? { redact } : {}),
+        });
         if (file) result.files.push(file);
       }
 
