@@ -9,7 +9,7 @@ CLI package `@nocoo/otter` is published to npm. Steps to release a new version:
    - `packages/web/src/lib/version.ts` (fallback)
    - `packages/web/src/__tests__/unit/live-route.test.ts` (mock + assertion)
 2. **Build** — `bun install && bun run build`
-3. **Test** — `bun run test` (291+ tests must pass)
+3. **Test** — `bun run test` (444+ tests must pass)
 4. **Dry-run** — `npm publish --dry-run` in `packages/cli/`
 5. **Publish** — `npm publish` in `packages/cli/` (requires `npm login` as `nocoo`)
 6. **Verify** — `npx @nocoo/otter@latest --help` in a temp directory
@@ -41,9 +41,9 @@ CLI package `@nocoo/otter` is published to npm. Steps to release a new version:
 | Dim | Gate | Hook |
 |-----|------|------|
 | G1 | Biome check (lint + format, 0 errors) + lint-staged | pre-commit |
-| L1 | 436+ vitest tests, 90% coverage thresholds | pre-commit |
+| L1 | 444+ vitest tests, 90% coverage thresholds | pre-commit |
 | tsc | TypeScript strict type check (core → cli → web) | pre-commit |
 | G2 | osv-scanner (0 vulns) + gitleaks (0 leaks) | pre-push |
 | L2 | 4 API E2E tests on real HTTP (:17029) | pre-push |
 | L3 | Playwright browser E2E smoke spec (:27029) | pre-push |
-| D1 | N/A (no storage) | — |
+| D1 | `otter-db-test` D1 + `otter-snapshots-test` R2 (env override + guard + marker) | E2E runner |
