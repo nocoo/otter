@@ -1,5 +1,14 @@
 #!/usr/bin/env sh
 
+# G1: Biome lint + format (incremental, staged files only)
+bunx lint-staged 2>&1
+LINT_STAGED_EXIT=$?
+
+if [ $LINT_STAGED_EXIT -ne 0 ]; then
+  echo "❌ G1 FAILED: Biome lint/format errors on staged files."
+  exit 1
+fi
+
 # L1: Unit Tests
 bun run test 2>&1
 TEST_EXIT=$?
@@ -9,13 +18,13 @@ if [ $TEST_EXIT -ne 0 ]; then
   exit 1
 fi
 
-# L2: TypeScript strict type checking (zero errors, zero warnings)
+# Type checking (tsc strict)
 bun run lint 2>&1
-LINT_EXIT=$?
+TSC_EXIT=$?
 
-if [ $LINT_EXIT -ne 0 ]; then
-  echo "❌ L2 FAILED: TypeScript type check failed."
+if [ $TSC_EXIT -ne 0 ]; then
+  echo "❌ Type check FAILED: TypeScript errors found."
   exit 1
 fi
 
-echo "✅ L1 (UT) + L2 (Lint) passed."
+echo "✅ G1 (Biome) + L1 (UT) + tsc passed."

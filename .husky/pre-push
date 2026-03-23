@@ -1,12 +1,43 @@
 #!/usr/bin/env sh
 
-# L3: API E2E Tests (port 17029)
+# G2a: Dependency vulnerability scanning
+echo "🔍 G2a: Running osv-scanner..."
+osv-scanner scan --lockfile=bun.lock 2>&1
+OSV_EXIT=$?
+
+if [ $OSV_EXIT -ne 0 ]; then
+  echo "❌ G2 FAILED: osv-scanner found vulnerabilities."
+  exit 1
+fi
+
+# G2b: Secret detection
+echo "🔍 G2b: Running gitleaks..."
+gitleaks git --no-banner -v 2>&1
+GITLEAKS_EXIT=$?
+
+if [ $GITLEAKS_EXIT -ne 0 ]; then
+  echo "❌ G2 FAILED: gitleaks detected secrets."
+  exit 1
+fi
+
+# L2: API E2E Tests (port 17029)
+echo "🧪 L2: Running API E2E tests..."
 bun run test:e2e 2>&1
 E2E_EXIT=$?
 
 if [ $E2E_EXIT -ne 0 ]; then
-  echo "❌ L3 FAILED: API E2E tests did not pass."
+  echo "❌ L2 FAILED: API E2E tests did not pass."
   exit 1
 fi
 
-echo "✅ L3 (API E2E) passed."
+# L3: Playwright Browser E2E Tests (port 27029)
+echo "🧪 L3: Running Playwright E2E tests..."
+bun run test:e2e:ui 2>&1
+PW_EXIT=$?
+
+if [ $PW_EXIT -ne 0 ]; then
+  echo "❌ L3 FAILED: Playwright E2E tests did not pass."
+  exit 1
+fi
+
+echo "✅ G2 (Security) + L2 (API E2E) + L3 (Playwright) passed."
