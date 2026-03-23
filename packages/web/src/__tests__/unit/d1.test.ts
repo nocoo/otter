@@ -239,6 +239,46 @@ describe("D1 client", () => {
     await expect(batch([{ sql: "BAD SQL" }])).rejects.toThrow("D1 batch failed: batch error");
   });
 
+  // --- E2E test isolation guard ---
+
+  it("throws in E2E mode when CF_D1_TEST_DATABASE_ID is missing", async () => {
+    process.env.E2E_SKIP_AUTH = "true";
+    const { query } = await import("@/lib/cf/d1");
+    await expect(query("SELECT 1")).rejects.toThrow(
+      "D1 safety: E2E mode active but CF_D1_TEST_DATABASE_ID not set",
+    );
+  });
+
+  it("throws in E2E mode when database IDs don't match", async () => {
+    process.env.E2E_SKIP_AUTH = "true";
+    process.env.CF_D1_TEST_DATABASE_ID = "different-db";
+    const { query } = await import("@/lib/cf/d1");
+    await expect(query("SELECT 1")).rejects.toThrow("D1 safety: CF_D1_DATABASE_ID");
+  });
+
+  it("passes in E2E mode when database IDs match", async () => {
+    process.env.E2E_SKIP_AUTH = "true";
+    process.env.CF_D1_TEST_DATABASE_ID = "test-db";
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => makeD1Response([{ id: 1 }]),
+    });
+    const { query } = await import("@/lib/cf/d1");
+    const result = await query("SELECT 1");
+    expect(result).toEqual([{ id: 1 }]);
+  });
+
+  it("does not trigger guard when E2E_SKIP_AUTH is not set", async () => {
+    delete process.env.E2E_SKIP_AUTH;
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => makeD1Response([{ id: 1 }]),
+    });
+    const { query } = await import("@/lib/cf/d1");
+    const result = await query("SELECT 1");
+    expect(result).toEqual([{ id: 1 }]);
+  });
+
   // --- retry logic ---
 
   it("retries on transient failures then succeeds", async () => {

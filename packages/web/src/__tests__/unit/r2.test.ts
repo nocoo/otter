@@ -46,6 +46,40 @@ describe("R2 client", () => {
     await expect(putSnapshot("key", {})).rejects.toThrow("Missing Cloudflare R2 env vars");
   });
 
+  // --- E2E test isolation guard ---
+
+  it("throws in E2E mode when CF_R2_TEST_BUCKET is missing", async () => {
+    process.env.E2E_SKIP_AUTH = "true";
+    const { putSnapshot } = await import("@/lib/cf/r2");
+    await expect(putSnapshot("key", {})).rejects.toThrow(
+      "R2 safety: E2E mode active but CF_R2_TEST_BUCKET not set",
+    );
+  });
+
+  it("throws in E2E mode when bucket names don't match", async () => {
+    process.env.E2E_SKIP_AUTH = "true";
+    process.env.CF_R2_TEST_BUCKET = "different-bucket";
+    const { putSnapshot } = await import("@/lib/cf/r2");
+    await expect(putSnapshot("key", {})).rejects.toThrow("R2 safety: CF_R2_BUCKET");
+  });
+
+  it("passes in E2E mode when bucket names match", async () => {
+    process.env.E2E_SKIP_AUTH = "true";
+    process.env.CF_R2_TEST_BUCKET = "otter-snapshots";
+    mockSend.mockResolvedValueOnce({});
+    const { putSnapshot } = await import("@/lib/cf/r2");
+    await putSnapshot("key", { foo: "bar" });
+    expect(mockSend).toHaveBeenCalledOnce();
+  });
+
+  it("does not trigger R2 guard when E2E_SKIP_AUTH is not set", async () => {
+    delete process.env.E2E_SKIP_AUTH;
+    mockSend.mockResolvedValueOnce({});
+    const { putSnapshot } = await import("@/lib/cf/r2");
+    await putSnapshot("key", { foo: "bar" });
+    expect(mockSend).toHaveBeenCalledOnce();
+  });
+
   // --- snapshotKey ---
 
   it("generates correct snapshot key", async () => {
