@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.2] - 2026-03-23
+
+### Quality
+
+- **S-tier quality gates**: Upgraded project from Tier C to Tier S by implementing full mem6 quality framework
+- **Biome 2.4 linter**: Added Biome with strict rules (recommended + all groups at error level) as the project linter and formatter, replacing tsc-only checks
+- **lint-staged**: Incremental Biome lint+format on staged files via pre-commit hook (replaces full-repo checks)
+- **Security scanning**: Added osv-scanner (dependency vulnerabilities) and gitleaks (secret detection) as pre-push hard gates
+- **Husky hooks restructured**: pre-commit runs G1 (Biome) + L1 (tests) + tsc; pre-push runs G2 (security) + L2 (API E2E) + L3 (Playwright)
+
+### Fixes
+
+- **Dependency vulnerabilities**: Upgraded next 16.1.6 → 16.2.1, added overrides for fast-xml-parser, flatted, and hono to resolve 10 known CVEs
+- **React key props**: Replaced array index keys with content-based keys in collector cards and overview tab
+- **Non-null assertions**: Replaced `!` assertions with proper null checks and type narrowing across CLI and web
+- **Accessibility**: Added `type="button"` attributes and ARIA labels to interactive elements
+- **Import organization**: Applied Biome import sorting and formatting across 126 files
+
 ## [1.3.1] - 2026-03-21
 
 ### Testing

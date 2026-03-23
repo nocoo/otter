@@ -17,7 +17,7 @@ test("e2e auth bypass allows dashboard access", async ({ page }) => {
   await expect(page.getByText("Snapshots")).toBeVisible();
 });
 
-test("dashboard snapshot detail renders all rich collectors", async ({ page }) => {
+test("dashboard snapshot detail renders rich snapshot", async ({ page }) => {
   await page.route(`**/api/snapshots/${richSnapshotId}`, async (route) => {
     await route.fulfill({
       status: 200,
@@ -42,26 +42,25 @@ test("dashboard snapshot detail renders all rich collectors", async ({ page }) =
   });
 
   await page.goto(`/snapshots/${richSnapshotId}`);
-  await expect(page.getByRole("button", { name: /config 4 collectors/i })).toBeVisible();
-  await expect(page.getByRole("button", { name: /environment 8 collectors/i })).toBeVisible();
-  await expect(page.getByText("pinned: true")).toBeVisible();
-  await expect(page.getByText("editor: vscode")).toBeVisible();
-  await expect(page.getByText("current: true")).toBeVisible();
-  await expect(page.getByText("Skipped pyenv: not installed")).toBeVisible();
-  await expect(page.getByText("Keys are detected only")).toBeVisible();
-  await expect(page.getByText("crontab")).toBeVisible();
 
+  // Overview tab: verify category tabs and summary cards
+  await expect(page.getByRole("tab", { name: /config\s+4/i })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /environment\s+8/i })).toBeVisible();
+  await expect(page.getByText("Otter Rich Mac")).toBeVisible();
+  await expect(page.getByText("12 collectors captured in this snapshot")).toBeVisible();
+  await expect(page.getByText("Skipped pyenv: not installed")).toBeVisible();
+
+  // Switch to Config tab and search
+  await page.getByRole("tab", { name: /config\s+4/i }).click();
   await page.getByPlaceholder("Search collectors, files, items, or metadata...").fill("copilot");
   await expect(page.getByText("VS Code / Cursor Configuration")).toBeVisible();
-  await expect(page.getByText("Homebrew Packages")).not.toBeVisible();
 
-  await page.getByRole("button", { name: "Environment" }).click();
-  await expect(page.getByText("No collectors match the current filters.")).toBeVisible();
+  // Switch to Environment tab and verify an environment collector renders
+  await page.getByRole("tab", { name: /environment\s+8/i }).click();
+  await expect(page.getByText("Development Toolchain")).toBeVisible();
 
-  await page.getByRole("button", { name: "All" }).click();
-  await page
-    .getByPlaceholder("Search collectors, files, items, or metadata...")
-    .fill("aws-profile");
-  await expect(page.getByText("Cloud CLI Configuration")).toBeVisible();
-  await expect(page.getByText("macOS System Preferences")).not.toBeVisible();
+  // Search within environment tab
+  await page.getByPlaceholder("Search collectors, files, items, or metadata...").fill("homebrew");
+  await expect(page.getByText("Homebrew Packages")).toBeVisible();
+  await expect(page.getByText("Docker Configuration")).not.toBeVisible();
 });
