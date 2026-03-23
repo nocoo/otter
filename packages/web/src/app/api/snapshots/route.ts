@@ -45,14 +45,14 @@ export async function GET(request: NextRequest) {
   let limit = DEFAULT_LIMIT;
   const limitParam = searchParams.get("limit");
   if (limitParam) {
-    const parsed = parseInt(limitParam, 10);
+    const parsed = Number.parseInt(limitParam, 10);
     if (!Number.isNaN(parsed) && parsed > 0) {
       limit = Math.min(parsed, MAX_LIMIT);
     }
   }
 
   const beforeParam = searchParams.get("before");
-  const before = beforeParam ? parseInt(beforeParam, 10) : null;
+  const before = beforeParam ? Number.parseInt(beforeParam, 10) : null;
 
   // Build query
   let sql: string;

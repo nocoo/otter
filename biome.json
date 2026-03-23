@@ -41,14 +41,22 @@
       "a11y": "error",
       "complexity": {
         "recommended": true,
+        "noExcessiveCognitiveComplexity": "warn",
         "noExcessiveLinesPerFunction": "off",
-        "noVoid": "off"
+        "noVoid": "off",
+        "noForEach": "warn",
+        "noUselessConstructor": "error",
+        "noStaticOnlyClass": "error"
       },
       "correctness": {
         "recommended": true,
         "noNodejsModules": "off",
         "noUnresolvedImports": "off",
-        "noUndeclaredDependencies": "off"
+        "noUndeclaredDependencies": "off",
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error",
+        "useExhaustiveDependencies": "error",
+        "useHookAtTopLevel": "error"
       },
       "performance": {
         "recommended": true,
@@ -59,20 +67,36 @@
         "noReExportAll": "off"
       },
       "security": {
-        "recommended": true
+        "recommended": true,
+        "noGlobalEval": "error"
       },
       "suspicious": {
         "recommended": true,
         "noConsole": "off",
         "useAwait": "warn",
         "noEmptyBlockStatements": "error",
-        "noArrayIndexKey": "error"
+        "noArrayIndexKey": "error",
+        "noExplicitAny": "error",
+        "noConfusingVoidType": "error",
+        "noAssignInExpressions": "error",
+        "noDoubleEquals": "error"
       },
       "style": {
         "recommended": true,
         "noDefaultExport": "off",
-        "noNonNullAssertion": "error",
-        "useComponentExportOnlyModules": "error"
+        "noNonNullAssertion": "warn",
+        "useComponentExportOnlyModules": "error",
+        "useConst": "error",
+        "useExportType": "error",
+        "useImportType": "error",
+        "useTemplate": "error",
+        "useNamingConvention": "warn",
+        "useSelfClosingElements": "error",
+        "useShorthandFunctionType": "error",
+        "useNodejsImportProtocol": "error",
+        "useNumberNamespace": "error",
+        "useForOf": "error",
+        "noUselessElse": "error"
       }
     },
     "domains": {
