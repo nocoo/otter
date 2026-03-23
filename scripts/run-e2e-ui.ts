@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * L4 BDD Playwright E2E UI Test Runner
+ * L3 Playwright E2E UI Test Runner
  *
  * This script:
  * 1. Ensures the target port is free
@@ -10,7 +10,7 @@
  */
 
 import { type Subprocess, spawn } from "bun";
-import { cleanupBuildDir, ensurePortFree } from "./e2e-utils";
+import { buildE2eEnv, cleanupBuildDir, ensurePortFree } from "./e2e-utils";
 
 const E2E_UI_PORT = process.env.E2E_UI_PORT || "27029";
 const E2E_DIST_DIR = "packages/web/.next-e2e-ui";
@@ -43,20 +43,23 @@ async function cleanup() {
 }
 
 async function main() {
-  console.log("🎭 L4 Playwright E2E UI Test Runner\n");
+  console.log("🎭 L3 Playwright E2E UI Test Runner\n");
 
   // Step 0: Ensure port is free
   await ensurePortFree(E2E_UI_PORT);
 
-  // Step 1: Start dev server
+  // Step 1: Build isolated test env (D1/R2 overrides + _test_marker verification)
+  const e2eEnv = await buildE2eEnv({ distDir: ".next-e2e-ui" });
+  if (!e2eEnv) {
+    console.log("⏭️  Skipping E2E UI — test resources not configured.");
+    process.exit(0);
+  }
+
+  // Step 2: Start dev server with test resources
   console.log("🌐 Starting E2E UI server on port", E2E_UI_PORT, "...");
   serverProcess = spawn(["bun", "run", "next", "dev", "-p", E2E_UI_PORT], {
     cwd: "packages/web",
-    env: {
-      ...process.env,
-      NEXT_DIST_DIR: ".next-e2e-ui",
-      E2E_SKIP_AUTH: "true",
-    },
+    env: e2eEnv,
     stdout: "pipe",
     stderr: "pipe",
   });
@@ -81,7 +84,7 @@ async function main() {
   }
   console.log("✅ E2E UI server ready!\n");
 
-  // Step 2: Run Playwright tests
+  // Step 3: Run Playwright tests
   console.log("🎭 Running Playwright tests...\n");
   const testResult = Bun.spawnSync(
     [
@@ -103,14 +106,14 @@ async function main() {
     },
   );
 
-  // Step 3: Cleanup
+  // Step 4: Cleanup
   await cleanup();
 
   console.log(
     "\n" +
       (testResult.exitCode === 0
-        ? "✅ L4 Playwright E2E tests passed!"
-        : "❌ L4 Playwright E2E tests failed!"),
+        ? "✅ L3 Playwright E2E tests passed!"
+        : "❌ L3 Playwright E2E tests failed!"),
   );
   process.exit(testResult.exitCode ?? 1);
 }

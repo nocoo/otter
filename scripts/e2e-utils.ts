@@ -3,6 +3,7 @@
  */
 
 import { existsSync, rmSync } from "node:fs";
+import { verifyTestDatabase } from "./verify-test-resources";
 
 /**
  * Ensure a TCP port is free before starting a server.
@@ -43,4 +44,53 @@ export function cleanupBuildDir(dir: string): void {
     rmSync(dir, { recursive: true, force: true });
     console.log(`   Removed ${dir}`);
   }
+}
+
+/**
+ * Build an env object for the E2E dev server with test resource isolation.
+ *
+ * Performs the Variant B triple-check (existence → inequality → override):
+ *  1. CF_D1_TEST_DATABASE_ID and CF_R2_TEST_BUCKET must be set
+ *  2. They must differ from their production counterparts
+ *  3. Overrides CF_D1_DATABASE_ID and CF_R2_BUCKET so the server uses test resources
+ *
+ * Also verifies the test database via _test_marker table.
+ *
+ * Returns null if test env vars are missing (caller should skip E2E gracefully).
+ */
+export async function buildE2eEnv(options: {
+  distDir: string;
+}): Promise<Record<string, string | undefined> | null> {
+  const testDbId = process.env.CF_D1_TEST_DATABASE_ID;
+  const prodDbId = process.env.CF_D1_DATABASE_ID;
+  const testBucket = process.env.CF_R2_TEST_BUCKET;
+  const prodBucket = process.env.CF_R2_BUCKET;
+
+  // 1. Existence check — soft gate: warn + skip
+  if (!testDbId || !testBucket) {
+    console.warn("⚠️  CF_D1_TEST_DATABASE_ID or CF_R2_TEST_BUCKET not set — skipping E2E");
+    return null;
+  }
+
+  // 2. Inequality check — prevent misconfiguration pointing back to prod
+  if (testDbId === prodDbId) {
+    throw new Error(
+      "CF_D1_TEST_DATABASE_ID === CF_D1_DATABASE_ID. Refusing to run E2E against prod.",
+    );
+  }
+  if (testBucket === prodBucket) {
+    throw new Error("CF_R2_TEST_BUCKET === CF_R2_BUCKET. Refusing to run E2E against prod.");
+  }
+
+  // 3. Verify _test_marker in the test database
+  await verifyTestDatabase();
+
+  // 4. Build env with overrides
+  return {
+    ...process.env,
+    CF_D1_DATABASE_ID: testDbId,
+    CF_R2_BUCKET: testBucket,
+    NEXT_DIST_DIR: options.distDir,
+    E2E_SKIP_AUTH: "true",
+  };
 }

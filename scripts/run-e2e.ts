@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * L3 API E2E Test Runner
+ * L2 API E2E Test Runner
  *
  * This script:
  * 1. Ensures the target port is free
@@ -10,7 +10,7 @@
  */
 
 import { type Subprocess, spawn } from "bun";
-import { cleanupBuildDir, ensurePortFree } from "./e2e-utils";
+import { buildE2eEnv, cleanupBuildDir, ensurePortFree } from "./e2e-utils";
 
 const E2E_PORT = process.env.E2E_PORT || "17029";
 const E2E_DIST_DIR = "packages/web/.next-e2e";
@@ -43,20 +43,23 @@ async function cleanup() {
 }
 
 async function main() {
-  console.log("🚀 L3 API E2E Test Runner\n");
+  console.log("🚀 L2 API E2E Test Runner\n");
 
   // Step 0: Ensure port is free
   await ensurePortFree(E2E_PORT);
 
-  // Step 1: Start dev server
+  // Step 1: Build isolated test env (D1/R2 overrides + _test_marker verification)
+  const e2eEnv = await buildE2eEnv({ distDir: ".next-e2e" });
+  if (!e2eEnv) {
+    console.log("⏭️  Skipping E2E — test resources not configured.");
+    process.exit(0);
+  }
+
+  // Step 2: Start dev server with test resources
   console.log("🌐 Starting E2E server on port", E2E_PORT, "...");
   serverProcess = spawn(["bun", "run", "next", "dev", "-p", E2E_PORT], {
     cwd: "packages/web",
-    env: {
-      ...process.env,
-      NEXT_DIST_DIR: ".next-e2e",
-      E2E_SKIP_AUTH: "true",
-    },
+    env: e2eEnv,
     stdout: "pipe",
     stderr: "pipe",
   });
@@ -81,8 +84,8 @@ async function main() {
   }
   console.log("✅ E2E server ready!\n");
 
-  // Step 2: Run E2E tests
-  console.log("🧪 Running L3 API E2E tests...\n");
+  // Step 3: Run E2E tests
+  console.log("🧪 Running L2 API E2E tests...\n");
   const testResult = Bun.spawnSync(
     ["bun", "test", "packages/web/src/__tests__/e2e", "--timeout", "30000"],
     {
@@ -95,12 +98,12 @@ async function main() {
     },
   );
 
-  // Step 3: Cleanup
+  // Step 4: Cleanup
   await cleanup();
 
   console.log(
     "\n" +
-      (testResult.exitCode === 0 ? "✅ L3 API E2E tests passed!" : "❌ L3 API E2E tests failed!"),
+      (testResult.exitCode === 0 ? "✅ L2 API E2E tests passed!" : "❌ L2 API E2E tests failed!"),
   );
   process.exit(testResult.exitCode ?? 1);
 }
