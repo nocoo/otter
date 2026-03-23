@@ -1,0 +1,12 @@
+title = "otter gitleaks config"
+
+[allowlist]
+  description = "Known false positives in test fixtures and example data"
+
+  # Test fixture fake tokens in redact.test.ts and deleted settings page
+  commits = [
+    "6dd5c655481e39e045cad3e452a87ffa84f7d497",
+    "46b509c46a4241f50be7516def3be75a836ed901",
+    "5c5a8437907b1fee8e5cfb6ddb74e97d2947df57",
+    "d68cee37dc8e68d819d86e61a98c71f00de2d215"
+  ]
