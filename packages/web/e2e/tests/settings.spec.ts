@@ -46,7 +46,7 @@ test.describe("Settings", () => {
     await expect(page.getByText("Manage your account and webhook tokens")).toBeVisible();
 
     // Account section — session is null in E2E so fallback to "User"
-    await expect(page.getByText("Account")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Account" })).toBeVisible();
     await expect(page.locator("text=User").first()).toBeVisible();
     await expect(page.getByText("Google OAuth")).toBeVisible();
 

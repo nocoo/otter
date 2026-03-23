@@ -42,13 +42,13 @@ test.describe("Navigation", () => {
   test("active sidebar link is highlighted", async ({ page }) => {
     await page.goto("/snapshots");
 
-    // The Snapshots link should have the active class (bg-accent)
+    // The Snapshots link should have the active class (text-foreground, NOT text-muted-foreground)
     const snapshotsLink = page.locator("aside").getByRole("link", { name: "Snapshots" });
-    await expect(snapshotsLink).toHaveClass(/bg-accent/);
+    await expect(snapshotsLink).not.toHaveClass(/text-muted-foreground/);
 
-    // The Dashboard link should NOT have the active class
+    // The Dashboard link should have the inactive class (text-muted-foreground)
     const dashboardLink = page.locator("aside").getByRole("link", { name: "Dashboard" });
-    await expect(dashboardLink).not.toHaveClass(/bg-accent/);
+    await expect(dashboardLink).toHaveClass(/text-muted-foreground/);
   });
 
   test("breadcrumbs show correct path segments", async ({ page }) => {

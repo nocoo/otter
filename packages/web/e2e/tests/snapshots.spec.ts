@@ -60,8 +60,8 @@ test.describe("Snapshots List", () => {
     await expect(page.getByRole("columnheader", { name: "Files" })).toBeVisible();
 
     // Hostnames should appear in the table
-    await expect(page.getByText("host-1")).toBeVisible();
-    await expect(page.getByText("host-5")).toBeVisible();
+    await expect(page.getByText("host-1", { exact: true })).toBeVisible();
+    await expect(page.getByText("host-5", { exact: true })).toBeVisible();
 
     // Pagination text
     await expect(page.getByText("Showing 1-5 of 5 snapshots")).toBeVisible();
@@ -103,7 +103,7 @@ test.describe("Snapshots List", () => {
 
     // Page 1 info
     await expect(page.getByText("Page 1 of 2")).toBeVisible();
-    await expect(page.getByText("host-1")).toBeVisible();
+    await expect(page.getByText("host-1", { exact: true })).toBeVisible();
 
     // Click Next
     const nextButton = page

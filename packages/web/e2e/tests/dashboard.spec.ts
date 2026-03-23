@@ -106,9 +106,9 @@ test.describe("Dashboard", () => {
     await page.goto("/");
 
     // Table should show all 3 hostnames
-    await expect(page.getByText("macbook-pro")).toBeVisible();
-    await expect(page.getByText("linux-dev")).toBeVisible();
-    await expect(page.getByText("work-laptop")).toBeVisible();
+    await expect(page.getByText("macbook-pro", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("linux-dev", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("work-laptop", { exact: true }).first()).toBeVisible();
 
     // Click on first row hostname link → navigates to detail page
     await page.route("**/api/snapshots/snap-001", async (route) => {
