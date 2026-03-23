@@ -2,8 +2,32 @@
  * Shared E2E utilities for test runner scripts.
  */
 
-import { existsSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, rmSync } from "node:fs";
+import { resolve } from "node:path";
 import { verifyTestDatabase } from "./verify-test-resources";
+
+/**
+ * Load packages/web/.env into process.env (without overriding existing vars).
+ * Runner scripts execute from repo root, so Next.js auto-loading doesn't apply.
+ */
+function loadWebEnv(): void {
+  const envPath = resolve("packages/web/.env");
+  if (!existsSync(envPath)) return;
+
+  const content = readFileSync(envPath, "utf-8");
+  for (const line of content.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eqIdx = trimmed.indexOf("=");
+    if (eqIdx === -1) continue;
+    const key = trimmed.slice(0, eqIdx);
+    const value = trimmed.slice(eqIdx + 1);
+    // Don't override existing env vars (e.g. from shell)
+    if (!(key in process.env)) {
+      process.env[key] = value;
+    }
+  }
+}
 
 /**
  * Ensure a TCP port is free before starting a server.
@@ -61,6 +85,9 @@ export function cleanupBuildDir(dir: string): void {
 export async function buildE2eEnv(options: {
   distDir: string;
 }): Promise<Record<string, string | undefined> | null> {
+  // Load packages/web/.env since runner scripts execute from repo root
+  loadWebEnv();
+
   const testDbId = process.env.CF_D1_TEST_DATABASE_ID;
   const prodDbId = process.env.CF_D1_DATABASE_ID;
   const testBucket = process.env.CF_R2_TEST_BUCKET;
