@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { Github, Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { Menu, Github } from "lucide-react";
+import { useEffect } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Breadcrumbs } from "./breadcrumbs";
 import { Sidebar } from "./sidebar";
 import { SidebarProvider, useSidebar } from "./sidebar-context";
 import { ThemeToggle } from "./theme-toggle";
-import { Breadcrumbs } from "./breadcrumbs";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 // ---------------------------------------------------------------------------
 // URL-based breadcrumb generation
@@ -133,9 +133,7 @@ function AppShellInner({ children }: AppShellProps) {
 export function AppShell({ children }: AppShellProps) {
   return (
     <SidebarProvider>
-      <AppShellInner>
-        {children}
-      </AppShellInner>
+      <AppShellInner>{children}</AppShellInner>
     </SidebarProvider>
   );
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies
 vi.mock("@/lib/session", () => ({
@@ -10,10 +10,10 @@ vi.mock("@/lib/cf/d1", () => ({
   queryFirst: vi.fn(),
 }));
 
-import { GET } from "@/app/api/snapshots/route";
-import { getAuthUser } from "@/lib/session";
-import { query, queryFirst } from "@/lib/cf/d1";
 import { NextRequest } from "next/server";
+import { GET } from "@/app/api/snapshots/route";
+import { query, queryFirst } from "@/lib/cf/d1";
+import { getAuthUser } from "@/lib/session";
 
 const mockGetAuthUser = vi.mocked(getAuthUser);
 const mockQuery = vi.mocked(query);
@@ -121,10 +121,10 @@ describe("GET /api/snapshots", () => {
     mockQueryFirst.mockResolvedValue({ total: 0 });
 
     await GET(makeRequest());
-    expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining("WHERE user_id = ?1"),
-      ["user-42", 20],
-    );
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining("WHERE user_id = ?1"), [
+      "user-42",
+      20,
+    ]);
   });
 
   it("respects custom limit parameter", async () => {
@@ -133,10 +133,7 @@ describe("GET /api/snapshots", () => {
     mockQueryFirst.mockResolvedValue({ total: 0 });
 
     await GET(makeRequest("http://localhost/api/snapshots?limit=5"));
-    expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining("LIMIT ?2"),
-      ["user-1", 5],
-    );
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining("LIMIT ?2"), ["user-1", 5]);
   });
 
   it("caps limit at 100", async () => {
@@ -145,10 +142,7 @@ describe("GET /api/snapshots", () => {
     mockQueryFirst.mockResolvedValue({ total: 0 });
 
     await GET(makeRequest("http://localhost/api/snapshots?limit=500"));
-    expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining("LIMIT ?2"),
-      ["user-1", 100],
-    );
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining("LIMIT ?2"), ["user-1", 100]);
   });
 
   it("uses before cursor for pagination", async () => {
@@ -156,9 +150,7 @@ describe("GET /api/snapshots", () => {
     mockQuery.mockResolvedValue([]);
     mockQueryFirst.mockResolvedValue({ total: 10 });
 
-    await GET(
-      makeRequest("http://localhost/api/snapshots?before=1709700000000"),
-    );
+    await GET(makeRequest("http://localhost/api/snapshots?before=1709700000000"));
     expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining("WHERE user_id = ?1 AND uploaded_at < ?2"),
       ["user-1", 1709700000000, 20],

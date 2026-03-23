@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
+import { execute, query } from "@/lib/cf/d1";
 import { getAuthUser } from "@/lib/session";
-import { query, execute } from "@/lib/cf/d1";
 
 interface WebhookRow {
   id: string;
@@ -40,10 +40,7 @@ export async function GET() {
     return NextResponse.json({ webhooks });
   } catch (err) {
     console.error("GET /api/webhooks failed:", err);
-    return NextResponse.json(
-      { error: "Failed to fetch webhooks from database" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to fetch webhooks from database" }, { status: 500 });
   }
 }
 
@@ -90,9 +87,6 @@ export async function POST(request: Request) {
     );
   } catch (err) {
     console.error("POST /api/webhooks failed:", err);
-    return NextResponse.json(
-      { error: "Failed to create webhook in database" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to create webhook in database" }, { status: 500 });
   }
 }

@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { buildRichSnapshotFixture, getRichSnapshotCounts } from "../../test-support/rich-snapshot";
 
 const richSnapshotId = "ui-rich-meta";
@@ -59,7 +59,9 @@ test("dashboard snapshot detail renders all rich collectors", async ({ page }) =
   await expect(page.getByText("No collectors match the current filters.")).toBeVisible();
 
   await page.getByRole("button", { name: "All" }).click();
-  await page.getByPlaceholder("Search collectors, files, items, or metadata...").fill("aws-profile");
+  await page
+    .getByPlaceholder("Search collectors, files, items, or metadata...")
+    .fill("aws-profile");
   await expect(page.getByText("Cloud CLI Configuration")).toBeVisible();
   await expect(page.getByText("macOS System Preferences")).not.toBeVisible();
 });

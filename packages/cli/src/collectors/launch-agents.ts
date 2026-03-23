@@ -2,13 +2,9 @@ import { exec } from "node:child_process";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
-import { BaseCollector } from "./base.js";
-import type {
-  CollectorCategory,
-  CollectorResult,
-  CollectedFile,
-} from "@otter/core";
+import type { CollectedFile, CollectorCategory, CollectorResult } from "@otter/core";
 import { redactSecrets } from "../utils/redact.js";
+import { BaseCollector } from "./base.js";
 
 const execAsync = promisify(exec);
 
@@ -34,13 +30,11 @@ export class LaunchAgentsCollector extends BaseCollector {
               name: entry.name,
               meta: { type: "user-agent" },
             }))
-            .sort((a, b) => a.name.localeCompare(b.name))
+            .sort((a, b) => a.name.localeCompare(b.name)),
         );
       } catch (err) {
         if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
-          result.errors.push(
-            `Failed to read launch agents: ${(err as Error).message}`
-          );
+          result.errors.push(`Failed to read launch agents: ${(err as Error).message}`);
         }
       }
 

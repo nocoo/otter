@@ -1,11 +1,7 @@
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
+import type { CollectedListItem, CollectorCategory, CollectorResult } from "@otter/core";
 import { BaseCollector } from "./base.js";
-import type {
-  CollectorCategory,
-  CollectorResult,
-  CollectedListItem,
-} from "@otter/core";
 
 const execAsync = promisify(exec);
 
@@ -68,23 +64,22 @@ export class DevToolchainCollector extends BaseCollector {
   private async collectFnm(result: CollectorResult): Promise<CollectedListItem[]> {
     try {
       const output = await this._execCommand("fnm list");
-      return lines(output)
-        .flatMap((line) => {
-          const version = parseFnmVersion(line);
-          if (!version) return [];
+      return lines(output).flatMap((line) => {
+        const version = parseFnmVersion(line);
+        if (!version) return [];
 
-          return [
-            {
-              name: `node/v${version}`,
-              version,
-              meta: {
-                type: "node-version",
-                manager: "fnm",
-                ...(line.includes("default") ? { default: "true" } : {}),
-              },
+        return [
+          {
+            name: `node/v${version}`,
+            version,
+            meta: {
+              type: "node-version",
+              manager: "fnm",
+              ...(line.includes("default") ? { default: "true" } : {}),
             },
-          ];
-        });
+          },
+        ];
+      });
     } catch (err) {
       this.pushMissingToolError(result, "fnm", err);
       return [];
@@ -155,20 +150,19 @@ export class DevToolchainCollector extends BaseCollector {
   private async collectRustup(result: CollectorResult): Promise<CollectedListItem[]> {
     try {
       const output = await this._execCommand("rustup show");
-      return parseInstalledRustToolchains(output)
-        .map((line) => {
-          const isDefault = line.includes("default");
-          const isActive = line.includes("active");
-          const name = line.replace(/\s*\((?:active(?:,\s*)?)?default\)/, "").trim();
-          return {
-            name,
-            meta: {
-              type: "rust-toolchain",
-              ...(isActive ? { active: "true" } : {}),
-              ...(isDefault ? { default: "true" } : {}),
-            },
-          };
-        });
+      return parseInstalledRustToolchains(output).map((line) => {
+        const isDefault = line.includes("default");
+        const isActive = line.includes("active");
+        const name = line.replace(/\s*\((?:active(?:,\s*)?)?default\)/, "").trim();
+        return {
+          name,
+          meta: {
+            type: "rust-toolchain",
+            ...(isActive ? { active: "true" } : {}),
+            ...(isDefault ? { default: "true" } : {}),
+          },
+        };
+      });
     } catch (err) {
       this.pushMissingToolError(result, "rustup", err);
       return [];
@@ -242,11 +236,7 @@ export class DevToolchainCollector extends BaseCollector {
     }
   }
 
-  private pushMissingToolError(
-    result: CollectorResult,
-    tool: string,
-    err: unknown
-  ): void {
+  private pushMissingToolError(result: CollectorResult, tool: string, err: unknown): void {
     const message = (err as Error).message;
     if (
       message.includes("not found") ||
@@ -262,7 +252,7 @@ export class DevToolchainCollector extends BaseCollector {
   private shouldIgnoreBunGlobalError(err: unknown): boolean {
     const message = (err as Error).message;
     return (
-      message.includes('No package.json was found for directory') ||
+      message.includes("No package.json was found for directory") ||
       message.includes('Run "bun init" to initialize a project')
     );
   }

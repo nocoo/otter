@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { AppWindow, CircleCheck } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { metaEntries, formatMetaLabel, badgeClassName } from "./helpers";
+import { badgeClassName, formatMetaLabel, metaEntries } from "./helpers";
 import type { ListItem } from "./types";
 
 interface ListItemRowProps {

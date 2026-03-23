@@ -1,11 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtemp, writeFile, mkdir, rm, chmod } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  ShellConfigCollector,
-  classifySshFile,
-} from "../../collectors/shell-config.js";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { classifySshFile, ShellConfigCollector } from "../../collectors/shell-config.js";
 
 describe("ShellConfigCollector", () => {
   let tempHome: string;
@@ -34,7 +31,7 @@ describe("ShellConfigCollector", () => {
     expect(result.files).toContainEqual(
       expect.objectContaining({
         path: join(tempHome, ".zshrc"),
-      })
+      }),
     );
   });
 
@@ -47,7 +44,7 @@ describe("ShellConfigCollector", () => {
     expect(result.files).toContainEqual(
       expect.objectContaining({
         path: join(tempHome, ".zprofile"),
-      })
+      }),
     );
   });
 
@@ -72,7 +69,7 @@ describe("ShellConfigCollector", () => {
     expect(result.files).toContainEqual(
       expect.objectContaining({
         path: join(tempHome, ".gitconfig"),
-      })
+      }),
     );
   });
 
@@ -99,13 +96,13 @@ describe("ShellConfigCollector", () => {
       expect.objectContaining({
         name: "id_rsa",
         meta: expect.objectContaining({ type: "private-key" }),
-      })
+      }),
     );
     expect(keyItems).toContainEqual(
       expect.objectContaining({
         name: "id_rsa.pub",
         meta: expect.objectContaining({ type: "public-key" }),
-      })
+      }),
     );
   });
 
@@ -147,9 +144,7 @@ describe("ShellConfigCollector", () => {
     // id_rsa (private), id_rsa.pub (public), id_ed25519 (private),
     // id_ed25519.pub (public), id-work.pub (public)
     // Note: id-work does NOT match id_ prefix pattern, so not detected as private key
-    const privateKeys = keyItems.filter(
-      (l) => l.meta?.type === "private-key"
-    );
+    const privateKeys = keyItems.filter((l) => l.meta?.type === "private-key");
     const publicKeys = keyItems.filter((l) => l.meta?.type === "public-key");
     expect(privateKeys.length).toBe(2); // id_rsa, id_ed25519
     expect(publicKeys.length).toBe(3); // id_rsa.pub, id_ed25519.pub, id-work.pub
@@ -209,9 +204,7 @@ describe("ShellConfigCollector", () => {
 
     const sshKeys = result.lists.filter((l) => l.meta?.source === ".ssh");
     expect(sshKeys).toHaveLength(0);
-    expect(
-      result.errors.some((e) => e.includes("SSH directory"))
-    ).toBe(true);
+    expect(result.errors.some((e) => e.includes("SSH directory"))).toBe(true);
 
     // Restore permissions for cleanup
     await chmod(sshDir, 0o755);

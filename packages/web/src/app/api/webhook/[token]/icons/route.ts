@@ -34,8 +34,7 @@ function isValidBody(data: unknown): data is IconsRequestBody {
   for (const icon of obj.icons) {
     if (typeof icon !== "object" || icon === null) return false;
     const i = icon as Record<string, unknown>;
-    if (typeof i.hash !== "string" || !/^[a-f0-9]{12}$/.test(i.hash))
-      return false;
+    if (typeof i.hash !== "string" || !/^[a-f0-9]{12}$/.test(i.hash)) return false;
     if (typeof i.data !== "string" || i.data.length === 0) return false;
   }
 
@@ -59,17 +58,11 @@ export async function POST(request: Request, { params }: RouteParams) {
   );
 
   if (!webhook) {
-    return NextResponse.json(
-      { error: "Invalid webhook token" },
-      { status: 401 },
-    );
+    return NextResponse.json({ error: "Invalid webhook token" }, { status: 401 });
   }
 
   if (webhook.is_active !== 1) {
-    return NextResponse.json(
-      { error: "Webhook is disabled" },
-      { status: 403 },
-    );
+    return NextResponse.json({ error: "Webhook is disabled" }, { status: 403 });
   }
 
   // 2. Parse and validate body
@@ -77,17 +70,11 @@ export async function POST(request: Request, { params }: RouteParams) {
   try {
     const parsed: unknown = await request.json();
     if (!isValidBody(parsed)) {
-      return NextResponse.json(
-        { error: "Invalid request body" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
     }
     body = parsed;
   } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
   if (body.icons.length === 0) {
@@ -104,10 +91,7 @@ export async function POST(request: Request, { params }: RouteParams) {
   // 3. Validate individual icon sizes
   for (const icon of body.icons) {
     if (icon.data.length > MAX_ICON_BASE64_SIZE) {
-      return NextResponse.json(
-        { error: `Icon ${icon.hash} exceeds size limit` },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: `Icon ${icon.hash} exceeds size limit` }, { status: 400 });
     }
   }
 

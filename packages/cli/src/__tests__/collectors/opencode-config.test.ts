@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtemp, writeFile, mkdir, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   OpenCodeConfigCollector,
   parseSkillFrontmatter,
@@ -37,7 +37,7 @@ describe("OpenCodeConfigCollector", () => {
       expect.objectContaining({
         path: join(configDir, "config.json"),
         content: '{"theme": "dark"}',
-      })
+      }),
     );
   });
 
@@ -46,7 +46,7 @@ describe("OpenCodeConfigCollector", () => {
     await mkdir(join(skillsDir, "my-skill"), { recursive: true });
     await writeFile(
       join(skillsDir, "my-skill", "SKILL.md"),
-      "---\nname: my-skill\ndescription: Does amazing stuff\n---\n# My Skill\nDoes stuff"
+      "---\nname: my-skill\ndescription: Does amazing stuff\n---\n# My Skill\nDoes stuff",
     );
 
     const collector = new OpenCodeConfigCollector(tempHome);
@@ -60,7 +60,7 @@ describe("OpenCodeConfigCollector", () => {
           skillName: "my-skill",
           location: `file://${join(skillsDir, "my-skill", "SKILL.md")}`,
         }),
-      })
+      }),
     );
   });
 
@@ -84,7 +84,7 @@ describe("OpenCodeConfigCollector", () => {
     await mkdir(join(agentsSkillsDir, "memory-skill"), { recursive: true });
     await writeFile(
       join(agentsSkillsDir, "memory-skill", "SKILL.md"),
-      "---\nname: memory-skill\ndescription: Manages memory\nallowed-tools: Bash(*)\n---\n# Memory"
+      "---\nname: memory-skill\ndescription: Manages memory\nallowed-tools: Bash(*)\n---\n# Memory",
     );
 
     const collector = new OpenCodeConfigCollector(tempHome);
@@ -98,7 +98,7 @@ describe("OpenCodeConfigCollector", () => {
           description: "Manages memory",
           location: `file://${join(agentsSkillsDir, "memory-skill", "SKILL.md")}`,
         }),
-      })
+      }),
     );
   });
 
@@ -114,22 +114,14 @@ describe("OpenCodeConfigCollector", () => {
   it("should exclude skill content but include skill SKILL.md path in meta", async () => {
     const skillsDir = join(tempHome, ".config", "opencode", "skills");
     await mkdir(join(skillsDir, "big-skill"), { recursive: true });
-    await writeFile(
-      join(skillsDir, "big-skill", "SKILL.md"),
-      "very long content..."
-    );
-    await writeFile(
-      join(skillsDir, "big-skill", "helper.ts"),
-      "export function x() {}"
-    );
+    await writeFile(join(skillsDir, "big-skill", "SKILL.md"), "very long content...");
+    await writeFile(join(skillsDir, "big-skill", "helper.ts"), "export function x() {}");
 
     const collector = new OpenCodeConfigCollector(tempHome);
     const result = await collector.collect();
 
     // Skill files should NOT be in the files array
-    const skillFiles = result.files.filter((f) =>
-      f.path.includes("skills/big-skill")
-    );
+    const skillFiles = result.files.filter((f) => f.path.includes("skills/big-skill"));
     expect(skillFiles).toHaveLength(0);
 
     // But skill should be in the lists array with location
@@ -139,7 +131,7 @@ describe("OpenCodeConfigCollector", () => {
         meta: expect.objectContaining({
           location: `file://${join(skillsDir, "big-skill", "SKILL.md")}`,
         }),
-      })
+      }),
     );
   });
 
@@ -164,7 +156,7 @@ describe("OpenCodeConfigCollector", () => {
 describe("parseSkillFrontmatter", () => {
   it("should parse standard frontmatter", () => {
     const content =
-      '---\nname: deploy\ndescription: Deploy code to Railway\nallowed-tools: Bash(railway:*)\n---\n# Deploy';
+      "---\nname: deploy\ndescription: Deploy code to Railway\nallowed-tools: Bash(railway:*)\n---\n# Deploy";
     const meta = parseSkillFrontmatter(content);
     expect(meta).toEqual({
       name: "deploy",
@@ -183,8 +175,7 @@ describe("parseSkillFrontmatter", () => {
   });
 
   it("should handle description with colons", () => {
-    const content =
-      '---\nname: test\ndescription: Use when user says: deploy now\n---';
+    const content = "---\nname: test\ndescription: Use when user says: deploy now\n---";
     const meta = parseSkillFrontmatter(content);
     expect(meta.description).toBe("Use when user says: deploy now");
   });

@@ -94,9 +94,7 @@ async function executeRaw<T = Record<string, unknown>>(
 
   const data: D1Response<T> = await response.json();
   if (!data.success) {
-    throw new Error(
-      `D1 query failed: ${data.errors.map((e) => e.message).join(", ")}`,
-    );
+    throw new Error(`D1 query failed: ${data.errors.map((e) => e.message).join(", ")}`);
   }
 
   // biome-ignore lint/style/noNonNullAssertion: D1 API always returns at least one result set on success
@@ -136,9 +134,7 @@ export async function execute(
 }
 
 /** Execute multiple statements in a batch (each runs in sequence) */
-export async function batch(
-  statements: Array<{ sql: string; params?: unknown[] }>,
-): Promise<void> {
+export async function batch(statements: Array<{ sql: string; params?: unknown[] }>): Promise<void> {
   const config = getConfig();
   const url = `https://api.cloudflare.com/client/v4/accounts/${config.CF_ACCOUNT_ID}/d1/database/${config.CF_D1_DATABASE_ID}/query`;
 
@@ -166,9 +162,7 @@ export async function batch(
 
       const data: D1Response = await response.json();
       if (!data.success) {
-        throw new Error(
-          `D1 batch failed: ${data.errors.map((e) => e.message).join(", ")}`,
-        );
+        throw new Error(`D1 batch failed: ${data.errors.map((e) => e.message).join(", ")}`);
       }
     });
   }

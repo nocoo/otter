@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
-import { executeScan } from "../../commands/scan.js";
 import type { Collector, CollectorResult } from "@otter/core";
+import { describe, expect, it, vi } from "vitest";
+import { executeScan } from "../../commands/scan.js";
 
 function mockCollector(id: string, files: number, lists: number): Collector {
   const result: CollectorResult = {
@@ -29,10 +29,7 @@ function mockCollector(id: string, files: number, lists: number): Collector {
 
 describe("executeScan", () => {
   it("should run all collectors and return snapshot", async () => {
-    const collectors = [
-      mockCollector("c1", 2, 0),
-      mockCollector("c2", 0, 3),
-    ];
+    const collectors = [mockCollector("c1", 2, 0), mockCollector("c2", 0, 3)];
 
     const snapshot = await executeScan(collectors);
 
@@ -52,10 +49,7 @@ describe("executeScan", () => {
   });
 
   it("should call onStart callback before each collector runs", async () => {
-    const collectors = [
-      mockCollector("c1", 1, 0),
-      mockCollector("c2", 0, 1),
-    ];
+    const collectors = [mockCollector("c1", 1, 0), mockCollector("c2", 0, 1)];
     const onStart = vi.fn();
     const onProgress = vi.fn();
 
@@ -66,7 +60,7 @@ describe("executeScan", () => {
     expect(onStart).toHaveBeenCalledWith("c2", "c2");
     // onStart should be called before onProgress for each collector
     expect(onStart.mock.invocationCallOrder[0]).toBeLessThan(
-      onProgress.mock.invocationCallOrder[0]
+      onProgress.mock.invocationCallOrder[0],
     );
   });
 
@@ -130,7 +124,9 @@ describe("executeScan", () => {
     expect(progress).toHaveBeenCalledOnce();
     expect(progress).toHaveBeenCalledWith(
       "crasher",
-      expect.objectContaining({ errors: expect.arrayContaining([expect.stringContaining("crashed")]) })
+      expect.objectContaining({
+        errors: expect.arrayContaining([expect.stringContaining("crashed")]),
+      }),
     );
   });
 });

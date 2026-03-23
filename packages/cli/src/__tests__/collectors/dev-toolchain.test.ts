@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { DevToolchainCollector } from "../../collectors/dev-toolchain.js";
 
 describe("DevToolchainCollector", () => {
@@ -67,7 +67,7 @@ describe("DevToolchainCollector", () => {
           return '{"dependencies":{}}';
         case "bun pm ls -g":
           throw new Error(
-            'No package.json was found for directory "/Users/test/.bun/install/global"\nRun "bun init" to initialize a project'
+            'No package.json was found for directory "/Users/test/.bun/install/global"\nRun "bun init" to initialize a project',
           );
         case "rustup show":
           return [
@@ -105,14 +105,14 @@ describe("DevToolchainCollector", () => {
       meta: { type: "node-version", manager: "fnm", default: "true" },
     });
     expect(result.lists).not.toContainEqual(
-      expect.objectContaining({ name: expect.stringContaining("system") })
+      expect.objectContaining({ name: expect.stringContaining("system") }),
     );
     expect(result.lists).toContainEqual({
       name: "stable-aarch64-apple-darwin",
       meta: { type: "rust-toolchain", active: "true", default: "true" },
     });
     expect(result.lists).not.toContainEqual(
-      expect.objectContaining({ name: "name: stable-aarch64-apple-darwin" })
+      expect.objectContaining({ name: "name: stable-aarch64-apple-darwin" }),
     );
     expect(result.errors).not.toContainEqual(expect.stringContaining("Failed to collect bun"));
   });

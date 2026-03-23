@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { CloudCLICollector } from "../../collectors/cloud-cli.js";
 
 describe("CloudCLICollector", () => {
@@ -26,9 +26,15 @@ describe("CloudCLICollector", () => {
     await writeFile(join(tempHome, ".azure", "config"), "token=secret");
     await writeFile(join(tempHome, ".azure", "azureProfile.json"), '{"subscriptionId":"abc"}');
     await writeFile(join(tempHome, ".azure", "clouds.config"), "AzureCloud");
-    await writeFile(join(tempHome, ".aws", "config"), "[default]\nregion=us-east-1\n[profile work]\nregion=us-west-2\n");
+    await writeFile(
+      join(tempHome, ".aws", "config"),
+      "[default]\nregion=us-east-1\n[profile work]\nregion=us-west-2\n",
+    );
     await writeFile(join(tempHome, ".config", "gcloud", "properties"), "account=test@example.com");
-    await writeFile(join(tempHome, ".config", "gcloud", "configurations", "config_default"), "project=test");
+    await writeFile(
+      join(tempHome, ".config", "gcloud", "configurations", "config_default"),
+      "project=test",
+    );
     await writeFile(join(tempHome, ".config", "railway", "config.json"), '{"token":"secret"}');
 
     const collector = new CloudCLICollector(tempHome);

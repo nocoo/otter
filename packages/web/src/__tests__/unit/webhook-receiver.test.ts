@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { gzipSync } from "node:zlib";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies
 vi.mock("@/lib/cf/d1", () => ({
@@ -10,13 +10,11 @@ vi.mock("@/lib/cf/d1", () => ({
 
 vi.mock("@/lib/cf/r2", () => ({
   putSnapshot: vi.fn(),
-  snapshotKey: vi.fn(
-    (userId: string, snapshotId: string) => `${userId}/${snapshotId}.json`,
-  ),
+  snapshotKey: vi.fn((userId: string, snapshotId: string) => `${userId}/${snapshotId}.json`),
 }));
 
 import { POST } from "@/app/api/webhook/[token]/route";
-import { queryFirst, batch } from "@/lib/cf/d1";
+import { batch, queryFirst } from "@/lib/cf/d1";
 import { putSnapshot } from "@/lib/cf/r2";
 
 const mockQueryFirst = vi.mocked(queryFirst);
@@ -42,9 +40,7 @@ const validSnapshot = {
       id: "shell-config",
       label: "Shell Config",
       category: "config",
-      files: [
-        { path: "/Users/testuser/.zshrc", content: "# zshrc", sizeBytes: 7 },
-      ],
+      files: [{ path: "/Users/testuser/.zshrc", content: "# zshrc", sizeBytes: 7 }],
       lists: [],
       errors: [],
       skipped: [],
@@ -98,10 +94,7 @@ describe("POST /api/webhook/[token]", () => {
 
   it("returns 401 for invalid token", async () => {
     mockQueryFirst.mockResolvedValue(null);
-    const response = await POST(
-      makeGzipRequest(validSnapshot),
-      makeParams("bad-token"),
-    );
+    const response = await POST(makeGzipRequest(validSnapshot), makeParams("bad-token"));
     expect(response.status).toBe(401);
     const data = await response.json();
     expect(data.error).toBe("Invalid webhook token");
@@ -114,10 +107,7 @@ describe("POST /api/webhook/[token]", () => {
       token: "test-token",
       is_active: 0,
     });
-    const response = await POST(
-      makeGzipRequest(validSnapshot),
-      makeParams("test-token"),
-    );
+    const response = await POST(makeGzipRequest(validSnapshot), makeParams("test-token"));
     expect(response.status).toBe(403);
     const data = await response.json();
     expect(data.error).toBe("Webhook is disabled");
@@ -133,10 +123,7 @@ describe("POST /api/webhook/[token]", () => {
     mockPutSnapshot.mockResolvedValue(undefined);
     mockBatch.mockResolvedValue(undefined);
 
-    const response = await POST(
-      makeGzipRequest(validSnapshot),
-      makeParams("test-token"),
-    );
+    const response = await POST(makeGzipRequest(validSnapshot), makeParams("test-token"));
     expect(response.status).toBe(201);
     const data = await response.json();
     expect(data.success).toBe(true);
@@ -153,10 +140,7 @@ describe("POST /api/webhook/[token]", () => {
     mockPutSnapshot.mockResolvedValue(undefined);
     mockBatch.mockResolvedValue(undefined);
 
-    const response = await POST(
-      makePlainRequest(validSnapshot),
-      makeParams("test-token"),
-    );
+    const response = await POST(makePlainRequest(validSnapshot), makeParams("test-token"));
     expect(response.status).toBe(201);
   });
 
@@ -186,10 +170,7 @@ describe("POST /api/webhook/[token]", () => {
       is_active: 1,
     });
 
-    const response = await POST(
-      makePlainRequest({ not: "a snapshot" }),
-      makeParams("test-token"),
-    );
+    const response = await POST(makePlainRequest({ not: "a snapshot" }), makeParams("test-token"));
     expect(response.status).toBe(400);
     const data = await response.json();
     expect(data.error).toBe("Invalid snapshot format");
@@ -206,10 +187,7 @@ describe("POST /api/webhook/[token]", () => {
     mockBatch.mockResolvedValue(undefined);
 
     await POST(makeGzipRequest(validSnapshot), makeParams("test-token"));
-    expect(mockPutSnapshot).toHaveBeenCalledWith(
-      "user-1/snap-123.json",
-      validSnapshot,
-    );
+    expect(mockPutSnapshot).toHaveBeenCalledWith("user-1/snap-123.json", validSnapshot);
   });
 
   it("writes correct metadata to D1", async () => {
@@ -260,10 +238,7 @@ describe("POST /api/webhook/[token]", () => {
     });
     mockPutSnapshot.mockRejectedValue(new Error("R2 connection failed"));
 
-    const response = await POST(
-      makeGzipRequest(validSnapshot),
-      makeParams("test-token"),
-    );
+    const response = await POST(makeGzipRequest(validSnapshot), makeParams("test-token"));
     expect(response.status).toBe(500);
     const data = await response.json();
     expect(data.error).toBe("Failed to store snapshot");
@@ -279,10 +254,7 @@ describe("POST /api/webhook/[token]", () => {
     mockPutSnapshot.mockResolvedValue(undefined);
     mockBatch.mockRejectedValue(new Error("D1 timeout"));
 
-    const response = await POST(
-      makeGzipRequest(validSnapshot),
-      makeParams("test-token"),
-    );
+    const response = await POST(makeGzipRequest(validSnapshot), makeParams("test-token"));
     expect(response.status).toBe(500);
     const data = await response.json();
     expect(data.error).toBe("Failed to index snapshot");

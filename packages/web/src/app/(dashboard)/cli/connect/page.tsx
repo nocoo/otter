@@ -1,15 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { Check, ExternalLink, Loader2, ShieldAlert, Terminal, Webhook } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import {
-  Webhook,
-  Loader2,
-  Terminal,
-  ExternalLink,
-  ShieldAlert,
-  Check,
-} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -37,8 +30,7 @@ interface WebhookToken {
 function isValidCallback(callback: string): boolean {
   try {
     const url = new URL(callback);
-    const isLocalhost =
-      url.hostname === "localhost" || url.hostname === "127.0.0.1";
+    const isLocalhost = url.hostname === "localhost" || url.hostname === "127.0.0.1";
     const isHttp = url.protocol === "http:";
     return isLocalhost && isHttp;
   } catch {
@@ -59,10 +51,7 @@ export default function CliConnectPage() {
   const [error, setError] = useState<string | null>(null);
   const [connectingId, setConnectingId] = useState<string | null>(null);
 
-  const baseUrl =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : "https://otter.hexly.ai";
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://otter.hexly.ai";
 
   // Validate callback
   const callbackValid = callback ? isValidCallback(callback) : false;
@@ -73,9 +62,7 @@ export default function CliConnectPage() {
       const res = await fetch("/api/webhooks");
       if (!res.ok) {
         const body = await res.json().catch(() => null);
-        throw new Error(
-          body?.error ?? `Failed to load webhooks (${res.status})`
-        );
+        throw new Error(body?.error ?? `Failed to load webhooks (${res.status})`);
       }
       const data = await res.json();
       setWebhooks(data.webhooks);
@@ -125,9 +112,7 @@ export default function CliConnectPage() {
       <div className="max-w-2xl space-y-6">
         <Header />
         <ErrorCard
-          icon={
-            <ShieldAlert className="h-8 w-8 text-destructive/60" />
-          }
+          icon={<ShieldAlert className="h-8 w-8 text-destructive/60" />}
           title="Invalid callback URL"
           description="For security, only localhost callbacks are allowed. The callback URL must start with http://localhost or http://127.0.0.1."
         />
@@ -144,9 +129,7 @@ export default function CliConnectPage() {
           <Terminal className="h-3.5 w-3.5" strokeWidth={1.5} />
           <span>
             Connecting to{" "}
-            <code className="bg-background/50 px-1.5 py-0.5 rounded text-[11px]">
-              {callback}
-            </code>
+            <code className="bg-background/50 px-1.5 py-0.5 rounded text-[11px]">{callback}</code>
           </span>
         </div>
       </div>
@@ -154,9 +137,7 @@ export default function CliConnectPage() {
       {loading ? (
         <div className="rounded-xl bg-secondary p-8 text-center">
           <Loader2 className="h-8 w-8 text-muted-foreground/40 mx-auto animate-spin" />
-          <p className="mt-3 text-sm text-muted-foreground">
-            Loading webhooks...
-          </p>
+          <p className="mt-3 text-sm text-muted-foreground">Loading webhooks...</p>
         </div>
       ) : error ? (
         <div className="rounded-xl bg-secondary p-8 text-center">
@@ -175,14 +156,9 @@ export default function CliConnectPage() {
         </div>
       ) : webhooks.length === 0 ? (
         <div className="rounded-xl bg-secondary p-8 text-center space-y-3">
-          <Webhook
-            className="h-8 w-8 text-muted-foreground/40 mx-auto"
-            strokeWidth={1.5}
-          />
+          <Webhook className="h-8 w-8 text-muted-foreground/40 mx-auto" strokeWidth={1.5} />
           <div>
-            <p className="text-sm text-muted-foreground">
-              No webhook tokens yet
-            </p>
+            <p className="text-sm text-muted-foreground">No webhook tokens yet</p>
             <p className="mt-1 text-xs text-muted-foreground/60">
               Create a webhook token in Settings first, then come back here.
             </p>
@@ -212,15 +188,8 @@ export default function CliConnectPage() {
             ))}
           {webhooks.filter((wh) => wh.isActive).length === 0 && (
             <div className="rounded-xl bg-secondary p-6 text-center space-y-3">
-              <p className="text-sm text-muted-foreground">
-                All your webhook tokens are inactive.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                asChild
-              >
+              <p className="text-sm text-muted-foreground">All your webhook tokens are inactive.</p>
+              <Button variant="outline" size="sm" className="gap-1.5" asChild>
                 <a href="/settings">
                   Manage in Settings
                   <ExternalLink className="h-3 w-3" strokeWidth={1.5} />
@@ -241,12 +210,8 @@ export default function CliConnectPage() {
 function Header() {
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-tight">
-        Connect CLI
-      </h1>
-      <p className="text-sm text-muted-foreground">
-        Link your Otter CLI to this dashboard
-      </p>
+      <h1 className="text-2xl font-semibold tracking-tight">Connect CLI</h1>
+      <p className="text-sm text-muted-foreground">Link your Otter CLI to this dashboard</p>
     </div>
   );
 }

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { FileText, Copy, Check, Eye } from "lucide-react";
+import { Check, Copy, Eye, FileText } from "lucide-react";
+import { useCallback, useState } from "react";
+import { FileViewerDialog } from "@/components/file-viewer-dialog";
 import { Button } from "@/components/ui/button";
 import { formatSize } from "@/lib/utils";
-import { FileViewerDialog } from "@/components/file-viewer-dialog";
 import type { FileData } from "./types";
 
 export function FileRow({ file }: { file: FileData }) {
@@ -57,11 +57,7 @@ export function FileRow({ file }: { file: FileData }) {
           )}
         </div>
       </div>
-      <FileViewerDialog
-        file={file}
-        open={viewerOpen}
-        onOpenChange={setViewerOpen}
-      />
+      <FileViewerDialog file={file} open={viewerOpen} onOpenChange={setViewerOpen} />
     </>
   );
 }

@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { LaunchAgentsCollector } from "../../collectors/launch-agents.js";
 
 describe("LaunchAgentsCollector", () => {
@@ -17,10 +17,7 @@ describe("LaunchAgentsCollector", () => {
   });
 
   it("should collect launch agents and crontab", async () => {
-    await writeFile(
-      join(tempHome, "Library", "LaunchAgents", "com.example.sync.plist"),
-      "plist"
-    );
+    await writeFile(join(tempHome, "Library", "LaunchAgents", "com.example.sync.plist"), "plist");
 
     const collector = new LaunchAgentsCollector(tempHome);
     collector._execCommand = async () => "MAILTO=user@example.com\n0 1 * * * backup\n";

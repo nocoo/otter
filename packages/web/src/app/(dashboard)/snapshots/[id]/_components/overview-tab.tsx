@@ -1,26 +1,20 @@
 "use client";
 
 import {
-  Monitor,
-  Cpu,
-  User,
-  Archive,
-  HardDrive,
   AlertTriangle,
-  SkipForward,
+  Archive,
+  Cpu,
   FileText,
+  HardDrive,
   List,
+  Monitor,
+  SkipForward,
+  User,
 } from "lucide-react";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatSize } from "@/lib/utils";
-import type { SnapshotMeta, Collector } from "./types";
+import type { Collector, SnapshotMeta } from "./types";
 
 interface OverviewTabProps {
   meta: SnapshotMeta;
@@ -47,9 +41,7 @@ function StatCard({
       <CardContent className="px-4 py-3.5 flex items-center gap-3">
         <Icon className="h-4 w-4 text-primary shrink-0" strokeWidth={1.5} />
         <div className="min-w-0">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-            {label}
-          </p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
           <p className="text-sm font-medium truncate">{value}</p>
         </div>
       </CardContent>
@@ -89,9 +81,7 @@ function CollectorSummaryCard({ collectors }: { collectors: Collector[] }) {
     <Card className="gap-0 py-0">
       <CardHeader className="gap-0 px-5 py-4 border-b border-border/40">
         <CardTitle className="text-sm">Collectors</CardTitle>
-        <CardDescription>
-          {collectors.length} collectors captured in this snapshot
-        </CardDescription>
+        <CardDescription>{collectors.length} collectors captured in this snapshot</CardDescription>
       </CardHeader>
       <CardContent className="px-5 py-4">
         <div className="space-y-3">
@@ -127,10 +117,10 @@ function CollectorSummaryCard({ collectors }: { collectors: Collector[] }) {
 
 function IssuesCard({ collectors }: { collectors: Collector[] }) {
   const errors = collectors.flatMap((c) =>
-    c.errors.map((err) => ({ collector: c.label, message: err }))
+    c.errors.map((err) => ({ collector: c.label, message: err })),
   );
   const skipped = collectors.flatMap((c) =>
-    (c.skipped ?? []).map((msg) => ({ collector: c.label, message: msg }))
+    (c.skipped ?? []).map((msg) => ({ collector: c.label, message: msg })),
   );
 
   if (errors.length === 0 && skipped.length === 0) return null;
@@ -141,8 +131,7 @@ function IssuesCard({ collectors }: { collectors: Collector[] }) {
         <CardTitle className="text-sm">Issues</CardTitle>
         <CardDescription>
           {errors.length} error{errors.length !== 1 ? "s" : ""}
-          {skipped.length > 0 &&
-            `, ${skipped.length} skipped`}
+          {skipped.length > 0 && `, ${skipped.length} skipped`}
         </CardDescription>
       </CardHeader>
       <CardContent className="px-5 py-4 space-y-4">
@@ -152,9 +141,11 @@ function IssuesCard({ collectors }: { collectors: Collector[] }) {
               <AlertTriangle className="h-3 w-3" strokeWidth={1.5} />
               Errors
             </h4>
-            {errors.map((err, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: static error list, no reordering
-              <div key={i} className="rounded-lg bg-destructive/5 border border-destructive/10 px-3 py-2">
+            {errors.map((err) => (
+              <div
+                key={`${err.collector}-${err.message}`}
+                className="rounded-lg bg-destructive/5 border border-destructive/10 px-3 py-2"
+              >
                 <p className="text-xs font-medium text-foreground">{err.collector}</p>
                 <p className="text-xs text-destructive/80 mt-0.5">{err.message}</p>
               </div>
@@ -185,33 +176,20 @@ function IssuesCard({ collectors }: { collectors: Collector[] }) {
 // Overview Tab
 // ---------------------------------------------------------------------------
 
-export function OverviewTab({
-  meta,
-  collectors,
-  totalFiles,
-  totalLists,
-}: OverviewTabProps) {
+export function OverviewTab({ meta, collectors, totalFiles, totalLists }: OverviewTabProps) {
   return (
     <div className="space-y-6">
       {/* Machine info grid */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard icon={Monitor} label="Host" value={meta.hostname} />
-        <StatCard
-          icon={Cpu}
-          label="Platform"
-          value={`${meta.platform}/${meta.arch}`}
-        />
+        <StatCard icon={Cpu} label="Platform" value={`${meta.platform}/${meta.arch}`} />
         <StatCard icon={User} label="User" value={meta.username} />
         <StatCard
           icon={Archive}
           label="Content"
           value={`${totalFiles} files, ${totalLists} items`}
         />
-        <StatCard
-          icon={HardDrive}
-          label="Size"
-          value={formatSize(meta.sizeBytes)}
-        />
+        <StatCard icon={HardDrive} label="Size" value={formatSize(meta.sizeBytes)} />
       </div>
 
       {/* Collector summary */}

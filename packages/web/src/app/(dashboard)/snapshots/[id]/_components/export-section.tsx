@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Clock } from "lucide-react";
+import { Clock, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { SnapshotData } from "./types";

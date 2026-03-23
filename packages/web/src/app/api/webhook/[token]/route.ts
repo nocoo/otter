@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { gunzipSync } from "node:zlib";
-import { queryFirst, batch } from "@/lib/cf/d1";
+import { NextResponse } from "next/server";
+import { batch, queryFirst } from "@/lib/cf/d1";
 import { putSnapshot, snapshotKey } from "@/lib/cf/r2";
 
 /** Minimal Snapshot shape for validation and metadata extraction */
@@ -80,17 +80,11 @@ export async function POST(request: Request, { params }: RouteParams) {
   );
 
   if (!webhook) {
-    return NextResponse.json(
-      { error: "Invalid webhook token" },
-      { status: 401 },
-    );
+    return NextResponse.json({ error: "Invalid webhook token" }, { status: 401 });
   }
 
   if (webhook.is_active !== 1) {
-    return NextResponse.json(
-      { error: "Webhook is disabled" },
-      { status: 403 },
-    );
+    return NextResponse.json({ error: "Webhook is disabled" }, { status: 403 });
   }
 
   // 2. Read and decompress the body
@@ -106,10 +100,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       jsonString = new TextDecoder().decode(rawBody);
     }
   } catch {
-    return NextResponse.json(
-      { error: "Failed to decompress request body" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Failed to decompress request body" }, { status: 400 });
   }
 
   // 3. Parse and validate JSON
@@ -117,17 +108,11 @@ export async function POST(request: Request, { params }: RouteParams) {
   try {
     const parsed: unknown = JSON.parse(jsonString);
     if (!isValidSnapshot(parsed)) {
-      return NextResponse.json(
-        { error: "Invalid snapshot format" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid snapshot format" }, { status: 400 });
     }
     snapshot = parsed;
   } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
   // 4. Store raw JSON in R2
@@ -138,10 +123,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     await putSnapshot(r2Key, snapshot);
   } catch (error) {
     console.error("[webhook] Failed to store snapshot in R2:", error);
-    return NextResponse.json(
-      { error: "Failed to store snapshot" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to store snapshot" }, { status: 500 });
   }
 
   // 5. Write snapshot metadata to D1 + update webhook last_used_at
@@ -181,10 +163,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     ]);
   } catch (error) {
     console.error("[webhook] Failed to write snapshot metadata to D1:", error);
-    return NextResponse.json(
-      { error: "Failed to index snapshot" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to index snapshot" }, { status: 500 });
   }
 
   return NextResponse.json(

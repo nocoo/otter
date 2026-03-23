@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getAuthUser } from "@/lib/session";
 import { query, queryFirst } from "@/lib/cf/d1";
+import { getAuthUser } from "@/lib/session";
 
 interface SnapshotRow {
   id: string;
@@ -113,9 +113,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("GET /api/snapshots failed:", err);
-    return NextResponse.json(
-      { error: "Failed to fetch snapshots from database" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to fetch snapshots from database" }, { status: 500 });
   }
 }

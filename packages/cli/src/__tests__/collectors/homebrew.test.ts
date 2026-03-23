@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { HomebrewCollector } from "../../collectors/homebrew.js";
 
 describe("HomebrewCollector", () => {
@@ -24,13 +24,13 @@ describe("HomebrewCollector", () => {
     const result = await collector.collect();
 
     expect(result.lists).toContainEqual(
-      expect.objectContaining({ name: "git", version: "2.49.0" })
+      expect.objectContaining({ name: "git", version: "2.49.0" }),
     );
     expect(result.lists).toContainEqual(
-      expect.objectContaining({ name: "node", version: "24.5.0" })
+      expect.objectContaining({ name: "node", version: "24.5.0" }),
     );
     expect(result.lists).toContainEqual(
-      expect.objectContaining({ name: "ripgrep", version: "14.1.1" })
+      expect.objectContaining({ name: "ripgrep", version: "14.1.1" }),
     );
     expect(result.lists.length).toBe(4);
   });
@@ -57,14 +57,14 @@ describe("HomebrewCollector", () => {
     expect(casks.length).toBe(2);
     expect(taps.length).toBe(2);
     expect(casks).toContainEqual(
-      expect.objectContaining({ name: "visual-studio-code", version: "1.99.3" })
+      expect.objectContaining({ name: "visual-studio-code", version: "1.99.3" }),
     );
     expect(formulae).toContainEqual(
       expect.objectContaining({
         name: "node",
         version: "24.5.0",
         meta: { type: "formula", pinned: "true" },
-      })
+      }),
     );
   });
 
@@ -77,9 +77,7 @@ describe("HomebrewCollector", () => {
     const result = await collector.collect();
 
     expect(result.lists).toHaveLength(0);
-    expect(result.errors).toContainEqual(
-      expect.stringContaining("command not found")
-    );
+    expect(result.errors).toContainEqual(expect.stringContaining("command not found"));
   });
 
   it("should keep multiple installed versions in version field", async () => {
@@ -118,8 +116,6 @@ describe("HomebrewCollector", () => {
     const result = await collector.collect();
 
     expect(result.lists).toHaveLength(1);
-    expect(result.errors).toContainEqual(
-      expect.stringContaining("brew list --pinned")
-    );
+    expect(result.errors).toContainEqual(expect.stringContaining("brew list --pinned"));
   });
 });

@@ -1,11 +1,7 @@
 import { readdir } from "node:fs/promises";
 import { extname, join } from "node:path";
+import type { CollectedListItem, CollectorCategory, CollectorResult } from "@otter/core";
 import { BaseCollector } from "./base.js";
-import type {
-  CollectorCategory,
-  CollectorResult,
-  CollectedListItem,
-} from "@otter/core";
 
 export class FontsCollector extends BaseCollector {
   readonly id = "fonts";
@@ -34,9 +30,7 @@ export class FontsCollector extends BaseCollector {
         result.lists.push(...items);
       } catch (err) {
         if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
-          result.errors.push(
-            `Failed to read fonts directory: ${(err as Error).message}`
-          );
+          result.errors.push(`Failed to read fonts directory: ${(err as Error).message}`);
         }
       }
     });

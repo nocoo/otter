@@ -1,14 +1,14 @@
-import { describe, it, expect } from "vitest";
+import type { CollectorResult, Snapshot } from "@otter/core";
+import { describe, expect, it } from "vitest";
 import {
-  formatSnapshotList,
-  formatSnapshotDetail,
   diffSnapshots,
-  formatSnapshotDiff,
-  formatSize,
   formatDate,
+  formatSize,
+  formatSnapshotDetail,
+  formatSnapshotDiff,
+  formatSnapshotList,
 } from "../../commands/snapshot.js";
 import type { SnapshotMeta } from "../../storage/local.js";
-import type { Snapshot, CollectorResult } from "@otter/core";
 
 function makeMeta(overrides: Partial<SnapshotMeta> = {}): SnapshotMeta {
   return {
@@ -29,9 +29,7 @@ function makeCollector(overrides: Partial<CollectorResult> = {}): CollectorResul
     id: "shell-config",
     label: "Shell Config",
     category: "config",
-    files: [
-      { path: "/Users/tester/.zshrc", content: "# zsh", sizeBytes: 5 },
-    ],
+    files: [{ path: "/Users/tester/.zshrc", content: "# zsh", sizeBytes: 5 }],
     lists: [{ name: "zsh" }, { name: "bash" }],
     errors: [],
     skipped: [],
@@ -193,9 +191,7 @@ describe("diffSnapshots", () => {
     });
     const diff = diffSnapshots(oldSnap, newSnap);
     expect(diff.collectors).toHaveLength(1);
-    expect(diff.collectors[0].files).toEqual([
-      { type: "added", label: "/Users/tester/.bashrc" },
-    ]);
+    expect(diff.collectors[0].files).toEqual([{ type: "added", label: "/Users/tester/.bashrc" }]);
   });
 
   it("should detect removed files", () => {
@@ -210,9 +206,7 @@ describe("diffSnapshots", () => {
       collectors: [makeCollector({ files: [] })],
     });
     const diff = diffSnapshots(oldSnap, newSnap);
-    expect(diff.collectors[0].files).toEqual([
-      { type: "removed", label: "/Users/tester/.zshrc" },
-    ]);
+    expect(diff.collectors[0].files).toEqual([{ type: "removed", label: "/Users/tester/.zshrc" }]);
   });
 
   it("should detect changed files by size difference", () => {
@@ -226,16 +220,12 @@ describe("diffSnapshots", () => {
     const newSnap = makeSnapshot({
       collectors: [
         makeCollector({
-          files: [
-            { path: "/Users/tester/.zshrc", content: "# zsh updated", sizeBytes: 99 },
-          ],
+          files: [{ path: "/Users/tester/.zshrc", content: "# zsh updated", sizeBytes: 99 }],
         }),
       ],
     });
     const diff = diffSnapshots(oldSnap, newSnap);
-    expect(diff.collectors[0].files).toEqual([
-      { type: "changed", label: "/Users/tester/.zshrc" },
-    ]);
+    expect(diff.collectors[0].files).toEqual([{ type: "changed", label: "/Users/tester/.zshrc" }]);
   });
 
   it("should detect added list items", () => {
@@ -243,29 +233,21 @@ describe("diffSnapshots", () => {
       collectors: [makeCollector({ lists: [{ name: "zsh" }] })],
     });
     const newSnap = makeSnapshot({
-      collectors: [
-        makeCollector({ lists: [{ name: "zsh" }, { name: "fish" }] }),
-      ],
+      collectors: [makeCollector({ lists: [{ name: "zsh" }, { name: "fish" }] })],
     });
     const diff = diffSnapshots(oldSnap, newSnap);
-    expect(diff.collectors[0].lists).toEqual([
-      { type: "added", label: "fish" },
-    ]);
+    expect(diff.collectors[0].lists).toEqual([{ type: "added", label: "fish" }]);
   });
 
   it("should detect removed list items", () => {
     const oldSnap = makeSnapshot({
-      collectors: [
-        makeCollector({ lists: [{ name: "zsh" }, { name: "bash" }] }),
-      ],
+      collectors: [makeCollector({ lists: [{ name: "zsh" }, { name: "bash" }] })],
     });
     const newSnap = makeSnapshot({
       collectors: [makeCollector({ lists: [{ name: "zsh" }] })],
     });
     const diff = diffSnapshots(oldSnap, newSnap);
-    expect(diff.collectors[0].lists).toEqual([
-      { type: "removed", label: "bash" },
-    ]);
+    expect(diff.collectors[0].lists).toEqual([{ type: "removed", label: "bash" }]);
   });
 
   it("should set correct old and new IDs", () => {
@@ -386,9 +368,7 @@ describe("formatSize", () => {
 
 describe("formatDate", () => {
   it("should format ISO date to short form", () => {
-    expect(formatDate("2026-03-06T12:30:00.000Z")).toMatch(
-      /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/
-    );
+    expect(formatDate("2026-03-06T12:30:00.000Z")).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
   });
 
   it("should pad single-digit months and hours", () => {

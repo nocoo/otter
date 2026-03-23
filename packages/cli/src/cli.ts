@@ -1,27 +1,23 @@
-import { defineCommand } from "citty";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { defineCommand } from "citty";
 import yoctoSpinner from "yocto-spinner";
 import { createDefaultCollectors } from "./collectors/index.js";
-import { executeScan } from "./commands/scan.js";
 import { executeConfig } from "./commands/config.js";
+import { buildWebhookUrl, executeLogin, resolveHost } from "./commands/login.js";
+import { executeScan } from "./commands/scan.js";
 import {
-  executeLogin,
-  resolveHost,
-  buildWebhookUrl,
-} from "./commands/login.js";
-import {
-  formatSnapshotList,
-  formatSnapshotDetail,
   diffSnapshots,
+  formatSnapshotDetail,
   formatSnapshotDiff,
+  formatSnapshotList,
 } from "./commands/snapshot.js";
 import { ConfigManager } from "./config/manager.js";
 import { SnapshotStore } from "./storage/local.js";
-import { uploadSnapshot } from "./uploader/webhook.js";
-import { uploadIconsToServer } from "./uploader/icons-server.js";
-import { exportIcons } from "./utils/icons.js";
 import * as ui from "./ui.js";
+import { uploadIconsToServer } from "./uploader/icons-server.js";
+import { uploadSnapshot } from "./uploader/webhook.js";
+import { exportIcons } from "./utils/icons.js";
 
 const CLI_VERSION = "1.3.1";
 
@@ -112,14 +108,8 @@ const scanCommand = defineCommand({
     if (args.json) {
       process.stdout.write(`${JSON.stringify(snapshot, null, 2)}\n`);
     } else {
-      const totalFiles = snapshot.collectors.reduce(
-        (sum, c) => sum + c.files.length,
-        0
-      );
-      const totalLists = snapshot.collectors.reduce(
-        (sum, c) => sum + c.lists.length,
-        0
-      );
+      const totalFiles = snapshot.collectors.reduce((sum, c) => sum + c.files.length, 0);
+      const totalLists = snapshot.collectors.reduce((sum, c) => sum + c.lists.length, 0);
 
       ui.blank();
       ui.box({
@@ -158,9 +148,7 @@ const backupCommand = defineCommand({
     const config = await configManager.load();
     if (!config.token) {
       ui.banner(CLI_VERSION);
-      ui.error(
-        `Not logged in. Run ${ui.pc.bold("otter login")} first.`
-      );
+      ui.error(`Not logged in. Run ${ui.pc.bold("otter login")} first.`);
       process.exitCode = 1;
       return;
     }
@@ -231,10 +219,7 @@ const backupCommand = defineCommand({
     );
 
     if (exported.length > 0) {
-      ui.statusLine(
-        ui.S.success,
-        `${exported.length} icons exported`
-      );
+      ui.statusLine(ui.S.success, `${exported.length} icons exported`);
 
       const iconsUrl = `${webhookUrl}/icons`;
       const icons = exported.map((r) => ({
@@ -246,15 +231,11 @@ const backupCommand = defineCommand({
       const iconUpload = await uploadIconsToServer(icons, { iconsUrl });
 
       if (iconUpload.success) {
-        iconSpinner.success(
-          ` ${iconUpload.stored} icons uploaded`
-        );
+        iconSpinner.success(` ${iconUpload.stored} icons uploaded`);
       } else {
         iconSpinner.warning(
           ` Icon upload issue: ${iconUpload.error ?? "partial failure"}` +
-            (iconUpload.stored > 0
-              ? ` (${iconUpload.stored}/${iconUpload.total} stored)`
-              : "")
+            (iconUpload.stored > 0 ? ` (${iconUpload.stored}/${iconUpload.total} stored)` : ""),
         );
       }
     } else {
@@ -262,14 +243,8 @@ const backupCommand = defineCommand({
     }
 
     // ── Summary ──
-    const totalFiles = snapshot.collectors.reduce(
-      (sum, c) => sum + c.files.length,
-      0
-    );
-    const totalLists = snapshot.collectors.reduce(
-      (sum, c) => sum + c.lists.length,
-      0
-    );
+    const totalFiles = snapshot.collectors.reduce((sum, c) => sum + c.files.length, 0);
+    const totalLists = snapshot.collectors.reduce((sum, c) => sum + c.lists.length, 0);
 
     ui.blank();
     ui.box({
@@ -315,9 +290,7 @@ const configCommand = defineCommand({
     if (action === "show") {
       const result = await executeConfig(configManager, { action: "show" });
       const entries = Object.entries(result as Record<string, unknown>);
-      const lines = entries.map(
-        ([k, v]) => `${ui.pc.bold(k)}: ${ui.pc.dim(String(v))}`
-      );
+      const lines = entries.map(([k, v]) => `${ui.pc.bold(k)}: ${ui.pc.dim(String(v))}`);
       lines.push("", ui.pc.dim(`Config file: ${configManager.configPath}`));
       ui.consola.box({
         title: "Configuration",
@@ -471,8 +444,7 @@ const exportIconsCommand = defineCommand({
     },
   },
   async run({ args }) {
-    const outputDir =
-      (args.output as string) || join(homedir(), ".otter", "icons");
+    const outputDir = (args.output as string) || join(homedir(), ".otter", "icons");
     const size = parseInt((args.size as string) || "128", 10);
 
     ui.banner(CLI_VERSION);
@@ -486,7 +458,7 @@ const exportIconsCommand = defineCommand({
           console.log(`${ui.S.success}  ${result.appName}`);
         } else {
           console.log(
-            `${ui.S.warning}  ${result.appName}: ${ui.pc.dim(result.error ?? "unknown error")}`
+            `${ui.S.warning}  ${result.appName}: ${ui.pc.dim(result.error ?? "unknown error")}`,
           );
         }
       },
@@ -512,8 +484,7 @@ const exportIconsCommand = defineCommand({
 const loginCommand = defineCommand({
   meta: {
     name: "login",
-    description:
-      "Connect your CLI to the Otter dashboard via browser-based OAuth",
+    description: "Connect your CLI to the Otter dashboard via browser-based OAuth",
   },
   args: {
     dev: {
@@ -539,17 +510,13 @@ const loginCommand = defineCommand({
         onBrowserOpen: (url) => {
           spinner.text = ` Waiting for browser connection...`;
           ui.info(`Opening browser: ${ui.pc.dim(url)}`);
-          console.log(
-            `${ui.pc.dim("Waiting for you to connect in the browser (30s timeout)...")}`
-          );
+          console.log(`${ui.pc.dim("Waiting for you to connect in the browser (30s timeout)...")}`);
         },
         onSuccess: (token) => {
           spinner.success(" Connected! Token saved.");
           ui.blank();
           ui.info(`Token: ${ui.pc.dim(token.slice(0, 8))}...`);
-          ui.info(
-            `Run ${ui.pc.bold("otter backup")} to create your first backup.`
-          );
+          ui.info(`Run ${ui.pc.bold("otter backup")} to create your first backup.`);
         },
         onError: (err) => {
           spinner.error(` Login failed: ${err}`);
@@ -557,7 +524,7 @@ const loginCommand = defineCommand({
         onTimeout: () => {
           spinner.warning(" Login timed out (30s). Please try again.");
         },
-      }
+      },
     );
 
     if (!result.success) {
@@ -572,8 +539,7 @@ export const main = defineCommand({
   meta: {
     name: "otter",
     version: CLI_VERSION,
-    description:
-      "Backup and restore your Mac development environment configuration",
+    description: "Backup and restore your Mac development environment configuration",
   },
   subCommands: {
     login: loginCommand,

@@ -1,11 +1,7 @@
-import { join } from "node:path";
 import { readdir, readFile } from "node:fs/promises";
+import { join } from "node:path";
+import type { CollectedListItem, CollectorCategory, CollectorResult } from "@otter/core";
 import { BaseCollector } from "./base.js";
-import type {
-  CollectorCategory,
-  CollectorResult,
-  CollectedListItem,
-} from "@otter/core";
 
 /** Directories that contain skills (list-only, not full content) */
 const SKILLS_DIRS = [
@@ -18,9 +14,7 @@ const SKILLS_DIRS = [
  * Extracts simple `key: value` pairs between `---` delimiters.
  * Exported for testing.
  */
-export function parseSkillFrontmatter(
-  content: string
-): Record<string, string> {
+export function parseSkillFrontmatter(content: string): Record<string, string> {
   const meta: Record<string, string> = {};
   const match = content.match(/^---\s*\n([\s\S]*?)\n---/);
   if (!match) return meta;
@@ -60,7 +54,7 @@ export class OpenCodeConfigCollector extends BaseCollector {
         const skills = await this.collectSkillNames(
           join(this.homeDir, skillDir.relative),
           skillDir.source,
-          result
+          result,
         );
         result.lists.push(...skills);
       }
@@ -70,7 +64,7 @@ export class OpenCodeConfigCollector extends BaseCollector {
   private async collectSkillNames(
     dirPath: string,
     source: string,
-    result: CollectorResult
+    result: CollectorResult,
   ): Promise<CollectedListItem[]> {
     const items: CollectedListItem[] = [];
     try {
@@ -84,10 +78,7 @@ export class OpenCodeConfigCollector extends BaseCollector {
 
         // Try to parse SKILL.md frontmatter for description
         try {
-          const skillMd = await readFile(
-            join(dirPath, entry.name, "SKILL.md"),
-            "utf-8"
-          );
+          const skillMd = await readFile(join(dirPath, entry.name, "SKILL.md"), "utf-8");
           const fm = parseSkillFrontmatter(skillMd);
           if (fm.description) {
             meta.description = fm.description;
@@ -103,9 +94,7 @@ export class OpenCodeConfigCollector extends BaseCollector {
       }
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
-        result.errors.push(
-          `Failed to read skills directory ${dirPath}: ${(err as Error).message}`
-        );
+        result.errors.push(`Failed to read skills directory ${dirPath}: ${(err as Error).message}`);
       }
     }
     return items;

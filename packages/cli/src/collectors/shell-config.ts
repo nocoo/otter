@@ -1,11 +1,7 @@
-import { join } from "node:path";
 import { readdir, stat } from "node:fs/promises";
+import { join } from "node:path";
+import type { CollectedListItem, CollectorCategory, CollectorResult } from "@otter/core";
 import { BaseCollector } from "./base.js";
-import type {
-  CollectorCategory,
-  CollectorResult,
-  CollectedListItem,
-} from "@otter/core";
 
 /** Well-known dotfiles to collect from home directory */
 const DOTFILES: Array<{ name: string; redact?: boolean }> = [
@@ -34,7 +30,7 @@ const SSH_SAFE_FILES = ["config", "known_hosts"];
 
 /** Well-known SSH key filename patterns (without path) */
 const SSH_PRIVATE_KEY_PATTERNS = [
-  /^id_/,      // id_rsa, id_ed25519, id_ecdsa, id_dsa, id_*
+  /^id_/, // id_rsa, id_ed25519, id_ecdsa, id_dsa, id_*
   /^identity$/, // legacy SSH1
 ];
 
@@ -57,9 +53,7 @@ const SSH_NON_KEY_FILES = new Set([
  * Classify an SSH filename as a key type, or null if not a key.
  * Exported for testing.
  */
-export function classifySshFile(
-  name: string
-): "private-key" | "public-key" | null {
+export function classifySshFile(name: string): "private-key" | "public-key" | null {
   if (SSH_NON_KEY_FILES.has(name)) return null;
 
   // Public key check first (foo.pub)
@@ -89,20 +83,13 @@ export class ShellConfigCollector extends BaseCollector {
     return this.timed(async (result) => {
       // 1. Collect well-known dotfiles
       for (const { name: dotfile, redact } of DOTFILES) {
-        const file = await this.safeReadFile(
-          join(this.homeDir, dotfile),
-          result,
-          { redact }
-        );
+        const file = await this.safeReadFile(join(this.homeDir, dotfile), result, { redact });
         if (file) result.files.push(file);
       }
 
       // 2. Collect safe SSH config files
       for (const sshFile of SSH_SAFE_FILES) {
-        const file = await this.safeReadFile(
-          join(this.homeDir, ".ssh", sshFile),
-          result
-        );
+        const file = await this.safeReadFile(join(this.homeDir, ".ssh", sshFile), result);
         if (file) result.files.push(file);
       }
 
@@ -116,9 +103,7 @@ export class ShellConfigCollector extends BaseCollector {
    * Scan ~/.ssh/ for key files and return presence indicators.
    * Key content is NEVER read — only filenames and metadata.
    */
-  private async detectSshKeys(
-    result: CollectorResult
-  ): Promise<CollectedListItem[]> {
+  private async detectSshKeys(result: CollectorResult): Promise<CollectedListItem[]> {
     const sshDir = join(this.homeDir, ".ssh");
     const items: CollectedListItem[] = [];
 
@@ -150,9 +135,7 @@ export class ShellConfigCollector extends BaseCollector {
       }
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
-        result.errors.push(
-          `Failed to scan SSH directory: ${(err as Error).message}`
-        );
+        result.errors.push(`Failed to scan SSH directory: ${(err as Error).message}`);
       }
     }
 

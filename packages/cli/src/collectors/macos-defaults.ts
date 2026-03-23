@@ -1,11 +1,7 @@
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
+import type { CollectedFile, CollectorCategory, CollectorResult } from "@otter/core";
 import { BaseCollector } from "./base.js";
-import type {
-  CollectorCategory,
-  CollectorResult,
-  CollectedFile,
-} from "@otter/core";
 
 const execAsync = promisify(exec);
 
@@ -42,14 +38,14 @@ export class MacOSDefaultsCollector extends BaseCollector {
           result.files.push(file);
         } catch (err) {
           result.errors.push(
-            `Failed to export defaults domain ${domain}: ${(err as Error).message}`
+            `Failed to export defaults domain ${domain}: ${(err as Error).message}`,
           );
         }
       }
 
       try {
         const output = await this._execCommand(
-          "osascript -e 'tell application \"System Events\" to get the name of every login item'"
+          "osascript -e 'tell application \"System Events\" to get the name of every login item'",
         );
         const items = output
           .split(",")

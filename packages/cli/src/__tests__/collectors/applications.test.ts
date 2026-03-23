@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtemp, mkdir, writeFile, rm, chmod } from "node:fs/promises";
 import { createHash } from "node:crypto";
+import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ApplicationsCollector } from "../../collectors/applications.js";
 
 describe("ApplicationsCollector", () => {
@@ -75,7 +75,12 @@ describe("ApplicationsCollector", () => {
   });
 
   it("should handle missing applications directory", async () => {
-    const collector = new ApplicationsCollector(tempHome, "/nonexistent/path", undefined, tempUserAppsDir);
+    const collector = new ApplicationsCollector(
+      tempHome,
+      "/nonexistent/path",
+      undefined,
+      tempUserAppsDir,
+    );
     collector._execCommand = async () => "";
     const result = await collector.collect();
 
@@ -95,7 +100,7 @@ describe("ApplicationsCollector", () => {
     expect(result.errors).toEqual(
       expect.arrayContaining([
         expect.stringContaining(`Failed to read applications directory ${tempAppsDir}`),
-      ])
+      ]),
     );
 
     // Restore permissions for cleanup
@@ -124,7 +129,12 @@ describe("ApplicationsCollector", () => {
     it("should not include meta when iconBaseUrl is omitted", async () => {
       await mkdir(join(tempAppsDir, "Slack.app"), { recursive: true });
 
-      const collector = new ApplicationsCollector(tempHome, tempAppsDir, undefined, tempUserAppsDir);
+      const collector = new ApplicationsCollector(
+        tempHome,
+        tempAppsDir,
+        undefined,
+        tempUserAppsDir,
+      );
       collector._execCommand = async () => "";
       const result = await collector.collect();
 
@@ -185,16 +195,14 @@ describe("ApplicationsCollector", () => {
 
     const collector = new ApplicationsCollector(tempHome, tempAppsDir, undefined, tempUserAppsDir);
     collector._execCommand = async (cmd: string) => {
-      expect(cmd).toContain('defaults read');
-      expect(cmd).toContain('Docker.app/Contents/Info.plist');
+      expect(cmd).toContain("defaults read");
+      expect(cmd).toContain("Docker.app/Contents/Info.plist");
       return "4.39.0\n";
     };
 
     const result = await collector.collect();
 
-    expect(result.lists).toEqual([
-      { name: "Docker", version: "4.39.0" },
-    ]);
+    expect(result.lists).toEqual([{ name: "Docker", version: "4.39.0" }]);
   });
 
   it("should ignore version lookup failures", async () => {

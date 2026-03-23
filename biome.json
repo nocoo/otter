@@ -102,12 +102,7 @@
       }
     },
     {
-      "includes": [
-        "**/__tests__/**",
-        "**/*.test.ts",
-        "**/*.spec.ts",
-        "**/test-support/**"
-      ],
+      "includes": ["**/__tests__/**", "**/*.test.ts", "**/*.spec.ts", "**/test-support/**"],
       "linter": {
         "rules": {
           "suspicious": {

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Save original env
 const originalEnv = { ...process.env };
@@ -69,7 +69,10 @@ describe("D1 client", () => {
   // --- query ---
 
   it("query returns all rows", async () => {
-    const rows = [{ id: 1, name: "a" }, { id: 2, name: "b" }];
+    const rows = [
+      { id: 1, name: "a" },
+      { id: 2, name: "b" },
+    ];
     fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => makeD1Response(rows),
@@ -240,12 +243,10 @@ describe("D1 client", () => {
 
   it("retries on transient failures then succeeds", async () => {
     const rows = [{ id: 1 }];
-    fetchMock
-      .mockRejectedValueOnce(new Error("network error"))
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => makeD1Response(rows),
-      });
+    fetchMock.mockRejectedValueOnce(new Error("network error")).mockResolvedValueOnce({
+      ok: true,
+      json: async () => makeD1Response(rows),
+    });
 
     const { query } = await import("@/lib/cf/d1");
     const result = await query("SELECT 1");

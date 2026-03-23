@@ -1,25 +1,14 @@
 "use client";
 
+import { Archive, LayoutDashboard, LogOut, PanelLeft, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
-import {
-  LayoutDashboard,
-  Archive,
-  Settings,
-  PanelLeft,
-  LogOut,
-} from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { APP_VERSION } from "@/lib/version";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useSidebar } from "./sidebar-context";
 
 const navItems = [
@@ -44,7 +33,7 @@ export function Sidebar() {
       <aside
         className={cn(
           "sticky top-0 flex h-screen shrink-0 flex-col bg-background transition-all duration-300 ease-in-out overflow-hidden",
-          collapsed ? "w-[68px]" : "w-[260px]"
+          collapsed ? "w-[68px]" : "w-[260px]",
         )}
       >
         {collapsed ? (
@@ -76,9 +65,7 @@ export function Sidebar() {
             <nav className="flex-1 flex flex-col items-center gap-1 overflow-y-auto pt-1">
               {navItems.map((item) => {
                 const isActive =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname.startsWith(item.href);
+                  item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
 
                 return (
                   <Tooltip key={item.href}>
@@ -89,7 +76,7 @@ export function Sidebar() {
                           "relative flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
                           isActive
                             ? "bg-accent text-foreground"
-                            : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                            : "text-muted-foreground hover:bg-accent hover:text-foreground",
                         )}
                       >
                         <item.icon className="h-4 w-4" strokeWidth={1.5} />
@@ -133,7 +120,13 @@ export function Sidebar() {
             <div className="px-3 h-14 flex items-center">
               <div className="flex w-full items-center justify-between px-3">
                 <div className="flex items-center gap-3">
-                  <Image src="/logo-24.png" alt="Otter" width={24} height={24} className="shrink-0" />
+                  <Image
+                    src="/logo-24.png"
+                    alt="Otter"
+                    width={24}
+                    height={24}
+                    className="shrink-0"
+                  />
                   <span className="text-lg font-bold tracking-tighter">otter</span>
                   <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-muted-foreground font-mono leading-none">
                     v{APP_VERSION}
@@ -155,9 +148,7 @@ export function Sidebar() {
               <div className="flex flex-col gap-0.5 px-3">
                 {navItems.map((item) => {
                   const isActive =
-                    item.href === "/"
-                      ? pathname === "/"
-                      : pathname.startsWith(item.href);
+                    item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
 
                   return (
                     <Link
@@ -167,7 +158,7 @@ export function Sidebar() {
                         "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-normal transition-colors",
                         isActive
                           ? "bg-accent text-foreground"
-                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                          : "text-muted-foreground hover:bg-accent hover:text-foreground",
                       )}
                     >
                       <item.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />

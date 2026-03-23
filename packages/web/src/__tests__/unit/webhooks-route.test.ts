@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies
 vi.mock("@/lib/session", () => ({
@@ -11,8 +11,8 @@ vi.mock("@/lib/cf/d1", () => ({
 }));
 
 import { GET, POST } from "@/app/api/webhooks/route";
+import { execute, query } from "@/lib/cf/d1";
 import { getAuthUser } from "@/lib/session";
-import { query, execute } from "@/lib/cf/d1";
 
 const mockGetAuthUser = vi.mocked(getAuthUser);
 const mockQuery = vi.mocked(query);
@@ -109,10 +109,9 @@ describe("GET /api/webhooks", () => {
     mockQuery.mockResolvedValue([]);
 
     await GET();
-    expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining("WHERE user_id = ?1"),
-      ["user-42"],
-    );
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining("WHERE user_id = ?1"), [
+      "user-42",
+    ]);
   });
 });
 
@@ -122,7 +121,9 @@ describe("POST /api/webhooks", () => {
     // Mock crypto.randomUUID for deterministic tests
     vi.spyOn(crypto, "randomUUID")
       .mockReturnValueOnce("generated-id" as `${string}-${string}-${string}-${string}-${string}`)
-      .mockReturnValueOnce("generated-token" as `${string}-${string}-${string}-${string}-${string}`);
+      .mockReturnValueOnce(
+        "generated-token" as `${string}-${string}-${string}-${string}-${string}`,
+      );
   });
 
   it("returns 401 when not authenticated", async () => {
@@ -162,9 +163,7 @@ describe("POST /api/webhooks", () => {
     });
     mockExecute.mockResolvedValue({ changes: 1, lastRowId: 1 });
 
-    const response = await POST(
-      new Request("http://localhost/api/webhooks", { method: "POST" }),
-    );
+    const response = await POST(new Request("http://localhost/api/webhooks", { method: "POST" }));
     expect(response.status).toBe(201);
     const data = await response.json();
     expect(data.webhook.label).toBe("Default");
@@ -196,9 +195,12 @@ describe("POST /api/webhooks", () => {
     mockExecute.mockResolvedValue({ changes: 1, lastRowId: 1 });
 
     await POST(mockPostRequest({ label: "Test" }));
-    expect(mockExecute).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO webhooks"),
-      ["generated-id", "user-1", "generated-token", "Test", expect.any(Number)],
-    );
+    expect(mockExecute).toHaveBeenCalledWith(expect.stringContaining("INSERT INTO webhooks"), [
+      "generated-id",
+      "user-1",
+      "generated-token",
+      "Test",
+      expect.any(Number),
+    ]);
   });
 });

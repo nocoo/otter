@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies
 vi.mock("@/lib/session", () => ({
@@ -11,15 +11,13 @@ vi.mock("@/lib/cf/d1", () => ({
 
 vi.mock("@/lib/cf/r2", () => ({
   getSnapshot: vi.fn(),
-  snapshotKey: vi.fn(
-    (userId: string, snapshotId: string) => `${userId}/${snapshotId}.json`,
-  ),
+  snapshotKey: vi.fn((userId: string, snapshotId: string) => `${userId}/${snapshotId}.json`),
 }));
 
 import { GET } from "@/app/api/snapshots/[id]/route";
-import { getAuthUser } from "@/lib/session";
 import { queryFirst } from "@/lib/cf/d1";
 import { getSnapshot } from "@/lib/cf/r2";
+import { getAuthUser } from "@/lib/session";
 
 const mockGetAuthUser = vi.mocked(getAuthUser);
 const mockQueryFirst = vi.mocked(queryFirst);

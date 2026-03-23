@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies
 vi.mock("@/lib/cf/d1", () => ({
@@ -59,10 +59,7 @@ describe("POST /api/webhook/[token]/icons", () => {
 
   it("returns 401 for invalid token", async () => {
     mockQueryFirst.mockResolvedValue(null);
-    const res = await POST(
-      makeRequest({ icons: [] }),
-      makeParams("bad-token"),
-    );
+    const res = await POST(makeRequest({ icons: [] }), makeParams("bad-token"));
     expect(res.status).toBe(401);
     const data = await res.json();
     expect(data.error).toBe("Invalid webhook token");
@@ -70,10 +67,7 @@ describe("POST /api/webhook/[token]/icons", () => {
 
   it("returns 403 for disabled webhook", async () => {
     mockQueryFirst.mockResolvedValue({ ...activeWebhook, is_active: 0 });
-    const res = await POST(
-      makeRequest({ icons: [] }),
-      makeParams("test-token"),
-    );
+    const res = await POST(makeRequest({ icons: [] }), makeParams("test-token"));
     expect(res.status).toBe(403);
     const data = await res.json();
     expect(data.error).toBe("Webhook is disabled");
@@ -97,10 +91,7 @@ describe("POST /api/webhook/[token]/icons", () => {
 
   it("returns 400 when icons is not an array", async () => {
     mockQueryFirst.mockResolvedValue(activeWebhook);
-    const res = await POST(
-      makeRequest({ icons: "not-array" }),
-      makeParams("test-token"),
-    );
+    const res = await POST(makeRequest({ icons: "not-array" }), makeParams("test-token"));
     expect(res.status).toBe(400);
     const data = await res.json();
     expect(data.error).toBe("Invalid request body");
@@ -144,10 +135,7 @@ describe("POST /api/webhook/[token]/icons", () => {
       hash: i.toString(16).padStart(12, "0"),
       data: TINY_PNG_BASE64,
     }));
-    const res = await POST(
-      makeRequest({ icons }),
-      makeParams("test-token"),
-    );
+    const res = await POST(makeRequest({ icons }), makeParams("test-token"));
     expect(res.status).toBe(400);
     expect((await res.json()).error).toMatch(/Too many icons/);
   });
@@ -167,10 +155,7 @@ describe("POST /api/webhook/[token]/icons", () => {
 
   it("returns 200 with stored: 0 for empty icons array", async () => {
     mockQueryFirst.mockResolvedValue(activeWebhook);
-    const res = await POST(
-      makeRequest({ icons: [] }),
-      makeParams("test-token"),
-    );
+    const res = await POST(makeRequest({ icons: [] }), makeParams("test-token"));
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.stored).toBe(0);
@@ -191,10 +176,7 @@ describe("POST /api/webhook/[token]/icons", () => {
     expect(data.stored).toBe(1);
 
     expect(mockPutIcon).toHaveBeenCalledOnce();
-    expect(mockPutIcon).toHaveBeenCalledWith(
-      "abcdef012345",
-      expect.any(Buffer),
-    );
+    expect(mockPutIcon).toHaveBeenCalledWith("abcdef012345", expect.any(Buffer));
   });
 
   it("stores multiple icons in R2", async () => {
@@ -207,10 +189,7 @@ describe("POST /api/webhook/[token]/icons", () => {
       { hash: "cccccccccccc", data: TINY_PNG_BASE64 },
     ];
 
-    const res = await POST(
-      makeRequest({ icons }),
-      makeParams("test-token"),
-    );
+    const res = await POST(makeRequest({ icons }), makeParams("test-token"));
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.stored).toBe(3);
@@ -252,10 +231,7 @@ describe("POST /api/webhook/[token]/icons", () => {
       { hash: "cccccccccccc", data: TINY_PNG_BASE64 },
     ];
 
-    const res = await POST(
-      makeRequest({ icons }),
-      makeParams("test-token"),
-    );
+    const res = await POST(makeRequest({ icons }), makeParams("test-token"));
     expect(res.status).toBe(207);
     const data = await res.json();
     expect(data.stored).toBe(2);

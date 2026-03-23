@@ -45,10 +45,7 @@ function normalize(value: string): string {
   return value.trim().toLowerCase();
 }
 
-export function matchesCollectorQuery(
-  collector: SnapshotCollector,
-  rawQuery: string
-): boolean {
+export function matchesCollectorQuery(collector: SnapshotCollector, rawQuery: string): boolean {
   const query = normalize(rawQuery);
   if (!query) return true;
 
@@ -73,18 +70,17 @@ export function matchesCollectorQuery(
 
 export function filterCollectors(
   collectors: SnapshotCollector[],
-  filters: CollectorFilterState
+  filters: CollectorFilterState,
 ): SnapshotCollector[] {
   return collectors.filter((collector) => {
-    const matchesCategory =
-      filters.category === "all" || collector.category === filters.category;
+    const matchesCategory = filters.category === "all" || collector.category === filters.category;
     return matchesCategory && matchesCollectorQuery(collector, filters.query);
   });
 }
 
 export function getCollectorOverview(
   collectors: SnapshotCollector[],
-  visibleCollectors: SnapshotCollector[]
+  visibleCollectors: SnapshotCollector[],
 ): CollectorOverview {
   return {
     total: collectors.length,
@@ -95,9 +91,7 @@ export function getCollectorOverview(
   };
 }
 
-export function groupCollectorsByCategory(
-  collectors: SnapshotCollector[]
-): CollectorGroup[] {
+export function groupCollectorsByCategory(collectors: SnapshotCollector[]): CollectorGroup[] {
   const grouped = new Map<string, SnapshotCollector[]>();
 
   for (const collector of collectors) {

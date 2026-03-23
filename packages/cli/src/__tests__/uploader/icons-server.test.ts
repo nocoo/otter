@@ -1,11 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { writeFile, mkdir } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import {
-  uploadIconsToServer,
-  hashAppName,
-} from "../../uploader/icons-server.js";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { hashAppName, uploadIconsToServer } from "../../uploader/icons-server.js";
 
 // Create a tiny 1x1 PNG for testing
 const TINY_PNG = Buffer.from(

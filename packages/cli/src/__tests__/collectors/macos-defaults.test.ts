@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { MacOSDefaultsCollector } from "../../collectors/macos-defaults.js";
 
 describe("MacOSDefaultsCollector", () => {
@@ -6,7 +6,7 @@ describe("MacOSDefaultsCollector", () => {
     const collector = new MacOSDefaultsCollector("/fake/home");
     collector._execCommand = async (cmd: string) => {
       if (cmd.startsWith("defaults export")) {
-        return "<?xml version=\"1.0\"?><plist></plist>\n";
+        return '<?xml version="1.0"?><plist></plist>\n';
       }
       if (cmd.startsWith("osascript")) {
         return "Raycast, CleanShot X\n";

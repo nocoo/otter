@@ -32,9 +32,7 @@ describe("R2 icon config separation", () => {
       bucket: "zhe",
       prefix: "apps/otter",
     });
-    expect(r2.iconKey("abcdef012345", "apps/otter")).toBe(
-      "apps/otter/abcdef012345.png"
-    );
+    expect(r2.iconKey("abcdef012345", "apps/otter")).toBe("apps/otter/abcdef012345.png");
   });
 
   it("falls back to snapshot bucket when icon bucket is unset", async () => {

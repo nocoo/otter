@@ -1,13 +1,13 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { mkdtemp, writeFile, mkdir, rm, readdir } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockExecFile = vi.fn(
   (
     cmd: string,
     _args: string[],
-    cb: (err: Error | null, stdout: string, stderr: string) => void
+    cb: (err: Error | null, stdout: string, stderr: string) => void,
   ) => {
     if (cmd === "/usr/bin/sips") {
       cb(null, "", "");
@@ -18,7 +18,7 @@ const mockExecFile = vi.fn(
       return;
     }
     cb(new Error(`unexpected command: ${cmd}`), "", "");
-  }
+  },
 );
 
 vi.mock("node:child_process", () => ({
@@ -100,7 +100,7 @@ describe("exportIcons", async () => {
       (
         cmd: string,
         _args: string[],
-        cb: (err: Error | null, stdout: string, stderr: string) => void
+        cb: (err: Error | null, stdout: string, stderr: string) => void,
       ) => {
         if (cmd === "/usr/bin/sips") {
           cb(null, "", "");
@@ -111,7 +111,7 @@ describe("exportIcons", async () => {
           return;
         }
         cb(new Error(`unexpected command: ${cmd}`), "", "");
-      }
+      },
     );
   });
 
@@ -160,7 +160,7 @@ describe("exportIcons", async () => {
 <plist><dict>
   <key>CFBundleIconFile</key>
   <string>missing.icns</string>
-</dict></plist>`
+</dict></plist>`,
     );
 
     const results = await exportIcons({ appsDir, outputDir });
@@ -207,12 +207,9 @@ describe("exportIcons", async () => {
 <plist><dict>
   <key>CFBundleIconFile</key>
   <string>AppIcon</string>
-</dict></plist>`
+</dict></plist>`,
     );
-    await writeFile(
-      join(appPath, "Contents", "Resources", "AppIcon.icns"),
-      "fake-icns-data"
-    );
+    await writeFile(join(appPath, "Contents", "Resources", "AppIcon.icns"), "fake-icns-data");
 
     const results = await exportIcons({ appsDir, outputDir });
     expect(results).toHaveLength(1);
@@ -225,13 +222,17 @@ describe("exportIcons", async () => {
 
   it("should report sips conversion failure", async () => {
     mockExecFile.mockImplementation(
-      (cmd: string, _args: string[], cb: (err: Error | null, stdout: string, stderr: string) => void) => {
+      (
+        cmd: string,
+        _args: string[],
+        cb: (err: Error | null, stdout: string, stderr: string) => void,
+      ) => {
         if (cmd === "/usr/bin/plutil") {
           cb(new Error("unexpected plutil call"), "", "");
           return;
         }
         cb(new Error("sips: could not convert"), "", "");
-      }
+      },
     );
 
     const appPath = join(appsDir, "BrokenApp.app");
@@ -242,12 +243,9 @@ describe("exportIcons", async () => {
 <plist><dict>
   <key>CFBundleIconFile</key>
   <string>BrokenIcon.icns</string>
-</dict></plist>`
+</dict></plist>`,
     );
-    await writeFile(
-      join(appPath, "Contents", "Resources", "BrokenIcon.icns"),
-      "corrupted-data"
-    );
+    await writeFile(join(appPath, "Contents", "Resources", "BrokenIcon.icns"), "corrupted-data");
 
     const results = await exportIcons({ appsDir, outputDir });
     expect(results).toHaveLength(1);
@@ -267,12 +265,9 @@ describe("exportIcons", async () => {
 <plist><dict>
   <key>CFBundleIconFile</key>
   <string>Icon.icns</string>
-</dict></plist>`
+</dict></plist>`,
     );
-    await writeFile(
-      join(appPath, "Contents", "Resources", "Icon.icns"),
-      "icns-data"
-    );
+    await writeFile(join(appPath, "Contents", "Resources", "Icon.icns"), "icns-data");
 
     const progressResults: Array<{ appName: string; success: boolean }> = [];
     await exportIcons({

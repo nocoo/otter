@@ -14,7 +14,7 @@ export interface ScanOptions {
  */
 export async function executeScan(
   collectors: Collector[],
-  options: ScanOptions = {}
+  options: ScanOptions = {},
 ): Promise<Snapshot> {
   // Run collectors sequentially to allow progress reporting
   const results: CollectorResult[] = [];
@@ -30,9 +30,7 @@ export async function executeScan(
         category: collector.category,
         files: [],
         lists: [],
-        errors: [
-          `Collector '${collector.id}' crashed: ${(err as Error).message}`,
-        ],
+        errors: [`Collector '${collector.id}' crashed: ${(err as Error).message}`],
         skipped: [],
         durationMs: 0,
       };

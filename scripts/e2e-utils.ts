@@ -20,9 +20,7 @@ export async function ensurePortFree(port: string | number): Promise<void> {
   if (!pids) return;
 
   const pidList = pids.split("\n").filter(Boolean);
-  console.warn(
-    `⚠️  Port ${port} occupied by PID ${pidList.join(", ")} — killing...`
-  );
+  console.warn(`⚠️  Port ${port} occupied by PID ${pidList.join(", ")} — killing...`);
 
   for (const pid of pidList) {
     try {

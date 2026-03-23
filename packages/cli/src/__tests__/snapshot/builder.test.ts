@@ -1,11 +1,9 @@
-import { describe, it, expect, vi } from "vitest";
-import { buildSnapshot } from "../../snapshot/builder.js";
 import type { Collector, CollectorResult } from "@otter/core";
+import { describe, expect, it, vi } from "vitest";
+import { buildSnapshot } from "../../snapshot/builder.js";
 
 /** Create a mock collector for testing */
-function mockCollector(
-  overrides: Partial<CollectorResult> & { id: string }
-): Collector {
+function mockCollector(overrides: Partial<CollectorResult> & { id: string }): Collector {
   const result: CollectorResult = {
     id: overrides.id,
     label: overrides.label ?? overrides.id,
@@ -44,9 +42,7 @@ describe("buildSnapshot", () => {
     const s1 = await buildSnapshot([]);
     const s2 = await buildSnapshot([]);
 
-    expect(s1.id).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
-    );
+    expect(s1.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
     expect(s1.id).not.toBe(s2.id);
   });
 
@@ -100,9 +96,7 @@ describe("buildSnapshot", () => {
 
     // Should still produce a snapshot
     expect(snapshot.collectors).toHaveLength(1);
-    expect(snapshot.collectors[0].errors).toContain(
-      "Collector 'failing' crashed: boom"
-    );
+    expect(snapshot.collectors[0].errors).toContain("Collector 'failing' crashed: boom");
   });
 
   it("should produce valid JSON when serialized", async () => {

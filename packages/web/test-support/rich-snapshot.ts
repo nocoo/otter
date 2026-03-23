@@ -1,4 +1,4 @@
-import type { Snapshot, CollectorResult } from "../../core/src/types";
+import type { CollectorResult, Snapshot } from "../../core/src/types";
 
 export const ALL_COLLECTOR_IDS = [
   "claude-config",
@@ -48,7 +48,7 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
         files: [
           collectorFile(
             "/Users/e2e-tester/.claude/settings.json",
-            '{"theme":"light","apiKey":"[REDACTED]"}'
+            '{"theme":"light","apiKey":"[REDACTED]"}',
           ),
         ],
         lists: [{ name: "claude-session-count", version: "4", meta: { type: "summary" } }],
@@ -63,7 +63,7 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
         files: [
           collectorFile(
             "/Users/e2e-tester/.config/opencode/config.json",
-            '{"provider":"anthropic","token":"[REDACTED]"}'
+            '{"provider":"anthropic","token":"[REDACTED]"}',
           ),
         ],
         lists: [{ name: "web-design-guidelines", meta: { type: "skill" } }],
@@ -78,12 +78,10 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
         files: [
           collectorFile(
             "/Users/e2e-tester/.zshrc",
-            'export PATH="/opt/homebrew/bin:$PATH"\nexport OPENAI_API_KEY="[REDACTED]"'
+            'export PATH="/opt/homebrew/bin:$PATH"\nexport OPENAI_API_KEY="[REDACTED]"',
           ),
         ],
-        lists: [
-          { name: "~/.ssh/id_ed25519", meta: { type: "ssh-key", source: ".ssh" } },
-        ],
+        lists: [{ name: "~/.ssh/id_ed25519", meta: { type: "ssh-key", source: ".ssh" } }],
         errors: [],
         skipped: [],
         durationMs: 20,
@@ -130,11 +128,11 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
         files: [
           collectorFile(
             "/Users/e2e-tester/Library/Application Support/Code/User/settings.json",
-            '{"editor.fontFamily":"MonoLisa","github.copilot.chat.localeOverride":"en","token":"[REDACTED]"}'
+            '{"editor.fontFamily":"MonoLisa","github.copilot.chat.localeOverride":"en","token":"[REDACTED]"}',
           ),
           collectorFile(
             "/Users/e2e-tester/Library/Application Support/Cursor/User/keybindings.json",
-            '[{"key":"cmd+k cmd+s","command":"workbench.action.openGlobalKeybindings"}]'
+            '[{"key":"cmd+k cmd+s","command":"workbench.action.openGlobalKeybindings"}]',
           ),
         ],
         lists: [
@@ -160,7 +158,7 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
         files: [
           collectorFile(
             "/Users/e2e-tester/.docker/config.json",
-            '{"auths":{"ghcr.io":{"auth":"[REDACTED]"}},"credsStore":"desktop"}'
+            '{"auths":{"ghcr.io":{"auth":"[REDACTED]"}},"credsStore":"desktop"}',
           ),
         ],
         lists: [
@@ -215,11 +213,11 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
         files: [
           collectorFile(
             "/Users/e2e-tester/.aws/config",
-            '[default]\nregion=us-east-1\n[profile work]\nregion=us-west-2'
+            "[default]\nregion=us-east-1\n[profile work]\nregion=us-west-2",
           ),
           collectorFile(
             "/Users/e2e-tester/.config/railway/config.json",
-            '{"token":"[REDACTED]","project":"otter"}'
+            '{"token":"[REDACTED]","project":"otter"}',
           ),
         ],
         lists: [
@@ -237,7 +235,7 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
         files: [
           collectorFile(
             "macos-defaults/com.apple.dock.plist",
-            "<?xml version=\"1.0\"?><plist><dict><key>autohide</key><true/></dict></plist>"
+            '<?xml version="1.0"?><plist><dict><key>autohide</key><true/></dict></plist>',
           ),
         ],
         lists: [
@@ -255,12 +253,10 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
         files: [
           collectorFile(
             "crontab",
-            'MAILTO="alerts@example.com"\n0 1 * * * /usr/local/bin/backup --token [REDACTED]'
+            'MAILTO="alerts@example.com"\n0 1 * * * /usr/local/bin/backup --token [REDACTED]',
           ),
         ],
-        lists: [
-          { name: "com.example.sync.plist", meta: { type: "user-agent" } },
-        ],
+        lists: [{ name: "com.example.sync.plist", meta: { type: "user-agent" } }],
         errors: [],
         skipped: [],
         durationMs: 14,
@@ -273,13 +269,13 @@ export function getRichSnapshotCounts(snapshot: Snapshot) {
   return snapshot.collectors.reduce(
     (
       acc: { collectorCount: number; fileCount: number; listCount: number },
-      collector: CollectorResult
+      collector: CollectorResult,
     ) => {
       acc.collectorCount += 1;
       acc.fileCount += collector.files.length;
       acc.listCount += collector.lists.length;
       return acc;
     },
-    { collectorCount: 0, fileCount: 0, listCount: 0 }
+    { collectorCount: 0, fileCount: 0, listCount: 0 },
   );
 }

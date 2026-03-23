@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { VSCodeCollector } from "../../collectors/vscode.js";
 
 describe("VSCodeCollector", () => {
@@ -64,13 +64,7 @@ describe("VSCodeCollector", () => {
   });
 
   it("should collect settings, keybindings, and snippets", async () => {
-    const userDir = join(
-      tempHome,
-      "Library",
-      "Application Support",
-      "Code",
-      "User"
-    );
+    const userDir = join(tempHome, "Library", "Application Support", "Code", "User");
     await mkdir(join(userDir, "snippets"), { recursive: true });
     await writeFile(join(userDir, "settings.json"), '{"apiKey":"secret"}');
     await writeFile(join(userDir, "keybindings.json"), "[]");
@@ -86,7 +80,7 @@ describe("VSCodeCollector", () => {
         join(userDir, "settings.json"),
         join(userDir, "keybindings.json"),
         join(userDir, "snippets", "ts.json"),
-      ])
+      ]),
     );
     const settings = result.files.find((file) => file.path.endsWith("settings.json"));
     expect(settings?.content).toContain("[REDACTED]");

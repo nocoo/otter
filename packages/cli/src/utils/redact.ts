@@ -251,9 +251,7 @@ function redactDeepValues(obj: unknown): [unknown, boolean] {
   if (typeof obj === "object") {
     let anyRedacted = false;
     const result: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(
-      obj as Record<string, unknown>
-    )) {
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
       const [val, redacted] = redactDeepValues(value);
       result[key] = val;
       if (redacted) anyRedacted = true;

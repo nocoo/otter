@@ -1,10 +1,10 @@
 "use client";
 
-import { signIn } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
-import Image from "next/image";
 import { Archive, Github } from "lucide-react";
+import Image from "next/image";
+import { useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { Suspense } from "react";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 function Barcode() {
@@ -88,7 +88,8 @@ function LoginContent() {
               <div
                 className="h-4 w-8 rounded-full bg-background/80"
                 style={{
-                  boxShadow: "inset 0 1.5px 3px rgba(0,0,0,0.35), inset 0 -0.5px 1px rgba(255,255,255,0.1)",
+                  boxShadow:
+                    "inset 0 1.5px 3px rgba(0,0,0,0.35), inset 0 -0.5px 1px rgba(255,255,255,0.1)",
                 }}
               />
               <div className="flex items-center gap-2">
@@ -183,7 +184,13 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>}>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      }
+    >
       <LoginContent />
     </Suspense>
   );

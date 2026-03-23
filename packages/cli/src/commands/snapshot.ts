@@ -1,15 +1,7 @@
-import pc from "picocolors";
 import type { Snapshot } from "@otter/core";
+import pc from "picocolors";
 import type { SnapshotMeta } from "../storage/local.js";
-import {
-  formatSize,
-  formatDate,
-  table,
-  tree,
-  S,
-  type TreeChild,
-  type Column,
-} from "../ui.js";
+import { type Column, formatDate, formatSize, S, type TreeChild, table, tree } from "../ui.js";
 
 // ── snapshot list ───────────────────────────────────────────────────
 
@@ -56,17 +48,13 @@ export function formatSnapshotDetail(snapshot: Snapshot): string {
   lines.push("");
   lines.push(`  Snapshot ${pc.bold(snapshot.id.slice(0, 8))}`);
   lines.push(`  Created: ${pc.dim(formatDate(snapshot.createdAt))}`);
-  lines.push(
-    `  Machine: ${pc.dim(`${machineName} (${m.platform}/${m.arch}, ${m.osVersion})`)}`
-  );
+  lines.push(`  Machine: ${pc.dim(`${machineName} (${m.platform}/${m.arch}, ${m.osVersion})`)}`);
   lines.push(`  User:    ${pc.dim(m.username)}`);
   lines.push("");
 
   for (const c of snapshot.collectors) {
     const status = c.errors.length > 0 ? S.warning : S.success;
-    const meta = pc.dim(
-      `${c.files.length} files, ${c.lists.length} items`
-    );
+    const meta = pc.dim(`${c.files.length} files, ${c.lists.length} items`);
     lines.push(`  ${status}  ${pc.bold(c.label)}  ${meta}`);
 
     // Build tree children
@@ -85,8 +73,7 @@ export function formatSnapshotDetail(snapshot: Snapshot): string {
         .slice(0, 10)
         .map((l) => l.name)
         .join(", ");
-      const suffix =
-        c.lists.length > 10 ? `, ... +${c.lists.length - 10} more` : "";
+      const suffix = c.lists.length > 10 ? `, ... +${c.lists.length - 10} more` : "";
       children.push({ text: `items: ${preview}${suffix}`, dim: true });
     }
 
@@ -141,17 +128,11 @@ export interface SnapshotDiffResult {
  * Content-level diffing is out of scope — only presence/absence is tracked,
  * plus a "changed" marker when a file exists in both but size differs.
  */
-export function diffSnapshots(
-  oldSnap: Snapshot,
-  newSnap: Snapshot
-): SnapshotDiffResult {
+export function diffSnapshots(oldSnap: Snapshot, newSnap: Snapshot): SnapshotDiffResult {
   const oldCollectorMap = new Map(oldSnap.collectors.map((c) => [c.id, c]));
   const newCollectorMap = new Map(newSnap.collectors.map((c) => [c.id, c]));
 
-  const allIds = new Set([
-    ...oldCollectorMap.keys(),
-    ...newCollectorMap.keys(),
-  ]);
+  const allIds = new Set([...oldCollectorMap.keys(), ...newCollectorMap.keys()]);
 
   const addedCollectors: string[] = [];
   const removedCollectors: string[] = [];
@@ -198,7 +179,7 @@ export function diffSnapshots(
 
 function diffFiles(
   oldFiles: Snapshot["collectors"][0]["files"],
-  newFiles: Snapshot["collectors"][0]["files"]
+  newFiles: Snapshot["collectors"][0]["files"],
 ): DiffEntry[] {
   const oldMap = new Map(oldFiles.map((f) => [f.path, f]));
   const newMap = new Map(newFiles.map((f) => [f.path, f]));
@@ -224,7 +205,7 @@ function diffFiles(
 
 function diffLists(
   oldLists: Snapshot["collectors"][0]["lists"],
-  newLists: Snapshot["collectors"][0]["lists"]
+  newLists: Snapshot["collectors"][0]["lists"],
 ): DiffEntry[] {
   const oldNames = new Set(oldLists.map((l) => l.name));
   const newNames = new Set(newLists.map((l) => l.name));
@@ -252,9 +233,7 @@ export function formatSnapshotDiff(diff: SnapshotDiffResult): string {
   const lines: string[] = [];
 
   lines.push("");
-  lines.push(
-    `  Diff: ${pc.bold(diff.oldId)} \u2192 ${pc.bold(diff.newId)}`
-  );
+  lines.push(`  Diff: ${pc.bold(diff.oldId)} \u2192 ${pc.bold(diff.newId)}`);
   lines.push("");
 
   const hasChanges =
@@ -269,14 +248,10 @@ export function formatSnapshotDiff(diff: SnapshotDiffResult): string {
   }
 
   if (diff.addedCollectors.length > 0) {
-    lines.push(
-      `  ${pc.green("+")} Collectors added: ${diff.addedCollectors.join(", ")}`
-    );
+    lines.push(`  ${pc.green("+")} Collectors added: ${diff.addedCollectors.join(", ")}`);
   }
   if (diff.removedCollectors.length > 0) {
-    lines.push(
-      `  ${pc.red("-")} Collectors removed: ${diff.removedCollectors.join(", ")}`
-    );
+    lines.push(`  ${pc.red("-")} Collectors removed: ${diff.removedCollectors.join(", ")}`);
   }
 
   for (const c of diff.collectors) {
@@ -288,21 +263,15 @@ export function formatSnapshotDiff(diff: SnapshotDiffResult): string {
     const children: TreeChild[] = [];
 
     for (const f of c.files) {
-      const prefix =
-        f.type === "added" ? "+" : f.type === "removed" ? "-" : "~";
+      const prefix = f.type === "added" ? "+" : f.type === "removed" ? "-" : "~";
       const color: TreeChild["color"] =
-        f.type === "added"
-          ? "green"
-          : f.type === "removed"
-            ? "red"
-            : "yellow";
+        f.type === "added" ? "green" : f.type === "removed" ? "red" : "yellow";
       children.push({ text: `${prefix} ${f.label}`, color });
     }
 
     for (const l of c.lists) {
       const prefix = l.type === "added" ? "+" : "-";
-      const color: TreeChild["color"] =
-        l.type === "added" ? "green" : "red";
+      const color: TreeChild["color"] = l.type === "added" ? "green" : "red";
       children.push({ text: `${prefix} ${l.label}`, color });
     }
 
@@ -315,4 +284,4 @@ export function formatSnapshotDiff(diff: SnapshotDiffResult): string {
   return lines.join("\n");
 }
 
-export { formatSize, formatDate };
+export { formatDate, formatSize };

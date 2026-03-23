@@ -1,5 +1,5 @@
-import { createServer } from "node:http";
 import { exec } from "node:child_process";
+import { createServer } from "node:http";
 import { createConnection } from "node:net";
 import type { ConfigManager } from "../config/manager.js";
 
@@ -47,9 +47,7 @@ export function checkPortAvailable(port: number): Promise<boolean> {
  */
 export async function findAvailablePort(): Promise<number> {
   for (let i = 0; i < 20; i++) {
-    const port =
-      PORT_RANGE_START +
-      Math.floor(Math.random() * (PORT_RANGE_END - PORT_RANGE_START));
+    const port = PORT_RANGE_START + Math.floor(Math.random() * (PORT_RANGE_END - PORT_RANGE_START));
     if (await checkPortAvailable(port)) {
       return port;
     }
@@ -68,9 +66,7 @@ function openBrowser(url: string): void {
  * Parse callback query parameters from the URL.
  * Expected: /callback?token=<uuid>
  */
-export function parseCallbackParams(
-  url: string
-): { token: string } | { error: string } {
+export function parseCallbackParams(url: string): { token: string } | { error: string } {
   try {
     const parsed = new URL(url, "http://localhost");
     const token = parsed.searchParams.get("token");
@@ -120,7 +116,7 @@ export async function executeLogin(
     onError?: (error: string) => void;
     onTimeout?: () => void;
     openBrowser?: (url: string) => void;
-  }
+  },
 ): Promise<LoginResult> {
   const host = resolveHost(options);
   const port = await findAvailablePort();
@@ -231,10 +227,7 @@ function successHtml(): string {
 }
 
 function errorHtml(message: string): string {
-  const escaped = message
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  const escaped = message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   return `<!DOCTYPE html>
 <html>
 <head>

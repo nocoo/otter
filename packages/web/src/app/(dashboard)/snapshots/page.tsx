@@ -1,15 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { Archive, ChevronLeft, ChevronRight, Loader2, Monitor, Search } from "lucide-react";
 import Link from "next/link";
-import {
-  Archive,
-  Monitor,
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { formatSize } from "@/lib/utils";
@@ -143,17 +136,14 @@ export default function SnapshotsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Snapshots</h1>
-          <p className="text-sm text-muted-foreground">
-            Browse all dev environment backups
-          </p>
+          <p className="text-sm text-muted-foreground">Browse all dev environment backups</p>
         </div>
         <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={1.5} />
-          <Input
-            placeholder="Search by hostname..."
-            className="pl-9"
-            disabled
+          <Search
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            strokeWidth={1.5}
           />
+          <Input placeholder="Search by hostname..." className="pl-9" disabled />
         </div>
       </div>
 
@@ -193,14 +183,30 @@ export default function SnapshotsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">Snapshot</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">Host</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">Platform</th>
-                    <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">Collectors</th>
-                    <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">Files</th>
-                    <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">Lists</th>
-                    <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">Size</th>
-                    <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">Created</th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">
+                      Snapshot
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">
+                      Host
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">
+                      Platform
+                    </th>
+                    <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">
+                      Collectors
+                    </th>
+                    <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">
+                      Files
+                    </th>
+                    <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">
+                      Lists
+                    </th>
+                    <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">
+                      Size
+                    </th>
+                    <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">
+                      Created
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -214,13 +220,19 @@ export default function SnapshotsPage() {
                           href={`/snapshots/${snap.id}`}
                           className="inline-flex items-center gap-2 text-foreground hover:text-primary transition-colors"
                         >
-                          <Archive className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                          <Archive
+                            className="h-3.5 w-3.5 text-muted-foreground"
+                            strokeWidth={1.5}
+                          />
                           <code className="text-xs font-mono">{snap.id.slice(0, 8)}</code>
                         </Link>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <Monitor className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                          <Monitor
+                            className="h-3.5 w-3.5 text-muted-foreground"
+                            strokeWidth={1.5}
+                          />
                           <span className="font-medium">{snap.hostname}</span>
                         </div>
                       </td>
@@ -232,11 +244,17 @@ export default function SnapshotsPage() {
                       <td className="px-4 py-3 text-right tabular-nums">{snap.collectorCount}</td>
                       <td className="px-4 py-3 text-right tabular-nums">{snap.fileCount}</td>
                       <td className="px-4 py-3 text-right tabular-nums">{snap.listCount}</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{formatSize(snap.sizeBytes)}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
+                        {formatSize(snap.sizeBytes)}
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex flex-col items-end">
-                          <span className="text-xs text-muted-foreground">{formatTimeAgo(snap.snapshotAt)}</span>
-                          <span className="text-[10px] text-muted-foreground/60">{formatDateTime(snap.snapshotAt)}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatTimeAgo(snap.snapshotAt)}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground/60">
+                            {formatDateTime(snap.snapshotAt)}
+                          </span>
                         </div>
                       </td>
                     </tr>
@@ -260,7 +278,9 @@ export default function SnapshotsPage() {
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <span className="px-2 text-xs text-muted-foreground">Page {currentPage} of {totalPages}</span>
+              <span className="px-2 text-xs text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
               <button
                 type="button"
                 disabled={nextBefore === null}

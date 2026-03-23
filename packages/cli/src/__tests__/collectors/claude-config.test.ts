@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtemp, writeFile, mkdir, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ClaudeConfigCollector } from "../../collectors/claude-config.js";
 
 describe("ClaudeConfigCollector", () => {
@@ -31,7 +31,7 @@ describe("ClaudeConfigCollector", () => {
       expect.objectContaining({
         path: join(tempHome, "CLAUDE.md"),
         content: "# My Claude Config",
-      })
+      }),
     );
     expect(result.errors).toHaveLength(0);
   });
@@ -40,24 +40,12 @@ describe("ClaudeConfigCollector", () => {
     const claudeDir = join(tempHome, ".claude");
     await mkdir(join(claudeDir, "plugins"), { recursive: true });
 
-    await writeFile(
-      join(claudeDir, "settings.json"),
-      '{"enabledPlugins": []}'
-    );
-    await writeFile(
-      join(claudeDir, "stats-cache.json"),
-      '{"totalSessions": 10}'
-    );
+    await writeFile(join(claudeDir, "settings.json"), '{"enabledPlugins": []}');
+    await writeFile(join(claudeDir, "stats-cache.json"), '{"totalSessions": 10}');
     await writeFile(join(claudeDir, "CLAUDE.md"), "# Claude level config");
     await writeFile(join(claudeDir, "history.jsonl"), '{"display":"hello"}');
-    await writeFile(
-      join(claudeDir, "plugins", "installed_plugins.json"),
-      "[]"
-    );
-    await writeFile(
-      join(claudeDir, "plugins", "blocklist.json"),
-      "[]"
-    );
+    await writeFile(join(claudeDir, "plugins", "installed_plugins.json"), "[]");
+    await writeFile(join(claudeDir, "plugins", "blocklist.json"), "[]");
 
     const collector = new ClaudeConfigCollector(tempHome);
     const result = await collector.collect();
@@ -67,9 +55,7 @@ describe("ClaudeConfigCollector", () => {
     expect(paths).toContain(join(claudeDir, "stats-cache.json"));
     expect(paths).toContain(join(claudeDir, "CLAUDE.md"));
     expect(paths).toContain(join(claudeDir, "history.jsonl"));
-    expect(paths).toContain(
-      join(claudeDir, "plugins", "installed_plugins.json")
-    );
+    expect(paths).toContain(join(claudeDir, "plugins", "installed_plugins.json"));
     expect(paths).toContain(join(claudeDir, "plugins", "blocklist.json"));
   });
 
@@ -82,29 +68,17 @@ describe("ClaudeConfigCollector", () => {
 
     await writeFile(join(claudeDir, "debug", "debug.log"), "debug content");
     await writeFile(join(claudeDir, "telemetry", "events.json"), "{}");
-    await writeFile(
-      join(claudeDir, "transcripts", "transcript.jsonl"),
-      "{}"
-    );
-    await writeFile(
-      join(claudeDir, "projects", "abc123", "session-001.jsonl"),
-      '{"type":"user"}'
-    );
+    await writeFile(join(claudeDir, "transcripts", "transcript.jsonl"), "{}");
+    await writeFile(join(claudeDir, "projects", "abc123", "session-001.jsonl"), '{"type":"user"}');
 
     const collector = new ClaudeConfigCollector(tempHome);
     const result = await collector.collect();
 
     const paths = result.files.map((f) => f.path);
     expect(paths).not.toContain(join(claudeDir, "debug", "debug.log"));
-    expect(paths).not.toContain(
-      join(claudeDir, "telemetry", "events.json")
-    );
-    expect(paths).not.toContain(
-      join(claudeDir, "transcripts", "transcript.jsonl")
-    );
-    expect(paths).not.toContain(
-      join(claudeDir, "projects", "abc123", "session-001.jsonl")
-    );
+    expect(paths).not.toContain(join(claudeDir, "telemetry", "events.json"));
+    expect(paths).not.toContain(join(claudeDir, "transcripts", "transcript.jsonl"));
+    expect(paths).not.toContain(join(claudeDir, "projects", "abc123", "session-001.jsonl"));
   });
 
   it("should collect session summaries from sessions-index.json", async () => {
@@ -134,17 +108,12 @@ describe("ClaudeConfigCollector", () => {
       ],
       originalPath: "/Users/test/myproject",
     };
-    await writeFile(
-      join(projectDir, "sessions-index.json"),
-      JSON.stringify(sessionsIndex)
-    );
+    await writeFile(join(projectDir, "sessions-index.json"), JSON.stringify(sessionsIndex));
 
     const collector = new ClaudeConfigCollector(tempHome);
     const result = await collector.collect();
 
-    const summaryFile = result.files.find((f) =>
-      f.path.endsWith("__sessions-summary.json")
-    );
+    const summaryFile = result.files.find((f) => f.path.endsWith("__sessions-summary.json"));
     expect(summaryFile).toBeDefined();
 
     // biome-ignore lint/style/noNonNullAssertion: asserted defined above
@@ -216,20 +185,16 @@ describe("ClaudeConfigCollector", () => {
       await writeFile(
         join(dir, "sessions-index.json"),
         JSON.stringify({
-          entries: [
-            { sessionId: `${hash}-s1`, firstPrompt: `Work on ${hash}` },
-          ],
+          entries: [{ sessionId: `${hash}-s1`, firstPrompt: `Work on ${hash}` }],
           originalPath: origPath,
-        })
+        }),
       );
     }
 
     const collector = new ClaudeConfigCollector(tempHome);
     const result = await collector.collect();
 
-    const summaryFile = result.files.find((f) =>
-      f.path.endsWith("__sessions-summary.json")
-    );
+    const summaryFile = result.files.find((f) => f.path.endsWith("__sessions-summary.json"));
     expect(summaryFile).toBeDefined();
 
     // biome-ignore lint/style/noNonNullAssertion: asserted defined above
@@ -241,18 +206,13 @@ describe("ClaudeConfigCollector", () => {
     const claudeDir = join(tempHome, ".claude");
     const dir = join(claudeDir, "projects", "empty-proj");
     await mkdir(dir, { recursive: true });
-    await writeFile(
-      join(dir, "sessions-index.json"),
-      JSON.stringify({ entries: [] })
-    );
+    await writeFile(join(dir, "sessions-index.json"), JSON.stringify({ entries: [] }));
 
     const collector = new ClaudeConfigCollector(tempHome);
     const result = await collector.collect();
 
     // No summary file should be created for empty projects
-    const summaryFile = result.files.find((f) =>
-      f.path.endsWith("__sessions-summary.json")
-    );
+    const summaryFile = result.files.find((f) => f.path.endsWith("__sessions-summary.json"));
     expect(summaryFile).toBeUndefined();
   });
 
@@ -265,16 +225,13 @@ describe("ClaudeConfigCollector", () => {
     // Create all files
     await writeFile(join(claudeDir, "settings.json"), '{"env":{}}');
     await writeFile(join(claudeDir, "CLAUDE.md"), "# Config");
-    await writeFile(
-      join(claudeDir, "history.jsonl"),
-      '{"display":"test prompt"}'
-    );
+    await writeFile(join(claudeDir, "history.jsonl"), '{"display":"test prompt"}');
     await writeFile(
       join(projectDir, "sessions-index.json"),
       JSON.stringify({
         entries: [{ sessionId: "s1", firstPrompt: "hello" }],
         originalPath: "/test",
-      })
+      }),
     );
 
     const collector = new ClaudeConfigCollector(tempHome, { slim: true });
@@ -288,9 +245,7 @@ describe("ClaudeConfigCollector", () => {
 
     // Behavior data should be excluded
     expect(paths).not.toContain(join(claudeDir, "history.jsonl"));
-    expect(paths.some((p) => p.endsWith("__sessions-summary.json"))).toBe(
-      false
-    );
+    expect(paths.some((p) => p.endsWith("__sessions-summary.json"))).toBe(false);
   });
 
   it("should include history.jsonl and session summaries without slim mode", async () => {
@@ -298,16 +253,13 @@ describe("ClaudeConfigCollector", () => {
     const projectDir = join(claudeDir, "projects", "abc123");
     await mkdir(projectDir, { recursive: true });
 
-    await writeFile(
-      join(claudeDir, "history.jsonl"),
-      '{"display":"test prompt"}'
-    );
+    await writeFile(join(claudeDir, "history.jsonl"), '{"display":"test prompt"}');
     await writeFile(
       join(projectDir, "sessions-index.json"),
       JSON.stringify({
         entries: [{ sessionId: "s1", firstPrompt: "hello" }],
         originalPath: "/test",
-      })
+      }),
     );
 
     const collector = new ClaudeConfigCollector(tempHome); // no slim
@@ -315,8 +267,6 @@ describe("ClaudeConfigCollector", () => {
 
     const paths = result.files.map((f) => f.path);
     expect(paths).toContain(join(claudeDir, "history.jsonl"));
-    expect(paths.some((p) => p.endsWith("__sessions-summary.json"))).toBe(
-      true
-    );
+    expect(paths.some((p) => p.endsWith("__sessions-summary.json"))).toBe(true);
   });
 });

@@ -1,6 +1,6 @@
-import { randomUUID } from "node:crypto";
 import { execSync } from "node:child_process";
-import { hostname, platform, release, arch, userInfo, homedir } from "node:os";
+import { randomUUID } from "node:crypto";
+import { arch, homedir, hostname, platform, release, userInfo } from "node:os";
 import type { Collector, CollectorResult, MachineInfo, Snapshot } from "@otter/core";
 
 /**
@@ -58,9 +58,7 @@ async function runCollector(collector: Collector): Promise<CollectorResult> {
  * Build a complete snapshot by running all provided collectors
  * and assembling results into the unified Snapshot format.
  */
-export async function buildSnapshot(
-  collectors: Collector[]
-): Promise<Snapshot> {
+export async function buildSnapshot(collectors: Collector[]): Promise<Snapshot> {
   const results = await Promise.all(collectors.map(runCollector));
 
   return {

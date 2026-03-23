@@ -10,7 +10,7 @@
  * All created resources are cleaned up at the end.
  */
 
-import { describe, it, expect, afterAll } from "bun:test";
+import { afterAll, describe, expect, it } from "bun:test";
 
 const BASE_URL = `http://localhost:${process.env.E2E_PORT || "17029"}`;
 
@@ -120,22 +120,18 @@ describe("L3 API E2E: Webhooks CRUD", () => {
   });
 
   it("PATCH /api/webhooks/:id returns 404 for non-existent webhook", async () => {
-    const res = await fetch(
-      `${BASE_URL}/api/webhooks/00000000-0000-0000-0000-000000000000`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ label: "nope" }),
-      },
-    );
+    const res = await fetch(`${BASE_URL}/api/webhooks/00000000-0000-0000-0000-000000000000`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ label: "nope" }),
+    });
     expect(res.status).toBe(404);
   });
 
   it("DELETE /api/webhooks/:id returns 404 for non-existent webhook", async () => {
-    const res = await fetch(
-      `${BASE_URL}/api/webhooks/00000000-0000-0000-0000-000000000000`,
-      { method: "DELETE" },
-    );
+    const res = await fetch(`${BASE_URL}/api/webhooks/00000000-0000-0000-0000-000000000000`, {
+      method: "DELETE",
+    });
     expect(res.status).toBe(404);
   });
 });

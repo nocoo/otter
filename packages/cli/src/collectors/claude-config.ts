@@ -1,11 +1,7 @@
+import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { readFile, readdir } from "node:fs/promises";
+import type { CollectedFile, CollectorCategory, CollectorResult } from "@otter/core";
 import { BaseCollector } from "./base.js";
-import type {
-  CollectorCategory,
-  CollectorResult,
-  CollectedFile,
-} from "@otter/core";
 
 // ---------------------------------------------------------------------------
 // Session metadata types (for snapshot summary, not full conversation content)
@@ -38,14 +34,15 @@ interface ProjectSummary {
 // ---------------------------------------------------------------------------
 
 /** Files to collect as full content (small, valuable config files) */
-const TARGETED_FILES: Array<{ path: string; redact?: boolean; maxSize?: number; slim?: boolean }> = [
-  { path: "CLAUDE.md" }, // user-level instructions
-  { path: "settings.json", redact: true }, // settings (contains API tokens)
-  { path: "stats-cache.json" }, // aggregate usage stats
-  { path: "plugins/installed_plugins.json" }, // plugin inventory
-  { path: "plugins/blocklist.json" }, // plugin blocklist
-  { path: "history.jsonl", redact: true, maxSize: 2 * 1024 * 1024, slim: true }, // prompt history (excluded in slim mode)
-];
+const TARGETED_FILES: Array<{ path: string; redact?: boolean; maxSize?: number; slim?: boolean }> =
+  [
+    { path: "CLAUDE.md" }, // user-level instructions
+    { path: "settings.json", redact: true }, // settings (contains API tokens)
+    { path: "stats-cache.json" }, // aggregate usage stats
+    { path: "plugins/installed_plugins.json" }, // plugin inventory
+    { path: "plugins/blocklist.json" }, // plugin blocklist
+    { path: "history.jsonl", redact: true, maxSize: 2 * 1024 * 1024, slim: true }, // prompt history (excluded in slim mode)
+  ];
 
 /**
  * Collects Claude Code configuration files with targeted, safe collection.
@@ -82,10 +79,7 @@ export class ClaudeConfigCollector extends BaseCollector {
       const claudeDir = join(this.homeDir, ".claude");
 
       // 1. Collect ~/CLAUDE.md (home-level instructions)
-      const homeMd = await this.safeReadFile(
-        join(this.homeDir, "CLAUDE.md"),
-        result
-      );
+      const homeMd = await this.safeReadFile(join(this.homeDir, "CLAUDE.md"), result);
       if (homeMd) result.files.push(homeMd);
 
       // 2. Collect targeted config files from ~/.claude/
@@ -93,20 +87,16 @@ export class ClaudeConfigCollector extends BaseCollector {
         // Skip files marked as slim-excluded when in slim mode
         if (this.slim && slimExclude) continue;
 
-        const file = await this.safeReadFile(
-          join(claudeDir, relativePath),
-          result,
-          { redact, maxSize }
-        );
+        const file = await this.safeReadFile(join(claudeDir, relativePath), result, {
+          redact,
+          maxSize,
+        });
         if (file) result.files.push(file);
       }
 
       // 3. Collect conversation metadata summaries (skip in slim mode)
       if (!this.slim) {
-        const summaryFile = await this.collectSessionSummaries(
-          claudeDir,
-          result
-        );
+        const summaryFile = await this.collectSessionSummaries(claudeDir, result);
         if (summaryFile) result.files.push(summaryFile);
       }
     });
@@ -121,7 +111,7 @@ export class ClaudeConfigCollector extends BaseCollector {
    */
   private async collectSessionSummaries(
     claudeDir: string,
-    result: CollectorResult
+    result: CollectorResult,
   ): Promise<CollectedFile | null> {
     const projectsDir = join(claudeDir, "projects");
     const summaries: ProjectSummary[] = [];
@@ -133,11 +123,7 @@ export class ClaudeConfigCollector extends BaseCollector {
       for (const entry of projectDirs) {
         if (!entry.isDirectory()) continue;
 
-        const indexPath = join(
-          projectsDir,
-          entry.name,
-          "sessions-index.json"
-        );
+        const indexPath = join(projectsDir, entry.name, "sessions-index.json");
 
         try {
           const raw = await readFile(indexPath, "utf-8");
@@ -164,9 +150,7 @@ export class ClaudeConfigCollector extends BaseCollector {
       }
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
-        result.errors.push(
-          `Failed to read Claude projects directory: ${(err as Error).message}`
-        );
+        result.errors.push(`Failed to read Claude projects directory: ${(err as Error).message}`);
       }
       return null;
     }

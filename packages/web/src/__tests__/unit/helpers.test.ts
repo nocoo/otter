@@ -1,12 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  formatDateTime,
-  computeIconUrl,
-  resolveIconUrl,
-  metaEntries,
-  formatMetaLabel,
   badgeClassName,
+  computeIconUrl,
+  formatDateTime,
+  formatMetaLabel,
   listItemKey,
+  metaEntries,
+  resolveIconUrl,
 } from "@/app/(dashboard)/snapshots/[id]/_components/helpers";
 
 describe("helpers", () => {

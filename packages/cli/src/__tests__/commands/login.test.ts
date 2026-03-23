@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
-  parseCallbackParams,
-  resolveHost,
   buildWebhookUrl,
   checkPortAvailable,
-  findAvailablePort,
   executeLogin,
+  findAvailablePort,
+  parseCallbackParams,
+  resolveHost,
 } from "../../commands/login.js";
 import { ConfigManager } from "../../config/manager.js";
 
@@ -30,16 +30,12 @@ describe("parseCallbackParams", () => {
   });
 
   it("should return error param if present", () => {
-    const result = parseCallbackParams(
-      "/callback?error=User%20cancelled"
-    );
+    const result = parseCallbackParams("/callback?error=User%20cancelled");
     expect(result).toEqual({ error: "User cancelled" });
   });
 
   it("should prioritize error over token", () => {
-    const result = parseCallbackParams(
-      "/callback?error=bad&token=abc"
-    );
+    const result = parseCallbackParams("/callback?error=bad&token=abc");
     expect(result).toEqual({ error: "bad" });
   });
 });
@@ -121,24 +117,34 @@ describe("executeLogin", () => {
     let browserUrl = "";
 
     // Start login, then immediately simulate a callback
-    const loginPromise = executeLogin(configManager, {}, {
-      openBrowser: (url) => {
-        browserUrl = url;
+    const loginPromise = executeLogin(
+      configManager,
+      {},
+      {
+        openBrowser: (url) => {
+          browserUrl = url;
 
-        // Simulate: extract the callback port and hit it
-        const callbackMatch = url.match(/callback=([^&]+)/);
-        if (callbackMatch) {
-          const callbackBase = decodeURIComponent(callbackMatch[1]);
-          // Hit the callback with token only
-          fetch(
-            `${callbackBase}/callback?token=test-token`
-          ).catch(() => { /* fire-and-forget */ });
-        }
+          // Simulate: extract the callback port and hit it
+          const callbackMatch = url.match(/callback=([^&]+)/);
+          if (callbackMatch) {
+            const callbackBase = decodeURIComponent(callbackMatch[1]);
+            // Hit the callback with token only
+            fetch(`${callbackBase}/callback?token=test-token`).catch(() => {
+              /* fire-and-forget */
+            });
+          }
+        },
+        onBrowserOpen: () => {
+          /* no-op */
+        },
+        onPortReady: () => {
+          /* no-op */
+        },
+        onSuccess: () => {
+          /* no-op */
+        },
       },
-      onBrowserOpen: () => { /* no-op */ },
-      onPortReady: () => { /* no-op */ },
-      onSuccess: () => { /* no-op */ },
-    });
+    );
 
     const result = await loginPromise;
 
@@ -149,20 +155,30 @@ describe("executeLogin", () => {
   });
 
   it("should save token to config after success", async () => {
-    const loginPromise = executeLogin(configManager, {}, {
-      openBrowser: (url) => {
-        const callbackMatch = url.match(/callback=([^&]+)/);
-        if (callbackMatch) {
-          const callbackBase = decodeURIComponent(callbackMatch[1]);
-          fetch(
-            `${callbackBase}/callback?token=saved-token`
-          ).catch(() => { /* fire-and-forget */ });
-        }
+    const loginPromise = executeLogin(
+      configManager,
+      {},
+      {
+        openBrowser: (url) => {
+          const callbackMatch = url.match(/callback=([^&]+)/);
+          if (callbackMatch) {
+            const callbackBase = decodeURIComponent(callbackMatch[1]);
+            fetch(`${callbackBase}/callback?token=saved-token`).catch(() => {
+              /* fire-and-forget */
+            });
+          }
+        },
+        onBrowserOpen: () => {
+          /* no-op */
+        },
+        onPortReady: () => {
+          /* no-op */
+        },
+        onSuccess: () => {
+          /* no-op */
+        },
       },
-      onBrowserOpen: () => { /* no-op */ },
-      onPortReady: () => { /* no-op */ },
-      onSuccess: () => { /* no-op */ },
-    });
+    );
 
     await loginPromise;
 
@@ -171,20 +187,30 @@ describe("executeLogin", () => {
   });
 
   it("should use dev host when --dev is set", async () => {
-    const loginPromise = executeLogin(configManager, { dev: true }, {
-      openBrowser: (url) => {
-        const callbackMatch = url.match(/callback=([^&]+)/);
-        if (callbackMatch) {
-          const callbackBase = decodeURIComponent(callbackMatch[1]);
-          fetch(
-            `${callbackBase}/callback?token=dev-token`
-          ).catch(() => { /* fire-and-forget */ });
-        }
+    const loginPromise = executeLogin(
+      configManager,
+      { dev: true },
+      {
+        openBrowser: (url) => {
+          const callbackMatch = url.match(/callback=([^&]+)/);
+          if (callbackMatch) {
+            const callbackBase = decodeURIComponent(callbackMatch[1]);
+            fetch(`${callbackBase}/callback?token=dev-token`).catch(() => {
+              /* fire-and-forget */
+            });
+          }
+        },
+        onBrowserOpen: () => {
+          /* no-op */
+        },
+        onPortReady: () => {
+          /* no-op */
+        },
+        onSuccess: () => {
+          /* no-op */
+        },
       },
-      onBrowserOpen: () => { /* no-op */ },
-      onPortReady: () => { /* no-op */ },
-      onSuccess: () => { /* no-op */ },
-    });
+    );
 
     const result = await loginPromise;
 
@@ -193,20 +219,32 @@ describe("executeLogin", () => {
   });
 
   it("should return error when callback has error param", async () => {
-    const loginPromise = executeLogin(configManager, {}, {
-      openBrowser: (url) => {
-        const callbackMatch = url.match(/callback=([^&]+)/);
-        if (callbackMatch) {
-          const callbackBase = decodeURIComponent(callbackMatch[1]);
-          fetch(
-            `${callbackBase}/callback?error=${encodeURIComponent("User cancelled")}`
-          ).catch(() => { /* fire-and-forget */ });
-        }
+    const loginPromise = executeLogin(
+      configManager,
+      {},
+      {
+        openBrowser: (url) => {
+          const callbackMatch = url.match(/callback=([^&]+)/);
+          if (callbackMatch) {
+            const callbackBase = decodeURIComponent(callbackMatch[1]);
+            fetch(`${callbackBase}/callback?error=${encodeURIComponent("User cancelled")}`).catch(
+              () => {
+                /* fire-and-forget */
+              },
+            );
+          }
+        },
+        onBrowserOpen: () => {
+          /* no-op */
+        },
+        onPortReady: () => {
+          /* no-op */
+        },
+        onError: () => {
+          /* no-op */
+        },
       },
-      onBrowserOpen: () => { /* no-op */ },
-      onPortReady: () => { /* no-op */ },
-      onError: () => { /* no-op */ },
-    });
+    );
 
     const result = await loginPromise;
 
@@ -217,22 +255,30 @@ describe("executeLogin", () => {
   it("should call onPortReady with a valid port", async () => {
     let reportedPort = 0;
 
-    const loginPromise = executeLogin(configManager, {}, {
-      openBrowser: (url) => {
-        const callbackMatch = url.match(/callback=([^&]+)/);
-        if (callbackMatch) {
-          const callbackBase = decodeURIComponent(callbackMatch[1]);
-          fetch(
-            `${callbackBase}/callback?token=t`
-          ).catch(() => { /* fire-and-forget */ });
-        }
+    const loginPromise = executeLogin(
+      configManager,
+      {},
+      {
+        openBrowser: (url) => {
+          const callbackMatch = url.match(/callback=([^&]+)/);
+          if (callbackMatch) {
+            const callbackBase = decodeURIComponent(callbackMatch[1]);
+            fetch(`${callbackBase}/callback?token=t`).catch(() => {
+              /* fire-and-forget */
+            });
+          }
+        },
+        onBrowserOpen: () => {
+          /* no-op */
+        },
+        onPortReady: (port) => {
+          reportedPort = port;
+        },
+        onSuccess: () => {
+          /* no-op */
+        },
       },
-      onBrowserOpen: () => { /* no-op */ },
-      onPortReady: (port) => {
-        reportedPort = port;
-      },
-      onSuccess: () => { /* no-op */ },
-    });
+    );
 
     await loginPromise;
 
@@ -243,30 +289,40 @@ describe("executeLogin", () => {
   it("should return 404 for non-callback paths", async () => {
     let responseStatus = 0;
 
-    const loginPromise = executeLogin(configManager, {}, {
-      openBrowser: async (url) => {
-        const callbackMatch = url.match(/callback=([^&]+)/);
-        if (callbackMatch) {
-          const callbackBase = decodeURIComponent(callbackMatch[1]);
+    const loginPromise = executeLogin(
+      configManager,
+      {},
+      {
+        openBrowser: async (url) => {
+          const callbackMatch = url.match(/callback=([^&]+)/);
+          if (callbackMatch) {
+            const callbackBase = decodeURIComponent(callbackMatch[1]);
 
-          // Hit a wrong path first
-          try {
-            const res = await fetch(`${callbackBase}/wrong-path`);
-            responseStatus = res.status;
-          } catch {
-            // ignore
+            // Hit a wrong path first
+            try {
+              const res = await fetch(`${callbackBase}/wrong-path`);
+              responseStatus = res.status;
+            } catch {
+              // ignore
+            }
+
+            // Then hit the correct path to let the test finish
+            fetch(`${callbackBase}/callback?token=t`).catch(() => {
+              /* fire-and-forget */
+            });
           }
-
-          // Then hit the correct path to let the test finish
-          fetch(
-            `${callbackBase}/callback?token=t`
-          ).catch(() => { /* fire-and-forget */ });
-        }
+        },
+        onBrowserOpen: () => {
+          /* no-op */
+        },
+        onPortReady: () => {
+          /* no-op */
+        },
+        onSuccess: () => {
+          /* no-op */
+        },
       },
-      onBrowserOpen: () => { /* no-op */ },
-      onPortReady: () => { /* no-op */ },
-      onSuccess: () => { /* no-op */ },
-    });
+    );
 
     await loginPromise;
 

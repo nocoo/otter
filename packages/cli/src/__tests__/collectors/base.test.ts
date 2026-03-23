@@ -1,14 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import {
-  mkdtemp,
-  writeFile,
-  mkdir,
-  rm,
-  chmod,
-} from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CollectorCategory, CollectorResult } from "@otter/core";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { BaseCollector } from "../../collectors/base.js";
 
 /**
@@ -20,19 +14,17 @@ class TestCollector extends BaseCollector {
   readonly category: CollectorCategory = "config";
 
   async collect(): Promise<CollectorResult> {
-    return this.timed(async () => { /* no-op — stub for testing */ });
+    return this.timed(async () => {
+      /* no-op — stub for testing */
+    });
   }
 
   // Expose protected methods for testing
-  async testSafeReadFile(
-    ...args: Parameters<BaseCollector["safeReadFile"]>
-  ) {
+  async testSafeReadFile(...args: Parameters<BaseCollector["safeReadFile"]>) {
     return this.safeReadFile(...args);
   }
 
-  async testCollectDir(
-    ...args: Parameters<BaseCollector["collectDir"]>
-  ) {
+  async testCollectDir(...args: Parameters<BaseCollector["collectDir"]>) {
     return this.collectDir(...args);
   }
 
@@ -107,10 +99,7 @@ describe("BaseCollector", () => {
 
     it("should return null silently for missing files (ENOENT)", async () => {
       const result = collector.testCreateResult();
-      const file = await collector.testSafeReadFile(
-        join(tempDir, "nonexistent.txt"),
-        result
-      );
+      const file = await collector.testSafeReadFile(join(tempDir, "nonexistent.txt"), result);
 
       expect(file).toBeNull();
       expect(result.errors).toHaveLength(0);
@@ -135,10 +124,7 @@ describe("BaseCollector", () => {
 
     it("should apply credential redaction when redact is true", async () => {
       const filePath = join(tempDir, "settings.json");
-      await writeFile(
-        filePath,
-        JSON.stringify({ password: "my-secret-123" })
-      );
+      await writeFile(filePath, JSON.stringify({ password: "my-secret-123" }));
 
       const result = collector.testCreateResult();
       const file = await collector.testSafeReadFile(filePath, result, {
@@ -214,10 +200,7 @@ describe("BaseCollector", () => {
 
     it("should return empty silently for missing directory (ENOENT)", async () => {
       const result = collector.testCreateResult();
-      const files = await collector.testCollectDir(
-        join(tempDir, "nonexistent"),
-        result
-      );
+      const files = await collector.testCollectDir(join(tempDir, "nonexistent"), result);
 
       expect(files).toHaveLength(0);
       expect(result.errors).toHaveLength(0);

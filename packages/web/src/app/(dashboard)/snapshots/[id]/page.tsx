@@ -1,25 +1,16 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
-import { Loader2, Settings, Globe } from "lucide-react";
+import { Globe, Loader2, Settings } from "lucide-react";
+import { use, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/components/ui/tabs";
-import { formatDateTime } from "./_components/helpers";
-import { OverviewTab } from "./_components/overview-tab";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CollectorsTab } from "./_components/collectors-tab";
 import { ExportSection } from "./_components/export-section";
-import type { SnapshotMeta, SnapshotData } from "./_components/types";
+import { formatDateTime } from "./_components/helpers";
+import { OverviewTab } from "./_components/overview-tab";
+import type { SnapshotData, SnapshotMeta } from "./_components/types";
 
-export default function SnapshotDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default function SnapshotDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [meta, setMeta] = useState<SnapshotMeta | null>(null);
   const [data, setData] = useState<SnapshotData | null>(null);
@@ -36,9 +27,7 @@ export default function SnapshotDetailPage({
             setError(body?.error ?? "Snapshot not found");
             return;
           }
-          throw new Error(
-            body?.error ?? `Failed to load snapshot (${res.status})`
-          );
+          throw new Error(body?.error ?? `Failed to load snapshot (${res.status})`);
         }
         const result = await res.json();
         setMeta(result.snapshot);
@@ -57,9 +46,7 @@ export default function SnapshotDetailPage({
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader2 className="h-8 w-8 text-muted-foreground/40 animate-spin" />
-        <p className="mt-3 text-sm text-muted-foreground">
-          Loading snapshot...
-        </p>
+        <p className="mt-3 text-sm text-muted-foreground">Loading snapshot...</p>
       </div>
     );
   }
@@ -67,9 +54,7 @@ export default function SnapshotDetailPage({
   if (error || !meta || !data) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <p className="text-sm text-destructive">
-          {error ?? "Snapshot not found"}
-        </p>
+        <p className="text-sm text-destructive">{error ?? "Snapshot not found"}</p>
       </div>
     );
   }
@@ -78,9 +63,7 @@ export default function SnapshotDetailPage({
   const totalFiles = collectors.reduce((sum, c) => sum + c.files.length, 0);
   const totalLists = collectors.reduce((sum, c) => sum + c.lists.length, 0);
   const configCount = collectors.filter((c) => c.category === "config").length;
-  const envCount = collectors.filter(
-    (c) => c.category === "environment"
-  ).length;
+  const envCount = collectors.filter((c) => c.category === "environment").length;
 
   return (
     <div className="space-y-6">
@@ -88,8 +71,7 @@ export default function SnapshotDetailPage({
       <div>
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-semibold tracking-tight">
-            Snapshot{" "}
-            <code className="font-mono text-lg">{id.slice(0, 8)}</code>
+            Snapshot <code className="font-mono text-lg">{id.slice(0, 8)}</code>
           </h1>
         </div>
         <p className="text-sm text-muted-foreground mt-1">
@@ -104,20 +86,14 @@ export default function SnapshotDetailPage({
           <TabsTrigger value="config" className="gap-1.5">
             <Settings className="h-3.5 w-3.5" strokeWidth={1.5} />
             Config
-            <Badge
-              variant="secondary"
-              className="text-[10px] font-normal ml-0.5 px-1.5 py-0"
-            >
+            <Badge variant="secondary" className="text-[10px] font-normal ml-0.5 px-1.5 py-0">
               {configCount}
             </Badge>
           </TabsTrigger>
           <TabsTrigger value="environment" className="gap-1.5">
             <Globe className="h-3.5 w-3.5" strokeWidth={1.5} />
             Environment
-            <Badge
-              variant="secondary"
-              className="text-[10px] font-normal ml-0.5 px-1.5 py-0"
-            >
+            <Badge variant="secondary" className="text-[10px] font-normal ml-0.5 px-1.5 py-0">
               {envCount}
             </Badge>
           </TabsTrigger>

@@ -11,7 +11,7 @@
  * ingest pipeline: gzip decompression → R2 storage → D1 indexing.
  */
 
-import { describe, it, expect, afterAll } from "bun:test";
+import { afterAll, describe, expect, it } from "bun:test";
 import { gzipSync } from "bun";
 import {
   ALL_COLLECTOR_IDS,
@@ -133,9 +133,7 @@ describe("L3 API E2E: Webhook Receiver", () => {
     expect(res.status).toBe(200);
 
     const data = await res.json();
-    const found = data.snapshots.find(
-      (s: { id: string }) => s.id === snapshotId,
-    );
+    const found = data.snapshots.find((s: { id: string }) => s.id === snapshotId);
     expect(found).toBeDefined();
     expect(found.hostname).toBe("e2e-test-host");
     expect(found.platform).toBe("darwin");
@@ -166,17 +164,14 @@ describe("L3 API E2E: Webhook Receiver", () => {
     const jsonBytes = new TextEncoder().encode(JSON.stringify(testSnapshot));
     const compressed = gzipSync(jsonBytes);
 
-    const res = await fetch(
-      `${BASE_URL}/api/webhook/00000000-0000-0000-0000-000000000000`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Content-Encoding": "gzip",
-        },
-        body: compressed,
+    const res = await fetch(`${BASE_URL}/api/webhook/00000000-0000-0000-0000-000000000000`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Encoding": "gzip",
       },
-    );
+      body: compressed,
+    });
     expect(res.status).toBe(401);
   });
 
@@ -229,9 +224,7 @@ describe("L3 API E2E: Webhook Receiver", () => {
     expect(res.status).toBe(200);
 
     const data = await res.json();
-    const found = data.snapshots.find(
-      (s: { id: string }) => s.id === richSnapshotId,
-    );
+    const found = data.snapshots.find((s: { id: string }) => s.id === richSnapshotId);
 
     expect(found).toBeDefined();
     expect(found.hostname).toBe("Otter Rich Mac");

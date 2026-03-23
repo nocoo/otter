@@ -5,7 +5,7 @@
  * Run via: bun run test:e2e
  */
 
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
 
 const BASE_URL = `http://localhost:${process.env.E2E_PORT || "17029"}`;
 

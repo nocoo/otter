@@ -9,7 +9,7 @@ const DEFAULT_TIMEOUT_MS = 30_000;
  */
 export async function uploadSnapshot(
   snapshot: Snapshot,
-  config: UploaderConfig
+  config: UploaderConfig,
 ): Promise<UploadResult> {
   const timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const controller = new AbortController();

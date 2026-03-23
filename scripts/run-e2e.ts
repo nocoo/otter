@@ -9,8 +9,8 @@
  * 4. Cleans up
  */
 
-import { spawn, type Subprocess } from "bun";
-import { ensurePortFree, cleanupBuildDir } from "./e2e-utils";
+import { type Subprocess, spawn } from "bun";
+import { cleanupBuildDir, ensurePortFree } from "./e2e-utils";
 
 const E2E_PORT = process.env.E2E_PORT || "17029";
 const E2E_DIST_DIR = "packages/web/.next-e2e";
@@ -50,19 +50,16 @@ async function main() {
 
   // Step 1: Start dev server
   console.log("🌐 Starting E2E server on port", E2E_PORT, "...");
-  serverProcess = spawn(
-    ["bun", "run", "next", "dev", "-p", E2E_PORT],
-    {
-      cwd: "packages/web",
-      env: {
-        ...process.env,
-        NEXT_DIST_DIR: ".next-e2e",
-        E2E_SKIP_AUTH: "true",
-      },
-      stdout: "pipe",
-      stderr: "pipe",
-    }
-  );
+  serverProcess = spawn(["bun", "run", "next", "dev", "-p", E2E_PORT], {
+    cwd: "packages/web",
+    env: {
+      ...process.env,
+      NEXT_DIST_DIR: ".next-e2e",
+      E2E_SKIP_AUTH: "true",
+    },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
 
   const ready = await waitForServer();
   if (!ready) {
@@ -95,7 +92,7 @@ async function main() {
         ...process.env,
         E2E_PORT,
       },
-    }
+    },
   );
 
   // Step 3: Cleanup
@@ -103,9 +100,7 @@ async function main() {
 
   console.log(
     "\n" +
-      (testResult.exitCode === 0
-        ? "✅ L3 API E2E tests passed!"
-        : "❌ L3 API E2E tests failed!")
+      (testResult.exitCode === 0 ? "✅ L3 API E2E tests passed!" : "❌ L3 API E2E tests failed!"),
   );
   process.exit(testResult.exitCode ?? 1);
 }

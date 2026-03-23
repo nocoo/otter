@@ -11,7 +11,7 @@ export type ConfigAction =
  */
 export async function executeConfig(
   manager: ConfigManager,
-  params: ConfigAction
+  params: ConfigAction,
 ): Promise<string | OtterConfig | undefined> {
   switch (params.action) {
     case "set": {

@@ -1,12 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  filterCollectors,
-  type SnapshotCollector,
-} from "@/lib/snapshot-collectors";
+import { Input } from "@/components/ui/input";
+import { filterCollectors, type SnapshotCollector } from "@/lib/snapshot-collectors";
 import { CollectorCard } from "./collector-card";
 
 interface CollectorsTabProps {
@@ -18,9 +15,7 @@ export function CollectorsTab({ collectors, category }: CollectorsTabProps) {
   const [query, setQuery] = useState("");
 
   // Filter by this tab's category, then apply search query
-  const categoryCollectors = collectors.filter(
-    (c) => c.category === category
-  );
+  const categoryCollectors = collectors.filter((c) => c.category === category);
   const filtered = filterCollectors(categoryCollectors, {
     query,
     category: "all", // already category-filtered above
@@ -44,9 +39,7 @@ export function CollectorsTab({ collectors, category }: CollectorsTabProps) {
       {/* Collector cards */}
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-card px-5 py-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            No collectors match the current search.
-          </p>
+          <p className="text-sm text-muted-foreground">No collectors match the current search.</p>
         </div>
       ) : (
         <div className="space-y-3">

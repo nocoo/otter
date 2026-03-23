@@ -1,14 +1,10 @@
-import { createHash } from "node:crypto";
 import { exec } from "node:child_process";
+import { createHash } from "node:crypto";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
+import type { CollectedListItem, CollectorCategory, CollectorResult } from "@otter/core";
 import { BaseCollector } from "./base.js";
-import type {
-  CollectorCategory,
-  CollectorResult,
-  CollectedListItem,
-} from "@otter/core";
 
 const execAsync = promisify(exec);
 
@@ -55,16 +51,14 @@ export class ApplicationsCollector extends BaseCollector {
       await this.collectFromDir(this.systemAppsDir, apps, result);
       await this.collectFromDir(this.userAppsDir, apps, result);
 
-      result.lists.push(
-        ...Array.from(apps.values()).sort((a, b) => a.name.localeCompare(b.name))
-      );
+      result.lists.push(...Array.from(apps.values()).sort((a, b) => a.name.localeCompare(b.name)));
     });
   }
 
   private async collectFromDir(
     appsDir: string,
     apps: Map<string, CollectedListItem>,
-    result: CollectorResult
+    result: CollectorResult,
   ): Promise<void> {
     try {
       const entries = await readdir(appsDir, { withFileTypes: true });
@@ -88,20 +82,17 @@ export class ApplicationsCollector extends BaseCollector {
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
         result.errors.push(
-          `Failed to read applications directory ${appsDir}: ${(err as Error).message}`
+          `Failed to read applications directory ${appsDir}: ${(err as Error).message}`,
         );
       }
     }
   }
 
-  private async getAppVersion(
-    appsDir: string,
-    entryName: string
-  ): Promise<string | undefined> {
+  private async getAppVersion(appsDir: string, entryName: string): Promise<string | undefined> {
     const plistPath = join(appsDir, entryName, "Contents", "Info.plist");
     try {
       const version = await this._execCommand(
-        `defaults read ${JSON.stringify(plistPath)} CFBundleShortVersionString`
+        `defaults read ${JSON.stringify(plistPath)} CFBundleShortVersionString`,
       );
       const trimmed = version.trim();
       return trimmed.length > 0 ? trimmed : undefined;

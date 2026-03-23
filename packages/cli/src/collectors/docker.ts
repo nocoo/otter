@@ -1,12 +1,8 @@
-import { join } from "node:path";
 import { exec } from "node:child_process";
+import { join } from "node:path";
 import { promisify } from "node:util";
+import type { CollectedListItem, CollectorCategory, CollectorResult } from "@otter/core";
 import { BaseCollector } from "./base.js";
-import type {
-  CollectorCategory,
-  CollectorResult,
-  CollectedListItem,
-} from "@otter/core";
 
 const execAsync = promisify(exec);
 
@@ -29,9 +25,7 @@ function parseDockerContexts(output: string): CollectedListItem[] {
             meta: {
               type: "docker-context",
               ...(parsed.Current ? { current: "true" } : {}),
-              ...(parsed.DockerEndpoint
-                ? { endpoint: parsed.DockerEndpoint }
-                : {}),
+              ...(parsed.DockerEndpoint ? { endpoint: parsed.DockerEndpoint } : {}),
             },
           },
         ];
@@ -53,11 +47,9 @@ export class DockerCollector extends BaseCollector {
 
   async collect(): Promise<CollectorResult> {
     return this.timed(async (result) => {
-      const config = await this.safeReadFile(
-        join(this.homeDir, ".docker", "config.json"),
-        result,
-        { redact: true }
-      );
+      const config = await this.safeReadFile(join(this.homeDir, ".docker", "config.json"), result, {
+        redact: true,
+      });
       if (config) result.files.push(config);
 
       try {
@@ -65,7 +57,7 @@ export class DockerCollector extends BaseCollector {
         result.lists.push(...parseDockerContexts(output));
       } catch (err) {
         result.errors.push(
-          `Failed to run 'docker context ls --format json': ${(err as Error).message}`
+          `Failed to run 'docker context ls --format json': ${(err as Error).message}`,
         );
       }
     });

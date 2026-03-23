@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtemp, rm, readFile, writeFile, readdir } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { SnapshotStore } from "../../storage/local.js";
 import type { Snapshot } from "@otter/core";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { SnapshotStore } from "../../storage/local.js";
 
 /** Build a minimal valid Snapshot for testing */
 function makeSnapshot(overrides: Partial<Snapshot> = {}): Snapshot {
@@ -25,13 +25,8 @@ function makeSnapshot(overrides: Partial<Snapshot> = {}): Snapshot {
         id: "shell-config",
         label: "Shell Config",
         category: "config",
-        files: [
-          { path: "/Users/tester/.zshrc", content: "# zsh", sizeBytes: 5 },
-        ],
-        lists: [
-          { name: "zsh" },
-          { name: "bash" },
-        ],
+        files: [{ path: "/Users/tester/.zshrc", content: "# zsh", sizeBytes: 5 }],
+        lists: [{ name: "zsh" }, { name: "bash" }],
         errors: [],
         skipped: [],
         durationMs: 42,

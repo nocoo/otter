@@ -9,8 +9,8 @@
  * 4. Cleans up
  */
 
-import { spawn, type Subprocess } from "bun";
-import { ensurePortFree, cleanupBuildDir } from "./e2e-utils";
+import { type Subprocess, spawn } from "bun";
+import { cleanupBuildDir, ensurePortFree } from "./e2e-utils";
 
 const E2E_UI_PORT = process.env.E2E_UI_PORT || "27029";
 const E2E_DIST_DIR = "packages/web/.next-e2e-ui";
@@ -50,19 +50,16 @@ async function main() {
 
   // Step 1: Start dev server
   console.log("🌐 Starting E2E UI server on port", E2E_UI_PORT, "...");
-  serverProcess = spawn(
-    ["bun", "run", "next", "dev", "-p", E2E_UI_PORT],
-    {
-      cwd: "packages/web",
-      env: {
-        ...process.env,
-        NEXT_DIST_DIR: ".next-e2e-ui",
-        E2E_SKIP_AUTH: "true",
-      },
-      stdout: "pipe",
-      stderr: "pipe",
-    }
-  );
+  serverProcess = spawn(["bun", "run", "next", "dev", "-p", E2E_UI_PORT], {
+    cwd: "packages/web",
+    env: {
+      ...process.env,
+      NEXT_DIST_DIR: ".next-e2e-ui",
+      E2E_SKIP_AUTH: "true",
+    },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
 
   const ready = await waitForServer();
   if (!ready) {
@@ -103,7 +100,7 @@ async function main() {
         ...process.env,
         E2E_UI_PORT,
       },
-    }
+    },
   );
 
   // Step 3: Cleanup
@@ -113,7 +110,7 @@ async function main() {
     "\n" +
       (testResult.exitCode === 0
         ? "✅ L4 Playwright E2E tests passed!"
-        : "❌ L4 Playwright E2E tests failed!")
+        : "❌ L4 Playwright E2E tests failed!"),
   );
   process.exit(testResult.exitCode ?? 1);
 }

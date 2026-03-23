@@ -2,13 +2,13 @@ import { exec } from "node:child_process";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
-import { BaseCollector } from "./base.js";
 import type {
-  CollectorCategory,
-  CollectorResult,
   CollectedFile,
   CollectedListItem,
+  CollectorCategory,
+  CollectorResult,
 } from "@otter/core";
+import { BaseCollector } from "./base.js";
 
 const execAsync = promisify(exec);
 
@@ -97,12 +97,10 @@ export class VSCodeCollector extends BaseCollector {
 
   private async collectExtensions(
     editor: EditorConfig,
-    result: CollectorResult
+    result: CollectorResult,
   ): Promise<CollectedListItem[]> {
     try {
-      const output = await this._execCommand(
-        `${editor.cli} --list-extensions --show-versions`
-      );
+      const output = await this._execCommand(`${editor.cli} --list-extensions --show-versions`);
       return parseCliExtensions(output, editor.editor);
     } catch {
       return this.collectExtensionsFromDir(editor, result);
@@ -111,7 +109,7 @@ export class VSCodeCollector extends BaseCollector {
 
   private async collectExtensionsFromDir(
     editor: EditorConfig,
-    result: CollectorResult
+    result: CollectorResult,
   ): Promise<CollectedListItem[]> {
     try {
       const entries = await readdir(editor.extensionsDir, { withFileTypes: true });
@@ -126,9 +124,7 @@ export class VSCodeCollector extends BaseCollector {
         .sort((a, b) => a.name.localeCompare(b.name));
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
-        result.errors.push(
-          `Failed to read ${editor.editor} extensions: ${(err as Error).message}`
-        );
+        result.errors.push(`Failed to read ${editor.editor} extensions: ${(err as Error).message}`);
       }
       return [];
     }
@@ -136,27 +132,21 @@ export class VSCodeCollector extends BaseCollector {
 
   private async collectEditorFiles(
     editor: EditorConfig,
-    result: CollectorResult
+    result: CollectorResult,
   ): Promise<CollectedFile[]> {
     const files: CollectedFile[] = [];
 
-    const settings = await this.safeReadFile(
-      join(editor.userDir, "settings.json"),
-      result,
-      { redact: true }
-    );
+    const settings = await this.safeReadFile(join(editor.userDir, "settings.json"), result, {
+      redact: true,
+    });
     if (settings) files.push(settings);
 
-    const keybindings = await this.safeReadFile(
-      join(editor.userDir, "keybindings.json"),
-      result
-    );
+    const keybindings = await this.safeReadFile(join(editor.userDir, "keybindings.json"), result);
     if (keybindings) files.push(keybindings);
 
     const snippets = await this.collectDir(join(editor.userDir, "snippets"), result, {
       maxFileSize: 128 * 1024,
-      filter: (filePath) =>
-        filePath.endsWith(".json") || filePath.endsWith(".code-snippets"),
+      filter: (filePath) => filePath.endsWith(".json") || filePath.endsWith(".code-snippets"),
     });
     files.push(...snippets);
 

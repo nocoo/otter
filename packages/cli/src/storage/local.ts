@@ -1,4 +1,4 @@
-import { readFile, writeFile, readdir, mkdir, stat } from "node:fs/promises";
+import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Snapshot } from "@otter/core";
 
@@ -45,10 +45,7 @@ function buildFilename(snapshot: Snapshot): string {
  * Parse snapshot metadata from a stored JSON file without loading
  * the full collector content into memory. Reads only what's needed.
  */
-async function parseMetaFromFile(
-  filePath: string,
-  filename: string
-): Promise<SnapshotMeta | null> {
+async function parseMetaFromFile(filePath: string, filename: string): Promise<SnapshotMeta | null> {
   try {
     const info = await stat(filePath);
     const raw = await readFile(filePath, "utf-8");
@@ -61,14 +58,8 @@ async function parseMetaFromFile(
       filename,
       sizeBytes: info.size,
       collectorCount: snapshot.collectors.length,
-      fileCount: snapshot.collectors.reduce(
-        (sum, c) => sum + c.files.length,
-        0
-      ),
-      listCount: snapshot.collectors.reduce(
-        (sum, c) => sum + c.lists.length,
-        0
-      ),
+      fileCount: snapshot.collectors.reduce((sum, c) => sum + c.files.length, 0),
+      listCount: snapshot.collectors.reduce((sum, c) => sum + c.lists.length, 0),
     };
   } catch {
     // Corrupt or unreadable file — skip it
@@ -112,18 +103,12 @@ export class SnapshotStore {
     const metas: SnapshotMeta[] = [];
 
     for (const filename of jsonFiles) {
-      const meta = await parseMetaFromFile(
-        join(this.storageDir, filename),
-        filename
-      );
+      const meta = await parseMetaFromFile(join(this.storageDir, filename), filename);
       if (meta) metas.push(meta);
     }
 
     // Sort newest first
-    metas.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    metas.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return metas;
   }
@@ -134,16 +119,11 @@ export class SnapshotStore {
    */
   async load(shortId: string): Promise<Snapshot | null> {
     const metas = await this.list();
-    const match = metas.find(
-      (m) => m.shortId === shortId || m.id === shortId
-    );
+    const match = metas.find((m) => m.shortId === shortId || m.id === shortId);
     if (!match) return null;
 
     try {
-      const raw = await readFile(
-        join(this.storageDir, match.filename),
-        "utf-8"
-      );
+      const raw = await readFile(join(this.storageDir, match.filename), "utf-8");
       return JSON.parse(raw) as Snapshot;
     } catch {
       return null;

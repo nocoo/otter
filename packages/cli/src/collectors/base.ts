@@ -1,11 +1,6 @@
-import { readFile, readdir, stat } from "node:fs/promises";
-import { join, extname, basename } from "node:path";
-import type {
-  Collector,
-  CollectorCategory,
-  CollectorResult,
-  CollectedFile,
-} from "@otter/core";
+import { readdir, readFile, stat } from "node:fs/promises";
+import { basename, extname, join } from "node:path";
+import type { CollectedFile, Collector, CollectorCategory, CollectorResult } from "@otter/core";
 import { redactSecrets } from "../utils/redact.js";
 
 // ---------------------------------------------------------------------------
@@ -141,7 +136,7 @@ export abstract class BaseCollector implements Collector {
   protected async safeReadFile(
     filePath: string,
     result: CollectorResult,
-    { maxSize = MAX_FILE_SIZE_BYTES, redact = false }: SafeReadOptions = {}
+    { maxSize = MAX_FILE_SIZE_BYTES, redact = false }: SafeReadOptions = {},
   ): Promise<CollectedFile | null> {
     try {
       // Skip binary files
@@ -153,7 +148,7 @@ export abstract class BaseCollector implements Collector {
       // Skip files exceeding size limit
       if (info.size > maxSize) {
         result.errors.push(
-          `Skipped ${filePath}: exceeds size limit (${(info.size / 1024).toFixed(0)} KB > ${(maxSize / 1024).toFixed(0)} KB)`
+          `Skipped ${filePath}: exceeds size limit (${(info.size / 1024).toFixed(0)} KB > ${(maxSize / 1024).toFixed(0)} KB)`,
         );
         return null;
       }
@@ -172,9 +167,7 @@ export abstract class BaseCollector implements Collector {
       };
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
-        result.errors.push(
-          `Failed to read ${filePath}: ${(err as Error).message}`
-        );
+        result.errors.push(`Failed to read ${filePath}: ${(err as Error).message}`);
       }
       return null;
     }
@@ -191,7 +184,7 @@ export abstract class BaseCollector implements Collector {
   protected async collectDir(
     dirPath: string,
     result: CollectorResult,
-    opts: CollectDirOptions = {}
+    opts: CollectDirOptions = {},
   ): Promise<CollectedFile[]> {
     const { filter, maxFileSize = MAX_FILE_SIZE_BYTES, excludeDirs, redact } = opts;
     const files: CollectedFile[] = [];
@@ -220,18 +213,14 @@ export abstract class BaseCollector implements Collector {
       }
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
-        result.errors.push(
-          `Failed to read directory ${dirPath}: ${(err as Error).message}`
-        );
+        result.errors.push(`Failed to read directory ${dirPath}: ${(err as Error).message}`);
       }
     }
     return files;
   }
 
   /** Measure execution time of the collect operation */
-  protected async timed(
-    fn: (result: CollectorResult) => Promise<void>
-  ): Promise<CollectorResult> {
+  protected async timed(fn: (result: CollectorResult) => Promise<void>): Promise<CollectorResult> {
     const result = this.createResult();
     const start = performance.now();
     await fn(result);

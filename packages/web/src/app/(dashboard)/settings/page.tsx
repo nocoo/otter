@@ -1,23 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { Check, Copy, Loader2, Mail, Plus, Shield, Trash2, User, Webhook } from "lucide-react";
 import { useSession } from "next-auth/react";
-import {
-  Webhook,
-  Plus,
-  Copy,
-  Trash2,
-  Check,
-  User,
-  Mail,
-  Shield,
-  Loader2,
-} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -25,8 +13,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -207,9 +197,7 @@ export default function SettingsPage() {
         throw new Error(body?.error ?? `Failed to update webhook (${res.status})`);
       }
       const data = await res.json();
-      setWebhooks((prev) =>
-        prev.map((wh) => (wh.id === id ? data.webhook : wh)),
-      );
+      setWebhooks((prev) => prev.map((wh) => (wh.id === id ? data.webhook : wh)));
     } catch {
       // Revert optimistically if needed — for now just refetch
       await fetchWebhooks();
@@ -271,9 +259,7 @@ export default function SettingsPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage your account and webhook tokens
-        </p>
+        <p className="text-sm text-muted-foreground">Manage your account and webhook tokens</p>
       </div>
 
       {/* Account Section */}
@@ -361,8 +347,10 @@ export default function SettingsPage() {
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Use webhook tokens to authenticate CLI uploads. Configure in your CLI
-          with: <code className="text-[11px] bg-background/50 px-1.5 py-0.5 rounded">otter config set webhook.url &lt;url&gt;</code>
+          Use webhook tokens to authenticate CLI uploads. Configure in your CLI with:{" "}
+          <code className="text-[11px] bg-background/50 px-1.5 py-0.5 rounded">
+            otter config set webhook.url &lt;url&gt;
+          </code>
         </p>
 
         {loading ? (
@@ -423,7 +411,12 @@ export default function SettingsPage() {
                 Permanently remove all stored backups. This cannot be undone.
               </p>
             </div>
-            <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" disabled>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-destructive border-destructive/30 hover:bg-destructive/10"
+              disabled
+            >
               Delete All
             </Button>
           </div>

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
+import { execute, queryFirst } from "@/lib/cf/d1";
 import { getAuthUser } from "@/lib/session";
-import { queryFirst, execute } from "@/lib/cf/d1";
 
 interface WebhookRow {
   id: string;
@@ -33,10 +33,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     );
 
     if (!existing) {
-      return NextResponse.json(
-        { error: "Webhook not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Webhook not found" }, { status: 404 });
     }
     if (existing.user_id !== user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -46,10 +43,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     try {
       body = await request.json();
     } catch {
-      return NextResponse.json(
-        { error: "Invalid JSON body" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
     // Build dynamic update
@@ -70,17 +64,11 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     }
 
     if (updates.length === 0) {
-      return NextResponse.json(
-        { error: "No valid fields to update" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
     }
 
     values.push(id);
-    await execute(
-      `UPDATE webhooks SET ${updates.join(", ")} WHERE id = ?${paramIndex}`,
-      values,
-    );
+    await execute(`UPDATE webhooks SET ${updates.join(", ")} WHERE id = ?${paramIndex}`, values);
 
     // Return updated webhook
     const updated = await queryFirst<WebhookRow>(
@@ -103,10 +91,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     });
   } catch (err) {
     console.error(`PATCH /api/webhooks/${id} failed:`, err);
-    return NextResponse.json(
-      { error: "Failed to update webhook in database" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to update webhook in database" }, { status: 500 });
   }
 }
 
@@ -127,10 +112,7 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
     );
 
     if (!existing) {
-      return NextResponse.json(
-        { error: "Webhook not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Webhook not found" }, { status: 404 });
     }
     if (existing.user_id !== user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -141,9 +123,6 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error(`DELETE /api/webhooks/${id} failed:`, err);
-    return NextResponse.json(
-      { error: "Failed to delete webhook from database" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to delete webhook from database" }, { status: 500 });
   }
 }

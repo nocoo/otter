@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { executeScan } from "../../commands/scan.js";
 import type { Collector, CollectorResult } from "@otter/core";
+import { describe, expect, it } from "vitest";
+import { executeScan } from "../../commands/scan.js";
 
 describe("executeScan rich collector integration", () => {
   it("preserves enriched list metadata across multiple collectors", async () => {

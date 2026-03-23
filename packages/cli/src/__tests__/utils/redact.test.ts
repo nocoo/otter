@@ -1,10 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  redactSecrets,
+  redactJsonlSecrets,
   redactJsonSecrets,
   redactLineSecrets,
+  redactSecrets,
   redactShellSecrets,
-  redactJsonlSecrets,
 } from "../../utils/redact.js";
 
 describe("redactJsonSecrets", () => {
@@ -89,9 +89,7 @@ describe("redactLineSecrets", () => {
     const result = redactLineSecrets(input);
 
     expect(result).toContain("registry=https://registry.npmjs.org/");
-    expect(result).toContain(
-      "//registry.npmjs.org/:_authToken=[REDACTED]"
-    );
+    expect(result).toContain("//registry.npmjs.org/:_authToken=[REDACTED]");
     expect(result).toContain("save-exact=true");
     expect(result).not.toContain("npm_abc123secret");
   });
@@ -164,10 +162,7 @@ describe("redactShellSecrets", () => {
   });
 
   it("should skip comment lines even with sensitive keywords", () => {
-    const input = [
-      "# export MY_TOKEN=old-value",
-      "  # GITHUB_SECRET=should-stay",
-    ].join("\n");
+    const input = ["# export MY_TOKEN=old-value", "  # GITHUB_SECRET=should-stay"].join("\n");
 
     const result = redactShellSecrets(input);
 
@@ -182,11 +177,7 @@ describe("redactShellSecrets", () => {
   });
 
   it("should not redact non-sensitive variables", () => {
-    const input = [
-      "export EDITOR=nvim",
-      "export LANG=en_US.UTF-8",
-      "HISTSIZE=10000",
-    ].join("\n");
+    const input = ["export EDITOR=nvim", "export LANG=en_US.UTF-8", "HISTSIZE=10000"].join("\n");
 
     const result = redactShellSecrets(input);
     expect(result).toBe(input);
@@ -280,8 +271,7 @@ describe("redactJsonlSecrets", () => {
 
   it("should redact npm tokens", () => {
     const entry = {
-      display:
-        "token: npm_AbCdEfGhIjKlMnOpQrStUvWxYz1234567890abcd",
+      display: "token: npm_AbCdEfGhIjKlMnOpQrStUvWxYz1234567890abcd",
     };
     const input = JSON.stringify(entry);
     const result = redactJsonlSecrets(input);
@@ -342,9 +332,7 @@ describe("redactJsonlSecrets", () => {
     const result = redactJsonlSecrets(input);
     const parsed = JSON.parse(result);
 
-    expect(parsed.pastedContents["1"].content).not.toContain(
-      "BEGIN RSA PRIVATE KEY"
-    );
+    expect(parsed.pastedContents["1"].content).not.toContain("BEGIN RSA PRIVATE KEY");
     expect(parsed.pastedContents["1"].content).toContain("[REDACTED]");
   });
 

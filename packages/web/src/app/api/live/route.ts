@@ -34,15 +34,12 @@ export async function GET() {
 
   try {
     const d1Start = Date.now();
-    const row = await queryFirst<CountRow>(
-      "SELECT COUNT(*) as count FROM snapshots",
-    );
+    const row = await queryFirst<CountRow>("SELECT COUNT(*) as count FROM snapshots");
     d1Latency = Date.now() - d1Start;
     snapshotCount = row?.count ?? 0;
   } catch (err) {
     d1Latency = Date.now() - start;
-    d1Error =
-      err instanceof Error ? err.message : "D1 connectivity check failed";
+    d1Error = err instanceof Error ? err.message : "D1 connectivity check failed";
   }
 
   const totalLatency = Date.now() - start;

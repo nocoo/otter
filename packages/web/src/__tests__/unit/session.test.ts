@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the auth module
 vi.mock("@/auth", () => ({
   auth: vi.fn(),
 }));
 
-import { getAuthUser } from "@/lib/session";
 import { auth } from "@/auth";
+import { getAuthUser } from "@/lib/session";
 
 const mockAuth = vi.mocked(auth);
 

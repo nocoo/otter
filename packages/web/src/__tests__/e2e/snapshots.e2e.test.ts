@@ -6,7 +6,7 @@
  * actual snapshot data depends on what exists in D1/R2.
  */
 
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
 
 const BASE_URL = `http://localhost:${process.env.E2E_PORT || "17029"}`;
 
@@ -32,9 +32,7 @@ describe("L3 API E2E: Snapshots", () => {
   });
 
   it("GET /api/snapshots/non-existent returns 404", async () => {
-    const res = await fetch(
-      `${BASE_URL}/api/snapshots/00000000-0000-0000-0000-000000000000`,
-    );
+    const res = await fetch(`${BASE_URL}/api/snapshots/00000000-0000-0000-0000-000000000000`);
     expect(res.status).toBe(404);
   });
 

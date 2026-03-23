@@ -1,17 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { FileText, List, Info, AlertTriangle, SkipForward } from "lucide-react";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
+import { AlertTriangle, FileText, Info, List, SkipForward } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileRow } from "./file-row";
+import { computeIconUrl, listItemKey, resolveIconUrl } from "./helpers";
 import { ListItemRow } from "./list-item-row";
-import { resolveIconUrl, computeIconUrl, listItemKey } from "./helpers";
 import type { Collector } from "./types";
 
 export function CollectorCard({ collector }: { collector: Collector }) {
@@ -67,7 +62,10 @@ export function CollectorCard({ collector }: { collector: Collector }) {
               </span>
             )}
             {hasErrors && (
-              <Badge variant="outline" className="text-[10px] font-normal border-destructive/30 bg-destructive/10 text-destructive">
+              <Badge
+                variant="outline"
+                className="text-[10px] font-normal border-destructive/30 bg-destructive/10 text-destructive"
+              >
                 {collector.errors.length} error{collector.errors.length !== 1 ? "s" : ""}
               </Badge>
             )}
@@ -131,9 +129,11 @@ export function CollectorCard({ collector }: { collector: Collector }) {
                 Errors
               </h4>
               <div className="space-y-1.5">
-                {collector.errors.map((err, i) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: static error list, no reordering
-                  <div key={i} className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2">
+                {collector.errors.map((err) => (
+                  <div
+                    key={err}
+                    className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2"
+                  >
                     <p className="text-xs text-destructive/90">{err}</p>
                   </div>
                 ))}
@@ -149,9 +149,11 @@ export function CollectorCard({ collector }: { collector: Collector }) {
                 Skipped
               </h4>
               <div className="space-y-1.5">
-                {(collector.skipped ?? []).map((msg, i) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: static display list, no reordering
-                  <div key={i} className="rounded-lg border border-border/50 bg-secondary px-3 py-2">
+                {(collector.skipped ?? []).map((msg) => (
+                  <div
+                    key={msg}
+                    className="rounded-lg border border-border/50 bg-secondary px-3 py-2"
+                  >
                     <p className="text-xs text-muted-foreground">{msg}</p>
                   </div>
                 ))}

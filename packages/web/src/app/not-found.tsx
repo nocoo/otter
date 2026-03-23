@@ -1,16 +1,10 @@
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function NotFound() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6">
-      <Image
-        src="/logo-80.png"
-        alt="Otter"
-        width={80}
-        height={80}
-        className="opacity-40"
-      />
+      <Image src="/logo-80.png" alt="Otter" width={80} height={80} className="opacity-40" />
       <div className="text-center">
         <h1 className="text-4xl font-bold tracking-tight text-foreground">404</h1>
         <p className="mt-2 text-sm text-muted-foreground">

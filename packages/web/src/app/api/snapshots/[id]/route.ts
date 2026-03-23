@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { getAuthUser } from "@/lib/session";
 import { queryFirst } from "@/lib/cf/d1";
 import { getSnapshot, snapshotKey } from "@/lib/cf/r2";
+import { getAuthUser } from "@/lib/session";
 
 interface SnapshotRow {
   id: string;
@@ -49,10 +49,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
     );
 
     if (!row) {
-      return NextResponse.json(
-        { error: "Snapshot not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Snapshot not found" }, { status: 404 });
     }
 
     // 2. Fetch full snapshot JSON from R2
@@ -60,10 +57,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
     const data = await getSnapshot(r2Key);
 
     if (!data) {
-      return NextResponse.json(
-        { error: "Snapshot data not found in storage" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Snapshot data not found in storage" }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -84,9 +78,6 @@ export async function GET(_request: Request, { params }: RouteParams) {
     });
   } catch (err) {
     console.error(`GET /api/snapshots/${id} failed:`, err);
-    return NextResponse.json(
-      { error: "Failed to fetch snapshot from database" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to fetch snapshot from database" }, { status: 500 });
   }
 }

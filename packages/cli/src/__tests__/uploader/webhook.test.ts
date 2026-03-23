@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { gunzipSync } from "node:zlib";
-import { uploadSnapshot } from "../../uploader/webhook.js";
 import type { Snapshot } from "@otter/core";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { uploadSnapshot } from "../../uploader/webhook.js";
 
 /** Minimal valid snapshot for testing */
 function createTestSnapshot(): Snapshot {
@@ -89,9 +89,7 @@ describe("uploadSnapshot", () => {
   });
 
   it("should return failure result on network error", async () => {
-    globalThis.fetch = vi
-      .fn()
-      .mockRejectedValue(new Error("Network unreachable"));
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network unreachable"));
 
     const result = await uploadSnapshot(createTestSnapshot(), {
       webhookUrl: "https://example.com/hook",
@@ -127,8 +125,7 @@ describe("uploadSnapshot", () => {
     });
 
     // Verify fetch was called with a signal
-    const options = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
-      .calls[0][1];
+    const options = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1];
     expect(options.signal).toBeInstanceOf(AbortSignal);
   });
 

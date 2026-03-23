@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   filterCollectors,
-  groupCollectorsByCategory,
   getCollectorOverview,
+  groupCollectorsByCategory,
   matchesCollectorQuery,
   type SnapshotCollector,
 } from "@/lib/snapshot-collectors";
@@ -13,9 +13,7 @@ const collectors: SnapshotCollector[] = [
     label: "Homebrew Packages",
     category: "environment",
     files: [],
-    lists: [
-      { name: "bun", version: "1.3.9", meta: { type: "formula", pinned: "true" } },
-    ],
+    lists: [{ name: "bun", version: "1.3.9", meta: { type: "formula", pinned: "true" } }],
     errors: [],
     skipped: [],
   },

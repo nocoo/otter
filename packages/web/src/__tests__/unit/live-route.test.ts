@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock D1
 vi.mock("@/lib/cf/d1", () => ({
@@ -106,9 +106,7 @@ describe("GET /api/live", () => {
 
     const res = await GET();
 
-    expect(res.headers.get("Cache-Control")).toBe(
-      "no-store, no-cache, must-revalidate",
-    );
+    expect(res.headers.get("Cache-Control")).toBe("no-store, no-cache, must-revalidate");
   });
 
   it("sets no-cache headers on error", async () => {
@@ -116,9 +114,7 @@ describe("GET /api/live", () => {
 
     const res = await GET();
 
-    expect(res.headers.get("Cache-Control")).toBe(
-      "no-store, no-cache, must-revalidate",
-    );
+    expect(res.headers.get("Cache-Control")).toBe("no-store, no-cache, must-revalidate");
   });
 
   it("does not require authentication", async () => {
@@ -139,9 +135,7 @@ describe("GET /api/live", () => {
     await GET();
 
     expect(mockQueryFirst).toHaveBeenCalledTimes(1);
-    expect(mockQueryFirst).toHaveBeenCalledWith(
-      "SELECT COUNT(*) as count FROM snapshots",
-    );
+    expect(mockQueryFirst).toHaveBeenCalledWith("SELECT COUNT(*) as count FROM snapshots");
   });
 
   it("latencyMs reflects actual timing", async () => {

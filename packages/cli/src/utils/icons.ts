@@ -1,7 +1,7 @@
-import { readdir, readFile, mkdir, access } from "node:fs/promises";
-import type { Dirent } from "node:fs";
-import { join, } from "node:path";
 import { execFile } from "node:child_process";
+import type { Dirent } from "node:fs";
+import { access, mkdir, readdir, readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
@@ -37,8 +37,7 @@ export interface ExportIconsOptions {
  */
 export function extractIconFileName(plistContent: string): string | null {
   // Match <key>CFBundleIconFile</key> followed by <string>value</string>
-  const pattern =
-    /<key>CFBundleIconFile<\/key>\s*<string>([^<]+)<\/string>/i;
+  const pattern = /<key>CFBundleIconFile<\/key>\s*<string>([^<]+)<\/string>/i;
   const match = plistContent.match(pattern);
   if (!match) return null;
 
@@ -55,10 +54,7 @@ function extractIconCandidates(plistContent: string): string[] {
   const candidates: string[] = [];
 
   for (const key of keys) {
-    const pattern = new RegExp(
-      `<key>${key}<\\/key>\\s*<string>([^<]+)<\\/string>`,
-      "i"
-    );
+    const pattern = new RegExp(`<key>${key}<\\/key>\\s*<string>([^<]+)<\\/string>`, "i");
     const match = plistContent.match(pattern);
     if (!match) continue;
 
@@ -111,7 +107,9 @@ async function resolveIconPath(appPath: string): Promise<string | null> {
       try {
         await access(iconPath);
         return iconPath;
-      } catch { /* file not accessible, try next candidate */ }
+      } catch {
+        /* file not accessible, try next candidate */
+      }
     }
 
     const fallback = extractIconFileName(plistContent);
@@ -131,11 +129,7 @@ async function resolveIconPath(appPath: string): Promise<string | null> {
  * Convert a .icns file to .png using macOS built-in sips.
  * Returns the output path on success, or throws on failure.
  */
-async function convertIcnsToPng(
-  icnsPath: string,
-  outputPath: string,
-  size: number
-): Promise<void> {
+async function convertIcnsToPng(icnsPath: string, outputPath: string, size: number): Promise<void> {
   await execFileAsync("/usr/bin/sips", [
     "-s",
     "format",
@@ -152,15 +146,8 @@ async function convertIcnsToPng(
  * Export app icons from /Applications as PNG files to a target directory.
  * Uses macOS `sips` for conversion (no external dependencies).
  */
-export async function exportIcons(
-  options: ExportIconsOptions
-): Promise<IconExportResult[]> {
-  const {
-    appsDir = "/Applications",
-    outputDir,
-    size = 128,
-    onProgress,
-  } = options;
+export async function exportIcons(options: ExportIconsOptions): Promise<IconExportResult[]> {
+  const { appsDir = "/Applications", outputDir, size = 128, onProgress } = options;
 
   // Ensure output directory exists
   await mkdir(outputDir, { recursive: true });
@@ -169,14 +156,12 @@ export async function exportIcons(
 
   let entries: Dirent[];
   try {
-    entries = await readdir(appsDir, { withFileTypes: true }) as Dirent[];
+    entries = (await readdir(appsDir, { withFileTypes: true })) as Dirent[];
   } catch {
     return results;
   }
 
-  const apps = entries.filter(
-    (e) => e.isDirectory() && e.name.endsWith(".app")
-  );
+  const apps = entries.filter((e) => e.isDirectory() && e.name.endsWith(".app"));
 
   for (const app of apps) {
     const appName = app.name.replace(/\.app$/, "");

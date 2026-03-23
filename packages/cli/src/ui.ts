@@ -6,8 +6,8 @@
  * so cli.ts and snapshot.ts stay focused on logic.
  */
 
-import pc from "picocolors";
 import { consola } from "consola";
+import pc from "picocolors";
 
 // ── Symbols ─────────────────────────────────────────────────────────
 
@@ -58,8 +58,7 @@ export function banner(version: string): void {
 // ── Step header (for multi-phase commands like backup) ──────────────
 
 export function step(message: string, current?: number, total?: number): void {
-  const counter =
-    current != null && total != null ? ` ${pc.dim(`(${current}/${total})`)}` : "";
+  const counter = current != null && total != null ? ` ${pc.dim(`(${current}/${total})`)}` : "";
   console.log(`${S.step}  ${message}${counter}`);
 }
 
@@ -83,24 +82,17 @@ export function item(opts: ItemOptions): void {
   const files = `${fileCount} files`.padStart(8);
   const items = `${listCount} items`.padStart(9);
   const errors = errorCount > 0 ? `  ${pc.yellow(`${errorCount} err`)}` : "";
-  const skipped =
-    skippedCount > 0 && errorCount === 0
-      ? `  ${pc.dim(`${skippedCount} skip`)}`
-      : "";
+  const skipped = skippedCount > 0 && errorCount === 0 ? `  ${pc.dim(`${skippedCount} skip`)}` : "";
   const timing = formatDuration(durationMs).padStart(8);
 
   console.log(
-    `${status}  ${label.padEnd(w)}${pc.dim(files)}  ${pc.dim(items)}${errors}  ${pc.dim(timing)}${skipped}`
+    `${status}  ${label.padEnd(w)}${pc.dim(files)}  ${pc.dim(items)}${errors}  ${pc.dim(timing)}${skipped}`,
   );
 }
 
 // ── Simple status line (for backup sub-steps) ───────────────────────
 
-export function statusLine(
-  icon: string,
-  message: string,
-  timing?: number
-): void {
+export function statusLine(icon: string, message: string, timing?: number): void {
   const t = timing != null ? `  ${pc.dim(formatDuration(timing).padStart(8))}` : "";
   console.log(`${icon}  ${message}${t}`);
 }
@@ -149,7 +141,7 @@ export function table(columns: Column[], rows: string[][]): string {
 
   // Compute column widths from header + all rows
   const widths = columns.map((col, i) =>
-    Math.max(col.label.length, ...rows.map((r) => (r[i] ?? "").length))
+    Math.max(col.label.length, ...rows.map((r) => (r[i] ?? "").length)),
   );
 
   const pad = (val: string, width: number, align: "left" | "right") =>
@@ -161,16 +153,10 @@ export function table(columns: Column[], rows: string[][]): string {
     .join(gap);
   const separator = widths.map((w) => pc.dim("\u2500".repeat(w))).join(gap);
   const dataLines = rows.map((row) =>
-    row
-      .map((cell, i) => pad(cell, widths[i], columns[i].align ?? "left"))
-      .join(gap)
+    row.map((cell, i) => pad(cell, widths[i], columns[i].align ?? "left")).join(gap),
   );
 
-  return [
-    headerLine,
-    separator,
-    ...dataLines,
-  ].join("\n");
+  return [headerLine, separator, ...dataLines].join("\n");
 }
 
 // ── Tree rendering ──────────────────────────────────────────────────
@@ -206,9 +192,7 @@ export function tree(children: TreeChild[]): string {
     if (child.detail) {
       const plainTextLen = child.text.length;
       const padding = Math.max(1, detailPad - plainTextLen);
-      lines.push(
-        `${S.bar}  ${branch} ${text}${" ".repeat(padding)}${pc.dim(child.detail)}`
-      );
+      lines.push(`${S.bar}  ${branch} ${text}${" ".repeat(padding)}${pc.dim(child.detail)}`);
     } else {
       lines.push(`${S.bar}  ${branch} ${text}`);
     }
@@ -243,4 +227,4 @@ export function success(message: string): void {
 
 // ── Re-export for convenience ───────────────────────────────────────
 
-export { pc, consola };
+export { consola, pc };

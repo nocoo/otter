@@ -1,10 +1,6 @@
 import { join } from "node:path";
+import type { CollectedListItem, CollectorCategory, CollectorResult } from "@otter/core";
 import { BaseCollector } from "./base.js";
-import type {
-  CollectorCategory,
-  CollectorResult,
-  CollectedListItem,
-} from "@otter/core";
 
 function parseAwsProfiles(content: string): CollectedListItem[] {
   return content
@@ -18,9 +14,7 @@ function parseAwsProfiles(content: string): CollectedListItem[] {
         : section === "default"
           ? "default"
           : null;
-      return profile
-        ? [{ name: profile, meta: { type: "aws-profile" } }]
-        : [];
+      return profile ? [{ name: profile, meta: { type: "aws-profile" } }] : [];
     });
 }
 
@@ -31,31 +25,27 @@ export class CloudCLICollector extends BaseCollector {
 
   async collect(): Promise<CollectorResult> {
     return this.timed(async (result) => {
-      const azureConfig = await this.safeReadFile(
-        join(this.homeDir, ".azure", "config"),
-        result,
-        { redact: true }
-      );
+      const azureConfig = await this.safeReadFile(join(this.homeDir, ".azure", "config"), result, {
+        redact: true,
+      });
       if (azureConfig) result.files.push(azureConfig);
 
       const azureProfile = await this.safeReadFile(
         join(this.homeDir, ".azure", "azureProfile.json"),
         result,
-        { redact: true }
+        { redact: true },
       );
       if (azureProfile) result.files.push(azureProfile);
 
       const azureClouds = await this.safeReadFile(
         join(this.homeDir, ".azure", "clouds.config"),
-        result
+        result,
       );
       if (azureClouds) result.files.push(azureClouds);
 
-      const awsConfig = await this.safeReadFile(
-        join(this.homeDir, ".aws", "config"),
-        result,
-        { redact: true }
-      );
+      const awsConfig = await this.safeReadFile(join(this.homeDir, ".aws", "config"), result, {
+        redact: true,
+      });
       if (awsConfig) {
         result.files.push(awsConfig);
         result.lists.push(...parseAwsProfiles(awsConfig.content));
@@ -64,7 +54,7 @@ export class CloudCLICollector extends BaseCollector {
       const gcloudProperties = await this.safeReadFile(
         join(this.homeDir, ".config", "gcloud", "properties"),
         result,
-        { redact: true }
+        { redact: true },
       );
       if (gcloudProperties) result.files.push(gcloudProperties);
 
@@ -81,14 +71,14 @@ export class CloudCLICollector extends BaseCollector {
             ];
             return !blocked.some((suffix) => filePath.endsWith(suffix));
           },
-        }
+        },
       );
       result.files.push(...gcloudConfigurations);
 
       const railwayConfig = await this.safeReadFile(
         join(this.homeDir, ".config", "railway", "config.json"),
         result,
-        { redact: true }
+        { redact: true },
       );
       if (railwayConfig) result.files.push(railwayConfig);
     });

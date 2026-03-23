@@ -1,9 +1,9 @@
 import {
-  S3Client,
-  PutObjectCommand,
-  GetObjectCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
   HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
 } from "@aws-sdk/client-s3";
 import { z } from "zod/v4";
 
@@ -73,8 +73,7 @@ function parseIconConfig(): IconStorageConfig {
   return {
     endpoint: result.data.CF_ICON_R2_ENDPOINT ?? snapshot.endpoint,
     accessKeyId: result.data.CF_ICON_R2_ACCESS_KEY_ID ?? snapshot.accessKeyId,
-    secretAccessKey:
-      result.data.CF_ICON_R2_SECRET_ACCESS_KEY ?? snapshot.secretAccessKey,
+    secretAccessKey: result.data.CF_ICON_R2_SECRET_ACCESS_KEY ?? snapshot.secretAccessKey,
     bucket: result.data.CF_ICON_R2_BUCKET ?? snapshot.bucket,
     prefix: normalizePrefix(result.data.CF_ICON_R2_PREFIX ?? ICON_PREFIX),
   };
@@ -127,10 +126,7 @@ export function __resetR2ClientsForTests(): void {
 // --- Public API ---
 
 /** Store a JSON snapshot in R2 */
-export async function putSnapshot(
-  key: string,
-  data: unknown,
-): Promise<void> {
+export async function putSnapshot(key: string, data: unknown): Promise<void> {
   const { client, bucket } = getSnapshotClient();
   const body = JSON.stringify(data);
 
@@ -145,9 +141,7 @@ export async function putSnapshot(
 }
 
 /** Retrieve a JSON snapshot from R2 */
-export async function getSnapshot<T = unknown>(
-  key: string,
-): Promise<T | null> {
+export async function getSnapshot<T = unknown>(key: string): Promise<T | null> {
   const { client, bucket } = getSnapshotClient();
 
   try {
@@ -162,11 +156,7 @@ export async function getSnapshot<T = unknown>(
     const text = await result.Body.transformToString("utf-8");
     return JSON.parse(text) as T;
   } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      "name" in error &&
-      error.name === "NoSuchKey"
-    ) {
+    if (error instanceof Error && "name" in error && error.name === "NoSuchKey") {
       return null;
     }
     throw error;
@@ -234,10 +224,7 @@ export function resolveIconStorageConfigForTests(env: NodeJS.ProcessEnv): {
 }
 
 /** Store a PNG icon in R2 with immutable caching */
-export async function putIcon(
-  hash: string,
-  data: Buffer,
-): Promise<void> {
+export async function putIcon(hash: string, data: Buffer): Promise<void> {
   const { client, bucket, prefix } = getIconClient();
 
   await client.send(

@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback, useSyncExternalStore } from "react";
-import { Copy, Check, FileText, Hash, Type } from "lucide-react";
+import { Check, Copy, FileText, Hash, Type } from "lucide-react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { type BundledLanguage, codeToTokens, type ThemedToken } from "shiki";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { formatSize } from "@/lib/utils";
-import { codeToTokens, type ThemedToken, type BundledLanguage } from "shiki";
 
 // ---------------------------------------------------------------------------
 // Theme detection (reuses the app's class-based dark mode)
@@ -164,18 +164,12 @@ function CodeEditor({
         <div
           // biome-ignore lint/suspicious/noArrayIndexKey: lines are positional, index is the natural key
           key={lineIdx}
-          className={
-            isDark
-              ? "flex hover:bg-[#161b22]"
-              : "flex hover:bg-[#f3f4f6]"
-          }
+          className={isDark ? "flex hover:bg-[#161b22]" : "flex hover:bg-[#f3f4f6]"}
         >
           {/* Line number gutter */}
           <span
             className={`shrink-0 select-none text-right pr-4 pl-4 sticky left-0 ${
-              isDark
-                ? "text-[#484f58] bg-[#0d1117]"
-                : "text-[#afb8c1] bg-[#ffffff]"
+              isDark ? "text-[#484f58] bg-[#0d1117]" : "text-[#afb8c1] bg-[#ffffff]"
             }`}
             style={{ minWidth: `calc(${gutterWidth} + 2rem)` }}
           >
@@ -220,17 +214,11 @@ function PlainEditor({
         <div
           // biome-ignore lint/suspicious/noArrayIndexKey: lines are positional, index is the natural key
           key={lineIdx}
-          className={
-            isDark
-              ? "flex hover:bg-[#161b22]"
-              : "flex hover:bg-[#f3f4f6]"
-          }
+          className={isDark ? "flex hover:bg-[#161b22]" : "flex hover:bg-[#f3f4f6]"}
         >
           <span
             className={`shrink-0 select-none text-right pr-4 pl-4 sticky left-0 ${
-              isDark
-                ? "text-[#484f58] bg-[#0d1117]"
-                : "text-[#afb8c1] bg-[#ffffff]"
+              isDark ? "text-[#484f58] bg-[#0d1117]" : "text-[#afb8c1] bg-[#ffffff]"
             }`}
             style={{ minWidth: `calc(${gutterWidth} + 2rem)` }}
           >
@@ -259,11 +247,7 @@ interface FileViewerDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function FileViewerDialog({
-  file,
-  open,
-  onOpenChange,
-}: FileViewerDialogProps) {
+export function FileViewerDialog({ file, open, onOpenChange }: FileViewerDialogProps) {
   const isDark = useIsDark();
   const [tokens, setTokens] = useState<ThemedToken[][] | null>(null);
   const [copied, setCopied] = useState(false);
@@ -385,7 +369,9 @@ export function FileViewerDialog({
 
         {/* Footer stats */}
         {stats && (
-          <div className={`px-5 py-3 border-t ${border} flex items-center gap-4 text-xs ${textSecondary} shrink-0`}>
+          <div
+            className={`px-5 py-3 border-t ${border} flex items-center gap-4 text-xs ${textSecondary} shrink-0`}
+          >
             <span className="flex items-center gap-1.5">
               <FileText className="h-3 w-3" strokeWidth={1.5} />
               {formatSize(stats.size)}

@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
 import {
   Archive,
+  ArrowRight,
+  Clock,
   FileText,
   List,
-  Clock,
-  Monitor,
-  ArrowRight,
-  Webhook,
   Loader2,
   type LucideIcon,
+  Monitor,
+  Webhook,
 } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { formatSize } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -168,9 +168,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          Overview of your dev environment backups
-        </p>
+        <p className="text-sm text-muted-foreground">Overview of your dev environment backups</p>
       </div>
 
       {/* Loading */}
@@ -225,12 +223,24 @@ export default function DashboardPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border text-left">
-                        <th className="pb-2 pr-4 font-medium text-muted-foreground text-xs">Host</th>
-                        <th className="pb-2 pr-4 font-medium text-muted-foreground text-xs">Platform</th>
-                        <th className="pb-2 pr-4 font-medium text-muted-foreground text-xs text-right">Files</th>
-                        <th className="pb-2 pr-4 font-medium text-muted-foreground text-xs text-right">Lists</th>
-                        <th className="pb-2 pr-4 font-medium text-muted-foreground text-xs text-right">Size</th>
-                        <th className="pb-2 font-medium text-muted-foreground text-xs text-right">When</th>
+                        <th className="pb-2 pr-4 font-medium text-muted-foreground text-xs">
+                          Host
+                        </th>
+                        <th className="pb-2 pr-4 font-medium text-muted-foreground text-xs">
+                          Platform
+                        </th>
+                        <th className="pb-2 pr-4 font-medium text-muted-foreground text-xs text-right">
+                          Files
+                        </th>
+                        <th className="pb-2 pr-4 font-medium text-muted-foreground text-xs text-right">
+                          Lists
+                        </th>
+                        <th className="pb-2 pr-4 font-medium text-muted-foreground text-xs text-right">
+                          Size
+                        </th>
+                        <th className="pb-2 font-medium text-muted-foreground text-xs text-right">
+                          When
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -241,15 +251,24 @@ export default function DashboardPage() {
                               href={`/snapshots/${snap.id}`}
                               className="flex items-center gap-2 hover:text-primary transition-colors"
                             >
-                              <Monitor className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                              <Monitor
+                                className="h-3.5 w-3.5 text-muted-foreground"
+                                strokeWidth={1.5}
+                              />
                               <span className="font-medium">{snap.hostname}</span>
                             </Link>
                           </td>
-                          <td className="py-2.5 pr-4 text-muted-foreground">{snap.platform}/{snap.arch}</td>
+                          <td className="py-2.5 pr-4 text-muted-foreground">
+                            {snap.platform}/{snap.arch}
+                          </td>
                           <td className="py-2.5 pr-4 text-right tabular-nums">{snap.fileCount}</td>
                           <td className="py-2.5 pr-4 text-right tabular-nums">{snap.listCount}</td>
-                          <td className="py-2.5 pr-4 text-right tabular-nums text-muted-foreground">{formatSize(snap.sizeBytes)}</td>
-                          <td className="py-2.5 text-right text-muted-foreground text-xs">{formatTimeAgo(snap.snapshotAt)}</td>
+                          <td className="py-2.5 pr-4 text-right tabular-nums text-muted-foreground">
+                            {formatSize(snap.sizeBytes)}
+                          </td>
+                          <td className="py-2.5 text-right text-muted-foreground text-xs">
+                            {formatTimeAgo(snap.snapshotAt)}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
