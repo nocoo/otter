@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.3] - 2026-03-24
+
+### Quality
+
+- **Pre-commit coverage enforcement**: Pre-commit hook now runs `test:coverage` instead of bare `test`, ensuring 90% threshold gates are enforced on every commit
+- **Biome strict preset**: Promoted 12 linter rules to `error` level (`noExplicitAny`, `useExportType`, `useImportType`, `useTemplate`, `useForOf`, `noUselessElse`, etc.) for stricter code quality
+- **TypeScript strict extras**: Enabled `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch` across all packages
+- **Playwright E2E expansion**: Grew from 1 spec / 3 tests to 6 specs / 28 tests covering navigation, dashboard, snapshots list, snapshot detail, and settings pages
+
+### Fixes
+
+- **25 TypeScript strict errors**: Added null guards, conditional spreads, and type narrowing across 12 CLI files to satisfy new strict compiler options
+- **Playwright strict mode**: Resolved 4 strict-mode violations (ambiguous selectors) in E2E tests with `{ exact: true }`, `.first()`, and role-based locators
+
+### Infrastructure
+
+- **D1/R2 test isolation**: Added env-override guards and `_test_marker` validation so E2E runners use dedicated test resources, never production
+- **E2E env loading**: `.env` is now loaded in E2E runners for Cloudflare credentials
+
 ## [1.3.2] - 2026-03-23
 
 ### Quality
