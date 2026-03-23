@@ -15,6 +15,20 @@ function getConfig() {
       `Missing Cloudflare D1 env vars: ${result.error.issues.map((i) => i.path.join(".")).join(", ")}`,
     );
   }
+
+  // D1 test isolation guard: when running E2E, verify we're on the test database
+  if (process.env.E2E_SKIP_AUTH === "true") {
+    const testDbId = process.env.CF_D1_TEST_DATABASE_ID;
+    if (!testDbId) {
+      throw new Error("D1 safety: E2E mode active but CF_D1_TEST_DATABASE_ID not set.");
+    }
+    if (result.data.CF_D1_DATABASE_ID !== testDbId) {
+      throw new Error(
+        `D1 safety: CF_D1_DATABASE_ID (${result.data.CF_D1_DATABASE_ID}) !== CF_D1_TEST_DATABASE_ID (${testDbId}). Refusing.`,
+      );
+    }
+  }
+
   return result.data;
 }
 

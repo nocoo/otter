@@ -53,6 +53,19 @@ function parseSnapshotConfig(): R2Config {
     );
   }
 
+  // R2 test isolation guard: when running E2E, verify we're on the test bucket
+  if (process.env.E2E_SKIP_AUTH === "true") {
+    const testBucket = process.env.CF_R2_TEST_BUCKET;
+    if (!testBucket) {
+      throw new Error("R2 safety: E2E mode active but CF_R2_TEST_BUCKET not set.");
+    }
+    if (result.data.CF_R2_BUCKET !== testBucket) {
+      throw new Error(
+        `R2 safety: CF_R2_BUCKET (${result.data.CF_R2_BUCKET}) !== CF_R2_TEST_BUCKET (${testBucket}). Refusing.`,
+      );
+    }
+  }
+
   return {
     endpoint: result.data.CF_R2_ENDPOINT,
     accessKeyId: result.data.CF_R2_ACCESS_KEY_ID,
