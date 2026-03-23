@@ -9,12 +9,12 @@ if [ $LINT_STAGED_EXIT -ne 0 ]; then
   exit 1
 fi
 
-# L1: Unit Tests
-bun run test 2>&1
+# L1: Unit Tests + Coverage Thresholds (≥90%)
+bun run test:coverage 2>&1
 TEST_EXIT=$?
 
 if [ $TEST_EXIT -ne 0 ]; then
-  echo "❌ L1 FAILED: Unit tests did not pass."
+  echo "❌ L1 FAILED: Unit tests or coverage thresholds did not pass."
   exit 1
 fi
 
