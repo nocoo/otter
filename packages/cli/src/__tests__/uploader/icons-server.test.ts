@@ -20,6 +20,7 @@ async function setupTestIcons(count: number): Promise<Array<{ appName: string; p
   for (let i = 0; i < count; i++) {
     const appName = `TestApp${i}`;
     const pngPath = join(testDir, `${appName}.png`);
+    // biome-ignore lint/performance/noAwaitInLoops: small fixed-size test setup loop
     await writeFile(pngPath, TINY_PNG);
     icons.push({ appName, pngPath });
   }

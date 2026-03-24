@@ -90,12 +90,14 @@ function StatCard({ label, value, icon: Icon }: StatCardProps) {
   );
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: multi-state UI rendering
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: multi-step fetch with error handling
     async function fetchDashboard() {
       setLoading(true);
       try {

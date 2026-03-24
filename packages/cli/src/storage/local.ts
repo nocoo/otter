@@ -2,6 +2,9 @@ import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Snapshot } from "@otter/core";
 
+const MILLIS_SUFFIX = /\.\d{3}Z$/;
+const COLON = /:/g;
+
 /** Metadata for a locally-stored snapshot (without loading full content) */
 export interface SnapshotMeta {
   /** Full UUID */
@@ -28,7 +31,7 @@ export interface SnapshotMeta {
  * Example: "2026-03-06T12:30:00.000Z" → "2026-03-06T12-30-00"
  */
 function toFileTimestamp(iso: string): string {
-  return iso.replace(/:/g, "-").replace(/\.\d{3}Z$/, "");
+  return iso.replace(COLON, "-").replace(MILLIS_SUFFIX, "");
 }
 
 /**
@@ -100,12 +103,11 @@ export class SnapshotStore {
     }
 
     const jsonFiles = entries.filter((f) => f.endsWith(".json"));
-    const metas: SnapshotMeta[] = [];
 
-    for (const filename of jsonFiles) {
-      const meta = await parseMetaFromFile(join(this.storageDir, filename), filename);
-      if (meta) metas.push(meta);
-    }
+    const results = await Promise.all(
+      jsonFiles.map((filename) => parseMetaFromFile(join(this.storageDir, filename), filename)),
+    );
+    const metas = results.filter((m): m is SnapshotMeta => m !== null);
 
     // Sort newest first
     metas.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

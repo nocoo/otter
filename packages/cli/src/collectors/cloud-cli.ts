@@ -18,12 +18,13 @@ function parseAwsProfiles(content: string): CollectedListItem[] {
     });
 }
 
+// biome-ignore lint/style/useNamingConvention: acronym in class name
 export class CloudCLICollector extends BaseCollector {
   readonly id = "cloud-cli";
   readonly label = "Cloud CLI Configuration";
   readonly category: CollectorCategory = "config";
 
-  async collect(): Promise<CollectorResult> {
+  collect(): Promise<CollectorResult> {
     return this.timed(async (result) => {
       const azureConfig = await this.safeReadFile(join(this.homeDir, ".azure", "config"), result, {
         redact: true,

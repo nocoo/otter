@@ -2,10 +2,14 @@ import { NextResponse } from "next/server";
 import { queryFirst } from "@/lib/cf/d1";
 import { putIcon } from "@/lib/cf/r2";
 
+const ICON_HASH_PATTERN = /^[a-f0-9]{12}$/;
+
 interface WebhookRow {
   id: string;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
   user_id: string;
   token: string;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
   is_active: number;
 }
 
@@ -34,7 +38,7 @@ function isValidBody(data: unknown): data is IconsRequestBody {
   for (const icon of obj.icons) {
     if (typeof icon !== "object" || icon === null) return false;
     const i = icon as Record<string, unknown>;
-    if (typeof i.hash !== "string" || !/^[a-f0-9]{12}$/.test(i.hash)) return false;
+    if (typeof i.hash !== "string" || !ICON_HASH_PATTERN.test(i.hash)) return false;
     if (typeof i.data !== "string" || i.data.length === 0) return false;
   }
 
@@ -95,20 +99,24 @@ export async function POST(request: Request, { params }: RouteParams) {
     }
   }
 
-  // 4. Store icons in R2
-  let stored = 0;
+  // 4. Store icons in R2 (independent uploads, run in parallel)
   const errors: string[] = [];
 
-  for (const icon of body.icons) {
-    try {
-      const buffer = Buffer.from(icon.data, "base64");
-      await putIcon(icon.hash, buffer);
-      stored++;
-    } catch (error) {
-      console.error(`[icons] Failed to store icon ${icon.hash}:`, error);
-      errors.push(icon.hash);
-    }
-  }
+  const results = await Promise.all(
+    body.icons.map(async (icon) => {
+      try {
+        const buffer = Buffer.from(icon.data, "base64");
+        await putIcon(icon.hash, buffer);
+        return true;
+      } catch (error) {
+        console.error(`[icons] Failed to store icon ${icon.hash}:`, error);
+        errors.push(icon.hash);
+        return false;
+      }
+    }),
+  );
+
+  const stored = results.filter(Boolean).length;
 
   return NextResponse.json(
     {

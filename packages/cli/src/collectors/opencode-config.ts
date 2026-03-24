@@ -3,6 +3,9 @@ import { join } from "node:path";
 import type { CollectedListItem, CollectorCategory, CollectorResult } from "@otter/core";
 import { BaseCollector } from "./base.js";
 
+const FRONTMATTER_BLOCK = /^---\s*\n([\s\S]*?)\n---/;
+const FRONTMATTER_KV = /^(\w[\w-]*)\s*:\s*(.+)$/;
+
 /** Directories that contain skills (list-only, not full content) */
 const SKILLS_DIRS = [
   { relative: ".config/opencode/skills", source: ".config/opencode/skills" },
@@ -16,14 +19,16 @@ const SKILLS_DIRS = [
  */
 export function parseSkillFrontmatter(content: string): Record<string, string> {
   const meta: Record<string, string> = {};
-  const match = content.match(/^---\s*\n([\s\S]*?)\n---/);
+  const match = content.match(FRONTMATTER_BLOCK);
   if (!match) return meta;
 
-  for (const line of match[1]!.split("\n")) {
+  for (const line of (match[1] ?? "").split("\n")) {
     // Match simple key: value (not nested YAML)
-    const kv = line.match(/^(\w[\w-]*)\s*:\s*(.+)$/);
-    if (kv) {
-      meta[kv[1]!.trim()] = kv[2]!.trim();
+    const kv = line.match(FRONTMATTER_KV);
+    const key = kv?.[1]?.trim();
+    const value = kv?.[2]?.trim();
+    if (key && value) {
+      meta[key] = value;
     }
   }
   return meta;
@@ -39,7 +44,7 @@ export class OpenCodeConfigCollector extends BaseCollector {
   readonly label = "OpenCode Configuration";
   readonly category: CollectorCategory = "config";
 
-  async collect(): Promise<CollectorResult> {
+  collect(): Promise<CollectorResult> {
     return this.timed(async (result) => {
       // 1. Collect config files from ~/.config/opencode/ (excluding skills dir)
       const configDir = join(this.homeDir, ".config", "opencode");
@@ -51,6 +56,7 @@ export class OpenCodeConfigCollector extends BaseCollector {
 
       // 2. Collect skill names as list items
       for (const skillDir of SKILLS_DIRS) {
+        // biome-ignore lint/performance/noAwaitInLoops: small fixed-size directory list
         const skills = await this.collectSkillNames(
           join(this.homeDir, skillDir.relative),
           skillDir.source,
@@ -78,6 +84,7 @@ export class OpenCodeConfigCollector extends BaseCollector {
 
         // Try to parse SKILL.md frontmatter for description
         try {
+          // biome-ignore lint/performance/noAwaitInLoops: sequential directory entry processing with error isolation
           const skillMd = await readFile(join(dirPath, entry.name, "SKILL.md"), "utf-8");
           const fm = parseSkillFrontmatter(skillMd);
           if (fm.description) {

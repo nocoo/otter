@@ -20,6 +20,7 @@ const createdIds: string[] = [];
 afterAll(async () => {
   for (const id of createdIds) {
     try {
+      // biome-ignore lint/performance/noAwaitInLoops: sequential test cleanup with error isolation
       await fetch(`${BASE_URL}/api/webhooks/${id}`, { method: "DELETE" });
     } catch {
       // Best-effort cleanup

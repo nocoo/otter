@@ -21,6 +21,7 @@ async function waitForServer(maxAttempts = 60): Promise<boolean> {
   const baseUrl = `http://localhost:${E2E_PORT}`;
   for (let i = 0; i < maxAttempts; i++) {
     try {
+      // biome-ignore lint/performance/noAwaitInLoops: retry loop with exponential backoff
       const response = await fetch(`${baseUrl}/login`);
       if (response.ok) return true;
     } catch {

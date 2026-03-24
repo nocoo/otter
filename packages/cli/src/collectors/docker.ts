@@ -14,8 +14,11 @@ function parseDockerContexts(output: string): CollectedListItem[] {
     .flatMap((line) => {
       try {
         const parsed = JSON.parse(line) as {
+          // biome-ignore lint/style/useNamingConvention: Docker CLI JSON output
           Name?: string;
+          // biome-ignore lint/style/useNamingConvention: Docker CLI JSON output
           Current?: boolean;
+          // biome-ignore lint/style/useNamingConvention: Docker CLI JSON output
           DockerEndpoint?: string;
         };
         if (!parsed.Name) return [];
@@ -45,7 +48,7 @@ export class DockerCollector extends BaseCollector {
     return stdout;
   };
 
-  async collect(): Promise<CollectorResult> {
+  collect(): Promise<CollectorResult> {
     return this.timed(async (result) => {
       const config = await this.safeReadFile(join(this.homeDir, ".docker", "config.json"), result, {
         redact: true,

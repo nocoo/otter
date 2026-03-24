@@ -41,10 +41,10 @@
       "a11y": "error",
       "complexity": {
         "recommended": true,
-        "noExcessiveCognitiveComplexity": "warn",
+        "noExcessiveCognitiveComplexity": "error",
         "noExcessiveLinesPerFunction": "off",
         "noVoid": "off",
-        "noForEach": "warn",
+        "noForEach": "error",
         "noUselessConstructor": "error",
         "noStaticOnlyClass": "error"
       },
@@ -60,9 +60,9 @@
       },
       "performance": {
         "recommended": true,
-        "useTopLevelRegex": "warn",
-        "noAwaitInLoops": "warn",
-        "noDelete": "warn",
+        "useTopLevelRegex": "error",
+        "noAwaitInLoops": "error",
+        "noDelete": "error",
         "noBarrelFile": "off",
         "noReExportAll": "off"
       },
@@ -73,7 +73,7 @@
       "suspicious": {
         "recommended": true,
         "noConsole": "off",
-        "useAwait": "warn",
+        "useAwait": "error",
         "noEmptyBlockStatements": "error",
         "noArrayIndexKey": "error",
         "noExplicitAny": "error",
@@ -84,13 +84,13 @@
       "style": {
         "recommended": true,
         "noDefaultExport": "off",
-        "noNonNullAssertion": "warn",
+        "noNonNullAssertion": "error",
         "useComponentExportOnlyModules": "error",
         "useConst": "error",
         "useExportType": "error",
         "useImportType": "error",
         "useTemplate": "error",
-        "useNamingConvention": "warn",
+        "useNamingConvention": "error",
         "useSelfClosingElements": "error",
         "useShorthandFunctionType": "error",
         "useNodejsImportProtocol": "error",
@@ -130,13 +130,47 @@
       "linter": {
         "rules": {
           "suspicious": {
-            "noExplicitAny": "off"
+            "noExplicitAny": "off",
+            "useAwait": "off"
           },
           "complexity": {
             "noExcessiveCognitiveComplexity": "off"
           },
+          "performance": {
+            "useTopLevelRegex": "off",
+            "noDelete": "off"
+          },
+          "style": {
+            "useNamingConvention": "off"
+          },
           "security": {
             "noSecrets": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/web/e2e/**"],
+      "linter": {
+        "rules": {
+          "performance": {
+            "useTopLevelRegex": "off"
+          },
+          "style": {
+            "useNamingConvention": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["scripts/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useNamingConvention": "off"
+          },
+          "complexity": {
+            "noExcessiveCognitiveComplexity": "off"
           }
         }
       }

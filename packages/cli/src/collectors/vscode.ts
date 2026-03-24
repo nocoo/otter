@@ -12,6 +12,8 @@ import { BaseCollector } from "./base.js";
 
 const execAsync = promisify(exec);
 
+const EXTENSION_DIR_NAME_PATTERN = /^(.*)-([0-9][A-Za-z0-9.+_-]*)$/;
+
 interface EditorConfig {
   editor: "vscode" | "cursor";
   cli: string;
@@ -42,18 +44,20 @@ function parseCliExtensions(output: string, editor: string): CollectedListItem[]
 }
 
 function parseExtensionDirName(name: string): { name: string; version?: string } | null {
-  const match = name.match(/^(.*)-([0-9][A-Za-z0-9.+_-]*)$/);
+  const match = name.match(EXTENSION_DIR_NAME_PATTERN);
   if (!match) {
     return name.length > 0 ? { name } : null;
   }
 
-  const parsedVersion = match[2];
+  const [, parsedName, parsedVersion] = match;
+  if (!parsedName) return name.length > 0 ? { name } : null;
   return {
-    name: match[1]!,
+    name: parsedName,
     ...(parsedVersion ? { version: parsedVersion } : {}),
   };
 }
 
+// biome-ignore lint/style/useNamingConvention: acronym in class name
 export class VSCodeCollector extends BaseCollector {
   readonly id = "vscode";
   readonly label = "VS Code / Cursor Configuration";
@@ -84,9 +88,10 @@ export class VSCodeCollector extends BaseCollector {
     return stdout;
   };
 
-  async collect(): Promise<CollectorResult> {
+  collect(): Promise<CollectorResult> {
     return this.timed(async (result) => {
       for (const editor of this.editors) {
+        // biome-ignore lint/performance/noAwaitInLoops: sequential collector execution with progress reporting
         const items = await this.collectExtensions(editor, result);
         result.lists.push(...items);
 

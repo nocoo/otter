@@ -18,7 +18,7 @@ export class LaunchAgentsCollector extends BaseCollector {
     return stdout;
   };
 
-  async collect(): Promise<CollectorResult> {
+  collect(): Promise<CollectorResult> {
     return this.timed(async (result) => {
       const agentsDir = join(this.homeDir, "Library", "LaunchAgents");
       try {

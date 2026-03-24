@@ -4,11 +4,15 @@ import { getAuthUser } from "@/lib/session";
 
 interface WebhookRow {
   id: string;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
   user_id: string;
   token: string;
   label: string;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
   is_active: number;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
   created_at: number;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
   last_used_at: number | null;
 }
 

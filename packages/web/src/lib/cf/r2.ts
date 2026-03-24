@@ -10,17 +10,26 @@ import { z } from "zod/v4";
 // --- Environment validation ---
 
 const snapshotR2EnvSchema = z.object({
+  // biome-ignore lint/style/useNamingConvention: env var naming
   CF_R2_ENDPOINT: z.string().url(),
+  // biome-ignore lint/style/useNamingConvention: env var naming
   CF_R2_ACCESS_KEY_ID: z.string().min(1),
+  // biome-ignore lint/style/useNamingConvention: env var naming
   CF_R2_SECRET_ACCESS_KEY: z.string().min(1),
+  // biome-ignore lint/style/useNamingConvention: env var naming
   CF_R2_BUCKET: z.string().min(1),
 });
 
 const iconR2EnvSchema = z.object({
+  // biome-ignore lint/style/useNamingConvention: env var naming
   CF_ICON_R2_ENDPOINT: z.string().url().optional(),
+  // biome-ignore lint/style/useNamingConvention: env var naming
   CF_ICON_R2_ACCESS_KEY_ID: z.string().min(1).optional(),
+  // biome-ignore lint/style/useNamingConvention: env var naming
   CF_ICON_R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+  // biome-ignore lint/style/useNamingConvention: env var naming
   CF_ICON_R2_BUCKET: z.string().min(1).optional(),
+  // biome-ignore lint/style/useNamingConvention: env var naming
   CF_ICON_R2_PREFIX: z.string().min(1).optional(),
 });
 
@@ -145,9 +154,13 @@ export async function putSnapshot(key: string, data: unknown): Promise<void> {
 
   await client.send(
     new PutObjectCommand({
+      // biome-ignore lint/style/useNamingConvention: AWS SDK parameter
       Bucket: bucket,
+      // biome-ignore lint/style/useNamingConvention: AWS SDK parameter
       Key: key,
+      // biome-ignore lint/style/useNamingConvention: AWS SDK parameter
       Body: body,
+      // biome-ignore lint/style/useNamingConvention: AWS SDK parameter
       ContentType: "application/json",
     }),
   );
@@ -160,7 +173,9 @@ export async function getSnapshot<T = unknown>(key: string): Promise<T | null> {
   try {
     const result = await client.send(
       new GetObjectCommand({
+        // biome-ignore lint/style/useNamingConvention: AWS SDK parameter
         Bucket: bucket,
+        // biome-ignore lint/style/useNamingConvention: AWS SDK parameter
         Key: key,
       }),
     );
@@ -182,7 +197,9 @@ export async function deleteSnapshot(key: string): Promise<void> {
 
   await client.send(
     new DeleteObjectCommand({
+      // biome-ignore lint/style/useNamingConvention: AWS SDK parameter
       Bucket: bucket,
+      // biome-ignore lint/style/useNamingConvention: AWS SDK parameter
       Key: key,
     }),
   );
@@ -195,7 +212,9 @@ export async function snapshotExists(key: string): Promise<boolean> {
   try {
     await client.send(
       new HeadObjectCommand({
+        // biome-ignore lint/style/useNamingConvention: AWS SDK parameter
         Bucket: bucket,
+        // biome-ignore lint/style/useNamingConvention: AWS SDK parameter
         Key: key,
       }),
     );
@@ -242,10 +261,15 @@ export async function putIcon(hash: string, data: Buffer): Promise<void> {
 
   await client.send(
     new PutObjectCommand({
+      // biome-ignore lint/style/useNamingConvention: AWS SDK parameter
       Bucket: bucket,
+      // biome-ignore lint/style/useNamingConvention: AWS SDK parameter
       Key: iconKey(hash, prefix),
+      // biome-ignore lint/style/useNamingConvention: AWS SDK parameter
       Body: data,
+      // biome-ignore lint/style/useNamingConvention: AWS SDK parameter
       ContentType: "image/png",
+      // biome-ignore lint/style/useNamingConvention: AWS SDK parameter
       CacheControl: "public, max-age=31536000, immutable",
     }),
   );
@@ -258,7 +282,9 @@ export async function iconExists(hash: string): Promise<boolean> {
   try {
     await client.send(
       new HeadObjectCommand({
+        // biome-ignore lint/style/useNamingConvention: AWS SDK parameter
         Bucket: bucket,
+        // biome-ignore lint/style/useNamingConvention: AWS SDK parameter
         Key: iconKey(hash, prefix),
       }),
     );

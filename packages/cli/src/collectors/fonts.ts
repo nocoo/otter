@@ -3,12 +3,14 @@ import { extname, join } from "node:path";
 import type { CollectedListItem, CollectorCategory, CollectorResult } from "@otter/core";
 import { BaseCollector } from "./base.js";
 
+const LEADING_DOT = /^\./;
+
 export class FontsCollector extends BaseCollector {
   readonly id = "fonts";
   readonly label = "Installed Fonts";
   readonly category: CollectorCategory = "environment";
 
-  async collect(): Promise<CollectorResult> {
+  collect(): Promise<CollectorResult> {
     return this.timed(async (result) => {
       const fontsDir = join(this.homeDir, "Library", "Fonts");
       try {
@@ -21,7 +23,7 @@ export class FontsCollector extends BaseCollector {
               name: entry.name.slice(0, ext ? -ext.length : undefined),
               meta: {
                 type: "font",
-                format: ext.replace(/^\./, "").toLowerCase() || "unknown",
+                format: ext.replace(LEADING_DOT, "").toLowerCase() || "unknown",
               },
             };
           })

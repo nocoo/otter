@@ -18,6 +18,7 @@ export default function SnapshotDetailPage({ params }: { params: Promise<{ id: s
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: multi-step fetch with error handling
     async function fetchSnapshot() {
       try {
         const res = await fetch(`/api/snapshots/${id}`);

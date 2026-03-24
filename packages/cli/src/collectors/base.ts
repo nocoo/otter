@@ -181,6 +181,7 @@ export abstract class BaseCollector implements Collector {
    *  - Skips binary files (by extension and known basenames)
    *  - Skips files exceeding size limit (default 512 KB)
    */
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: recursive directory traversal
   protected async collectDir(
     dirPath: string,
     result: CollectorResult,
@@ -200,6 +201,7 @@ export abstract class BaseCollector implements Collector {
           // Skip caller-specified excluded directories
           if (excludeDirs?.has(dirName)) continue;
 
+          // biome-ignore lint/performance/noAwaitInLoops: recursive directory traversal
           const subFiles = await this.collectDir(fullPath, result, opts);
           files.push(...subFiles);
         } else if (entry.isFile()) {

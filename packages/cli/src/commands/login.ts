@@ -48,6 +48,7 @@ export function checkPortAvailable(port: number): Promise<boolean> {
 export async function findAvailablePort(): Promise<number> {
   for (let i = 0; i < 20; i++) {
     const port = PORT_RANGE_START + Math.floor(Math.random() * (PORT_RANGE_END - PORT_RANGE_START));
+    // biome-ignore lint/performance/noAwaitInLoops: sequential port scanning
     if (await checkPortAvailable(port)) {
       return port;
     }

@@ -5,13 +5,15 @@ import { BaseCollector } from "./base.js";
 
 const execAsync = promisify(exec);
 
+const WHITESPACE_SPLIT = /\s+/;
+
 function parseVersionedItems(output: string, type: string): CollectedListItem[] {
   return output
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
     .map((line) => {
-      const [name, ...versions] = line.split(/\s+/);
+      const [name, ...versions] = line.split(WHITESPACE_SPLIT);
       if (!name) {
         return { name: "", meta: { type } };
       }
@@ -64,7 +66,7 @@ export class HomebrewCollector extends BaseCollector {
     return stdout;
   };
 
-  async collect(): Promise<CollectorResult> {
+  collect(): Promise<CollectorResult> {
     return this.timed(async (result) => {
       const formulae = await this.collectList(
         "brew list --formula --versions",

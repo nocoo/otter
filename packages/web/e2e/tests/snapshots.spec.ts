@@ -82,6 +82,7 @@ test.describe("Snapshots List", () => {
           body: JSON.stringify({
             snapshots: page1Snapshots,
             total: 25,
+            // biome-ignore lint/style/noNonNullAssertion: fixed-length mock array
             nextBefore: page1Snapshots[19]!.uploadedAt,
           }),
         });

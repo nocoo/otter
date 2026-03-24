@@ -74,7 +74,8 @@ export class ClaudeConfigCollector extends BaseCollector {
     this.slim = options?.slim ?? false;
   }
 
-  async collect(): Promise<CollectorResult> {
+  collect(): Promise<CollectorResult> {
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: multi-step collector pipeline
     return this.timed(async (result) => {
       const claudeDir = join(this.homeDir, ".claude");
 
@@ -87,6 +88,7 @@ export class ClaudeConfigCollector extends BaseCollector {
         // Skip files marked as slim-excluded when in slim mode
         if (this.slim && slimExclude) continue;
 
+        // biome-ignore lint/performance/noAwaitInLoops: small fixed-size config file list
         const file = await this.safeReadFile(join(claudeDir, relativePath), result, {
           ...(redact !== undefined ? { redact } : {}),
           ...(maxSize !== undefined ? { maxSize } : {}),
@@ -126,6 +128,7 @@ export class ClaudeConfigCollector extends BaseCollector {
         const indexPath = join(projectsDir, entry.name, "sessions-index.json");
 
         try {
+          // biome-ignore lint/performance/noAwaitInLoops: sequential directory traversal with error isolation
           const raw = await readFile(indexPath, "utf-8");
           const index: SessionIndex = JSON.parse(raw);
 
@@ -133,6 +136,7 @@ export class ClaudeConfigCollector extends BaseCollector {
 
           summaries.push({
             projectPath: index.originalPath ?? entry.name,
+            // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: multi-field conditional mapping
             sessions: index.entries.map((e) => {
               const session: SessionEntry = { sessionId: e.sessionId };
               if (e.firstPrompt !== undefined) session.firstPrompt = e.firstPrompt;

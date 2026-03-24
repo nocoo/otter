@@ -4,18 +4,27 @@ import { getAuthUser } from "@/lib/session";
 
 interface SnapshotRow {
   id: string;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
   user_id: string;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
   webhook_id: string;
   hostname: string;
   platform: string;
   arch: string;
   username: string;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
   collector_count: number;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
   file_count: number;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
   list_count: number;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
   size_bytes: number;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
   r2_key: string;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
   snapshot_at: number;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
   uploaded_at: number;
 }
 

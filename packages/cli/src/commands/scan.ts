@@ -22,6 +22,7 @@ export async function executeScan(
     options.onStart?.(collector.id, collector.label);
     let result: CollectorResult;
     try {
+      // biome-ignore lint/performance/noAwaitInLoops: sequential collector execution with progress reporting
       result = await collector.collect();
     } catch (err) {
       result = {

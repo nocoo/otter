@@ -23,8 +23,10 @@ interface Snapshot {
 
 interface WebhookRow {
   id: string;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
   user_id: string;
   token: string;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
   is_active: number;
 }
 

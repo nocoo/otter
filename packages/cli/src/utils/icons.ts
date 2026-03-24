@@ -6,6 +6,10 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
+const PLIST_ICON_FILE_PATTERN = /<key>CFBundleIconFile<\/key>\s*<string>([^<]+)<\/string>/i;
+const PLIST_ICON_NAME_PATTERN = /<key>CFBundleIconName<\/key>\s*<string>([^<]+)<\/string>/i;
+const DOT_APP_SUFFIX = /\.app$/;
+
 /** Result of extracting a single app icon */
 export interface IconExportResult {
   /** App name (without .app) */
@@ -37,32 +41,33 @@ export interface ExportIconsOptions {
  */
 export function extractIconFileName(plistContent: string): string | null {
   // Match <key>CFBundleIconFile</key> followed by <string>value</string>
-  const pattern = /<key>CFBundleIconFile<\/key>\s*<string>([^<]+)<\/string>/i;
-  const match = plistContent.match(pattern);
+  const match = plistContent.match(PLIST_ICON_FILE_PATTERN);
   if (!match) return null;
 
-  let iconFile = match[1]!.trim();
+  const iconFile = match[1]?.trim();
+  if (!iconFile) return null;
   // Ensure .icns extension (some plists omit it)
   if (!iconFile.endsWith(".icns")) {
-    iconFile += ".icns";
+    return `${iconFile}.icns`;
   }
   return iconFile;
 }
 
 function extractIconCandidates(plistContent: string): string[] {
-  const keys = ["CFBundleIconFile", "CFBundleIconName"];
+  const patterns = [PLIST_ICON_FILE_PATTERN, PLIST_ICON_NAME_PATTERN];
   const candidates: string[] = [];
 
-  for (const key of keys) {
-    const pattern = new RegExp(`<key>${key}<\\/key>\\s*<string>([^<]+)<\\/string>`, "i");
+  for (const pattern of patterns) {
     const match = plistContent.match(pattern);
     if (!match) continue;
 
-    let iconFile = match[1]!.trim();
+    const iconFile = match[1]?.trim();
+    if (!iconFile) continue;
     if (!iconFile.endsWith(".icns")) {
-      iconFile += ".icns";
+      candidates.push(`${iconFile}.icns`);
+    } else {
+      candidates.push(iconFile);
     }
-    candidates.push(iconFile);
   }
 
   return [...new Set(candidates)];
@@ -105,6 +110,7 @@ async function resolveIconPath(appPath: string): Promise<string | null> {
     for (const iconFile of extractIconCandidates(plistContent)) {
       const iconPath = join(appPath, "Contents", "Resources", iconFile);
       try {
+        // biome-ignore lint/performance/noAwaitInLoops: first-match search pattern
         await access(iconPath);
         return iconPath;
       } catch {
@@ -164,9 +170,10 @@ export async function exportIcons(options: ExportIconsOptions): Promise<IconExpo
   const apps = entries.filter((e) => e.isDirectory() && e.name.endsWith(".app"));
 
   for (const app of apps) {
-    const appName = app.name.replace(/\.app$/, "");
+    const appName = app.name.replace(DOT_APP_SUFFIX, "");
     const appPath = join(appsDir, app.name);
 
+    // biome-ignore lint/performance/noAwaitInLoops: sequential icon extraction with progress callback
     const icnsPath = await resolveIconPath(appPath);
     if (!icnsPath) {
       const result: IconExportResult = {

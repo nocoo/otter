@@ -178,8 +178,7 @@ export function tree(children: TreeChild[]): string {
   const maxTextLen = Math.max(...children.map((c) => c.text.length), 1);
   const detailPad = Math.min(maxTextLen + 4, 50);
 
-  for (let i = 0; i < children.length; i++) {
-    const child = children[i]!;
+  for (const [i, child] of children.entries()) {
     const isLast = i === children.length - 1;
     const branch = isLast ? S.treeLast : S.treeItem;
 

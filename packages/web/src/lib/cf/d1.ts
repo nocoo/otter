@@ -3,8 +3,11 @@ import { z } from "zod/v4";
 // --- Environment validation ---
 
 const cfEnvSchema = z.object({
+  // biome-ignore lint/style/useNamingConvention: env var naming
   CF_ACCOUNT_ID: z.string().min(1),
+  // biome-ignore lint/style/useNamingConvention: env var naming
   CF_D1_DATABASE_ID: z.string().min(1),
+  // biome-ignore lint/style/useNamingConvention: env var naming
   CF_D1_API_TOKEN: z.string().min(1),
 });
 
@@ -40,8 +43,11 @@ interface D1QueryResult<T = Record<string, unknown>> {
   meta: {
     duration: number;
     changes: number;
+    // biome-ignore lint/style/useNamingConvention: D1 REST API response shape
     last_row_id: number;
+    // biome-ignore lint/style/useNamingConvention: D1 REST API response shape
     rows_read: number;
+    // biome-ignore lint/style/useNamingConvention: D1 REST API response shape
     rows_written: number;
   };
 }
@@ -58,7 +64,7 @@ interface D1Response<T = Record<string, unknown>> {
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 200;
 
-async function sleep(ms: number): Promise<void> {
+function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
@@ -66,6 +72,7 @@ async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
   let lastError: Error | undefined;
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
+      // biome-ignore lint/performance/noAwaitInLoops: retry loop with exponential backoff
       return await fn();
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
@@ -95,6 +102,7 @@ async function executeRaw<T = Record<string, unknown>>(
   const response = await fetch(url, {
     method: "POST",
     headers: {
+      // biome-ignore lint/style/useNamingConvention: HTTP header
       Authorization: `Bearer ${config.CF_D1_API_TOKEN}`,
       "Content-Type": "application/json",
     },
@@ -154,6 +162,7 @@ export async function batch(statements: Array<{ sql: string; params?: unknown[] 
 
   // D1 REST API doesn't support batch natively, so we run sequentially
   for (const stmt of statements) {
+    // biome-ignore lint/performance/noAwaitInLoops: D1 REST API has no batch support
     await withRetry(async () => {
       const body: { sql: string; params?: unknown[] } = { sql: stmt.sql };
       if (stmt.params && stmt.params.length > 0) {
@@ -163,6 +172,7 @@ export async function batch(statements: Array<{ sql: string; params?: unknown[] 
       const response = await fetch(url, {
         method: "POST",
         headers: {
+          // biome-ignore lint/style/useNamingConvention: HTTP header
           Authorization: `Bearer ${config.CF_D1_API_TOKEN}`,
           "Content-Type": "application/json",
         },

@@ -79,10 +79,11 @@ export class ShellConfigCollector extends BaseCollector {
   readonly label = "Shell Configuration";
   readonly category: CollectorCategory = "environment";
 
-  async collect(): Promise<CollectorResult> {
+  collect(): Promise<CollectorResult> {
     return this.timed(async (result) => {
       // 1. Collect well-known dotfiles
       for (const { name: dotfile, redact } of DOTFILES) {
+        // biome-ignore lint/performance/noAwaitInLoops: small fixed-size config file list
         const file = await this.safeReadFile(join(this.homeDir, dotfile), result, {
           ...(redact !== undefined ? { redact } : {}),
         });
@@ -91,6 +92,7 @@ export class ShellConfigCollector extends BaseCollector {
 
       // 2. Collect safe SSH config files
       for (const sshFile of SSH_SAFE_FILES) {
+        // biome-ignore lint/performance/noAwaitInLoops: small fixed-size config file list
         const file = await this.safeReadFile(join(this.homeDir, ".ssh", sshFile), result);
         if (file) result.files.push(file);
       }
@@ -120,6 +122,7 @@ export class ShellConfigCollector extends BaseCollector {
         // Stat for modification time (useful for identifying stale keys)
         let modifiedAt: string | undefined;
         try {
+          // biome-ignore lint/performance/noAwaitInLoops: sequential directory entry processing with error isolation
           const info = await stat(join(sshDir, entry.name));
           modifiedAt = info.mtime.toISOString();
         } catch {

@@ -8,6 +8,8 @@ import { BaseCollector } from "./base.js";
 
 const execAsync = promisify(exec);
 
+const DOT_APP_SUFFIX = /\.app$/;
+
 /** Generate a deterministic icon URL from an app name and base URL */
 function iconUrl(appName: string, baseUrl: string): string {
   const hash = createHash("sha256").update(appName).digest("hex").slice(0, 12);
@@ -44,7 +46,7 @@ export class ApplicationsCollector extends BaseCollector {
   readonly label = "Installed Applications";
   readonly category: CollectorCategory = "environment";
 
-  async collect(): Promise<CollectorResult> {
+  collect(): Promise<CollectorResult> {
     return this.timed(async (result) => {
       const apps = new Map<string, CollectedListItem>();
 
@@ -65,10 +67,11 @@ export class ApplicationsCollector extends BaseCollector {
       for (const entry of entries) {
         if (!entry.isDirectory() || !entry.name.endsWith(".app")) continue;
 
-        const name = entry.name.replace(/\.app$/, "");
+        const name = entry.name.replace(DOT_APP_SUFFIX, "");
         const existing = apps.get(name);
         if (existing) continue;
 
+        // biome-ignore lint/performance/noAwaitInLoops: sequential directory entry processing with deduplication
         const version = await this.getAppVersion(appsDir, entry.name);
         const item: CollectedListItem = {
           name,

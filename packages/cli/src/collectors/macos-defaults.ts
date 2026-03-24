@@ -15,6 +15,7 @@ const DOMAINS = [
   "com.apple.screencapture",
 ];
 
+// biome-ignore lint/style/useNamingConvention: acronym in class name
 export class MacOSDefaultsCollector extends BaseCollector {
   readonly id = "macos-defaults";
   readonly label = "macOS System Preferences";
@@ -25,10 +26,11 @@ export class MacOSDefaultsCollector extends BaseCollector {
     return stdout;
   };
 
-  async collect(): Promise<CollectorResult> {
+  collect(): Promise<CollectorResult> {
     return this.timed(async (result) => {
       for (const domain of DOMAINS) {
         try {
+          // biome-ignore lint/performance/noAwaitInLoops: sequential shell command execution
           const content = await this._execCommand(`defaults export ${domain} -`);
           const file: CollectedFile = {
             path: `macos-defaults/${domain}.plist`,

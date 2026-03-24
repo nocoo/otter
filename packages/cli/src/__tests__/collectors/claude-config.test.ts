@@ -181,6 +181,7 @@ describe("ClaudeConfigCollector", () => {
       ["proj2", "/Users/test/project-b"],
     ] as const) {
       const dir = join(claudeDir, "projects", hash);
+      // biome-ignore lint/performance/noAwaitInLoops: small fixed-size test setup loop
       await mkdir(dir, { recursive: true });
       await writeFile(
         join(dir, "sessions-index.json"),

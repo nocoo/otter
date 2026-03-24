@@ -60,15 +60,16 @@ export async function uploadIconsToServer(
   const start = performance.now();
 
   try {
-    // Read and encode all icons
-    const payload: Array<{ hash: string; data: string }> = [];
-    for (const icon of icons) {
-      const buffer = await readFile(icon.pngPath);
-      payload.push({
-        hash: hashAppName(icon.appName),
-        data: buffer.toString("base64"),
-      });
-    }
+    // Read and encode all icons in parallel
+    const payload = await Promise.all(
+      icons.map(async (icon) => {
+        const buffer = await readFile(icon.pngPath);
+        return {
+          hash: hashAppName(icon.appName),
+          data: buffer.toString("base64"),
+        };
+      }),
+    );
 
     const response = await fetch(config.iconsUrl, {
       method: "POST",

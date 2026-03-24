@@ -3,6 +3,8 @@ import pc from "picocolors";
 import type { SnapshotMeta } from "../storage/local.js";
 import { type Column, formatDate, formatSize, S, type TreeChild, table, tree } from "../ui.js";
 
+const HOME_DIR_PREFIX = /^\/Users\/[^/]+/;
+
 // ── snapshot list ───────────────────────────────────────────────────
 
 /**
@@ -40,6 +42,7 @@ export function formatSnapshotList(metas: SnapshotMeta[]): string {
 /**
  * Format a detailed view of a single snapshot.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: multi-section tree builder
 export function formatSnapshotDetail(snapshot: Snapshot): string {
   const lines: string[] = [];
   const m = snapshot.machine;
@@ -63,7 +66,7 @@ export function formatSnapshotDetail(snapshot: Snapshot): string {
     // Files
     for (const f of c.files) {
       // Shorten home dir paths for readability
-      const shortPath = f.path.replace(/^\/Users\/[^/]+/, "~");
+      const shortPath = f.path.replace(HOME_DIR_PREFIX, "~");
       children.push({ text: shortPath, detail: formatSize(f.sizeBytes) });
     }
 
@@ -229,6 +232,7 @@ function diffLists(
 /**
  * Format a diff result for terminal output using tree views.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: multi-section diff formatter
 export function formatSnapshotDiff(diff: SnapshotDiffResult): string {
   const lines: string[] = [];
 

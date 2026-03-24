@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { formatSize } from "@/lib/utils";
 
+const WHITESPACE_SPLIT = /\s+/;
+
 // ---------------------------------------------------------------------------
 // Theme detection (reuses the app's class-based dark mode)
 // ---------------------------------------------------------------------------
@@ -101,10 +103,15 @@ const EXT_LANG_MAP: Record<string, string> = {
 
 /** Known full filenames that map to a language */
 const FILENAME_LANG_MAP: Record<string, string> = {
+  // biome-ignore lint/style/useNamingConvention: real filename
   Brewfile: "ruby",
+  // biome-ignore lint/style/useNamingConvention: real filename
   Gemfile: "ruby",
+  // biome-ignore lint/style/useNamingConvention: real filename
   Makefile: "makefile",
+  // biome-ignore lint/style/useNamingConvention: real filename
   Dockerfile: "dockerfile",
+  // biome-ignore lint/style/useNamingConvention: real filename
   CLAUDE: "markdown",
   "CLAUDE.md": "markdown",
   ".gitconfig": "ini",
@@ -137,7 +144,7 @@ interface FileStats {
 
 function computeFileStats(content: string, sizeBytes: number): FileStats {
   const lines = content.split("\n").length;
-  const words = content.trim() === "" ? 0 : content.trim().split(/\s+/).length;
+  const words = content.trim() === "" ? 0 : content.trim().split(WHITESPACE_SPLIT).length;
   return { size: sizeBytes, lines, words };
 }
 
@@ -247,6 +254,7 @@ interface FileViewerDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: multi-state code viewer
 export function FileViewerDialog({ file, open, onOpenChange }: FileViewerDialogProps) {
   const isDark = useIsDark();
   const [tokens, setTokens] = useState<ThemedToken[][] | null>(null);

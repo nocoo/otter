@@ -5,6 +5,15 @@ import { BaseCollector } from "./base.js";
 
 const execAsync = promisify(exec);
 
+const FNM_VERSION_PATTERN = /v(\d+\.\d+\.\d+)/;
+const DASHES_ONLY_LINE = /^-+$/;
+const VOLTA_TOOL_LINE = /^(node|npm|yarn|pnpm)\s+/;
+const WHITESPACE_SPLIT = /\s+/;
+const BUN_TREE_PREFIX = /^[├└─\s]+/;
+const RUSTUP_ANNOTATION = /\s*\((?:active(?:,\s*)?)?default\)/;
+const CARGO_INSTALL_LINE = /^([^\s]+) v([^:]+):?$/;
+const GO_VERSION_PATTERN = /go version go([^\s]+)/;
+
 function lines(output: string): string[] {
   return output
     .split("\n")
@@ -13,7 +22,7 @@ function lines(output: string): string[] {
 }
 
 function parseFnmVersion(line: string): string | null {
-  const versionMatch = line.match(/v(\d+\.\d+\.\d+)/);
+  const versionMatch = line.match(FNM_VERSION_PATTERN);
   return versionMatch?.[1] ?? null;
 }
 
@@ -29,7 +38,7 @@ function parseInstalledRustToolchains(output: string): string[] {
       if (toolchains.length > 0) break;
       continue;
     }
-    if (/^-+$/.test(line)) continue;
+    if (DASHES_ONLY_LINE.test(line)) continue;
     if (line.endsWith(":")) break;
     toolchains.push(line);
   }
@@ -47,7 +56,7 @@ export class DevToolchainCollector extends BaseCollector {
     return stdout;
   };
 
-  async collect(): Promise<CollectorResult> {
+  collect(): Promise<CollectorResult> {
     return this.timed(async (result) => {
       result.lists.push(...(await this.collectFnm(result)));
       result.lists.push(...(await this.collectVolta(result)));
@@ -90,9 +99,9 @@ export class DevToolchainCollector extends BaseCollector {
     try {
       const output = await this._execCommand("volta list all");
       return lines(output)
-        .filter((line) => /^(node|npm|yarn|pnpm)\s+/.test(line))
+        .filter((line) => VOLTA_TOOL_LINE.test(line))
         .flatMap((line) => {
-          const parts = line.split(/\s+/);
+          const parts = line.split(WHITESPACE_SPLIT);
           const tool = parts[0];
           const version = parts[1];
           if (!tool) return [];
@@ -133,7 +142,7 @@ export class DevToolchainCollector extends BaseCollector {
     try {
       const output = await this._execCommand("bun pm ls -g");
       return lines(output)
-        .map((line) => line.replace(/^[├└─\s]+/, "").trim())
+        .map((line) => line.replace(BUN_TREE_PREFIX, "").trim())
         .filter((line) => line.includes("@"))
         .map((line) => {
           const atIndex = line.lastIndexOf("@");
@@ -158,7 +167,7 @@ export class DevToolchainCollector extends BaseCollector {
       return parseInstalledRustToolchains(output).map((line) => {
         const isDefault = line.includes("default");
         const isActive = line.includes("active");
-        const name = line.replace(/\s*\((?:active(?:,\s*)?)?default\)/, "").trim();
+        const name = line.replace(RUSTUP_ANNOTATION, "").trim();
         return {
           name,
           meta: {
@@ -180,7 +189,7 @@ export class DevToolchainCollector extends BaseCollector {
       const items: CollectedListItem[] = [];
       for (const line of lines(output)) {
         if (!line.includes(" v")) continue;
-        const match = line.match(/^([^\s]+) v([^:]+):?$/);
+        const match = line.match(CARGO_INSTALL_LINE);
         if (!match) continue;
         const matchedName = match[1];
         const matchedVersion = match[2];
@@ -229,7 +238,7 @@ export class DevToolchainCollector extends BaseCollector {
   private async collectGo(result: CollectorResult): Promise<CollectedListItem[]> {
     try {
       const output = await this._execCommand("go version");
-      const match = output.match(/go version go([^\s]+)/);
+      const match = output.match(GO_VERSION_PATTERN);
       if (!match?.[1]) return [];
       return [
         {

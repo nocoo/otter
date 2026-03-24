@@ -20,7 +20,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs,json,jsonc,css}": [
-      "bunx biome check --write --no-errors-on-unmatched --files-ignore-unknown=true"
+      "bunx biome check --write --error-on-warnings --no-errors-on-unmatched --files-ignore-unknown=true"
     ]
   },
   "devDependencies": {

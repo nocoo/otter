@@ -111,14 +111,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       return true;
     },
-    async jwt({ token, profile }) {
+    jwt({ token, profile }) {
       // On initial sign-in, persist Google sub as user ID in JWT
       if (profile?.sub) {
         token.userId = profile.sub;
       }
       return token;
     },
-    async session({ session, token }) {
+    session({ session, token }) {
       // Expose user ID on the session object
       if (token.userId) {
         session.user.id = token.userId as string;
