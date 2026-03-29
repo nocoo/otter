@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.4] - 2026-03-30
+
+### Fixes
+
+- **Biome G1 strict compliance**: Upgraded all linter rules from `warn` to `error` level for full G1 gate compliance
+- **Transitive dependency vulnerabilities**: Pinned `brace-expansion >=5.0.5`, `path-to-regexp >=8.4.0`, `picomatch >=4.0.4` via overrides to resolve 8 osv-scanner findings (3 High, 5 Medium)
+
+### Chores
+
+- Removed unused `eslint` and `eslint-config-next` from web devDependencies
+
 ## [1.3.3] - 2026-03-24
 
 ### Quality
