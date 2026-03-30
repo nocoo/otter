@@ -41,7 +41,7 @@ const TARGETED_FILES: Array<{ path: string; redact?: boolean; maxSize?: number; 
     { path: "stats-cache.json" }, // aggregate usage stats
     { path: "plugins/installed_plugins.json" }, // plugin inventory
     { path: "plugins/blocklist.json" }, // plugin blocklist
-    { path: "history.jsonl", redact: true, maxSize: 2 * 1024 * 1024, slim: true }, // prompt history (excluded in slim mode)
+    { path: "history.jsonl", redact: true, maxSize: 5 * 1024 * 1024, slim: true }, // prompt history (excluded in slim mode)
   ];
 
 /**
