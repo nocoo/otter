@@ -7,7 +7,7 @@ vi.mock("@/lib/cf/d1", () => ({
 
 // Mock version
 vi.mock("@/lib/version", () => ({
-  APP_VERSION: "1.3.4",
+  APP_VERSION: "1.3.5",
 }));
 
 import { GET } from "@/app/api/live/route";
@@ -42,7 +42,7 @@ describe("GET /api/live", () => {
 
     // System metadata
     expect(body.system).toBeDefined();
-    expect(body.system.version).toBe("1.3.4");
+    expect(body.system.version).toBe("1.3.5");
     expect(typeof body.system.node).toBe("string");
     expect(typeof body.system.uptime).toBe("number");
     expect(typeof body.system.env).toBe("string");

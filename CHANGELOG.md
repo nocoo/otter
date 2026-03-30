@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.5] - 2026-03-30
+
+### Fixes
+
+- **Claude config collector**: Raised `history.jsonl` max size from 2MB to 5MB to prevent "exceeds size limit" error on large prompt histories
+
 ## [1.3.4] - 2026-03-30
 
 ### Fixes
