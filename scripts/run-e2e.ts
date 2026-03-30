@@ -12,7 +12,7 @@
 import { type Subprocess, spawn } from "bun";
 import { buildE2eEnv, cleanupBuildDir, ensurePortFree } from "./e2e-utils";
 
-const E2E_PORT = process.env.E2E_PORT || "17029";
+const E2E_PORT = process.env.E2E_PORT || "17019";
 const E2E_DIST_DIR = "packages/web/.next-e2e";
 
 let serverProcess: Subprocess | null = null;

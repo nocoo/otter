@@ -44,6 +44,6 @@ CLI package `@nocoo/otter` is published to npm. Steps to release a new version:
 | L1 | 444+ vitest tests, 90%/89% coverage thresholds | pre-commit |
 | tsc | TypeScript strict type check + 5 extras (core → cli → web) | pre-commit |
 | G2 | osv-scanner (0 vulns) + gitleaks (0 leaks) | pre-push |
-| L2 | 4 API E2E tests on real HTTP (:17029) | pre-push |
-| L3 | 6 Playwright specs / 28 tests (:27029) | pre-push |
+| L2 | 4 API E2E tests on real HTTP (:17019) | pre-push |
+| L3 | 6 Playwright specs / 28 tests (:27019) | pre-push |
 | D1 | `otter-db-test` D1 + `otter-snapshots-test` R2 (env override + guard + marker) | E2E runner |

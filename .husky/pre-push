@@ -20,7 +20,7 @@ if [ $GITLEAKS_EXIT -ne 0 ]; then
   exit 1
 fi
 
-# L2: API E2E Tests (port 17029)
+# L2: API E2E Tests (port 17019)
 echo "🧪 L2: Running API E2E tests..."
 bun run test:e2e 2>&1
 E2E_EXIT=$?
@@ -30,7 +30,7 @@ if [ $E2E_EXIT -ne 0 ]; then
   exit 1
 fi
 
-# L3: Playwright Browser E2E Tests (port 27029)
+# L3: Playwright Browser E2E Tests (port 27019)
 echo "🧪 L3: Running Playwright E2E tests..."
 bun run test:e2e:ui 2>&1
 PW_EXIT=$?

@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const E2E_UI_PORT = process.env.E2E_UI_PORT || "27029";
+const E2E_UI_PORT = process.env.E2E_UI_PORT || "27019";
 
 export default defineConfig({
   testDir: "./tests",

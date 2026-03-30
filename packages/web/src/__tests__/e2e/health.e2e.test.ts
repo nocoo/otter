@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from "bun:test";
 
-const BASE_URL = `http://localhost:${process.env.E2E_PORT || "17029"}`;
+const BASE_URL = `http://localhost:${process.env.E2E_PORT || "17019"}`;
 
 describe("L3 API E2E: Health", () => {
   it("GET /login returns 200", async () => {

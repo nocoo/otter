@@ -12,7 +12,7 @@
 
 import { afterAll, describe, expect, it } from "bun:test";
 
-const BASE_URL = `http://localhost:${process.env.E2E_PORT || "17029"}`;
+const BASE_URL = `http://localhost:${process.env.E2E_PORT || "17019"}`;
 
 // Track created webhook IDs for cleanup
 const createdIds: string[] = [];

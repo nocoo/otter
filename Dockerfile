@@ -20,13 +20,13 @@ FROM oven/bun:1 AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=7029
+ENV PORT=7019
 
 # Copy built assets and dependencies
 COPY --from=builder /app/packages/web/.next/standalone ./
 COPY --from=builder /app/packages/web/.next/static ./packages/web/.next/static
 COPY --from=builder /app/packages/web/public ./packages/web/public
 
-EXPOSE 7029
+EXPOSE 7019
 
 CMD ["bun", "packages/web/server.js"]

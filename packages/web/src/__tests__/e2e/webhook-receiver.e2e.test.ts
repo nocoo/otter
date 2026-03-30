@@ -19,7 +19,7 @@ import {
   getRichSnapshotCounts,
 } from "../../../test-support/rich-snapshot";
 
-const BASE_URL = `http://localhost:${process.env.E2E_PORT || "17029"}`;
+const BASE_URL = `http://localhost:${process.env.E2E_PORT || "17019"}`;
 
 // Track resources for cleanup
 let webhookId: string | null = null;

@@ -144,8 +144,8 @@ collector._execCommand = async (cmd: string) => "package1\npackage2\n";
 
 ### L3 / L4 约定
 
-- L3 使用独立 dev server，端口默认 `17029`
-- L4 使用独立 dev server，端口默认 `27029`
+- L3 使用独立 dev server，端口默认 `17019`
+- L4 使用独立 dev server，端口默认 `27019`
 - 两层都通过 `E2E_SKIP_AUTH=true` 绕过真实登录
 - L4 新增 rich snapshot fixture，验证 collector `meta` 在 dashboard 中可视化
 
