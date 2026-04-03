@@ -6,14 +6,15 @@ import {
   Clock,
   ExternalLink,
   FileText,
-  List,
   type LucideIcon,
   Monitor,
+  TrendingUp,
   Webhook,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AreaChart, type AreaChartDataPoint } from "@/components/charts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatSize } from "@/lib/utils";
 
@@ -46,6 +47,7 @@ interface WebhookRow {
 
 interface DashboardData {
   snapshots: SnapshotRow[];
+  allSnapshots: SnapshotRow[]; // For trend aggregation
   totalSnapshots: number;
   webhooks: WebhookRow[];
 }
@@ -66,6 +68,40 @@ function formatTimeAgo(ts: number): string {
   if (days < 30) return `${Math.floor(days / 7)}w ago`;
   if (days < 365) return `${Math.floor(days / 30)}mo ago`;
   return `${Math.floor(days / 365)}y ago`;
+}
+
+/** Aggregate snapshots into daily counts for the last 7 days */
+function aggregateSnapshotsByDay(snapshots: SnapshotRow[]): AreaChartDataPoint[] {
+  const now = Date.now();
+  const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+  const days: { [key: string]: number } = {};
+
+  // Initialize last 7 days with 0
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(now - i * 24 * 60 * 60 * 1000);
+    const key = date.toLocaleDateString("en-US", { weekday: "short" });
+    days[key] = 0;
+  }
+
+  // Count snapshots per day
+  for (const snap of snapshots) {
+    if (snap.snapshotAt >= sevenDaysAgo) {
+      const date = new Date(snap.snapshotAt);
+      const key = date.toLocaleDateString("en-US", { weekday: "short" });
+      if (key in days) {
+        days[key] = (days[key] ?? 0) + 1;
+      }
+    }
+  }
+
+  // Convert to ordered array
+  const result: AreaChartDataPoint[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(now - i * 24 * 60 * 60 * 1000);
+    const key = date.toLocaleDateString("en-US", { weekday: "short" });
+    result.push({ label: key, value: days[key] ?? 0 });
+  }
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -147,27 +183,16 @@ function DashboardSkeleton() {
           </div>
         </div>
 
-        {/* Activity Feed skeleton (1/3 width) */}
+        {/* Backup Trend skeleton (1/3 width) */}
         <div className="rounded-[var(--radius-card)] bg-secondary p-4 md:p-5">
-          <Skeleton className="h-4 w-20 mb-4" />
-          <div className="space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex gap-3">
-                <Skeleton className="mt-1.5 h-1.5 w-1.5 rounded-full shrink-0" />
-                <div className="flex-1 space-y-1">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-3 w-16" />
-                </div>
-              </div>
-            ))}
-          </div>
+          <Skeleton className="h-4 w-28 mb-4" />
+          <Skeleton className="h-[160px] w-full rounded" />
         </div>
       </div>
     </div>
   );
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: multi-state UI rendering
 export default function DashboardPage() {
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
@@ -179,8 +204,9 @@ export default function DashboardPage() {
     async function fetchDashboard() {
       setLoading(true);
       try {
-        const [snapshotsRes, webhooksRes] = await Promise.all([
-          fetch("/api/snapshots?limit=5"),
+        const [snapshotsRes, recentSnapshotsRes, webhooksRes] = await Promise.all([
+          fetch("/api/snapshots?limit=50"), // For trend aggregation
+          fetch("/api/snapshots?limit=5"), // For recent list
           fetch("/api/webhooks"),
         ]);
 
@@ -188,16 +214,22 @@ export default function DashboardPage() {
           const body = await snapshotsRes.json().catch(() => null);
           throw new Error(body?.error ?? `Failed to load snapshots (${snapshotsRes.status})`);
         }
+        if (!recentSnapshotsRes.ok) {
+          const body = await recentSnapshotsRes.json().catch(() => null);
+          throw new Error(body?.error ?? `Failed to load snapshots (${recentSnapshotsRes.status})`);
+        }
         if (!webhooksRes.ok) {
           const body = await webhooksRes.json().catch(() => null);
           throw new Error(body?.error ?? `Failed to load webhooks (${webhooksRes.status})`);
         }
 
         const snapshotsData = await snapshotsRes.json();
+        const recentSnapshotsData = await recentSnapshotsRes.json();
         const webhooksData = await webhooksRes.json();
 
         setData({
-          snapshots: snapshotsData.snapshots,
+          snapshots: recentSnapshotsData.snapshots,
+          allSnapshots: snapshotsData.snapshots,
           totalSnapshots: snapshotsData.total,
           webhooks: webhooksData.webhooks,
         });
@@ -237,11 +269,8 @@ export default function DashboardPage() {
     },
   ];
 
-  // Build activity feed from real snapshots
-  const activities = (data?.snapshots ?? []).map((snap) => ({
-    message: `Snapshot received from ${snap.hostname}`,
-    timeAgo: formatTimeAgo(snap.uploadedAt),
-  }));
+  // Aggregate snapshots by day for the trend chart
+  const trendData = aggregateSnapshotsByDay(data?.allSnapshots ?? []);
 
   return (
     <div className="space-y-8">
@@ -363,28 +392,14 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Activity Feed (1/3 width) */}
+            {/* Backup Trend (1/3 width) */}
             <div className="rounded-[var(--radius-card)] bg-secondary p-4 md:p-5">
-              <h2 className="text-sm font-medium text-foreground mb-4">Activity</h2>
-              {activities.length === 0 ? (
-                <div className="py-8 text-center">
-                  <List className="h-6 w-6 text-muted-foreground/40 mx-auto" strokeWidth={1.5} />
-                  <p className="mt-2 text-xs text-muted-foreground">No activity yet</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {activities.map((item, i) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: static display list with no reordering
-                    <div key={i} className="flex gap-3">
-                      <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
-                      <div className="min-w-0">
-                        <p className="text-sm text-foreground leading-snug">{item.message}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{item.timeAgo}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="h-4 w-4 text-primary" strokeWidth={1.5} />
+                <h2 className="text-sm font-medium text-foreground">Backup Trend</h2>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">Last 7 days</p>
+              <AreaChart data={trendData} height={160} showGrid={false} />
             </div>
           </div>
         </>

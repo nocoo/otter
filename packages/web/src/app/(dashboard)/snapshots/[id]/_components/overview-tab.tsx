@@ -11,6 +11,7 @@ import {
   SkipForward,
   User,
 } from "lucide-react";
+import { BarChart, DonutChart } from "@/components/charts";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatSize } from "@/lib/utils";
@@ -77,6 +78,12 @@ function CollectorSummaryCard({ collectors }: { collectors: Collector[] }) {
     },
   ];
 
+  // Data for donut chart
+  const donutData = [
+    { name: "Config", value: configCollectors.length },
+    { name: "Environment", value: envCollectors.length },
+  ].filter((d) => d.value > 0);
+
   return (
     <Card className="gap-0 py-0">
       <CardHeader className="gap-0 px-5 py-4 border-b border-border/40">
@@ -84,28 +91,65 @@ function CollectorSummaryCard({ collectors }: { collectors: Collector[] }) {
         <CardDescription>{collectors.length} collectors captured in this snapshot</CardDescription>
       </CardHeader>
       <CardContent className="px-5 py-4">
-        <div className="space-y-3">
-          {rows.map((row) => (
-            <div key={row.label} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">{row.label}</span>
-                <Badge variant="secondary" className="text-[10px] font-normal">
-                  {row.count}
-                </Badge>
+        <div className="grid gap-6 sm:grid-cols-2">
+          {/* Donut Chart */}
+          <div className="flex items-center justify-center">
+            <DonutChart data={donutData} height={140} showLegend={false} />
+          </div>
+          {/* Stats */}
+          <div className="space-y-3">
+            {rows.map((row) => (
+              <div key={row.label} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">{row.label}</span>
+                  <Badge variant="secondary" className="text-[10px] font-normal">
+                    {row.count}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <FileText className="h-3 w-3" strokeWidth={1.5} />
+                    {row.files} file{row.files !== 1 ? "s" : ""}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <List className="h-3 w-3" strokeWidth={1.5} />
+                    {row.items} item{row.items !== 1 ? "s" : ""}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <FileText className="h-3 w-3" strokeWidth={1.5} />
-                  {row.files} file{row.files !== 1 ? "s" : ""}
-                </span>
-                <span className="flex items-center gap-1">
-                  <List className="h-3 w-3" strokeWidth={1.5} />
-                  {row.items} item{row.items !== 1 ? "s" : ""}
-                </span>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Top collectors by file count
+// ---------------------------------------------------------------------------
+
+function TopCollectorsCard({ collectors }: { collectors: Collector[] }) {
+  // Get top 5 collectors by file count
+  const topCollectors = [...collectors]
+    .map((c) => ({
+      name: c.label,
+      value: c.files.length,
+    }))
+    .filter((c) => c.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+
+  if (topCollectors.length === 0) return null;
+
+  return (
+    <Card className="gap-0 py-0">
+      <CardHeader className="gap-0 px-5 py-4 border-b border-border/40">
+        <CardTitle className="text-sm">Top Collectors</CardTitle>
+        <CardDescription>By number of files captured</CardDescription>
+      </CardHeader>
+      <CardContent className="px-5 py-4">
+        <BarChart data={topCollectors} height={160} layout="horizontal" />
       </CardContent>
     </Card>
   );
@@ -192,8 +236,14 @@ export function OverviewTab({ meta, collectors, totalFiles, totalLists }: Overvi
         <StatCard icon={HardDrive} label="Size" value={formatSize(meta.sizeBytes)} />
       </div>
 
-      {/* Collector summary */}
-      <CollectorSummaryCard collectors={collectors} />
+      {/* Charts row */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Collector summary with donut chart */}
+        <CollectorSummaryCard collectors={collectors} />
+
+        {/* Top collectors bar chart */}
+        <TopCollectorsCard collectors={collectors} />
+      </div>
 
       {/* Errors & skipped */}
       <IssuesCard collectors={collectors} />
