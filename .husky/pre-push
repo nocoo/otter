@@ -2,7 +2,7 @@
 
 # G2a: Dependency vulnerability scanning
 echo "🔍 G2a: Running osv-scanner..."
-osv-scanner scan --lockfile=bun.lock 2>&1
+osv-scanner scan --lockfile=bun.lock --config=.osv-scanner.toml 2>&1
 OSV_EXIT=$?
 
 if [ $OSV_EXIT -ne 0 ]; then

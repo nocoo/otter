@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.6] - 2026-04-04
+
+### Fixes
+
+- **B-1 Login security**: Added `sanitizeCallbackUrl()` to prevent open-redirect attacks via `callbackUrl` query parameter
+- **B-5 Dark mode**: Corrected L3 input brightness from 12% to 18% per Basalt color system standard
+
+### UI Improvements
+
+- **B-2 Version badge**: Aligned version badge styling to `rounded-md bg-secondary` per Basalt standard
+- **B-4 Skeleton loading**: Replaced spinner with proper skeleton states matching dashboard layout structure
+- **StatCard styling**: Updated to use `--radius-card` and added icon container with L1 background for visual depth
+
+### Chores
+
+- **B-3 Logo naming**: Renamed `otter.png` to `logo.png` (Basalt standard naming convention)
+- **Dev port migration**: Changed dev server port from 7029 to 7019
+
 ## [1.3.5] - 2026-03-30
 
 ### Fixes
