@@ -4,6 +4,7 @@ import {
   Archive,
   ArrowRight,
   Clock,
+  ExternalLink,
   FileText,
   List,
   type LucideIcon,
@@ -11,6 +12,7 @@ import {
   Webhook,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatSize } from "@/lib/utils";
@@ -167,6 +169,7 @@ function DashboardSkeleton() {
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: multi-state UI rendering
 export default function DashboardPage() {
+  const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -319,18 +322,19 @@ export default function DashboardPage() {
                     </thead>
                     <tbody>
                       {data?.snapshots.map((snap) => (
-                        <tr key={snap.id} className="border-b border-border/50 last:border-0">
+                        <tr
+                          key={snap.id}
+                          className="group border-b border-border/50 last:border-0 hover:bg-accent/50 transition-colors cursor-pointer"
+                          onClick={() => router.push(`/snapshots/${snap.id}`)}
+                        >
                           <td className="py-2.5 pr-4">
-                            <Link
-                              href={`/snapshots/${snap.id}`}
-                              className="flex items-center gap-2 hover:text-primary transition-colors"
-                            >
+                            <div className="flex items-center gap-2 group-hover:text-primary transition-colors">
                               <Monitor
-                                className="h-3.5 w-3.5 text-muted-foreground"
+                                className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors"
                                 strokeWidth={1.5}
                               />
                               <span className="font-medium">{snap.hostname}</span>
-                            </Link>
+                            </div>
                           </td>
                           <td className="py-2.5 pr-4 text-muted-foreground">
                             {snap.platform}/{snap.arch}
@@ -340,8 +344,16 @@ export default function DashboardPage() {
                           <td className="py-2.5 pr-4 text-right tabular-nums text-muted-foreground">
                             {formatSize(snap.sizeBytes)}
                           </td>
-                          <td className="py-2.5 text-right text-muted-foreground text-xs">
-                            {formatTimeAgo(snap.snapshotAt)}
+                          <td className="py-2.5 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <span className="text-muted-foreground text-xs">
+                                {formatTimeAgo(snap.snapshotAt)}
+                              </span>
+                              <ExternalLink
+                                className="h-3.5 w-3.5 text-muted-foreground/0 group-hover:text-muted-foreground transition-colors"
+                                strokeWidth={1.5}
+                              />
+                            </div>
                           </td>
                         </tr>
                       ))}

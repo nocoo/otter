@@ -1,7 +1,7 @@
 "use client";
 
-import { Archive, ChevronLeft, ChevronRight, Monitor, Search } from "lucide-react";
-import Link from "next/link";
+import { Archive, ChevronLeft, ChevronRight, ExternalLink, Monitor, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -158,6 +158,7 @@ function SnapshotsPageSkeleton() {
 // ---------------------------------------------------------------------------
 
 export default function SnapshotsPage() {
+  const router = useRouter();
   const [snapshots, setSnapshots] = useState<SnapshotRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -304,19 +305,17 @@ export default function SnapshotsPage() {
                   {snapshots.map((snap) => (
                     <tr
                       key={snap.id}
-                      className="border-b border-border/50 last:border-0 hover:bg-accent/50 transition-colors"
+                      className="group border-b border-border/50 last:border-0 hover:bg-accent/50 transition-colors cursor-pointer"
+                      onClick={() => router.push(`/snapshots/${snap.id}`)}
                     >
                       <td className="px-4 py-3">
-                        <Link
-                          href={`/snapshots/${snap.id}`}
-                          className="inline-flex items-center gap-2 text-foreground hover:text-primary transition-colors"
-                        >
+                        <div className="inline-flex items-center gap-2 text-foreground group-hover:text-primary transition-colors">
                           <Archive
-                            className="h-3.5 w-3.5 text-muted-foreground"
+                            className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors"
                             strokeWidth={1.5}
                           />
                           <code className="text-xs font-mono">{snap.id.slice(0, 8)}</code>
-                        </Link>
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
@@ -339,13 +338,19 @@ export default function SnapshotsPage() {
                         {formatSize(snap.sizeBytes)}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <div className="flex flex-col items-end">
-                          <span className="text-xs text-muted-foreground">
-                            {formatTimeAgo(snap.snapshotAt)}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground/60">
-                            {formatDateTime(snap.snapshotAt)}
-                          </span>
+                        <div className="flex items-center justify-end gap-2">
+                          <div className="flex flex-col items-end">
+                            <span className="text-xs text-muted-foreground">
+                              {formatTimeAgo(snap.snapshotAt)}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground/60">
+                              {formatDateTime(snap.snapshotAt)}
+                            </span>
+                          </div>
+                          <ExternalLink
+                            className="h-3.5 w-3.5 text-muted-foreground/0 group-hover:text-muted-foreground transition-colors"
+                            strokeWidth={1.5}
+                          />
                         </div>
                       </td>
                     </tr>
