@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -135,10 +136,7 @@ export default function CliConnectPage() {
       </div>
 
       {loading ? (
-        <div className="rounded-xl bg-secondary p-8 text-center">
-          <Loader2 className="h-8 w-8 text-muted-foreground/40 mx-auto animate-spin" />
-          <p className="mt-3 text-sm text-muted-foreground">Loading webhooks...</p>
-        </div>
+        <WebhooksConnectSkeleton />
       ) : error ? (
         <div className="rounded-xl bg-secondary p-8 text-center">
           <p className="text-sm text-destructive">{error}</p>
@@ -212,6 +210,29 @@ function Header() {
     <div>
       <h1 className="text-2xl font-semibold tracking-tight">Connect CLI</h1>
       <p className="text-sm text-muted-foreground">Link your Otter CLI to this dashboard</p>
+    </div>
+  );
+}
+
+function WebhooksConnectSkeleton() {
+  return (
+    <div className="space-y-3">
+      <Skeleton className="h-4 w-48" />
+      {Array.from({ length: 2 }).map((_, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton cards are static, never reorder
+        <div key={`connect-skeleton-${i}`} className="rounded-xl bg-card p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="h-4 w-4" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-5 w-14 rounded-full" />
+            </div>
+            <Skeleton className="h-8 w-24 rounded-md" />
+          </div>
+          <Skeleton className="h-9 w-full rounded-lg" />
+          <Skeleton className="h-3 w-48" />
+        </div>
+      ))}
     </div>
   );
 }

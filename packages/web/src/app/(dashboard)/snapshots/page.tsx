@@ -1,10 +1,11 @@
 "use client";
 
-import { Archive, ChevronLeft, ChevronRight, Loader2, Monitor, Search } from "lucide-react";
+import { Archive, ChevronLeft, ChevronRight, Monitor, Search } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatSize } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -58,6 +59,99 @@ function formatDateTime(ts: number): string {
 // ---------------------------------------------------------------------------
 
 const PAGE_SIZE = 20;
+
+// ---------------------------------------------------------------------------
+// Skeleton
+// ---------------------------------------------------------------------------
+
+function SnapshotsPageSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* Header skeleton */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-4 w-64 mt-2" />
+        </div>
+        <Skeleton className="h-10 w-full sm:w-64" />
+      </div>
+
+      {/* Table skeleton */}
+      <div className="rounded-xl bg-secondary p-1">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="px-4 py-3 text-left">
+                  <Skeleton className="h-3 w-16" />
+                </th>
+                <th className="px-4 py-3 text-left">
+                  <Skeleton className="h-3 w-10" />
+                </th>
+                <th className="px-4 py-3 text-left">
+                  <Skeleton className="h-3 w-16" />
+                </th>
+                <th className="px-4 py-3 text-right">
+                  <Skeleton className="h-3 w-16 ml-auto" />
+                </th>
+                <th className="px-4 py-3 text-right">
+                  <Skeleton className="h-3 w-10 ml-auto" />
+                </th>
+                <th className="px-4 py-3 text-right">
+                  <Skeleton className="h-3 w-10 ml-auto" />
+                </th>
+                <th className="px-4 py-3 text-right">
+                  <Skeleton className="h-3 w-10 ml-auto" />
+                </th>
+                <th className="px-4 py-3 text-right">
+                  <Skeleton className="h-3 w-16 ml-auto" />
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 5 }).map((_, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows are static, never reorder
+                <tr key={`skeleton-row-${i}`} className="border-b border-border/50 last:border-0">
+                  <td className="px-4 py-3">
+                    <Skeleton className="h-4 w-20" />
+                  </td>
+                  <td className="px-4 py-3">
+                    <Skeleton className="h-4 w-24" />
+                  </td>
+                  <td className="px-4 py-3">
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Skeleton className="h-4 w-6 ml-auto" />
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Skeleton className="h-4 w-8 ml-auto" />
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Skeleton className="h-4 w-6 ml-auto" />
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Skeleton className="h-4 w-12 ml-auto" />
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Skeleton className="h-3 w-12 ml-auto" />
+                    <Skeleton className="h-2 w-20 ml-auto mt-1" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Pagination skeleton */}
+      <div className="flex items-center justify-between px-2">
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-8 w-32" />
+      </div>
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Components
@@ -149,10 +243,7 @@ export default function SnapshotsPage() {
 
       {/* Content */}
       {loading ? (
-        <div className="rounded-xl bg-secondary p-12 text-center">
-          <Loader2 className="h-8 w-8 text-muted-foreground/40 mx-auto animate-spin" />
-          <p className="mt-3 text-sm text-muted-foreground">Loading snapshots...</p>
-        </div>
+        <SnapshotsPageSkeleton />
       ) : error ? (
         <div className="rounded-xl bg-secondary p-12 text-center">
           <p className="text-sm text-destructive">{error}</p>

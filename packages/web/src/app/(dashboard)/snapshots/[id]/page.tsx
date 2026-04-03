@@ -1,14 +1,81 @@
 "use client";
 
-import { Globe, Loader2, Settings } from "lucide-react";
+import { Globe, Settings } from "lucide-react";
 import { use, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CollectorsTab } from "./_components/collectors-tab";
 import { ExportSection } from "./_components/export-section";
 import { formatDateTime } from "./_components/helpers";
 import { OverviewTab } from "./_components/overview-tab";
 import type { SnapshotData, SnapshotMeta } from "./_components/types";
+
+// ---------------------------------------------------------------------------
+// Skeleton
+// ---------------------------------------------------------------------------
+
+function SnapshotDetailSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* Header skeleton */}
+      <div>
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-8 w-56" />
+        </div>
+        <Skeleton className="h-4 w-40 mt-2" />
+      </div>
+
+      {/* Tabs skeleton */}
+      <div className="space-y-4">
+        <div className="flex gap-2">
+          <Skeleton className="h-9 w-24 rounded-md" />
+          <Skeleton className="h-9 w-28 rounded-md" />
+          <Skeleton className="h-9 w-32 rounded-md" />
+        </div>
+
+        {/* Overview content skeleton */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton cards are static, never reorder
+            <div key={`stat-${i}`} className="rounded-xl bg-card p-4 space-y-2">
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-8 w-12" />
+            </div>
+          ))}
+        </div>
+
+        {/* Collectors list skeleton */}
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton cards are static, never reorder
+            <div key={`collector-${i}`} className="rounded-xl bg-card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-8 w-8 rounded-lg" />
+                  <div>
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-3 w-24 mt-1" />
+                  </div>
+                </div>
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Export section skeleton */}
+      <div className="rounded-xl bg-secondary p-4">
+        <Skeleton className="h-4 w-32" />
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 
 export default function SnapshotDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -44,12 +111,7 @@ export default function SnapshotDetailPage({ params }: { params: Promise<{ id: s
   }, [id]);
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 text-muted-foreground/40 animate-spin" />
-        <p className="mt-3 text-sm text-muted-foreground">Loading snapshot...</p>
-      </div>
-    );
+    return <SnapshotDetailSkeleton />;
   }
 
   if (error || !meta || !data) {

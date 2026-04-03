@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatSize } from "@/lib/utils";
 
 const WHITESPACE_SPLIT = /\s+/;
@@ -361,8 +362,14 @@ export function FileViewerDialog({ file, open, onOpenChange }: FileViewerDialogP
         {/* Code editor area */}
         <div className="flex-1 overflow-auto min-h-0 py-2">
           {loading ? (
-            <div className={`flex items-center justify-center py-12 text-sm ${textSecondary}`}>
-              Loading...
+            <div className="px-4 py-4 space-y-2">
+              {Array.from({ length: 12 }).map((_, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: skeleton lines are static, never reorder
+                <div key={`code-line-${i}`} className="flex gap-4">
+                  <Skeleton className="h-4 w-8 shrink-0" />
+                  <Skeleton className="h-4" style={{ width: `${Math.random() * 40 + 40}%` }} />
+                </div>
+              ))}
             </div>
           ) : tokens ? (
             <CodeEditor tokens={tokens} lineCount={lineCount} isDark={isDark} />

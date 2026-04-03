@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 
 // ---------------------------------------------------------------------------
@@ -145,6 +146,42 @@ function WebhookRow({
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton
+// ---------------------------------------------------------------------------
+
+function WebhooksSkeleton() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 2 }).map((_, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton cards are static, never reorder
+        <div key={`webhook-skeleton-${i}`} className="rounded-xl bg-card p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="h-4 w-4" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-5 w-14 rounded-full" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-5 w-9 rounded-full" />
+              <Skeleton className="h-7 w-7 rounded-md" />
+            </div>
+          </div>
+          <Skeleton className="h-9 w-full rounded-lg" />
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-3 w-32" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 
 export default function SettingsPage() {
   const { data: session } = useSession();
@@ -354,10 +391,7 @@ export default function SettingsPage() {
         </p>
 
         {loading ? (
-          <div className="rounded-xl bg-secondary p-8 text-center">
-            <Loader2 className="h-8 w-8 text-muted-foreground/40 mx-auto animate-spin" />
-            <p className="mt-3 text-sm text-muted-foreground">Loading webhooks...</p>
-          </div>
+          <WebhooksSkeleton />
         ) : error ? (
           <div className="rounded-xl bg-secondary p-8 text-center">
             <p className="text-sm text-destructive">{error}</p>
