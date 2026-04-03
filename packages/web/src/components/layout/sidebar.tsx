@@ -128,7 +128,7 @@ export function Sidebar() {
                     className="shrink-0"
                   />
                   <span className="text-lg font-bold tracking-tighter">otter</span>
-                  <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-muted-foreground font-mono leading-none">
+                  <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground leading-none">
                     v{APP_VERSION}
                   </span>
                 </div>

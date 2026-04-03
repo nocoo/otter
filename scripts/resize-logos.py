@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Resize otter.png (transparent background) for different use cases.
+Resize logo.png (transparent background) for different use cases.
 
 Two distinct output categories:
 1. packages/web/public/  — assets referenced by <img src> in components
@@ -44,7 +44,7 @@ def main():
     app.mkdir(parents=True, exist_ok=True)
 
     # Load single source image (transparent background)
-    logo = Image.open(root / "otter.png").convert("RGBA")
+    logo = Image.open(root / "logo.png").convert("RGBA")
     print(f"Source logo: {logo.size}")
 
     # --- public/ : component-referenced assets only ---

@@ -6,13 +6,13 @@ import {
   Clock,
   FileText,
   List,
-  Loader2,
   type LucideIcon,
   Monitor,
   Webhook,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatSize } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -78,13 +78,88 @@ interface StatCardProps {
 
 function StatCard({ label, value, icon: Icon }: StatCardProps) {
   return (
-    <div className="rounded-xl bg-secondary p-5">
+    <div className="rounded-[var(--radius-card)] bg-secondary p-4 md:p-5">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">{label}</span>
-        <Icon className="h-4 w-4 text-primary" strokeWidth={1.5} />
+        <span className="text-xs md:text-sm text-muted-foreground">{label}</span>
+        <div className="rounded-md bg-card p-2">
+          <Icon className="h-5 w-5 text-primary" strokeWidth={1.5} />
+        </div>
       </div>
       <div className="mt-2">
-        <span className="text-2xl font-bold font-display">{value}</span>
+        <span className="text-2xl md:text-3xl font-semibold font-display tracking-tight">
+          {value}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function StatCardSkeleton() {
+  return (
+    <div className="rounded-[var(--radius-card)] bg-secondary p-4 md:p-5 space-y-3">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-3 w-20" />
+        <Skeleton className="h-9 w-9 rounded-md" />
+      </div>
+      <Skeleton className="h-7 w-28" />
+    </div>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <Skeleton className="h-7 w-32" />
+        <Skeleton className="mt-2 h-4 w-64" />
+      </div>
+
+      {/* Stats Cards Skeleton */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCardSkeleton />
+        <StatCardSkeleton />
+        <StatCardSkeleton />
+        <StatCardSkeleton />
+      </div>
+
+      {/* Two-column layout skeleton */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Recent Snapshots skeleton (2/3 width) */}
+        <div className="lg:col-span-2 rounded-[var(--radius-card)] bg-secondary p-4 md:p-5">
+          <div className="flex items-center justify-between mb-4">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-16" />
+          </div>
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center gap-4">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-12 ml-auto" />
+                <Skeleton className="h-4 w-12" />
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-14" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Activity Feed skeleton (1/3 width) */}
+        <div className="rounded-[var(--radius-card)] bg-secondary p-4 md:p-5">
+          <Skeleton className="h-4 w-20 mb-4" />
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex gap-3">
+                <Skeleton className="mt-1.5 h-1.5 w-1.5 rounded-full shrink-0" />
+                <div className="flex-1 space-y-1">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -173,14 +248,11 @@ export default function DashboardPage() {
         <p className="text-sm text-muted-foreground">Overview of your dev environment backups</p>
       </div>
 
-      {/* Loading */}
+      {/* Loading skeleton */}
       {loading ? (
-        <div className="rounded-xl bg-secondary p-12 text-center">
-          <Loader2 className="h-8 w-8 text-muted-foreground/40 mx-auto animate-spin" />
-          <p className="mt-3 text-sm text-muted-foreground">Loading dashboard...</p>
-        </div>
+        <DashboardSkeleton />
       ) : error ? (
-        <div className="rounded-xl bg-secondary p-12 text-center">
+        <div className="rounded-[var(--radius-card)] bg-secondary p-12 text-center">
           <p className="text-sm text-destructive">{error}</p>
           <button
             type="button"
@@ -202,7 +274,7 @@ export default function DashboardPage() {
           {/* Two-column layout: Recent Snapshots + Activity */}
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Recent Snapshots (2/3 width) */}
-            <div className="lg:col-span-2 rounded-xl bg-secondary p-5">
+            <div className="lg:col-span-2 rounded-[var(--radius-card)] bg-secondary p-4 md:p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-medium text-foreground">Recent Snapshots</h2>
                 <Link
@@ -280,7 +352,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Activity Feed (1/3 width) */}
-            <div className="rounded-xl bg-secondary p-5">
+            <div className="rounded-[var(--radius-card)] bg-secondary p-4 md:p-5">
               <h2 className="text-sm font-medium text-foreground mb-4">Activity</h2>
               {activities.length === 0 ? (
                 <div className="py-8 text-center">

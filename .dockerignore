@@ -15,6 +15,7 @@ packages/web/src/__tests__
 *.md
 !README.md
 otter.png
+logo.png
 .husky
 dist
 *.tsbuildinfo
