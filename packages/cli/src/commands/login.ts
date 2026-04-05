@@ -9,6 +9,15 @@ const TIMEOUT_MS = 30_000;
 const PORT_RANGE_START = 49152;
 const PORT_RANGE_END = 65535;
 
+/**
+ * Get Worker API URL for ingest endpoints.
+ * When set, CLI uploads go directly to the Worker instead of through Next.js.
+ * @returns The OTTER_API_URL env value, or undefined if not set
+ */
+export function getWorkerApiUrl(): string | undefined {
+  return process.env.OTTER_API_URL;
+}
+
 export interface LoginOptions {
   /** Use the dev host instead of production */
   dev?: boolean;
@@ -95,8 +104,16 @@ export function resolveHost(options: LoginOptions): string {
 
 /**
  * Build a webhook URL from host and token.
+ * If OTTER_API_URL env var is set, uses the Worker URL format (/ingest/{token}).
+ * Otherwise, uses the legacy Next.js URL format (/api/webhook/{token}).
  */
 export function buildWebhookUrl(host: string, token: string): string {
+  const workerUrl = getWorkerApiUrl();
+  if (workerUrl) {
+    // Worker URL format: https://api.otter.hexly.ai/ingest/{token}
+    return `${workerUrl}/ingest/${token}`;
+  }
+  // Legacy Next.js URL format: https://otter.hexly.ai/api/webhook/{token}
   return `${host}/api/webhook/${token}`;
 }
 

@@ -61,14 +61,34 @@ describe("resolveHost", () => {
 // ---------------------------------------------------------------------------
 
 describe("buildWebhookUrl", () => {
+  const originalEnv = process.env.OTTER_API_URL;
+
+  afterEach(() => {
+    // Restore original env
+    if (originalEnv === undefined) {
+      delete process.env.OTTER_API_URL;
+    } else {
+      process.env.OTTER_API_URL = originalEnv;
+    }
+  });
+
   it("should build webhook URL from host and token", () => {
+    delete process.env.OTTER_API_URL;
     const url = buildWebhookUrl("https://otter.hexly.ai", "abc-123");
     expect(url).toBe("https://otter.hexly.ai/api/webhook/abc-123");
   });
 
   it("should build dev webhook URL", () => {
+    delete process.env.OTTER_API_URL;
     const url = buildWebhookUrl("https://otter.dev.hexly.ai", "dev-token");
     expect(url).toBe("https://otter.dev.hexly.ai/api/webhook/dev-token");
+  });
+
+  it("should use OTTER_API_URL when set (Worker URL)", () => {
+    process.env.OTTER_API_URL = "https://api.otter.hexly.ai";
+    const url = buildWebhookUrl("https://otter.hexly.ai", "abc-123");
+    // Worker uses /ingest/{token} path
+    expect(url).toBe("https://api.otter.hexly.ai/ingest/abc-123");
   });
 });
 
