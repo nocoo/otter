@@ -118,7 +118,8 @@ const app = new Hono<{ Bindings: Bindings }>();
 
 // Global middleware
 app.use("*", logger());
-app.use("*", cors({ origin: "*" }));  // Worker 端跨域
+// 不启用全局 CORS — Worker 只接受 CLI 和 BFF 调用，不需要浏览器跨域
+// app.use("*", cors({ origin: "*" }));  // ❌ 禁止
 
 // Public routes (token-based auth in route)
 app.route("/ingest", ingestRoutes);
@@ -570,59 +571,123 @@ export default defineWorkersConfig({
 });
 ```
 
-#### 2. E2E 测试模式 (`X-Test-Mode` header)
+#### 2. E2E 测试：复用现有 E2E_SKIP_AUTH 机制
 
-Worker 需要支持测试模式，等价于 Next.js 的 `E2E_SKIP_AUTH`：
+**不引入新的 X-Test-Mode**。E2E 测试继续走完整调用链：
+
+```
+E2E 测试 → Next.js BFF (E2E_SKIP_AUTH=true) → Worker
+                  ↓
+         session.ts 返回 e2e-test-user
+                  ↓
+         BFF 添加 X-User-ID: e2e-test-user
+                  ↓
+         Worker 正常处理 (生产路径)
+```
+
+**为什么不在 Worker 加 X-Test-Mode**：
+- 会导致测试路径与生产路径分叉
+- 与 `apiKeyMiddleware` 的 `X-User-ID` 机制冲突
+- 现有 `E2E_SKIP_AUTH` 已经可以完成测试用户注入
+
+**Worker 无需任何测试特殊逻辑**，它只需要：
+1. 验证 `X-API-Key`
+2. 读取 `X-User-ID`
+3. 执行业务逻辑
+
+测试隔离通过 **资源层面** 实现（见下方），而非鉴权层面。
+
+#### 3. 测试资源隔离：Worker 端 Fail-Fast 校验
+
+Worker 必须在启动时和首次数据库访问时执行资源隔离校验，**强制执行环境**：
+- `test` 环境
+- `staging` 环境（可选，取决于是否共享生产资源）
+
+**实现位置**：`packages/worker/src/middleware/env-guard.ts`
 
 ```typescript
-// packages/worker/src/middleware/test-mode.ts
+// packages/worker/src/middleware/env-guard.ts
 import { Context, Next } from "hono";
 
-export async function testModeMiddleware(c: Context, next: Next) {
-  // 仅在测试环境启用
-  if (c.env.ENVIRONMENT !== "test" && c.env.ENVIRONMENT !== "staging") {
-    return next();
+/**
+ * 资源隔离守卫 — 防止测试流量写入生产资源
+ * 
+ * 强制规则：
+ * - test 环境必须使用 *-test 后缀的 D1/R2 资源
+ * - 生产环境禁止使用 *-test 资源
+ * - 校验失败立即 500，不执行任何业务逻辑
+ */
+export async function envGuardMiddleware(c: Context, next: Next) {
+  const env = c.env.ENVIRONMENT ?? "production";
+  
+  // 仅对 test 环境强制校验
+  if (env === "test") {
+    // 从 wrangler.toml 绑定名推断，实际通过 env var 传入
+    const dbName = c.env.D1_DATABASE_NAME;  // e.g., "otter-db-test"
+    const bucketName = c.env.R2_BUCKET_NAME; // e.g., "otter-snapshots-test"
+    
+    if (!dbName?.endsWith("-test")) {
+      console.error(`[env-guard] FATAL: test env but D1 is "${dbName}", expected *-test`);
+      return c.json({ error: "Resource isolation violation: D1" }, 500);
+    }
+    
+    if (!bucketName?.endsWith("-test")) {
+      console.error(`[env-guard] FATAL: test env but R2 is "${bucketName}", expected *-test`);
+      return c.json({ error: "Resource isolation violation: R2" }, 500);
+    }
   }
   
-  const testMode = c.req.header("X-Test-Mode");
-  if (testMode === "true") {
-    // 设置测试用户上下文
-    c.set("userId", "e2e-test-user");
-    c.set("isTestMode", true);
+  // 生产环境反向校验：禁止使用测试资源
+  if (env === "production") {
+    const dbName = c.env.D1_DATABASE_NAME;
+    const bucketName = c.env.R2_BUCKET_NAME;
+    
+    if (dbName?.includes("-test") || bucketName?.includes("-test")) {
+      console.error(`[env-guard] FATAL: production env using test resource`);
+      return c.json({ error: "Resource isolation violation: test resource in prod" }, 500);
+    }
   }
   
   await next();
 }
 ```
 
-#### 3. 测试资源隔离策略
-
-| 环境 | D1 Database | R2 Bucket | 隔离机制 |
-|------|-------------|-----------|----------|
-| Production | `otter-db` | `otter-snapshots` | 无测试流量 |
-| Staging | `otter-db-staging` | `otter-snapshots-staging` | 独立资源 |
-| E2E Test | `otter-db-test` | `otter-snapshots-test` | Marker 校验 |
-| Local Dev | Miniflare 内存 | Miniflare 内存 | 完全隔离 |
-
-**wrangler.toml 多环境配置**:
+**wrangler.toml 配置**：
 
 ```toml
 # 生产环境 (默认)
 [env.production]
+vars = { ENVIRONMENT = "production", D1_DATABASE_NAME = "otter-db", R2_BUCKET_NAME = "otter-snapshots" }
 d1_databases = [{ binding = "DB", database_name = "otter-db", database_id = "xxx" }]
 r2_buckets = [{ binding = "SNAPSHOTS", bucket_name = "otter-snapshots" }]
 
-# Staging 环境
-[env.staging]
-d1_databases = [{ binding = "DB", database_name = "otter-db-staging", database_id = "yyy" }]
-r2_buckets = [{ binding = "SNAPSHOTS", bucket_name = "otter-snapshots-staging" }]
-
-# 测试环境 (CI/E2E)
+# 测试环境 (CI/E2E) — 必须使用 *-test 资源
 [env.test]
-vars = { ENVIRONMENT = "test" }
+vars = { ENVIRONMENT = "test", D1_DATABASE_NAME = "otter-db-test", R2_BUCKET_NAME = "otter-snapshots-test" }
 d1_databases = [{ binding = "DB", database_name = "otter-db-test", database_id = "zzz" }]
 r2_buckets = [{ binding = "SNAPSHOTS", bucket_name = "otter-snapshots-test" }]
 ```
+
+**Hono 入口注册**：
+
+```typescript
+// src/index.ts
+import { envGuardMiddleware } from "./middleware/env-guard";
+
+const app = new Hono<{ Bindings: Bindings }>();
+
+// 资源隔离守卫 — 必须在所有路由之前
+app.use("*", envGuardMiddleware);
+app.use("*", logger());
+// ... 其他中间件和路由
+```
+
+**校验时机**：每个请求的第一个中间件，fail-fast。
+
+**与现有 Next.js 实现对齐**：
+- 等价于 `d1.ts:22-33` 的 `CF_D1_TEST_DATABASE_ID` 校验
+- 等价于 `r2.ts:65-76` 的 `CF_R2_TEST_BUCKET` 校验
+- 同样的 fail-fast 语义：校验失败 → 立即拒绝 → 不执行任何数据操作
 
 #### 4. E2E 测试执行方式
 
