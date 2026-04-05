@@ -1,33 +1,6 @@
 import { NextResponse } from "next/server";
-import { queryFirst } from "@/lib/cf/d1";
-import { getSnapshot, snapshotKey } from "@/lib/cf/r2";
 import { getAuthUser } from "@/lib/session";
-
-interface SnapshotRow {
-  id: string;
-  // biome-ignore lint/style/useNamingConvention: D1 column name
-  user_id: string;
-  // biome-ignore lint/style/useNamingConvention: D1 column name
-  webhook_id: string;
-  hostname: string;
-  platform: string;
-  arch: string;
-  username: string;
-  // biome-ignore lint/style/useNamingConvention: D1 column name
-  collector_count: number;
-  // biome-ignore lint/style/useNamingConvention: D1 column name
-  file_count: number;
-  // biome-ignore lint/style/useNamingConvention: D1 column name
-  list_count: number;
-  // biome-ignore lint/style/useNamingConvention: D1 column name
-  size_bytes: number;
-  // biome-ignore lint/style/useNamingConvention: D1 column name
-  r2_key: string;
-  // biome-ignore lint/style/useNamingConvention: D1 column name
-  snapshot_at: number;
-  // biome-ignore lint/style/useNamingConvention: D1 column name
-  uploaded_at: number;
-}
+import { deleteSnapshot, getSnapshot, WorkerError } from "@/lib/worker-client";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -36,7 +9,7 @@ interface RouteParams {
 /**
  * GET /api/snapshots/[id] — fetch a single snapshot's full data.
  *
- * Returns D1 metadata + full JSON from R2.
+ * BFF route: forwards to Worker /v1/snapshots/:id
  */
 export async function GET(_request: Request, { params }: RouteParams) {
   const user = await getAuthUser();
@@ -47,46 +20,40 @@ export async function GET(_request: Request, { params }: RouteParams) {
   const { id } = await params;
 
   try {
-    // 1. Fetch metadata from D1
-    const row = await queryFirst<SnapshotRow>(
-      `SELECT id, user_id, webhook_id, hostname, platform, arch, username,
-              collector_count, file_count, list_count, size_bytes, r2_key,
-              snapshot_at, uploaded_at
-       FROM snapshots
-       WHERE id = ?1 AND user_id = ?2`,
-      [id, user.id],
-    );
-
-    if (!row) {
-      return NextResponse.json({ error: "Snapshot not found" }, { status: 404 });
-    }
-
-    // 2. Fetch full snapshot JSON from R2
-    const r2Key = snapshotKey(user.id, id);
-    const data = await getSnapshot(r2Key);
-
-    if (!data) {
-      return NextResponse.json({ error: "Snapshot data not found in storage" }, { status: 404 });
-    }
-
-    return NextResponse.json({
-      snapshot: {
-        id: row.id,
-        hostname: row.hostname,
-        platform: row.platform,
-        arch: row.arch,
-        username: row.username,
-        collectorCount: row.collector_count,
-        fileCount: row.file_count,
-        listCount: row.list_count,
-        sizeBytes: row.size_bytes,
-        snapshotAt: row.snapshot_at,
-        uploadedAt: row.uploaded_at,
-      },
-      data,
-    });
+    const result = await getSnapshot(user.id, id);
+    return NextResponse.json(result);
   } catch (err) {
+    if (err instanceof WorkerError) {
+      console.error(`GET /api/snapshots/${id} Worker error:`, err.status, err.body);
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     console.error(`GET /api/snapshots/${id} failed:`, err);
-    return NextResponse.json({ error: "Failed to fetch snapshot from database" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch snapshot" }, { status: 500 });
+  }
+}
+
+/**
+ * DELETE /api/snapshots/[id] — delete a snapshot.
+ *
+ * BFF route: forwards to Worker /v1/snapshots/:id
+ */
+export async function DELETE(_request: Request, { params }: RouteParams) {
+  const user = await getAuthUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+
+  try {
+    const result = await deleteSnapshot(user.id, id);
+    return NextResponse.json(result);
+  } catch (err) {
+    if (err instanceof WorkerError) {
+      console.error(`DELETE /api/snapshots/${id} Worker error:`, err.status, err.body);
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    console.error(`DELETE /api/snapshots/${id} failed:`, err);
+    return NextResponse.json({ error: "Failed to delete snapshot" }, { status: 500 });
   }
 }

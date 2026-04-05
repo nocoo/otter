@@ -1,22 +1,12 @@
 import { NextResponse } from "next/server";
-import { execute, query } from "@/lib/cf/d1";
 import { getAuthUser } from "@/lib/session";
+import { createWebhook, listWebhooks, WorkerError } from "@/lib/worker-client";
 
-interface WebhookRow {
-  id: string;
-  // biome-ignore lint/style/useNamingConvention: D1 column name
-  user_id: string;
-  token: string;
-  label: string;
-  // biome-ignore lint/style/useNamingConvention: D1 column name
-  is_active: number;
-  // biome-ignore lint/style/useNamingConvention: D1 column name
-  created_at: number;
-  // biome-ignore lint/style/useNamingConvention: D1 column name
-  last_used_at: number | null;
-}
-
-/** GET /api/webhooks — list all webhooks for the authenticated user */
+/**
+ * GET /api/webhooks — list all webhooks for the authenticated user
+ *
+ * BFF route: forwards to Worker /v1/webhooks
+ */
 export async function GET() {
   const user = await getAuthUser();
   if (!user) {
@@ -24,73 +14,49 @@ export async function GET() {
   }
 
   try {
-    const rows = await query<WebhookRow>(
-      `SELECT id, token, label, is_active, created_at, last_used_at
-       FROM webhooks
-       WHERE user_id = ?1
-       ORDER BY created_at DESC`,
-      [user.id],
-    );
-
-    const webhooks = rows.map((row) => ({
-      id: row.id,
-      token: row.token,
-      label: row.label,
-      isActive: row.is_active === 1,
-      createdAt: row.created_at,
-      lastUsedAt: row.last_used_at,
-    }));
-
-    return NextResponse.json({ webhooks });
+    const result = await listWebhooks(user.id);
+    return NextResponse.json(result);
   } catch (err) {
+    if (err instanceof WorkerError) {
+      console.error("GET /api/webhooks Worker error:", err.status, err.body);
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     console.error("GET /api/webhooks failed:", err);
-    return NextResponse.json({ error: "Failed to fetch webhooks from database" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch webhooks" }, { status: 500 });
   }
 }
 
-/** POST /api/webhooks — create a new webhook token */
+/**
+ * POST /api/webhooks — create a new webhook token
+ *
+ * BFF route: forwards to Worker /v1/webhooks
+ */
 export async function POST(request: Request) {
   const user = await getAuthUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let label = "Default";
+  // Build options object, only including defined values
+  const options: { label?: string } = {};
   try {
     const body = await request.json();
     if (body.label && typeof body.label === "string") {
-      label = body.label.trim().slice(0, 100);
+      options.label = body.label.trim().slice(0, 100);
     }
   } catch {
     // Empty body is fine, use default label
   }
 
-  const id = crypto.randomUUID();
-  const token = crypto.randomUUID();
-  const now = Date.now();
-
   try {
-    await execute(
-      `INSERT INTO webhooks (id, user_id, token, label, is_active, created_at)
-       VALUES (?1, ?2, ?3, ?4, 1, ?5)`,
-      [id, user.id, token, label, now],
-    );
-
-    return NextResponse.json(
-      {
-        webhook: {
-          id,
-          token,
-          label,
-          isActive: true,
-          createdAt: now,
-          lastUsedAt: null,
-        },
-      },
-      { status: 201 },
-    );
+    const result = await createWebhook(user.id, options);
+    return NextResponse.json(result, { status: 201 });
   } catch (err) {
+    if (err instanceof WorkerError) {
+      console.error("POST /api/webhooks Worker error:", err.status, err.body);
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     console.error("POST /api/webhooks failed:", err);
-    return NextResponse.json({ error: "Failed to create webhook in database" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to create webhook" }, { status: 500 });
   }
 }

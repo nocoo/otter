@@ -1,26 +1,16 @@
 import { NextResponse } from "next/server";
-import { execute, queryFirst } from "@/lib/cf/d1";
 import { getAuthUser } from "@/lib/session";
-
-interface WebhookRow {
-  id: string;
-  // biome-ignore lint/style/useNamingConvention: D1 column name
-  user_id: string;
-  token: string;
-  label: string;
-  // biome-ignore lint/style/useNamingConvention: D1 column name
-  is_active: number;
-  // biome-ignore lint/style/useNamingConvention: D1 column name
-  created_at: number;
-  // biome-ignore lint/style/useNamingConvention: D1 column name
-  last_used_at: number | null;
-}
+import { deleteWebhook, updateWebhook, WorkerError } from "@/lib/worker-client";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-/** PATCH /api/webhooks/[id] — update label and/or toggle is_active */
+/**
+ * PATCH /api/webhooks/[id] — update label and/or toggle is_active
+ *
+ * BFF route: forwards to Worker /v1/webhooks/:id
+ */
 export async function PATCH(request: Request, { params }: RouteParams) {
   const user = await getAuthUser();
   if (!user) {
@@ -29,77 +19,44 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
   const { id } = await params;
 
+  let body: { label?: string; isActive?: boolean };
   try {
-    // Verify webhook belongs to user
-    const existing = await queryFirst<WebhookRow>(
-      `SELECT id, user_id FROM webhooks WHERE id = ?1`,
-      [id],
-    );
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
 
-    if (!existing) {
-      return NextResponse.json({ error: "Webhook not found" }, { status: 404 });
-    }
-    if (existing.user_id !== user.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  // Extract only valid fields
+  const data: { label?: string; isActive?: boolean } = {};
+  if (typeof body.label === "string") {
+    data.label = body.label.trim().slice(0, 100);
+  }
+  if (typeof body.isActive === "boolean") {
+    data.isActive = body.isActive;
+  }
 
-    let body: Record<string, unknown>;
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-    }
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
+  }
 
-    // Build dynamic update
-    const updates: string[] = [];
-    const values: unknown[] = [];
-    let paramIndex = 1;
-
-    if (typeof body.label === "string") {
-      updates.push(`label = ?${paramIndex}`);
-      values.push(body.label.trim().slice(0, 100));
-      paramIndex++;
-    }
-
-    if (typeof body.isActive === "boolean") {
-      updates.push(`is_active = ?${paramIndex}`);
-      values.push(body.isActive ? 1 : 0);
-      paramIndex++;
-    }
-
-    if (updates.length === 0) {
-      return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
-    }
-
-    values.push(id);
-    await execute(`UPDATE webhooks SET ${updates.join(", ")} WHERE id = ?${paramIndex}`, values);
-
-    // Return updated webhook
-    const updated = await queryFirst<WebhookRow>(
-      `SELECT id, token, label, is_active, created_at, last_used_at
-       FROM webhooks WHERE id = ?1`,
-      [id],
-    );
-
-    return NextResponse.json({
-      webhook: updated
-        ? {
-            id: updated.id,
-            token: updated.token,
-            label: updated.label,
-            isActive: updated.is_active === 1,
-            createdAt: updated.created_at,
-            lastUsedAt: updated.last_used_at,
-          }
-        : null,
-    });
+  try {
+    const result = await updateWebhook(user.id, id, data);
+    return NextResponse.json(result);
   } catch (err) {
+    if (err instanceof WorkerError) {
+      console.error(`PATCH /api/webhooks/${id} Worker error:`, err.status, err.body);
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     console.error(`PATCH /api/webhooks/${id} failed:`, err);
-    return NextResponse.json({ error: "Failed to update webhook in database" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update webhook" }, { status: 500 });
   }
 }
 
-/** DELETE /api/webhooks/[id] — delete a webhook */
+/**
+ * DELETE /api/webhooks/[id] — delete a webhook
+ *
+ * BFF route: forwards to Worker /v1/webhooks/:id
+ */
 export async function DELETE(_request: Request, { params }: RouteParams) {
   const user = await getAuthUser();
   if (!user) {
@@ -109,24 +66,14 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
   const { id } = await params;
 
   try {
-    // Verify webhook belongs to user
-    const existing = await queryFirst<WebhookRow>(
-      `SELECT id, user_id FROM webhooks WHERE id = ?1`,
-      [id],
-    );
-
-    if (!existing) {
-      return NextResponse.json({ error: "Webhook not found" }, { status: 404 });
-    }
-    if (existing.user_id !== user.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    await execute(`DELETE FROM webhooks WHERE id = ?1`, [id]);
-
-    return NextResponse.json({ success: true });
+    const result = await deleteWebhook(user.id, id);
+    return NextResponse.json(result);
   } catch (err) {
+    if (err instanceof WorkerError) {
+      console.error(`DELETE /api/webhooks/${id} Worker error:`, err.status, err.body);
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     console.error(`DELETE /api/webhooks/${id} failed:`, err);
-    return NextResponse.json({ error: "Failed to delete webhook from database" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete webhook" }, { status: 500 });
   }
 }

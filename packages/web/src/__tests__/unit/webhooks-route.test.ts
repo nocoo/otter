@@ -5,18 +5,28 @@ vi.mock("@/lib/session", () => ({
   getAuthUser: vi.fn(),
 }));
 
-vi.mock("@/lib/cf/d1", () => ({
-  query: vi.fn(),
-  execute: vi.fn(),
+vi.mock("@/lib/worker-client", () => ({
+  listWebhooks: vi.fn(),
+  createWebhook: vi.fn(),
+  WorkerError: class WorkerError extends Error {
+    constructor(
+      message: string,
+      public status: number,
+      public body?: unknown,
+    ) {
+      super(message);
+      this.name = "WorkerError";
+    }
+  },
 }));
 
 import { GET, POST } from "@/app/api/webhooks/route";
-import { execute, query } from "@/lib/cf/d1";
 import { getAuthUser } from "@/lib/session";
+import { createWebhook, listWebhooks, WorkerError } from "@/lib/worker-client";
 
 const mockGetAuthUser = vi.mocked(getAuthUser);
-const mockQuery = vi.mocked(query);
-const mockExecute = vi.mocked(execute);
+const mockListWebhooks = vi.mocked(listWebhooks);
+const mockCreateWebhook = vi.mocked(createWebhook);
 
 // Helper to create a mock Request
 function mockPostRequest(body: unknown): Request {
@@ -26,6 +36,32 @@ function mockPostRequest(body: unknown): Request {
     body: JSON.stringify(body),
   });
 }
+
+const mockUser = {
+  id: "user-1",
+  email: "test@example.com",
+  name: "Test",
+  image: null,
+};
+
+const mockWebhooks = [
+  {
+    id: "wh-1",
+    token: "tok-abc",
+    label: "My Webhook",
+    isActive: true,
+    createdAt: 1700000000000,
+    lastUsedAt: 1700001000000,
+  },
+  {
+    id: "wh-2",
+    token: "tok-def",
+    label: "Other",
+    isActive: false,
+    createdAt: 1700002000000,
+    lastUsedAt: null,
+  },
+];
 
 describe("GET /api/webhooks", () => {
   beforeEach(() => {
@@ -41,13 +77,8 @@ describe("GET /api/webhooks", () => {
   });
 
   it("returns empty list when no webhooks exist", async () => {
-    mockGetAuthUser.mockResolvedValue({
-      id: "user-1",
-      email: "test@example.com",
-      name: "Test",
-      image: null,
-    });
-    mockQuery.mockResolvedValue([]);
+    mockGetAuthUser.mockResolvedValue(mockUser);
+    mockListWebhooks.mockResolvedValue({ webhooks: [] });
 
     const response = await GET();
     expect(response.status).toBe(200);
@@ -55,75 +86,58 @@ describe("GET /api/webhooks", () => {
     expect(data.webhooks).toEqual([]);
   });
 
-  it("returns webhooks with camelCase fields", async () => {
-    mockGetAuthUser.mockResolvedValue({
-      id: "user-1",
-      email: "test@example.com",
-      name: "Test",
-      image: null,
-    });
-    mockQuery.mockResolvedValue([
-      {
-        id: "wh-1",
-        token: "tok-abc",
-        label: "My Webhook",
-        is_active: 1,
-        created_at: 1700000000000,
-        last_used_at: 1700001000000,
-      },
-      {
-        id: "wh-2",
-        token: "tok-def",
-        label: "Other",
-        is_active: 0,
-        created_at: 1700002000000,
-        last_used_at: null,
-      },
-    ]);
+  it("returns webhooks from Worker", async () => {
+    mockGetAuthUser.mockResolvedValue(mockUser);
+    mockListWebhooks.mockResolvedValue({ webhooks: mockWebhooks });
 
     const response = await GET();
     expect(response.status).toBe(200);
     const data = await response.json();
     expect(data.webhooks).toHaveLength(2);
-    expect(data.webhooks[0]).toEqual({
-      id: "wh-1",
-      token: "tok-abc",
-      label: "My Webhook",
-      isActive: true,
-      createdAt: 1700000000000,
-      lastUsedAt: 1700001000000,
-    });
+    expect(data.webhooks[0]).toEqual(mockWebhooks[0]);
     // biome-ignore lint/style/noNonNullAssertion: test array access after known length
     expect(data.webhooks[1]!.isActive).toBe(false);
     // biome-ignore lint/style/noNonNullAssertion: test array access after known length
     expect(data.webhooks[1]!.lastUsedAt).toBeNull();
   });
 
-  it("queries only the authenticated user's webhooks", async () => {
+  it("passes user ID to Worker client", async () => {
     mockGetAuthUser.mockResolvedValue({
       id: "user-42",
       email: "test@example.com",
       name: "Test",
       image: null,
     });
-    mockQuery.mockResolvedValue([]);
+    mockListWebhooks.mockResolvedValue({ webhooks: [] });
 
     await GET();
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining("WHERE user_id = ?1"), [
-      "user-42",
-    ]);
+    expect(mockListWebhooks).toHaveBeenCalledWith("user-42");
+  });
+
+  it("handles Worker errors", async () => {
+    mockGetAuthUser.mockResolvedValue(mockUser);
+    mockListWebhooks.mockRejectedValue(new WorkerError("Internal error", 500));
+
+    const response = await GET();
+    expect(response.status).toBe(500);
+    const data = await response.json();
+    expect(data.error).toBe("Internal error");
+  });
+
+  it("handles generic errors", async () => {
+    mockGetAuthUser.mockResolvedValue(mockUser);
+    mockListWebhooks.mockRejectedValue(new Error("Network error"));
+
+    const response = await GET();
+    expect(response.status).toBe(500);
+    const data = await response.json();
+    expect(data.error).toBe("Failed to fetch webhooks");
   });
 });
 
 describe("POST /api/webhooks", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    // Mock crypto.randomUUID for deterministic tests
-    vi.spyOn(crypto, "randomUUID")
-      .mockReturnValueOnce("generated-id" as `${string}-${string}-${string}-${string}-${string}`)
-      .mockReturnValueOnce(
-        "generated-token" as `${string}-${string}-${string}-${string}-${string}`,
-      );
   });
 
   it("returns 401 when not authenticated", async () => {
@@ -133,13 +147,17 @@ describe("POST /api/webhooks", () => {
   });
 
   it("creates webhook with provided label", async () => {
-    mockGetAuthUser.mockResolvedValue({
-      id: "user-1",
-      email: "test@example.com",
-      name: "Test",
-      image: null,
+    mockGetAuthUser.mockResolvedValue(mockUser);
+    mockCreateWebhook.mockResolvedValue({
+      webhook: {
+        id: "generated-id",
+        token: "generated-token",
+        label: "My MacBook",
+        isActive: true,
+        createdAt: 1700000000000,
+        lastUsedAt: null,
+      },
     });
-    mockExecute.mockResolvedValue({ changes: 1, lastRowId: 1 });
 
     const response = await POST(mockPostRequest({ label: "My MacBook" }));
     expect(response.status).toBe(201);
@@ -149,58 +167,80 @@ describe("POST /api/webhooks", () => {
       token: "generated-token",
       label: "My MacBook",
       isActive: true,
-      createdAt: expect.any(Number),
+      createdAt: 1700000000000,
       lastUsedAt: null,
     });
   });
 
-  it("uses default label when none provided", async () => {
-    mockGetAuthUser.mockResolvedValue({
-      id: "user-1",
-      email: "test@example.com",
-      name: "Test",
-      image: null,
+  it("passes label to Worker", async () => {
+    mockGetAuthUser.mockResolvedValue(mockUser);
+    mockCreateWebhook.mockResolvedValue({
+      webhook: {
+        id: "id",
+        token: "token",
+        label: "Test",
+        isActive: true,
+        createdAt: 1700000000000,
+        lastUsedAt: null,
+      },
     });
-    mockExecute.mockResolvedValue({ changes: 1, lastRowId: 1 });
 
-    const response = await POST(new Request("http://localhost/api/webhooks", { method: "POST" }));
-    expect(response.status).toBe(201);
-    const data = await response.json();
-    expect(data.webhook.label).toBe("Default");
+    await POST(mockPostRequest({ label: "Test" }));
+    expect(mockCreateWebhook).toHaveBeenCalledWith("user-1", { label: "Test" });
+  });
+
+  it("calls Worker without label when none provided", async () => {
+    mockGetAuthUser.mockResolvedValue(mockUser);
+    mockCreateWebhook.mockResolvedValue({
+      webhook: {
+        id: "id",
+        token: "token",
+        label: "Default",
+        isActive: true,
+        createdAt: 1700000000000,
+        lastUsedAt: null,
+      },
+    });
+
+    await POST(new Request("http://localhost/api/webhooks", { method: "POST" }));
+    expect(mockCreateWebhook).toHaveBeenCalledWith("user-1", {});
   });
 
   it("truncates long labels to 100 characters", async () => {
-    mockGetAuthUser.mockResolvedValue({
-      id: "user-1",
-      email: "test@example.com",
-      name: "Test",
-      image: null,
+    mockGetAuthUser.mockResolvedValue(mockUser);
+    mockCreateWebhook.mockResolvedValue({
+      webhook: {
+        id: "id",
+        token: "token",
+        label: "a".repeat(100),
+        isActive: true,
+        createdAt: 1700000000000,
+        lastUsedAt: null,
+      },
     });
-    mockExecute.mockResolvedValue({ changes: 1, lastRowId: 1 });
 
     const longLabel = "a".repeat(200);
-    const response = await POST(mockPostRequest({ label: longLabel }));
-    expect(response.status).toBe(201);
-    const data = await response.json();
-    expect(data.webhook.label).toHaveLength(100);
+    await POST(mockPostRequest({ label: longLabel }));
+    expect(mockCreateWebhook).toHaveBeenCalledWith("user-1", { label: "a".repeat(100) });
   });
 
-  it("inserts into D1 with correct user_id", async () => {
-    mockGetAuthUser.mockResolvedValue({
-      id: "user-1",
-      email: "test@example.com",
-      name: "Test",
-      image: null,
-    });
-    mockExecute.mockResolvedValue({ changes: 1, lastRowId: 1 });
+  it("handles Worker errors", async () => {
+    mockGetAuthUser.mockResolvedValue(mockUser);
+    mockCreateWebhook.mockRejectedValue(new WorkerError("Database error", 500));
 
-    await POST(mockPostRequest({ label: "Test" }));
-    expect(mockExecute).toHaveBeenCalledWith(expect.stringContaining("INSERT INTO webhooks"), [
-      "generated-id",
-      "user-1",
-      "generated-token",
-      "Test",
-      expect.any(Number),
-    ]);
+    const response = await POST(mockPostRequest({ label: "Test" }));
+    expect(response.status).toBe(500);
+    const data = await response.json();
+    expect(data.error).toBe("Database error");
+  });
+
+  it("handles generic errors", async () => {
+    mockGetAuthUser.mockResolvedValue(mockUser);
+    mockCreateWebhook.mockRejectedValue(new Error("Network error"));
+
+    const response = await POST(mockPostRequest({ label: "Test" }));
+    expect(response.status).toBe(500);
+    const data = await response.json();
+    expect(data.error).toBe("Failed to create webhook");
   });
 });

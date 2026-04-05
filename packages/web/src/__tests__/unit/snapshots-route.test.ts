@@ -5,19 +5,27 @@ vi.mock("@/lib/session", () => ({
   getAuthUser: vi.fn(),
 }));
 
-vi.mock("@/lib/cf/d1", () => ({
-  query: vi.fn(),
-  queryFirst: vi.fn(),
+vi.mock("@/lib/worker-client", () => ({
+  listSnapshots: vi.fn(),
+  WorkerError: class WorkerError extends Error {
+    constructor(
+      message: string,
+      public status: number,
+      public body?: unknown,
+    ) {
+      super(message);
+      this.name = "WorkerError";
+    }
+  },
 }));
 
 import { NextRequest } from "next/server";
 import { GET } from "@/app/api/snapshots/route";
-import { query, queryFirst } from "@/lib/cf/d1";
 import { getAuthUser } from "@/lib/session";
+import { listSnapshots, WorkerError } from "@/lib/worker-client";
 
 const mockGetAuthUser = vi.mocked(getAuthUser);
-const mockQuery = vi.mocked(query);
-const mockQueryFirst = vi.mocked(queryFirst);
+const mockListSnapshots = vi.mocked(listSnapshots);
 
 function makeRequest(url = "http://localhost/api/snapshots"): NextRequest {
   return new NextRequest(url);
@@ -30,19 +38,19 @@ const mockUser = {
   image: null,
 };
 
-const mockRows = [
+const mockSnapshots = [
   {
     id: "snap-1",
     hostname: "my-mac",
     platform: "darwin",
     arch: "arm64",
     username: "testuser",
-    collector_count: 5,
-    file_count: 21,
-    list_count: 201,
-    size_bytes: 72000,
-    snapshot_at: 1709700000000,
-    uploaded_at: 1709700100000,
+    collectorCount: 5,
+    fileCount: 21,
+    listCount: 201,
+    sizeBytes: 72000,
+    snapshotAt: 1709700000000,
+    uploadedAt: 1709700100000,
   },
   {
     id: "snap-2",
@@ -50,12 +58,12 @@ const mockRows = [
     platform: "darwin",
     arch: "arm64",
     username: "testuser",
-    collector_count: 5,
-    file_count: 20,
-    list_count: 195,
-    size_bytes: 70000,
-    snapshot_at: 1709600000000,
-    uploaded_at: 1709600100000,
+    collectorCount: 5,
+    fileCount: 20,
+    listCount: 195,
+    sizeBytes: 70000,
+    snapshotAt: 1709600000000,
+    uploadedAt: 1709600100000,
   },
 ];
 
@@ -74,8 +82,7 @@ describe("GET /api/snapshots", () => {
 
   it("returns empty list when no snapshots exist", async () => {
     mockGetAuthUser.mockResolvedValue(mockUser);
-    mockQuery.mockResolvedValue([]);
-    mockQueryFirst.mockResolvedValue({ total: 0 });
+    mockListSnapshots.mockResolvedValue({ snapshots: [], total: 0, nextBefore: null });
 
     const response = await GET(makeRequest());
     expect(response.status).toBe(200);
@@ -85,123 +92,90 @@ describe("GET /api/snapshots", () => {
     expect(data.nextBefore).toBeNull();
   });
 
-  it("returns snapshots with camelCase fields", async () => {
+  it("returns snapshots from Worker", async () => {
     mockGetAuthUser.mockResolvedValue(mockUser);
-    mockQuery.mockResolvedValue(mockRows);
-    mockQueryFirst.mockResolvedValue({ total: 2 });
+    mockListSnapshots.mockResolvedValue({
+      snapshots: mockSnapshots,
+      total: 2,
+      nextBefore: null,
+    });
 
     const response = await GET(makeRequest());
     expect(response.status).toBe(200);
     const data = await response.json();
     expect(data.snapshots).toHaveLength(2);
-    expect(data.snapshots[0]).toEqual({
-      id: "snap-1",
-      hostname: "my-mac",
-      platform: "darwin",
-      arch: "arm64",
-      username: "testuser",
-      collectorCount: 5,
-      fileCount: 21,
-      listCount: 201,
-      sizeBytes: 72000,
-      snapshotAt: 1709700000000,
-      uploadedAt: 1709700100000,
-    });
+    expect(data.snapshots[0]).toEqual(mockSnapshots[0]);
     expect(data.total).toBe(2);
   });
 
-  it("queries only the authenticated user's snapshots", async () => {
+  it("passes user ID to Worker client", async () => {
     mockGetAuthUser.mockResolvedValue({
       id: "user-42",
       email: "test@example.com",
       name: "Test",
       image: null,
     });
-    mockQuery.mockResolvedValue([]);
-    mockQueryFirst.mockResolvedValue({ total: 0 });
+    mockListSnapshots.mockResolvedValue({ snapshots: [], total: 0, nextBefore: null });
 
     await GET(makeRequest());
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining("WHERE user_id = ?1"), [
-      "user-42",
-      20,
-    ]);
+    expect(mockListSnapshots).toHaveBeenCalledWith("user-42", {});
   });
 
-  it("respects custom limit parameter", async () => {
+  it("passes limit parameter to Worker", async () => {
     mockGetAuthUser.mockResolvedValue(mockUser);
-    mockQuery.mockResolvedValue([]);
-    mockQueryFirst.mockResolvedValue({ total: 0 });
+    mockListSnapshots.mockResolvedValue({ snapshots: [], total: 0, nextBefore: null });
 
     await GET(makeRequest("http://localhost/api/snapshots?limit=5"));
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining("LIMIT ?2"), ["user-1", 5]);
+    expect(mockListSnapshots).toHaveBeenCalledWith("user-1", { limit: 5 });
   });
 
-  it("caps limit at 100", async () => {
+  it("passes before cursor to Worker", async () => {
     mockGetAuthUser.mockResolvedValue(mockUser);
-    mockQuery.mockResolvedValue([]);
-    mockQueryFirst.mockResolvedValue({ total: 0 });
-
-    await GET(makeRequest("http://localhost/api/snapshots?limit=500"));
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining("LIMIT ?2"), ["user-1", 100]);
-  });
-
-  it("uses before cursor for pagination", async () => {
-    mockGetAuthUser.mockResolvedValue(mockUser);
-    mockQuery.mockResolvedValue([]);
-    mockQueryFirst.mockResolvedValue({ total: 10 });
+    mockListSnapshots.mockResolvedValue({ snapshots: [], total: 10, nextBefore: null });
 
     await GET(makeRequest("http://localhost/api/snapshots?before=1709700000000"));
-    expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining("WHERE user_id = ?1 AND uploaded_at < ?2"),
-      ["user-1", 1709700000000, 20],
-    );
+    expect(mockListSnapshots).toHaveBeenCalledWith("user-1", { before: 1709700000000 });
   });
 
-  it("returns nextBefore when results fill the page", async () => {
+  it("passes both limit and before to Worker", async () => {
     mockGetAuthUser.mockResolvedValue(mockUser);
-    // Return exactly `limit` rows (default 20) — generate 20 rows
-    const twentyRows = Array.from({ length: 20 }, (_, i) => ({
-      id: `snap-${i}`,
-      hostname: "my-mac",
-      platform: "darwin",
-      arch: "arm64",
-      username: "testuser",
-      collector_count: 5,
-      file_count: 21,
-      list_count: 201,
-      size_bytes: 72000,
-      snapshot_at: 1709700000000 - i * 100000,
-      uploaded_at: 1709700100000 - i * 100000,
-    }));
-    mockQuery.mockResolvedValue(twentyRows);
-    mockQueryFirst.mockResolvedValue({ total: 50 });
+    mockListSnapshots.mockResolvedValue({ snapshots: [], total: 10, nextBefore: null });
+
+    await GET(makeRequest("http://localhost/api/snapshots?limit=10&before=1709700000000"));
+    expect(mockListSnapshots).toHaveBeenCalledWith("user-1", { limit: 10, before: 1709700000000 });
+  });
+
+  it("returns Worker error with correct status", async () => {
+    mockGetAuthUser.mockResolvedValue(mockUser);
+    mockListSnapshots.mockRejectedValue(new WorkerError("Internal error", 500));
+
+    const response = await GET(makeRequest());
+    expect(response.status).toBe(500);
+    const data = await response.json();
+    expect(data.error).toBe("Internal error");
+  });
+
+  it("handles generic errors", async () => {
+    mockGetAuthUser.mockResolvedValue(mockUser);
+    mockListSnapshots.mockRejectedValue(new Error("Network error"));
+
+    const response = await GET(makeRequest());
+    expect(response.status).toBe(500);
+    const data = await response.json();
+    expect(data.error).toBe("Failed to fetch snapshots");
+  });
+
+  it("returns nextBefore from Worker response", async () => {
+    mockGetAuthUser.mockResolvedValue(mockUser);
+    mockListSnapshots.mockResolvedValue({
+      snapshots: mockSnapshots,
+      total: 50,
+      nextBefore: 1709600100000,
+    });
 
     const response = await GET(makeRequest());
     const data = await response.json();
-    // biome-ignore lint/style/noNonNullAssertion: test array has known length
-    expect(data.nextBefore).toBe(twentyRows[19]!.uploaded_at);
+    expect(data.nextBefore).toBe(1709600100000);
     expect(data.total).toBe(50);
-  });
-
-  it("returns nextBefore as null when results do not fill the page", async () => {
-    mockGetAuthUser.mockResolvedValue(mockUser);
-    mockQuery.mockResolvedValue(mockRows); // 2 rows, default limit is 20
-    mockQueryFirst.mockResolvedValue({ total: 2 });
-
-    const response = await GET(makeRequest());
-    const data = await response.json();
-    expect(data.nextBefore).toBeNull();
-  });
-
-  it("ignores invalid limit values", async () => {
-    mockGetAuthUser.mockResolvedValue(mockUser);
-    mockQuery.mockResolvedValue([]);
-    mockQueryFirst.mockResolvedValue({ total: 0 });
-
-    await GET(makeRequest("http://localhost/api/snapshots?limit=abc"));
-    expect(mockQuery).toHaveBeenCalledWith(
-      expect.any(String),
-      ["user-1", 20], // falls back to default
-    );
   });
 });
