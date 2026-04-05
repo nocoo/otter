@@ -1,5 +1,5 @@
+import { pc } from "@nocoo/cli-base";
 import type { Snapshot } from "@otter/core";
-import pc from "picocolors";
 import type { SnapshotMeta } from "../storage/local.js";
 import { type Column, formatDate, formatSize, S, type TreeChild, table, tree } from "../ui.js";
 

@@ -1,7 +1,6 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { defineCommand } from "citty";
-import yoctoSpinner from "yocto-spinner";
+import { defineCommand, yoctoSpinner } from "@nocoo/cli-base";
 import { createDefaultCollectors } from "./collectors/index.js";
 import { executeConfig } from "./commands/config.js";
 import { buildWebhookUrl, executeLogin, resolveHost } from "./commands/login.js";
