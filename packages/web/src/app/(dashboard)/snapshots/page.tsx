@@ -349,7 +349,7 @@ export default function SnapshotsPage() {
                 type="button"
                 disabled={currentPage === 1}
                 onClick={currentPage === 2 ? handlePrevToFirst : handlePrev}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 transition-colors"
+                className="flex h-8 w-8 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 transition-colors"
                 aria-label="Previous page"
               >
                 <ChevronLeft className="h-4 w-4" aria-hidden="true" />
@@ -361,7 +361,7 @@ export default function SnapshotsPage() {
                 type="button"
                 disabled={nextBefore === null}
                 onClick={handleNext}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 transition-colors"
+                className="flex h-8 w-8 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 transition-colors"
                 aria-label="Next page"
               >
                 <ChevronRight className="h-4 w-4" aria-hidden="true" />

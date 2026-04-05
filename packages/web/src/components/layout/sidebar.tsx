@@ -136,7 +136,7 @@ export function Sidebar() {
                   type="button"
                   onClick={toggle}
                   aria-label="Collapse sidebar"
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex h-7 w-7 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <PanelLeft className="h-4 w-4" aria-hidden="true" strokeWidth={1.5} />
                 </button>
@@ -188,7 +188,7 @@ export function Sidebar() {
                       type="button"
                       onClick={() => signOut({ callbackUrl: "/login" })}
                       aria-label="Sign out"
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
+                      className="flex h-8 w-8 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
                     >
                       <LogOut className="h-4 w-4" aria-hidden="true" strokeWidth={1.5} />
                     </button>

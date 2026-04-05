@@ -98,7 +98,7 @@ function AppShellInner({ children }: AppShellProps) {
                 type="button"
                 onClick={() => setMobileOpen(true)}
                 aria-label="Open navigation"
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                className="flex h-8 w-8 min-h-11 min-w-11 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
                 <Menu className="h-5 w-5" aria-hidden="true" strokeWidth={1.5} />
               </button>
@@ -111,7 +111,7 @@ function AppShellInner({ children }: AppShellProps) {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="GitHub repository"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              className="flex h-8 w-8 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
             >
               <Github className="h-[18px] w-[18px]" aria-hidden="true" strokeWidth={1.5} />
             </a>
