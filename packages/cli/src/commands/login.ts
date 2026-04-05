@@ -5,17 +5,24 @@ import type { ConfigManager } from "../config/manager.js";
 
 export const DEFAULT_HOST = "https://otter.hexly.ai";
 export const DEV_HOST = "https://otter.dev.hexly.ai";
+
+/**
+ * Default Worker API URL for ingest endpoints.
+ * CLI uploads now go directly to the Worker by default.
+ */
+export const DEFAULT_WORKER_URL = "https://otter-api.nocoo.workers.dev";
+
 const TIMEOUT_MS = 30_000;
 const PORT_RANGE_START = 49152;
 const PORT_RANGE_END = 65535;
 
 /**
  * Get Worker API URL for ingest endpoints.
- * When set, CLI uploads go directly to the Worker instead of through Next.js.
- * @returns The OTTER_API_URL env value, or undefined if not set
+ * Returns OTTER_API_URL env if set, otherwise the default Worker URL.
+ * Set OTTER_API_URL to override or use legacy Next.js endpoints.
  */
-export function getWorkerApiUrl(): string | undefined {
-  return process.env.OTTER_API_URL;
+export function getWorkerApiUrl(): string {
+  return process.env.OTTER_API_URL ?? DEFAULT_WORKER_URL;
 }
 
 export interface LoginOptions {
@@ -104,17 +111,13 @@ export function resolveHost(options: LoginOptions): string {
 
 /**
  * Build a webhook URL from host and token.
- * If OTTER_API_URL env var is set, uses the Worker URL format (/ingest/{token}).
- * Otherwise, uses the legacy Next.js URL format (/api/webhook/{token}).
+ * Uses Worker URL format by default (/ingest/{token}).
+ * The host parameter is now only used for login flow, not for uploads.
  */
-export function buildWebhookUrl(host: string, token: string): string {
+export function buildWebhookUrl(_host: string, token: string): string {
   const workerUrl = getWorkerApiUrl();
-  if (workerUrl) {
-    // Worker URL format: https://api.otter.hexly.ai/ingest/{token}
-    return `${workerUrl}/ingest/${token}`;
-  }
-  // Legacy Next.js URL format: https://otter.hexly.ai/api/webhook/{token}
-  return `${host}/api/webhook/${token}`;
+  // Worker URL format: https://otter-api.nocoo.workers.dev/ingest/{token}
+  return `${workerUrl}/ingest/${token}`;
 }
 
 /**
