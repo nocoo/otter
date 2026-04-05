@@ -205,8 +205,9 @@ test.describe("Snapshots List", () => {
 
     await page.goto("/snapshots");
 
-    // Click the snapshot link (the short ID code)
-    await page.getByRole("link", { name: /snap-nav/ }).click();
+    // Click the snapshot row → navigates to detail page
+    // The row uses onClick={router.push}, not an <a> link
+    await page.getByText("snap-nav", { exact: false }).first().click();
     await expect(page).toHaveURL(/\/snapshots\/snap-nav-test$/);
   });
 });

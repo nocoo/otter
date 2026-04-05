@@ -110,7 +110,8 @@ test.describe("Dashboard", () => {
     await expect(page.getByText("linux-dev", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("work-laptop", { exact: true }).first()).toBeVisible();
 
-    // Click on first row hostname link → navigates to detail page
+    // Click on first row → navigates to detail page
+    // The row uses onClick={router.push}, not an <a> link
     await page.route("**/api/snapshots/snap-001", async (route) => {
       await route.fulfill({
         status: 404,
@@ -118,7 +119,7 @@ test.describe("Dashboard", () => {
         body: JSON.stringify({ error: "Not found" }),
       });
     });
-    await page.getByRole("link", { name: "macbook-pro" }).click();
+    await page.getByText("macbook-pro", { exact: true }).first().click();
     await expect(page).toHaveURL(/\/snapshots\/snap-001$/);
   });
 
