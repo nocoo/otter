@@ -101,7 +101,7 @@ function WebhookRow({
           <Webhook className="h-4 w-4 text-primary" strokeWidth={1.5} />
           <span className="font-medium text-sm">{webhook.label}</span>
           <Badge
-            variant={webhook.isActive ? "default" : "secondary"}
+            variant={webhook.isActive ? "success" : "secondary"}
             className="text-2xs font-normal"
           >
             {webhook.isActive ? "Active" : "Inactive"}
