@@ -1,5 +1,6 @@
 import type { ListItem } from "./types";
 
+/** Format timestamp for snapshot detail page (short month format) */
 export function formatDateTime(ts: number): string {
   return new Date(ts).toLocaleString("en-US", {
     year: "numeric",

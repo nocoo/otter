@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { formatDate } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -36,15 +37,8 @@ interface WebhookToken {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatDate(ts: number): string {
-  return new Date(ts).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function formatDateTime(ts: number): string {
+/** Format timestamp to short date time for settings page (different format than global) */
+function formatDateTimeShort(ts: number): string {
   return new Date(ts).toLocaleString("en-US", {
     year: "numeric",
     month: "short",
@@ -141,7 +135,7 @@ function WebhookRow({
       {/* Meta */}
       <div className="flex items-center gap-4 text-2xs text-muted-foreground">
         <span>Created {formatDate(webhook.createdAt)}</span>
-        {webhook.lastUsedAt && <span>Last used {formatDateTime(webhook.lastUsedAt)}</span>}
+        {webhook.lastUsedAt && <span>Last used {formatDateTimeShort(webhook.lastUsedAt)}</span>}
       </div>
     </div>
   );
