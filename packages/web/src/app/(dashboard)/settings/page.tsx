@@ -65,13 +65,13 @@ function CopyButton({ text }: { text: string }) {
     <button
       type="button"
       onClick={handleCopy}
-      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-      aria-label="Copy to clipboard"
+      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+      aria-label={copied ? "Copied to clipboard" : "Copy to clipboard"}
     >
       {copied ? (
-        <Check className="h-3.5 w-3.5 text-primary" strokeWidth={1.5} />
+        <Check className="h-3.5 w-3.5 text-primary" strokeWidth={1.5} aria-hidden="true" />
       ) : (
-        <Copy className="h-3.5 w-3.5" strokeWidth={1.5} />
+        <Copy className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
       )}
     </button>
   );
@@ -118,10 +118,10 @@ function WebhookRow({
             type="button"
             onClick={() => onDelete(webhook.id)}
             disabled={isDeleting}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors disabled:opacity-50"
             aria-label={`Delete ${webhook.label}`}
           >
-            <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+            <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
           </button>
         </div>
       </div>

@@ -312,7 +312,7 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm" aria-label="Recent snapshots">
                     <thead>
                       <tr className="border-b border-border text-left">
                         <th className="pb-2 pr-4 font-medium text-muted-foreground text-xs">
@@ -339,17 +339,23 @@ export default function DashboardPage() {
                       {data?.snapshots.map((snap) => (
                         <tr
                           key={snap.id}
-                          className="group border-b border-border/50 last:border-0 hover:bg-accent/50 transition-colors cursor-pointer"
+                          className="group border-b border-border/50 last:border-0 hover:bg-accent/50 focus-within:bg-accent/50 transition-colors cursor-pointer"
                           onClick={() => router.push(`/snapshots/${snap.id}`)}
                         >
                           <td className="py-2.5 pr-4">
-                            <div className="flex items-center gap-2 group-hover:text-primary transition-colors">
+                            <Link
+                              href={`/snapshots/${snap.id}`}
+                              className="flex items-center gap-2 group-hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                              aria-label={`View snapshot from ${snap.hostname}`}
+                            >
                               <Monitor
                                 className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors"
                                 strokeWidth={1.5}
+                                aria-hidden="true"
                               />
                               <span className="font-medium">{snap.hostname}</span>
-                            </div>
+                            </Link>
                           </td>
                           <td className="py-2.5 pr-4 text-muted-foreground">
                             {snap.platform}/{snap.arch}
@@ -385,7 +391,12 @@ export default function DashboardPage() {
                 <h2 className="text-sm font-medium text-foreground">Backup Trend</h2>
               </div>
               <p className="text-xs text-muted-foreground mb-3">Last 7 days</p>
-              <AreaChart data={trendData} height={160} showGrid={false} />
+              <AreaChart
+                data={trendData}
+                height={160}
+                showGrid={false}
+                ariaLabel="Backup trend over the last 7 days"
+              />
             </div>
           </div>
         </>

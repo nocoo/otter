@@ -1,6 +1,7 @@
 "use client";
 
 import { Archive, ChevronLeft, ChevronRight, ExternalLink, Monitor, Search } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -244,7 +245,7 @@ export default function SnapshotsPage() {
           {/* Table */}
           <div className="rounded-xl bg-secondary p-1">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm" aria-label="Snapshots list">
                 <thead>
                   <tr className="border-b border-border">
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">
@@ -277,17 +278,23 @@ export default function SnapshotsPage() {
                   {snapshots.map((snap) => (
                     <tr
                       key={snap.id}
-                      className="group border-b border-border/50 last:border-0 hover:bg-accent/50 transition-colors cursor-pointer"
+                      className="group border-b border-border/50 last:border-0 hover:bg-accent/50 focus-within:bg-accent/50 transition-colors cursor-pointer"
                       onClick={() => router.push(`/snapshots/${snap.id}`)}
                     >
                       <td className="px-4 py-3">
-                        <div className="inline-flex items-center gap-2 text-foreground group-hover:text-primary transition-colors">
+                        <Link
+                          href={`/snapshots/${snap.id}`}
+                          className="inline-flex items-center gap-2 text-foreground group-hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={`View snapshot ${snap.id.slice(0, 8)} from ${snap.hostname}`}
+                        >
                           <Archive
                             className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors"
                             strokeWidth={1.5}
+                            aria-hidden="true"
                           />
                           <code className="text-xs font-mono">{snap.id.slice(0, 8)}</code>
-                        </div>
+                        </Link>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
@@ -333,8 +340,8 @@ export default function SnapshotsPage() {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between px-2">
-            <p className="text-xs text-muted-foreground">
+          <nav className="flex items-center justify-between px-2" aria-label="Pagination">
+            <p className="text-xs text-muted-foreground" aria-live="polite">
               Showing {showStart}-{showEnd} of {total} snapshots
             </p>
             <div className="flex items-center gap-1">
@@ -342,23 +349,25 @@ export default function SnapshotsPage() {
                 type="button"
                 disabled={currentPage === 1}
                 onClick={currentPage === 2 ? handlePrevToFirst : handlePrev}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-40 transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 transition-colors"
+                aria-label="Previous page"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               </button>
-              <span className="px-2 text-xs text-muted-foreground">
+              <span className="px-2 text-xs text-muted-foreground" aria-current="page">
                 Page {currentPage} of {totalPages}
               </span>
               <button
                 type="button"
                 disabled={nextBefore === null}
                 onClick={handleNext}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-40 transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 transition-colors"
+                aria-label="Next page"
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
-          </div>
+          </nav>
         </>
       )}
     </div>
