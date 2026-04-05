@@ -182,33 +182,37 @@ function IssuesCard({ collectors }: { collectors: Collector[] }) {
         {errors.length > 0 && (
           <div className="space-y-2">
             <h4 className="text-xs font-medium text-destructive uppercase tracking-wider flex items-center gap-1.5">
-              <AlertTriangle className="h-3 w-3" strokeWidth={1.5} />
+              <AlertTriangle className="h-3 w-3" strokeWidth={1.5} aria-hidden="true" />
               Errors
             </h4>
-            {errors.map((err) => (
-              <div
-                key={`${err.collector}-${err.message}`}
-                className="rounded-lg bg-destructive/5 border border-destructive/10 px-3 py-2"
-              >
-                <p className="text-xs font-medium text-foreground">{err.collector}</p>
-                <p className="text-xs text-destructive/80 mt-0.5">{err.message}</p>
-              </div>
-            ))}
+            <ul className="space-y-1.5">
+              {errors.map((err) => (
+                <li
+                  key={`${err.collector}-${err.message}`}
+                  className="border-l-2 border-destructive/40 pl-3 py-1.5"
+                >
+                  <p className="text-xs font-medium text-foreground">{err.collector}</p>
+                  <p className="text-xs text-destructive/80 mt-0.5">{err.message}</p>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
         {skipped.length > 0 && (
           <div className="space-y-2">
             <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <SkipForward className="h-3 w-3" strokeWidth={1.5} />
+              <SkipForward className="h-3 w-3" strokeWidth={1.5} aria-hidden="true" />
               Skipped
             </h4>
-            {skipped.map((item, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: static display list, no reordering
-              <div key={i} className="rounded-lg bg-card px-3 py-2">
-                <p className="text-xs font-medium text-foreground">{item.collector}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{item.message}</p>
-              </div>
-            ))}
+            <ul className="space-y-1.5">
+              {skipped.map((item, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: static display list, no reordering
+                <li key={i} className="border-l-2 border-border pl-3 py-1.5">
+                  <p className="text-xs font-medium text-foreground">{item.collector}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{item.message}</p>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </CardContent>
