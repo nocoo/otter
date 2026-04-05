@@ -403,15 +403,15 @@ export function buildWebhookUrl(_host: string, token: string): string {
 }
 ```
 
-### Phase 3: Read API 迁移 (2-3 天)
+### Phase 3: Read API 迁移 (2-3 天) ✅ 完成
 
-| # | 任务 | 产出 |
-|---|------|------|
-| 3.1 | 实现 /v1/snapshots | 列表 + 详情 |
-| 3.2 | 实现 /v1/webhooks | CRUD |
-| 3.3 | Worker client 封装 | packages/web/src/lib/worker-client.ts |
-| 3.4 | Next.js 路由改造 | 保留为 BFF，转发到 Worker (见下方路由迁移表) |
-| 3.5 | 验证所有页面功能 | E2E 测试通过 |
+| # | 任务 | 产出 | 状态 |
+|---|------|------|------|
+| 3.1 | 实现 /v1/snapshots | 列表 + 详情 + 删除 | ✅ |
+| 3.2 | 实现 /v1/webhooks | CRUD 5 个端点 | ✅ |
+| 3.3 | Worker client 封装 | packages/web/src/lib/worker-client.ts | ✅ |
+| 3.4 | Next.js 路由改造 | 保留为 BFF，转发到 Worker | ✅ |
+| 3.5 | 验证所有页面功能 | 456 UT + 22 L2 + 28 L3 E2E 测试通过 | ✅ |
 
 #### 路由迁移策略
 
@@ -790,11 +790,11 @@ describe("Ingest API", () => {
 
 ### Phase 3: Read API 迁移
 
-- [ ] 3.1 实现 /v1/snapshots
-- [ ] 3.2 实现 /v1/webhooks
-- [ ] 3.3 Worker client 封装
-- [ ] 3.4 Next.js 路由改造
-- [ ] 3.5 E2E 验证
+- [x] 3.1 实现 /v1/snapshots
+- [x] 3.2 实现 /v1/webhooks
+- [x] 3.3 Worker client 封装
+- [x] 3.4 Next.js 路由改造
+- [x] 3.5 E2E 验证
 
 ### Phase 4: Analytics + 可视化
 
