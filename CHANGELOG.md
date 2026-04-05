@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.1] - 2026-04-05
+
+### Chores
+
+- **Code cleanup**: Removed deprecated Next.js webhook routes (`/api/webhook/[token]`) after Worker migration
+  - CLI now uses Worker `/ingest/{token}` directly
+  - Deleted R2 S3 API client (`lib/cf/r2.ts`) - no longer needed
+  - Removed 50 obsolete unit tests
+- **Worker rename**: Changed Worker name from `otter-api` to `otter`
+  - Production: `https://otter.worker.hexly.ai`
+  - Test: `https://otter-test.nocoo.workers.dev`
+- **E2E test update**: Ingest E2E test now calls Worker directly instead of deprecated Next.js route
+
+### Quality
+
+- Test count: 456 → 406 (removed deprecated tests, coverage maintained at 91.85%)
+
 ## [1.4.0] - 2026-04-05
 
 ### Features
