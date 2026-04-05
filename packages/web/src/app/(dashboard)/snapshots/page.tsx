@@ -343,7 +343,7 @@ export default function SnapshotsPage() {
                             <span className="text-xs text-muted-foreground">
                               {formatTimeAgo(snap.snapshotAt)}
                             </span>
-                            <span className="text-[10px] text-muted-foreground/60">
+                            <span className="text-2xs text-muted-foreground/60">
                               {formatDateTime(snap.snapshotAt)}
                             </span>
                           </div>

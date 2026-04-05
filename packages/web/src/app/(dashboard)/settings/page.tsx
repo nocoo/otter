@@ -108,7 +108,7 @@ function WebhookRow({
           <span className="font-medium text-sm">{webhook.label}</span>
           <Badge
             variant={webhook.isActive ? "default" : "secondary"}
-            className="text-[10px] font-normal"
+            className="text-2xs font-normal"
           >
             {webhook.isActive ? "Active" : "Inactive"}
           </Badge>
@@ -139,7 +139,7 @@ function WebhookRow({
       </div>
 
       {/* Meta */}
-      <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
+      <div className="flex items-center gap-4 text-2xs text-muted-foreground">
         <span>Created {formatDate(webhook.createdAt)}</span>
         {webhook.lastUsedAt && <span>Last used {formatDateTime(webhook.lastUsedAt)}</span>}
       </div>
@@ -385,7 +385,7 @@ export default function SettingsPage() {
 
         <p className="text-xs text-muted-foreground">
           Use webhook tokens to authenticate CLI uploads. Configure in your CLI with:{" "}
-          <code className="text-[11px] bg-background/50 px-1.5 py-0.5 rounded">
+          <code className="text-xs bg-background/50 px-1.5 py-0.5 rounded">
             otter config set webhook.url &lt;url&gt;
           </code>
         </p>

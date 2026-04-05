@@ -95,7 +95,7 @@ export function DonutChart({
                 className="h-2 w-2 rounded-full shrink-0"
                 style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
               />
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 {item.name}{" "}
                 <span className="font-medium text-foreground">{formatValue(item.value)}</span>
               </span>

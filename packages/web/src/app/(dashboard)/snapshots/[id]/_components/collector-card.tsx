@@ -64,7 +64,7 @@ export function CollectorCard({ collector }: { collector: Collector }) {
             {hasErrors && (
               <Badge
                 variant="outline"
-                className="text-[10px] font-normal border-destructive/30 bg-destructive/10 text-destructive"
+                className="text-2xs font-normal border-destructive/30 bg-destructive/10 text-destructive"
               >
                 {collector.errors.length} error{collector.errors.length !== 1 ? "s" : ""}
               </Badge>
@@ -79,7 +79,7 @@ export function CollectorCard({ collector }: { collector: Collector }) {
           {/* Files */}
           {totalFiles > 0 && (
             <div className="space-y-2">
-              <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <FileText className="h-3 w-3" strokeWidth={1.5} />
                 Files
               </h4>
@@ -94,7 +94,7 @@ export function CollectorCard({ collector }: { collector: Collector }) {
           {/* Items */}
           {totalLists > 0 && (
             <div className="space-y-2">
-              <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <List className="h-3 w-3" strokeWidth={1.5} />
                 Items
               </h4>
@@ -124,7 +124,7 @@ export function CollectorCard({ collector }: { collector: Collector }) {
           {/* Errors */}
           {hasErrors && (
             <div className="space-y-2">
-              <h4 className="text-[11px] font-medium text-destructive uppercase tracking-wider flex items-center gap-1.5">
+              <h4 className="text-xs font-medium text-destructive uppercase tracking-wider flex items-center gap-1.5">
                 <AlertTriangle className="h-3 w-3" strokeWidth={1.5} />
                 Errors
               </h4>
@@ -144,7 +144,7 @@ export function CollectorCard({ collector }: { collector: Collector }) {
           {/* Skipped */}
           {hasSkipped && (
             <div className="space-y-2">
-              <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <SkipForward className="h-3 w-3" strokeWidth={1.5} />
                 Skipped
               </h4>

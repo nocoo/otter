@@ -151,7 +151,7 @@ function CliConnectContent() {
           <Terminal className="h-3.5 w-3.5" strokeWidth={1.5} />
           <span>
             Connecting to{" "}
-            <code className="bg-background/50 px-1.5 py-0.5 rounded text-[11px]">{callback}</code>
+            <code className="bg-background/50 px-1.5 py-0.5 rounded text-xs">{callback}</code>
           </span>
         </div>
       </div>
@@ -305,7 +305,7 @@ function WebhookConnectRow({
         <div className="flex items-center gap-2.5">
           <Webhook className="h-4 w-4 text-primary" strokeWidth={1.5} />
           <span className="font-medium text-sm">{webhook.label}</span>
-          <Badge variant="default" className="text-[10px] font-normal">
+          <Badge variant="default" className="text-2xs font-normal">
             Active
           </Badge>
         </div>
@@ -335,7 +335,7 @@ function WebhookConnectRow({
         </code>
       </div>
 
-      <div className="text-[10px] text-muted-foreground">
+      <div className="text-2xs text-muted-foreground">
         Webhook URL: <span className="font-mono">{fullUrl.slice(0, 50)}...</span>
       </div>
     </div>

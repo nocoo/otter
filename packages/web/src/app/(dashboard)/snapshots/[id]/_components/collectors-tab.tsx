@@ -31,7 +31,7 @@ export function CollectorsTab({ collectors, category }: CollectorsTabProps) {
           placeholder="Search collectors, files, items, or metadata..."
           className="bg-background/70"
         />
-        <Badge variant="secondary" className="text-[10px] font-normal shrink-0">
+        <Badge variant="secondary" className="text-2xs font-normal shrink-0">
           {filtered.length}/{categoryCollectors.length}
         </Badge>
       </div>

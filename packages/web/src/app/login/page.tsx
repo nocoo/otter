@@ -113,13 +113,13 @@ function LoginContent() {
                 <Archive className="h-4 w-4 text-primary-foreground" strokeWidth={1.5} />
                 <span className="text-sm font-semibold text-primary-foreground">otter</span>
               </div>
-              <span className="text-[10px] font-medium uppercase tracking-widest text-primary-foreground/60">
+              <span className="text-2xs font-medium uppercase tracking-widest text-primary-foreground/60">
                 DEV
               </span>
             </div>
             {/* Barcode row */}
             <div className="mt-3 flex items-center justify-between">
-              <span className="text-[9px] font-mono text-primary-foreground/40 tracking-wider">
+              <span className="text-2xs font-mono text-primary-foreground/40 tracking-wider">
                 ID {year}-{today.slice(4)}
               </span>
               <div className="h-6">
@@ -181,7 +181,7 @@ function LoginContent() {
             </button>
 
             {/* Terms */}
-            <p className="mt-3 text-center text-[10px] leading-relaxed text-muted-foreground/60">
+            <p className="mt-3 text-center text-2xs leading-relaxed text-muted-foreground/60">
               By signing in you agree to our terms and privacy policy
             </p>
           </div>
@@ -190,7 +190,7 @@ function LoginContent() {
           <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center border-t border-border bg-secondary/50 py-2.5">
             <div className="flex items-center gap-1.5">
               <div className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-              <span className="text-[10px] text-muted-foreground">Secure Auth</span>
+              <span className="text-2xs text-muted-foreground">Secure Auth</span>
             </div>
           </div>
         </div>

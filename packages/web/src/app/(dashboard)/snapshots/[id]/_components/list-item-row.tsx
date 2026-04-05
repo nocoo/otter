@@ -44,7 +44,7 @@ export function ListItemRow({ item, iconUrl, isSshKey }: ListItemRowProps) {
               <Badge
                 key={`${item.name}-${key}`}
                 variant="outline"
-                className={cn("text-[10px] font-normal", badgeClassName(key))}
+                className={cn("text-2xs font-normal", badgeClassName(key))}
               >
                 {key === "type" ? value : `${formatMetaLabel(key)}: ${value}`}
               </Badge>
@@ -53,7 +53,7 @@ export function ListItemRow({ item, iconUrl, isSshKey }: ListItemRowProps) {
         )}
       </div>
       {item.version && (
-        <code className="text-[10px] text-muted-foreground font-mono shrink-0">{item.version}</code>
+        <code className="text-2xs text-muted-foreground font-mono shrink-0">{item.version}</code>
       )}
     </div>
   );

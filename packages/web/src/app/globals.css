@@ -313,3 +313,12 @@
 @utility font-display {
   font-family: var(--font-dm-sans), "DM Sans", system-ui, sans-serif;
 }
+
+/*
+ * Extended type scale
+ * text-2xs: 10px for metadata, timestamps, tertiary labels
+ */
+@utility text-2xs {
+  font-size: 0.625rem; /* 10px */
+  line-height: 1.4;
+}

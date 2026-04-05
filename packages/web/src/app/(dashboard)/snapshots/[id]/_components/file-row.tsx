@@ -27,7 +27,7 @@ export function FileRow({ file }: { file: FileData }) {
         <code className="text-xs font-mono text-foreground truncate flex-1" title={file.path}>
           {filename}
         </code>
-        <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
+        <span className="text-2xs text-muted-foreground tabular-nums shrink-0">
           {formatSize(file.sizeBytes)}
         </span>
         <div className="flex items-center gap-1 shrink-0">

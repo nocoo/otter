@@ -149,14 +149,14 @@ export default function SnapshotDetailPage({ params }: { params: Promise<{ id: s
           <TabsTrigger value="config" className="gap-1.5">
             <Settings className="h-3.5 w-3.5" strokeWidth={1.5} />
             Config
-            <Badge variant="secondary" className="text-[10px] font-normal ml-0.5 px-1.5 py-0">
+            <Badge variant="secondary" className="text-2xs font-normal ml-0.5 px-1.5 py-0">
               {configCount}
             </Badge>
           </TabsTrigger>
           <TabsTrigger value="environment" className="gap-1.5">
             <Globe className="h-3.5 w-3.5" strokeWidth={1.5} />
             Environment
-            <Badge variant="secondary" className="text-[10px] font-normal ml-0.5 px-1.5 py-0">
+            <Badge variant="secondary" className="text-2xs font-normal ml-0.5 px-1.5 py-0">
               {envCount}
             </Badge>
           </TabsTrigger>

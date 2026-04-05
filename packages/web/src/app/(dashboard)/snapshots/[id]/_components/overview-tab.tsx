@@ -42,7 +42,7 @@ function StatCard({
       <CardContent className="px-4 py-3.5 flex items-center gap-3">
         <Icon className="h-4 w-4 text-primary shrink-0" strokeWidth={1.5} />
         <div className="min-w-0">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
+          <p className="text-2xs text-muted-foreground uppercase tracking-wider">{label}</p>
           <p className="text-sm font-medium truncate">{value}</p>
         </div>
       </CardContent>
@@ -102,7 +102,7 @@ function CollectorSummaryCard({ collectors }: { collectors: Collector[] }) {
               <div key={row.label} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">{row.label}</span>
-                  <Badge variant="secondary" className="text-[10px] font-normal">
+                  <Badge variant="secondary" className="text-2xs font-normal">
                     {row.count}
                   </Badge>
                 </div>
@@ -181,7 +181,7 @@ function IssuesCard({ collectors }: { collectors: Collector[] }) {
       <CardContent className="px-5 py-4 space-y-4">
         {errors.length > 0 && (
           <div className="space-y-2">
-            <h4 className="text-[11px] font-medium text-destructive uppercase tracking-wider flex items-center gap-1.5">
+            <h4 className="text-xs font-medium text-destructive uppercase tracking-wider flex items-center gap-1.5">
               <AlertTriangle className="h-3 w-3" strokeWidth={1.5} />
               Errors
             </h4>
@@ -198,7 +198,7 @@ function IssuesCard({ collectors }: { collectors: Collector[] }) {
         )}
         {skipped.length > 0 && (
           <div className="space-y-2">
-            <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <SkipForward className="h-3 w-3" strokeWidth={1.5} />
               Skipped
             </h4>
