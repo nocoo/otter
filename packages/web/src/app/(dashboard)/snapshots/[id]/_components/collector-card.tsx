@@ -125,19 +125,16 @@ export function CollectorCard({ collector }: { collector: Collector }) {
           {hasErrors && (
             <div className="space-y-2">
               <h4 className="text-xs font-medium text-destructive uppercase tracking-wider flex items-center gap-1.5">
-                <AlertTriangle className="h-3 w-3" strokeWidth={1.5} />
+                <AlertTriangle className="h-3 w-3" strokeWidth={1.5} aria-hidden="true" />
                 Errors
               </h4>
-              <div className="space-y-1.5">
+              <ul className="space-y-1.5">
                 {collector.errors.map((err) => (
-                  <div
-                    key={err}
-                    className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2"
-                  >
-                    <p className="text-xs text-destructive/90">{err}</p>
-                  </div>
+                  <li key={err} className="border-l-2 border-destructive/40 pl-3 py-1.5">
+                    <p className="text-xs text-destructive/80">{err}</p>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
           )}
 
@@ -145,19 +142,16 @@ export function CollectorCard({ collector }: { collector: Collector }) {
           {hasSkipped && (
             <div className="space-y-2">
               <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <SkipForward className="h-3 w-3" strokeWidth={1.5} />
+                <SkipForward className="h-3 w-3" strokeWidth={1.5} aria-hidden="true" />
                 Skipped
               </h4>
-              <div className="space-y-1.5">
+              <ul className="space-y-1.5">
                 {(collector.skipped ?? []).map((msg) => (
-                  <div
-                    key={msg}
-                    className="rounded-lg border border-border/50 bg-secondary px-3 py-2"
-                  >
+                  <li key={msg} className="border-l-2 border-border pl-3 py-1.5">
                     <p className="text-xs text-muted-foreground">{msg}</p>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
           )}
         </div>
