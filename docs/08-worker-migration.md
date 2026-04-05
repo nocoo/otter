@@ -97,7 +97,6 @@ ICON_PREFIX = "apps/otter"
 ```typescript
 // src/index.ts
 import { Hono } from "hono";
-import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { ingestRoutes } from "./routes/ingest";
 import { snapshotRoutes } from "./routes/snapshots";
@@ -118,8 +117,7 @@ const app = new Hono<{ Bindings: Bindings }>();
 
 // Global middleware
 app.use("*", logger());
-// 不启用全局 CORS — Worker 只接受 CLI 和 BFF 调用，不需要浏览器跨域
-// app.use("*", cors({ origin: "*" }));  // ❌ 禁止
+// 不启用 CORS — Worker 只接受 CLI 和 BFF 调用，不需要浏览器跨域
 
 // Public routes (token-based auth in route)
 app.route("/ingest", ingestRoutes);
@@ -599,9 +597,11 @@ E2E 测试 → Next.js BFF (E2E_SKIP_AUTH=true) → Worker
 
 #### 3. 测试资源隔离：Worker 端 Fail-Fast 校验
 
-Worker 必须在启动时和首次数据库访问时执行资源隔离校验，**强制执行环境**：
+Worker 在 **每个请求的第一个中间件** 执行资源隔离校验，fail-fast。
+
+**强制执行环境**：
 - `test` 环境
-- `staging` 环境（可选，取决于是否共享生产资源）
+- `production` 环境（反向校验）
 
 **实现位置**：`packages/worker/src/middleware/env-guard.ts`
 
