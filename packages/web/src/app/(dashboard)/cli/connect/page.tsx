@@ -2,7 +2,7 @@
 
 import { Check, ExternalLink, Loader2, ShieldAlert, Terminal, Webhook } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,10 +40,31 @@ function isValidCallback(callback: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Page
+// Page (with Suspense boundary for useSearchParams)
 // ---------------------------------------------------------------------------
 
 export default function CliConnectPage() {
+  return (
+    <Suspense fallback={<CliConnectSkeleton />}>
+      <CliConnectContent />
+    </Suspense>
+  );
+}
+
+function CliConnectSkeleton() {
+  return (
+    <div className="max-w-2xl space-y-6">
+      <Header />
+      <WebhooksConnectSkeleton />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Content (uses useSearchParams)
+// ---------------------------------------------------------------------------
+
+function CliConnectContent() {
   const searchParams = useSearchParams();
   const callback = searchParams.get("callback");
 
