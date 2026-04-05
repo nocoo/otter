@@ -1,4 +1,4 @@
-name = "otter-api"
+name = "otter"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
 

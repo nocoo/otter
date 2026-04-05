@@ -76,7 +76,7 @@ describe("buildWebhookUrl", () => {
     delete process.env.OTTER_API_URL;
     const url = buildWebhookUrl("https://otter.hexly.ai", "abc-123");
     // Default is now Worker URL
-    expect(url).toBe("https://otter-api.nocoo.workers.dev/ingest/abc-123");
+    expect(url).toBe("https://otter.nocoo.workers.dev/ingest/abc-123");
   });
 
   it("should use OTTER_API_URL when set", () => {
@@ -89,7 +89,7 @@ describe("buildWebhookUrl", () => {
     delete process.env.OTTER_API_URL;
     // Host is ignored, Worker URL is used
     const url = buildWebhookUrl("https://otter.dev.hexly.ai", "dev-token");
-    expect(url).toBe("https://otter-api.nocoo.workers.dev/ingest/dev-token");
+    expect(url).toBe("https://otter.nocoo.workers.dev/ingest/dev-token");
   });
 });
 
