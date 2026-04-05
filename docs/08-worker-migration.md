@@ -769,11 +769,11 @@ describe("Ingest API", () => {
 
 ### Phase 1: Worker 基础设施
 
-- [ ] 1.1 创建 packages/worker 骨架
-- [ ] 1.2 配置 Hono + TypeScript
-- [ ] 1.3 实现 /health 路由
-- [ ] 1.4 本地开发环境
-- [ ] 1.5 部署到 Cloudflare
+- [x] 1.1 创建 packages/worker 骨架
+- [x] 1.2 配置 Hono + TypeScript
+- [x] 1.3 实现 /health 路由
+- [x] 1.4 本地开发环境
+- [x] 1.5 部署到 Cloudflare (https://otter-api.nocoo.workers.dev)
 
 ### Phase 2: Ingest 迁移
 

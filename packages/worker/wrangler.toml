@@ -12,7 +12,7 @@ ICON_PREFIX = "apps/otter"
 [[d1_databases]]
 binding = "DB"
 database_name = "otter-db"
-database_id = "placeholder-prod-db-id"  # 从 CF Dashboard 获取后替换
+database_id = "4004e775-8d54-4528-b3f2-3dd198ceeb51"
 
 [[r2_buckets]]
 binding = "SNAPSHOTS"
@@ -25,23 +25,6 @@ bucket_name = "zhe"
 # 生产环境 secrets (通过 wrangler secret put 设置):
 # - API_KEY: Next.js 调用 Worker 的密钥
 
-# --- Staging 环境 ---
-[env.staging]
-vars = { ENVIRONMENT = "staging", D1_DATABASE_NAME = "otter-db-staging", R2_BUCKET_NAME = "otter-snapshots-staging", ICON_PREFIX = "apps/otter" }
-
-[[env.staging.d1_databases]]
-binding = "DB"
-database_name = "otter-db-staging"
-database_id = "placeholder-staging-db-id"
-
-[[env.staging.r2_buckets]]
-binding = "SNAPSHOTS"
-bucket_name = "otter-snapshots-staging"
-
-[[env.staging.r2_buckets]]
-binding = "ICONS"
-bucket_name = "zhe"
-
 # --- 测试环境 (CI/E2E) ---
 [env.test]
 vars = { ENVIRONMENT = "test", D1_DATABASE_NAME = "otter-db-test", R2_BUCKET_NAME = "otter-snapshots-test", ICON_PREFIX = "apps/otter" }
@@ -49,7 +32,7 @@ vars = { ENVIRONMENT = "test", D1_DATABASE_NAME = "otter-db-test", R2_BUCKET_NAM
 [[env.test.d1_databases]]
 binding = "DB"
 database_name = "otter-db-test"
-database_id = "placeholder-test-db-id"
+database_id = "91daeab7-2fa7-482a-9e20-e2716df98bd3"
 
 [[env.test.r2_buckets]]
 binding = "SNAPSHOTS"
