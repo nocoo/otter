@@ -1,14 +1,13 @@
 /**
- * L3 API E2E: Webhook Receiver
+ * L2 API E2E: Ingest via Worker
  *
- * Tests the full webhook receiver flow:
- *  1. Create a webhook token
- *  2. POST a gzip-compressed snapshot to /api/webhook/:token
- *  3. Verify the snapshot appears in the snapshots list
+ * Tests the full ingest flow through the Worker:
+ *  1. Create a webhook token (via BFF → Worker)
+ *  2. POST a gzip-compressed snapshot directly to Worker /ingest/:token
+ *  3. Verify the snapshot appears in the snapshots list (via BFF → Worker)
  *  4. Clean up: delete the snapshot and webhook
  *
- * This is the most important E2E test — it exercises the entire
- * ingest pipeline: gzip decompression → R2 storage → D1 indexing.
+ * This exercises the entire ingest pipeline: Worker → gzip decompression → R2 storage → D1 indexing.
  */
 
 import { afterAll, describe, expect, it } from "bun:test";
@@ -20,6 +19,7 @@ import {
 } from "../../../test-support/rich-snapshot";
 
 const BASE_URL = `http://localhost:${process.env.E2E_PORT || "17019"}`;
+const WORKER_URL = process.env.WORKER_API_URL || "https://otter-test.nocoo.workers.dev";
 
 // Track resources for cleanup
 let webhookId: string | null = null;
@@ -30,7 +30,7 @@ let snapshotId: string | null = null;
 const testSnapshotId = `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const richSnapshotId = `e2e-rich-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-// Minimal valid snapshot payload matching the webhook receiver's validation:
+// Minimal valid snapshot payload matching the Worker's validation:
 //   - version: 1 (required)
 //   - id: string (required)
 //   - createdAt: ISO string (required)
@@ -71,11 +71,7 @@ const testSnapshot = {
 const richSnapshot = buildRichSnapshotFixture(richSnapshotId);
 
 afterAll(async () => {
-  // Clean up snapshot from D1 (no delete API yet, but we can verify it exists)
-  // In a real cleanup we'd need a DELETE /api/snapshots/:id route
-  // For now, the E2E test user data is isolated by user_id="e2e-test-user"
-
-  // Clean up webhook
+  // Clean up webhook via BFF
   if (webhookId) {
     try {
       await fetch(`${BASE_URL}/api/webhooks/${webhookId}`, {
@@ -87,7 +83,7 @@ afterAll(async () => {
   }
 });
 
-describe("L3 API E2E: Webhook Receiver", () => {
+describe("L2 API E2E: Ingest via Worker", () => {
   it("creates a webhook token for testing", async () => {
     const res = await fetch(`${BASE_URL}/api/webhooks`, {
       method: "POST",
@@ -103,13 +99,13 @@ describe("L3 API E2E: Webhook Receiver", () => {
     expect(typeof webhookToken).toBe("string");
   });
 
-  it("POST /api/webhook/:token accepts gzip snapshot", async () => {
+  it("POST Worker /ingest/:token accepts gzip snapshot", async () => {
     expect(webhookToken).not.toBeNull();
 
     const jsonBytes = new TextEncoder().encode(JSON.stringify(testSnapshot));
     const compressed = gzipSync(jsonBytes);
 
-    const res = await fetch(`${BASE_URL}/api/webhook/${webhookToken}`, {
+    const res = await fetch(`${WORKER_URL}/ingest/${webhookToken}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -160,11 +156,11 @@ describe("L3 API E2E: Webhook Receiver", () => {
     expect(data.data.collectors).toHaveLength(1);
   });
 
-  it("POST /api/webhook/:token rejects invalid token", async () => {
+  it("POST Worker /ingest/:token rejects invalid token", async () => {
     const jsonBytes = new TextEncoder().encode(JSON.stringify(testSnapshot));
     const compressed = gzipSync(jsonBytes);
 
-    const res = await fetch(`${BASE_URL}/api/webhook/00000000-0000-0000-0000-000000000000`, {
+    const res = await fetch(`${WORKER_URL}/ingest/00000000-0000-0000-0000-000000000000`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -175,7 +171,7 @@ describe("L3 API E2E: Webhook Receiver", () => {
     expect(res.status).toBe(401);
   });
 
-  it("POST /api/webhook/:token accepts raw JSON without gzip", async () => {
+  it("POST Worker /ingest/:token accepts raw JSON without gzip", async () => {
     expect(webhookToken).not.toBeNull();
 
     // Use a different snapshot ID to avoid PK collision
@@ -184,14 +180,14 @@ describe("L3 API E2E: Webhook Receiver", () => {
       id: `e2e-raw-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     };
 
-    const res = await fetch(`${BASE_URL}/api/webhook/${webhookToken}`, {
+    const res = await fetch(`${WORKER_URL}/ingest/${webhookToken}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(rawSnapshot),
     });
-    // Route accepts raw JSON when Content-Encoding is not gzip
+    // Worker accepts raw JSON when Content-Encoding is not gzip
     expect(res.status).toBe(201);
 
     const data = await res.json();
@@ -199,13 +195,13 @@ describe("L3 API E2E: Webhook Receiver", () => {
     expect(data).toHaveProperty("snapshotId", rawSnapshot.id);
   });
 
-  it("POST /api/webhook/:token accepts rich collector snapshot", async () => {
+  it("POST Worker /ingest/:token accepts rich collector snapshot", async () => {
     expect(webhookToken).not.toBeNull();
 
     const jsonBytes = new TextEncoder().encode(JSON.stringify(richSnapshot));
     const compressed = gzipSync(jsonBytes);
 
-    const res = await fetch(`${BASE_URL}/api/webhook/${webhookToken}`, {
+    const res = await fetch(`${WORKER_URL}/ingest/${webhookToken}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
