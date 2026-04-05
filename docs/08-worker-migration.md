@@ -375,7 +375,7 @@ POST https://api.otter.hexly.ai/ingest/{token}
 | 1.2 | 配置 Hono + TypeScript | src/index.ts, 类型定义 | ✅ |
 | 1.3 | 实现 /health 路由 | D1 ping 测试 | ✅ |
 | 1.4 | 本地开发环境 | `wrangler dev` 可用 | ✅ |
-| 1.5 | 部署到 Cloudflare | otter.nocoo.workers.dev 可访问 | ✅ |
+| 1.5 | 部署到 Cloudflare | otter.worker.hexly.ai 可访问 | ✅ |
 
 ### Phase 2: Ingest 迁移 (2-3 天) ✅ 完成
 
@@ -391,7 +391,7 @@ POST https://api.otter.hexly.ai/ingest/{token}
 
 ```typescript
 // packages/cli/src/commands/login.ts
-export const DEFAULT_WORKER_URL = "https://otter.nocoo.workers.dev";
+export const DEFAULT_WORKER_URL = "https://otter.worker.hexly.ai";
 
 export function getWorkerApiUrl(): string {
   return process.env.OTTER_API_URL ?? DEFAULT_WORKER_URL;
@@ -778,7 +778,7 @@ describe("Ingest API", () => {
 - [x] 1.2 配置 Hono + TypeScript
 - [x] 1.3 实现 /health 路由
 - [x] 1.4 本地开发环境
-- [x] 1.5 部署到 Cloudflare (https://otter.nocoo.workers.dev)
+- [x] 1.5 部署到 Cloudflare (https://otter.worker.hexly.ai)
 
 ### Phase 2: Ingest 迁移
 

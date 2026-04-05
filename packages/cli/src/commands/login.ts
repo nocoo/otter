@@ -10,7 +10,7 @@ export const DEV_HOST = "https://otter.dev.hexly.ai";
  * Default Worker API URL for ingest endpoints.
  * CLI uploads now go directly to the Worker by default.
  */
-export const DEFAULT_WORKER_URL = "https://otter.nocoo.workers.dev";
+export const DEFAULT_WORKER_URL = "https://otter.worker.hexly.ai";
 
 const TIMEOUT_MS = 30_000;
 const PORT_RANGE_START = 49152;
