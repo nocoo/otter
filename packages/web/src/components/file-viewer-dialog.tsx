@@ -153,15 +153,7 @@ function computeFileStats(content: string, sizeBytes: number): FileStats {
 // Code editor renderer
 // ---------------------------------------------------------------------------
 
-function CodeEditor({
-  tokens,
-  lineCount,
-  isDark,
-}: {
-  tokens: ThemedToken[][] | null;
-  lineCount: number;
-  isDark: boolean;
-}) {
+function CodeEditor({ tokens, lineCount }: { tokens: ThemedToken[][] | null; lineCount: number }) {
   const gutterWidth = `${Math.max(String(lineCount).length, 2)}ch`;
 
   if (!tokens) return null;
@@ -172,13 +164,11 @@ function CodeEditor({
         <div
           // biome-ignore lint/suspicious/noArrayIndexKey: lines are positional, index is the natural key
           key={lineIdx}
-          className={isDark ? "flex hover:bg-[#161b22]" : "flex hover:bg-[#f3f4f6]"}
+          className="flex hover:bg-code-line-hover"
         >
           {/* Line number gutter */}
           <span
-            className={`shrink-0 select-none text-right pr-4 pl-4 sticky left-0 ${
-              isDark ? "text-[#484f58] bg-[#0d1117]" : "text-[#afb8c1] bg-[#ffffff]"
-            }`}
+            className="shrink-0 select-none text-right pr-4 pl-4 sticky left-0 text-code-gutter-text bg-code-gutter-bg"
             style={{ minWidth: `calc(${gutterWidth} + 2rem)` }}
           >
             {lineIdx + 1}
@@ -204,15 +194,7 @@ function CodeEditor({
 // Fallback plain text editor (no syntax highlighting)
 // ---------------------------------------------------------------------------
 
-function PlainEditor({
-  content,
-  lineCount,
-  isDark,
-}: {
-  content: string;
-  lineCount: number;
-  isDark: boolean;
-}) {
+function PlainEditor({ content, lineCount }: { content: string; lineCount: number }) {
   const gutterWidth = `${Math.max(String(lineCount).length, 2)}ch`;
   const lines = content.split("\n");
 
@@ -222,21 +204,15 @@ function PlainEditor({
         <div
           // biome-ignore lint/suspicious/noArrayIndexKey: lines are positional, index is the natural key
           key={lineIdx}
-          className={isDark ? "flex hover:bg-[#161b22]" : "flex hover:bg-[#f3f4f6]"}
+          className="flex hover:bg-code-line-hover"
         >
           <span
-            className={`shrink-0 select-none text-right pr-4 pl-4 sticky left-0 ${
-              isDark ? "text-[#484f58] bg-[#0d1117]" : "text-[#afb8c1] bg-[#ffffff]"
-            }`}
+            className="shrink-0 select-none text-right pr-4 pl-4 sticky left-0 text-code-gutter-text bg-code-gutter-bg"
             style={{ minWidth: `calc(${gutterWidth} + 2rem)` }}
           >
             {lineIdx + 1}
           </span>
-          <span
-            className={`flex-1 whitespace-pre-wrap break-all pr-4 py-0 ${
-              isDark ? "text-[#e6edf3]" : "text-[#1f2328]"
-            }`}
-          >
+          <span className="flex-1 whitespace-pre-wrap break-all pr-4 py-0 text-code-text">
             {line || "\n"}
           </span>
         </div>
@@ -255,7 +231,6 @@ interface FileViewerDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: multi-state code viewer
 export function FileViewerDialog({ file, open, onOpenChange }: FileViewerDialogProps) {
   const isDark = useIsDark();
   const [tokens, setTokens] = useState<ThemedToken[][] | null>(null);
@@ -315,31 +290,17 @@ export function FileViewerDialog({ file, open, onOpenChange }: FileViewerDialogP
 
   const filename = file?.path.split("/").pop() ?? "";
 
-  // Adaptive color tokens
-  const bg = isDark ? "bg-[#0d1117]" : "bg-[#ffffff]";
-  const border = isDark ? "border-[#30363d]" : "border-[#d1d9e0]";
-  const textPrimary = isDark ? "text-[#e6edf3]" : "text-[#1f2328]";
-  const textSecondary = isDark ? "text-[#8b949e]" : "text-[#656d76]";
-  const btnBg = isDark
-    ? "border-[#30363d] bg-[#21262d] text-[#e6edf3] hover:bg-[#30363d] hover:text-[#e6edf3]"
-    : "border-[#d1d9e0] bg-[#f6f8fa] text-[#1f2328] hover:bg-[#eaeef2] hover:text-[#1f2328]";
-  const closeBtn = isDark
-    ? "[&_[data-slot=dialog-close]]:text-[#8b949e] [&_[data-slot=dialog-close]]:hover:text-[#e6edf3]"
-    : "[&_[data-slot=dialog-close]]:text-[#656d76] [&_[data-slot=dialog-close]]:hover:text-[#1f2328]";
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className={`sm:max-w-6xl max-h-[85vh] flex flex-col p-0 gap-0 ${bg} ${border} ${textPrimary} ${closeBtn}`}
-      >
+      <DialogContent className="sm:max-w-6xl max-h-[85vh] flex flex-col p-0 gap-0 bg-code-bg border-code-border text-code-text [&_[data-slot=dialog-close]]:text-code-text-secondary [&_[data-slot=dialog-close]]:hover:text-code-text">
         {/* Header */}
-        <DialogHeader className={`px-5 pt-5 pb-3 border-b ${border} shrink-0`}>
+        <DialogHeader className="px-5 pt-5 pb-3 border-b border-code-border shrink-0">
           <div className="flex items-center justify-between gap-3 pr-8">
             <div className="min-w-0">
-              <DialogTitle className={`text-sm font-medium truncate font-mono ${textPrimary}`}>
+              <DialogTitle className="text-sm font-medium truncate font-mono text-code-text">
                 {filename}
               </DialogTitle>
-              <DialogDescription className={`text-xs mt-1 truncate ${textSecondary}`}>
+              <DialogDescription className="text-xs mt-1 truncate text-code-text-secondary">
                 {file?.path}
               </DialogDescription>
             </div>
@@ -347,10 +308,10 @@ export function FileViewerDialog({ file, open, onOpenChange }: FileViewerDialogP
               variant="outline"
               size="xs"
               onClick={handleCopy}
-              className={`shrink-0 gap-1 ${btnBg}`}
+              className="shrink-0 gap-1 border-code-border bg-code-btn-bg text-code-text hover:bg-code-btn-hover hover:text-code-text"
             >
               {copied ? (
-                <Check className="h-3 w-3 text-green-500" strokeWidth={1.5} />
+                <Check className="h-3 w-3 text-success" strokeWidth={1.5} />
               ) : (
                 <Copy className="h-3 w-3" strokeWidth={1.5} />
               )}
@@ -372,11 +333,11 @@ export function FileViewerDialog({ file, open, onOpenChange }: FileViewerDialogP
               ))}
             </div>
           ) : tokens ? (
-            <CodeEditor tokens={tokens} lineCount={lineCount} isDark={isDark} />
+            <CodeEditor tokens={tokens} lineCount={lineCount} />
           ) : content ? (
-            <PlainEditor content={content} lineCount={lineCount} isDark={isDark} />
+            <PlainEditor content={content} lineCount={lineCount} />
           ) : (
-            <div className={`flex items-center justify-center py-12 text-sm ${textSecondary}`}>
+            <div className="flex items-center justify-center py-12 text-sm text-code-text-secondary">
               No content available
             </div>
           )}
@@ -384,9 +345,7 @@ export function FileViewerDialog({ file, open, onOpenChange }: FileViewerDialogP
 
         {/* Footer stats */}
         {stats && (
-          <div
-            className={`px-5 py-3 border-t ${border} flex items-center gap-4 text-xs ${textSecondary} shrink-0`}
-          >
+          <div className="px-5 py-3 border-t border-code-border flex items-center gap-4 text-xs text-code-text-secondary shrink-0">
             <span className="flex items-center gap-1.5">
               <FileText className="h-3 w-3" strokeWidth={1.5} />
               {formatSize(stats.size)}

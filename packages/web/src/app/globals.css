@@ -91,6 +91,17 @@
   --color-chart-axis: hsl(var(--chart-axis));
   --color-chart-muted: hsl(var(--chart-muted));
 
+  /* Code viewer colors */
+  --color-code-bg: hsl(var(--code-bg));
+  --color-code-gutter-bg: hsl(var(--code-gutter-bg));
+  --color-code-gutter-text: hsl(var(--code-gutter-text));
+  --color-code-line-hover: hsl(var(--code-line-hover));
+  --color-code-text: hsl(var(--code-text));
+  --color-code-text-secondary: hsl(var(--code-text-secondary));
+  --color-code-border: hsl(var(--code-border));
+  --color-code-btn-bg: hsl(var(--code-btn-bg));
+  --color-code-btn-hover: hsl(var(--code-btn-hover));
+
   /* Radius tokens */
   --radius-card: 14px;
   --radius-widget: 10px;
@@ -205,6 +216,17 @@
   /* Chart utility tokens */
   --chart-axis: 0 0% 40%;
   --chart-muted: 0 0% 70%;
+
+  /* Code viewer colors (GitHub Light theme) */
+  --code-bg: 0 0% 100%;
+  --code-gutter-bg: 0 0% 100%;
+  --code-gutter-text: 216 12% 72%;
+  --code-line-hover: 218 17% 95%;
+  --code-text: 213 27% 13%;
+  --code-text-secondary: 214 13% 42%;
+  --code-border: 214 16% 82%;
+  --code-btn-bg: 212 13% 97%;
+  --code-btn-hover: 212 13% 93%;
 }
 
 .dark {
@@ -292,6 +314,17 @@
   /* Chart utility tokens */
   --chart-axis: 0 0% 50%;
   --chart-muted: 0 0% 35%;
+
+  /* Code viewer colors (GitHub Dark theme) */
+  --code-bg: 215 28% 5%;
+  --code-gutter-bg: 215 28% 5%;
+  --code-gutter-text: 212 10% 31%;
+  --code-line-hover: 213 21% 10%;
+  --code-text: 213 20% 91%;
+  --code-text-secondary: 214 11% 56%;
+  --code-border: 214 12% 21%;
+  --code-btn-bg: 214 12% 16%;
+  --code-btn-hover: 214 12% 21%;
 }
 
 /*
