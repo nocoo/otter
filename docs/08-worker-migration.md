@@ -367,34 +367,39 @@ POST https://api.otter.hexly.ai/ingest/{token}
 
 ## 分阶段迁移计划
 
-### Phase 1: Worker 基础设施 (1-2 天)
+### Phase 1: Worker 基础设施 (1-2 天) ✅ 完成
 
-| # | 任务 | 产出 |
-|---|------|------|
-| 1.1 | 创建 `packages/worker` 骨架 | package.json, tsconfig.json, wrangler.toml |
-| 1.2 | 配置 Hono + TypeScript | src/index.ts, 类型定义 |
-| 1.3 | 实现 /health 路由 | D1 ping 测试 |
-| 1.4 | 本地开发环境 | `wrangler dev` 可用 |
-| 1.5 | 部署到 Cloudflare | api.otter.hexly.ai 可访问 |
+| # | 任务 | 产出 | 状态 |
+|---|------|------|------|
+| 1.1 | 创建 `packages/worker` 骨架 | package.json, tsconfig.json, wrangler.toml | ✅ |
+| 1.2 | 配置 Hono + TypeScript | src/index.ts, 类型定义 | ✅ |
+| 1.3 | 实现 /health 路由 | D1 ping 测试 | ✅ |
+| 1.4 | 本地开发环境 | `wrangler dev` 可用 | ✅ |
+| 1.5 | 部署到 Cloudflare | otter-api.nocoo.workers.dev 可访问 | ✅ |
 
-### Phase 2: Ingest 迁移 (2-3 天)
+### Phase 2: Ingest 迁移 (2-3 天) ✅ 完成
 
-| # | 任务 | 产出 |
-|---|------|------|
-| 2.1 | 实现 /ingest/{token} | 快照上传 (D1 + R2) |
-| 2.2 | 实现 /ingest/{token}/icons | 图标上传 |
-| 2.3 | CLI 兼容: 支持新旧 URL | 环境变量切换 |
-| 2.4 | E2E 测试 Ingest | Worker 侧测试 |
-| 2.5 | 切换生产流量 | CLI 默认使用 Worker URL |
+| # | 任务 | 产出 | 状态 |
+|---|------|------|------|
+| 2.1 | 实现 /ingest/{token} | 快照上传 (D1 + R2) | ✅ |
+| 2.2 | 实现 /ingest/{token}/icons | 图标上传 | ✅ |
+| 2.3 | CLI 兼容: 支持新旧 URL | 环境变量切换 | ✅ |
+| 2.4 | E2E 测试 Ingest | Worker 侧测试 | ✅ |
+| 2.5 | 切换生产流量 | CLI 默认使用 Worker URL | ✅ |
 
-**CLI 改动**:
+**CLI 改动 (已实现)**:
 
 ```typescript
-// packages/cli/src/config.ts
-export function getWebhookUrl(token: string): string {
-  // 新增环境变量，允许覆盖
-  const baseUrl = process.env.OTTER_API_URL ?? "https://api.otter.hexly.ai";
-  return `${baseUrl}/ingest/${token}`;
+// packages/cli/src/commands/login.ts
+export const DEFAULT_WORKER_URL = "https://otter-api.nocoo.workers.dev";
+
+export function getWorkerApiUrl(): string {
+  return process.env.OTTER_API_URL ?? DEFAULT_WORKER_URL;
+}
+
+export function buildWebhookUrl(_host: string, token: string): string {
+  const workerUrl = getWorkerApiUrl();
+  return `${workerUrl}/ingest/${token}`;
 }
 ```
 
