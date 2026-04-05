@@ -33,10 +33,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "citty": "^0.1.0",
-    "consola": "^3.4.0",
-    "picocolors": "^1.1.0",
-    "yocto-spinner": "^1.1.0"
+    "@nocoo/cli-base": "^0.1.4"
   },
   "devDependencies": {
     "@otter/core": "workspace:*",
