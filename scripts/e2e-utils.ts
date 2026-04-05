@@ -119,5 +119,8 @@ export async function buildE2eEnv(options: {
     CF_R2_BUCKET: testBucket,
     NEXT_DIST_DIR: options.distDir,
     E2E_SKIP_AUTH: "true",
+    // Worker API for BFF routes
+    WORKER_API_URL: "https://otter-api-test.nocoo.workers.dev",
+    WORKER_API_KEY: "test-api-key-e2e",
   };
 }
