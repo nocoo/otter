@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2026-04-05
+
+### Features
+
+- **Cloudflare Worker API (Phase 1-3)**: Complete migration of data access layer from D1 REST API to Cloudflare Worker with native bindings
+  - New `packages/worker` package with Hono framework
+  - `/ingest/{token}` and `/ingest/{token}/icons` routes (CLI upload)
+  - `/v1/snapshots` and `/v1/webhooks` routes (Dashboard read API)
+  - BFF pattern: Next.js API routes now forward to Worker with `X-API-Key` + `X-User-ID` headers
+  - Performance: D1 query latency reduced from 200-500ms to <20ms
+- **CLI Worker migration**: Default upload URL now points to Cloudflare Worker (`otter-api.nocoo.workers.dev`)
+  - Added `OTTER_API_URL` environment variable for custom Worker URL
+- **Dashboard charts**: Added Recharts-based data visualizations (area charts, bar charts)
+- **Snapshot list UX**: Enhanced table row clickability with hover states
+
+### Fixes
+
+- **Suspense boundary**: Wrapped `useSearchParams` in Suspense for `/cli/connect` page
+- **E2E test selectors**: Fixed Playwright tests to use `getByText` for table row navigation (pages use `<tr onClick>` not `<a>` links)
+
+### Chores
+
+- **Security**: Updated wrangler to 4.80.0 (CVE fix), added override for transitive dep
+- **Test infrastructure**: Deployed `otter-api-test` Worker with isolated D1/R2 for E2E testing
+- **Quality gates**: 456 unit tests (92.33% coverage), 22 L2 API E2E tests, 28 L3 Playwright tests
+
 ## [1.3.6] - 2026-04-04
 
 ### Fixes
