@@ -62,6 +62,29 @@ describe("buildWebhookUrl", () => {
 // executeLogin — integration with cli-base performLogin
 // ---------------------------------------------------------------------------
 
+/**
+ * Helper to extract callback URL and state from the login URL, then simulate
+ * the OAuth callback with the provided token and state.
+ */
+function simulateCallback(loginUrl: string, token?: string): void {
+  const callbackMatch = loginUrl.match(/callback=([^&]+)/);
+  const stateMatch = loginUrl.match(/state=([^&]+)/);
+  if (callbackMatch) {
+    const callbackBase = decodeURIComponent(callbackMatch[1]);
+    const state = stateMatch ? decodeURIComponent(stateMatch[1]) : "";
+    let callbackUrl = callbackBase;
+    if (token) {
+      callbackUrl += `?token=${encodeURIComponent(token)}`;
+      if (state) {
+        callbackUrl += `&state=${encodeURIComponent(state)}`;
+      }
+    }
+    fetch(callbackUrl).catch(() => {
+      /* fire-and-forget */
+    });
+  }
+}
+
 describe("executeLogin", () => {
   let tempDir: string;
   let configManager: ConfigManager;
@@ -85,16 +108,7 @@ describe("executeLogin", () => {
       {
         openBrowser: (url) => {
           browserUrl = url;
-
-          // Simulate: extract the callback port and hit it
-          const callbackMatch = url.match(/callback=([^&]+)/);
-          if (callbackMatch) {
-            const callbackBase = decodeURIComponent(callbackMatch[1]);
-            // Hit the callback with token
-            fetch(`${callbackBase}?token=test-token`).catch(() => {
-              /* fire-and-forget */
-            });
-          }
+          simulateCallback(url, "test-token");
         },
         onBrowserOpen: () => {
           /* no-op */
@@ -111,6 +125,7 @@ describe("executeLogin", () => {
     expect(result.host).toBe("https://otter.hexly.ai");
     expect(result.token).toBe("test-token");
     expect(browserUrl).toContain("https://otter.hexly.ai/cli/connect?callback=");
+    expect(browserUrl).toContain("state="); // CSRF state nonce should be present
   });
 
   it("should save token to config after success", async () => {
@@ -119,13 +134,7 @@ describe("executeLogin", () => {
       {},
       {
         openBrowser: (url) => {
-          const callbackMatch = url.match(/callback=([^&]+)/);
-          if (callbackMatch) {
-            const callbackBase = decodeURIComponent(callbackMatch[1]);
-            fetch(`${callbackBase}?token=saved-token`).catch(() => {
-              /* fire-and-forget */
-            });
-          }
+          simulateCallback(url, "saved-token");
         },
         onBrowserOpen: () => {
           /* no-op */
@@ -151,13 +160,7 @@ describe("executeLogin", () => {
       {
         openBrowser: (url) => {
           browserUrl = url;
-          const callbackMatch = url.match(/callback=([^&]+)/);
-          if (callbackMatch) {
-            const callbackBase = decodeURIComponent(callbackMatch[1]);
-            fetch(`${callbackBase}?token=dev-token`).catch(() => {
-              /* fire-and-forget */
-            });
-          }
+          simulateCallback(url, "dev-token");
         },
         onBrowserOpen: () => {
           /* no-op */
@@ -183,11 +186,17 @@ describe("executeLogin", () => {
       {},
       {
         openBrowser: (url) => {
+          // Hit callback with state but without token
           const callbackMatch = url.match(/callback=([^&]+)/);
+          const stateMatch = url.match(/state=([^&]+)/);
           if (callbackMatch) {
             const callbackBase = decodeURIComponent(callbackMatch[1]);
-            // Hit callback without token
-            fetch(callbackBase).catch(() => {
+            const state = stateMatch ? decodeURIComponent(stateMatch[1]) : "";
+            // Include state but not token
+            const callbackUrl = state
+              ? `${callbackBase}?state=${encodeURIComponent(state)}`
+              : callbackBase;
+            fetch(callbackUrl).catch(() => {
               /* fire-and-forget */
             });
           }
@@ -217,13 +226,7 @@ describe("executeLogin", () => {
       {
         openBrowser: (url) => {
           callOrder.push("openBrowser");
-          const callbackMatch = url.match(/callback=([^&]+)/);
-          if (callbackMatch) {
-            const callbackBase = decodeURIComponent(callbackMatch[1]);
-            fetch(`${callbackBase}?token=order-token`).catch(() => {
-              /* fire-and-forget */
-            });
-          }
+          simulateCallback(url, "order-token");
         },
         onBrowserOpen: () => {
           callOrder.push("onBrowserOpen");
@@ -239,5 +242,39 @@ describe("executeLogin", () => {
     expect(callOrder).toContain("onBrowserOpen");
     expect(callOrder).toContain("openBrowser");
     expect(callOrder).toContain("onSuccess");
+  });
+
+  it("should reject callback with wrong state (CSRF protection)", async () => {
+    let errorCalled = false;
+
+    const loginPromise = executeLogin(
+      configManager,
+      {},
+      {
+        openBrowser: (url) => {
+          // Hit callback with token but wrong state
+          const callbackMatch = url.match(/callback=([^&]+)/);
+          if (callbackMatch) {
+            const callbackBase = decodeURIComponent(callbackMatch[1]);
+            // Send wrong state
+            fetch(`${callbackBase}?token=test-token&state=wrong-state`).catch(() => {
+              /* fire-and-forget */
+            });
+          }
+        },
+        onBrowserOpen: () => {
+          /* no-op */
+        },
+        onError: () => {
+          errorCalled = true;
+        },
+      },
+    );
+
+    const result = await loginPromise;
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("CSRF");
+    expect(errorCalled).toBe(true);
   });
 });

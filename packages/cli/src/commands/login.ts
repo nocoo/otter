@@ -83,6 +83,7 @@ export async function executeLogin(
     timeoutMs: TIMEOUT_MS,
     tokenParam: "token",
     loginPath: "/cli/connect",
+    useStateNonce: true,
     openBrowser: async (url) => {
       callbacks?.onBrowserOpen?.(url);
       const opener = callbacks?.openBrowser;

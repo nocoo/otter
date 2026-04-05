@@ -67,6 +67,7 @@ function CliConnectSkeleton() {
 function CliConnectContent() {
   const searchParams = useSearchParams();
   const callback = searchParams.get("callback");
+  const state = searchParams.get("state");
 
   const [webhooks, setWebhooks] = useState<WebhookToken[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,12 +105,15 @@ function CliConnectContent() {
     }
   }, [callbackValid, fetchWebhooks]);
 
-  // Handle connect: redirect to CLI's local server with token only
+  // Handle connect: redirect to CLI's local server with token and optional state
   const handleConnect = (webhook: WebhookToken) => {
     if (!callback) return;
     setConnectingId(webhook.id);
 
-    const redirectUrl = `${callback}/callback?token=${encodeURIComponent(webhook.token)}`;
+    let redirectUrl = `${callback}/callback?token=${encodeURIComponent(webhook.token)}`;
+    if (state) {
+      redirectUrl += `&state=${encodeURIComponent(state)}`;
+    }
     window.location.href = redirectUrl;
   };
 

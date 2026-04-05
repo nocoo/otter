@@ -33,7 +33,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@nocoo/cli-base": "^0.1.4"
+    "@nocoo/cli-base": "^0.1.5"
   },
   "devDependencies": {
     "@otter/core": "workspace:*",
