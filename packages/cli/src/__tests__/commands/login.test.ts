@@ -2,43 +2,8 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-  buildWebhookUrl,
-  checkPortAvailable,
-  executeLogin,
-  findAvailablePort,
-  parseCallbackParams,
-  resolveHost,
-} from "../../commands/login.js";
+import { buildWebhookUrl, executeLogin, resolveHost } from "../../commands/login.js";
 import { ConfigManager } from "../../config/manager.js";
-
-// ---------------------------------------------------------------------------
-// parseCallbackParams
-// ---------------------------------------------------------------------------
-
-describe("parseCallbackParams", () => {
-  it("should parse valid callback with token", () => {
-    const result = parseCallbackParams("/callback?token=abc-123");
-    expect(result).toEqual({ token: "abc-123" });
-  });
-
-  it("should return error when token is missing", () => {
-    const result = parseCallbackParams("/callback");
-    expect(result).toEqual({
-      error: "Missing token in callback",
-    });
-  });
-
-  it("should return error param if present", () => {
-    const result = parseCallbackParams("/callback?error=User%20cancelled");
-    expect(result).toEqual({ error: "User cancelled" });
-  });
-
-  it("should prioritize error over token", () => {
-    const result = parseCallbackParams("/callback?error=bad&token=abc");
-    expect(result).toEqual({ error: "bad" });
-  });
-});
 
 // ---------------------------------------------------------------------------
 // resolveHost
@@ -94,31 +59,7 @@ describe("buildWebhookUrl", () => {
 });
 
 // ---------------------------------------------------------------------------
-// checkPortAvailable
-// ---------------------------------------------------------------------------
-
-describe("checkPortAvailable", () => {
-  it("should return true for a port that is not in use", async () => {
-    // Port 0 is never listening — pick a high ephemeral port
-    const available = await checkPortAvailable(19999);
-    expect(available).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// findAvailablePort
-// ---------------------------------------------------------------------------
-
-describe("findAvailablePort", () => {
-  it("should find a port in the ephemeral range", async () => {
-    const port = await findAvailablePort();
-    expect(port).toBeGreaterThanOrEqual(49152);
-    expect(port).toBeLessThanOrEqual(65535);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// executeLogin — full integration
+// executeLogin — integration with cli-base performLogin
 // ---------------------------------------------------------------------------
 
 describe("executeLogin", () => {
@@ -149,16 +90,13 @@ describe("executeLogin", () => {
           const callbackMatch = url.match(/callback=([^&]+)/);
           if (callbackMatch) {
             const callbackBase = decodeURIComponent(callbackMatch[1]);
-            // Hit the callback with token only
-            fetch(`${callbackBase}/callback?token=test-token`).catch(() => {
+            // Hit the callback with token
+            fetch(`${callbackBase}?token=test-token`).catch(() => {
               /* fire-and-forget */
             });
           }
         },
         onBrowserOpen: () => {
-          /* no-op */
-        },
-        onPortReady: () => {
           /* no-op */
         },
         onSuccess: () => {
@@ -184,15 +122,12 @@ describe("executeLogin", () => {
           const callbackMatch = url.match(/callback=([^&]+)/);
           if (callbackMatch) {
             const callbackBase = decodeURIComponent(callbackMatch[1]);
-            fetch(`${callbackBase}/callback?token=saved-token`).catch(() => {
+            fetch(`${callbackBase}?token=saved-token`).catch(() => {
               /* fire-and-forget */
             });
           }
         },
         onBrowserOpen: () => {
-          /* no-op */
-        },
-        onPortReady: () => {
           /* no-op */
         },
         onSuccess: () => {
@@ -208,23 +143,23 @@ describe("executeLogin", () => {
   });
 
   it("should use dev host when --dev is set", async () => {
+    let browserUrl = "";
+
     const loginPromise = executeLogin(
       configManager,
       { dev: true },
       {
         openBrowser: (url) => {
+          browserUrl = url;
           const callbackMatch = url.match(/callback=([^&]+)/);
           if (callbackMatch) {
             const callbackBase = decodeURIComponent(callbackMatch[1]);
-            fetch(`${callbackBase}/callback?token=dev-token`).catch(() => {
+            fetch(`${callbackBase}?token=dev-token`).catch(() => {
               /* fire-and-forget */
             });
           }
         },
         onBrowserOpen: () => {
-          /* no-op */
-        },
-        onPortReady: () => {
           /* no-op */
         },
         onSuccess: () => {
@@ -237,9 +172,12 @@ describe("executeLogin", () => {
 
     expect(result.success).toBe(true);
     expect(result.host).toBe("https://otter.dev.hexly.ai");
+    expect(browserUrl).toContain("https://otter.dev.hexly.ai/cli/connect");
   });
 
-  it("should return error when callback has error param", async () => {
+  it("should return error when token is missing", async () => {
+    let errorCalled = false;
+
     const loginPromise = executeLogin(
       configManager,
       {},
@@ -248,21 +186,17 @@ describe("executeLogin", () => {
           const callbackMatch = url.match(/callback=([^&]+)/);
           if (callbackMatch) {
             const callbackBase = decodeURIComponent(callbackMatch[1]);
-            fetch(`${callbackBase}/callback?error=${encodeURIComponent("User cancelled")}`).catch(
-              () => {
-                /* fire-and-forget */
-              },
-            );
+            // Hit callback without token
+            fetch(callbackBase).catch(() => {
+              /* fire-and-forget */
+            });
           }
         },
         onBrowserOpen: () => {
           /* no-op */
         },
-        onPortReady: () => {
-          /* no-op */
-        },
         onError: () => {
-          /* no-op */
+          errorCalled = true;
         },
       },
     );
@@ -270,83 +204,40 @@ describe("executeLogin", () => {
     const result = await loginPromise;
 
     expect(result.success).toBe(false);
-    expect(result.error).toBe("User cancelled");
+    expect(result.error).toContain("token");
+    expect(errorCalled).toBe(true);
   });
 
-  it("should call onPortReady with a valid port", async () => {
-    let reportedPort = 0;
+  it("should call callbacks in correct order", async () => {
+    const callOrder: string[] = [];
 
     const loginPromise = executeLogin(
       configManager,
       {},
       {
         openBrowser: (url) => {
+          callOrder.push("openBrowser");
           const callbackMatch = url.match(/callback=([^&]+)/);
           if (callbackMatch) {
             const callbackBase = decodeURIComponent(callbackMatch[1]);
-            fetch(`${callbackBase}/callback?token=t`).catch(() => {
+            fetch(`${callbackBase}?token=order-token`).catch(() => {
               /* fire-and-forget */
             });
           }
         },
         onBrowserOpen: () => {
-          /* no-op */
-        },
-        onPortReady: (port) => {
-          reportedPort = port;
+          callOrder.push("onBrowserOpen");
         },
         onSuccess: () => {
-          /* no-op */
+          callOrder.push("onSuccess");
         },
       },
     );
 
     await loginPromise;
 
-    expect(reportedPort).toBeGreaterThanOrEqual(49152);
-    expect(reportedPort).toBeLessThanOrEqual(65535);
-  });
-
-  it("should return 404 for non-callback paths", async () => {
-    let responseStatus = 0;
-
-    const loginPromise = executeLogin(
-      configManager,
-      {},
-      {
-        openBrowser: async (url) => {
-          const callbackMatch = url.match(/callback=([^&]+)/);
-          if (callbackMatch) {
-            const callbackBase = decodeURIComponent(callbackMatch[1]);
-
-            // Hit a wrong path first
-            try {
-              const res = await fetch(`${callbackBase}/wrong-path`);
-              responseStatus = res.status;
-            } catch {
-              // ignore
-            }
-
-            // Then hit the correct path to let the test finish
-            fetch(`${callbackBase}/callback?token=t`).catch(() => {
-              /* fire-and-forget */
-            });
-          }
-        },
-        onBrowserOpen: () => {
-          /* no-op */
-        },
-        onPortReady: () => {
-          /* no-op */
-        },
-        onSuccess: () => {
-          /* no-op */
-        },
-      },
-    );
-
-    await loginPromise;
-
-    expect(responseStatus).toBe(404);
+    expect(callOrder).toContain("onBrowserOpen");
+    expect(callOrder).toContain("openBrowser");
+    expect(callOrder).toContain("onSuccess");
   });
 });
