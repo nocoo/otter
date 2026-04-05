@@ -1,37 +1,57 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
-import type { OtterConfig } from "@otter/core";
+import { ConfigManager as BaseConfigManager } from "@nocoo/cli-base";
 
 const PROD_CONFIG = "config.json";
 const DEV_CONFIG = "config.dev.json";
+
+/** Config type with index signature for cli-base compatibility */
+interface OtterConfigInternal {
+  token?: string;
+  [key: string]: unknown;
+}
 
 /**
  * Manages the CLI configuration file.
  * - Production: ~/.config/otter/config.json
  * - Dev:        ~/.config/otter/config.dev.json
+ *
+ * Extends cli-base ConfigManager with Otter-specific methods.
  */
-export class ConfigManager {
-  readonly configPath: string;
-
+export class ConfigManager extends BaseConfigManager<OtterConfigInternal> {
   constructor(configDir: string, dev = false) {
-    const filename = dev ? DEV_CONFIG : PROD_CONFIG;
-    this.configPath = join(configDir, filename);
+    super(configDir, dev, {
+      prodFilename: PROD_CONFIG,
+      devFilename: DEV_CONFIG,
+    });
   }
 
-  /** Load config from disk. Returns empty config if file doesn't exist or is corrupted. */
-  async load(): Promise<OtterConfig> {
-    try {
-      const raw = await readFile(this.configPath, "utf-8");
-      return JSON.parse(raw) as OtterConfig;
-    } catch {
-      return {};
-    }
+  /** Get the authentication token. */
+  getToken(): string | undefined {
+    return this.get("token") as string | undefined;
   }
 
-  /** Save config to disk, creating the directory if needed. */
-  async save(config: OtterConfig): Promise<void> {
-    const dir = dirname(this.configPath);
-    await mkdir(dir, { recursive: true });
-    await writeFile(this.configPath, `${JSON.stringify(config, null, 2)}\n`);
+  /** Check if user is logged in. */
+  isLoggedIn(): boolean {
+    return !!this.getToken();
+  }
+
+  /** Save the token (async wrapper for login flow). */
+  async saveToken(token: string): Promise<void> {
+    await this.writeAsync({ token });
+  }
+
+  /**
+   * Load config from disk (async).
+   * @deprecated Use read() or readAsync() instead.
+   */
+  load(): Promise<OtterConfigInternal> {
+    return this.readAsync();
+  }
+
+  /**
+   * Save config to disk.
+   * @deprecated Use write() or writeAsync() instead.
+   */
+  save(config: OtterConfigInternal): Promise<void> {
+    return this.writeAsync(config);
   }
 }
