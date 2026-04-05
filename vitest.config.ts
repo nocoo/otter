@@ -15,6 +15,8 @@ export default defineConfig({
       "**/.next/**",
       "**/__tests__/e2e/**",
       "**/e2e/**",
+      // Worker tests require @cloudflare/vitest-pool-workers, run separately
+      "packages/worker/**",
     ],
     coverage: {
       provider: "v8",
@@ -35,6 +37,8 @@ export default defineConfig({
         "**/auth.ts",
         "**/proxy.ts",
         "**/api/auth/**",
+        // Worker has its own vitest config with cloudflare pool
+        "packages/worker/**",
       ],
       thresholds: {
         statements: 90,
