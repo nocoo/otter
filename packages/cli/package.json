@@ -1,6 +1,6 @@
 {
   "name": "@nocoo/otter",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "Backup and restore your Mac development environment configuration",
   "type": "module",
   "bin": {
@@ -33,7 +33,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@nocoo/cli-base": "^0.1.5"
+    "@nocoo/cli-base": "^0.1.6"
   },
   "devDependencies": {
     "@otter/core": "workspace:*",
