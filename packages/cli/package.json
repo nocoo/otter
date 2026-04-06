@@ -1,6 +1,6 @@
 {
   "name": "@nocoo/otter",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "Backup and restore your Mac development environment configuration",
   "type": "module",
   "bin": {
