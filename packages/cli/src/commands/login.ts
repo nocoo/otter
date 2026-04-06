@@ -83,7 +83,7 @@ export async function executeLogin(
     timeoutMs: TIMEOUT_MS,
     tokenParam: "token",
     loginPath: "/cli/connect",
-    useStateNonce: true,
+    accentColor: "#f97316", // Otter orange
     openBrowser: async (url) => {
       callbacks?.onBrowserOpen?.(url);
       const opener = callbacks?.openBrowser;
