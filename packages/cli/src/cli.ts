@@ -11,6 +11,7 @@ import {
   formatSnapshotDiff,
   formatSnapshotList,
 } from "./commands/snapshot.js";
+import updateCommand from "./commands/update.js";
 import { ConfigManager } from "./config/manager.js";
 import { SnapshotStore } from "./storage/local.js";
 import * as ui from "./ui.js";
@@ -18,7 +19,7 @@ import { uploadIconsToServer } from "./uploader/icons-server.js";
 import { uploadSnapshot } from "./uploader/webhook.js";
 import { exportIcons } from "./utils/icons.js";
 
-const CLI_VERSION = "1.4.4";
+const CLI_VERSION = "1.4.5";
 
 const otterConfigDir = join(homedir(), ".config", "otter");
 const snapshotStore = new SnapshotStore(join(otterConfigDir, "snapshots"));
@@ -546,6 +547,7 @@ export const main = defineCommand({
     backup: backupCommand,
     config: configCommand,
     snapshot: snapshotCommand,
+    update: updateCommand,
     "export-icons": exportIconsCommand,
   },
 });

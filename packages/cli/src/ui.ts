@@ -50,7 +50,8 @@ export function formatDate(iso: string): string {
 // ── Banner ──────────────────────────────────────────────────────────
 
 export function banner(version: string): void {
-  const label = `${pc.bgCyan(pc.black(` otter `))}  ${pc.dim(`v${version}`)}`;
+  const title = "Backup and restore your Mac development environment configuration";
+  const label = `${title} ${pc.dim(`(otter v${version})`)}`;
   console.log(`\n${label}\n`);
 }
 
