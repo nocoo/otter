@@ -12,6 +12,8 @@ import {
   User,
 } from "lucide-react";
 import { BarChart, DonutChart } from "@/components/charts";
+import { DashboardSegment } from "@/components/dashboard/dashboard-segment";
+import { StatCard, StatGrid } from "@/components/dashboard/stat-card";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatSize } from "@/lib/utils";
@@ -22,32 +24,6 @@ interface OverviewTabProps {
   collectors: Collector[];
   totalFiles: number;
   totalLists: number;
-}
-
-// ---------------------------------------------------------------------------
-// Stat card used in the machine info grid
-// ---------------------------------------------------------------------------
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
-  label: string;
-  value: string;
-}) {
-  return (
-    <Card className="gap-0 py-0">
-      <CardContent className="px-4 py-3.5 flex items-center gap-3">
-        <Icon className="h-4 w-4 text-primary shrink-0" strokeWidth={1.5} />
-        <div className="min-w-0">
-          <p className="text-2xs text-muted-foreground uppercase tracking-wider">{label}</p>
-          <p className="text-sm font-medium truncate">{value}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -86,12 +62,12 @@ function CollectorSummaryCard({ collectors }: { collectors: Collector[] }) {
 
   return (
     <Card className="gap-0 py-0">
-      <CardHeader className="gap-0 px-5 py-4 border-b border-border/40">
+      <CardHeader className="gap-0 px-5 py-3.5 border-b border-border/40">
         <CardTitle className="text-sm">Collectors</CardTitle>
         <CardDescription>{collectors.length} collectors captured in this snapshot</CardDescription>
       </CardHeader>
       <CardContent className="px-5 py-4">
-        <div className="grid gap-6 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           {/* Donut Chart */}
           <div className="flex items-center justify-center">
             <DonutChart data={donutData} height={140} showLegend={false} />
@@ -144,7 +120,7 @@ function TopCollectorsCard({ collectors }: { collectors: Collector[] }) {
 
   return (
     <Card className="gap-0 py-0">
-      <CardHeader className="gap-0 px-5 py-4 border-b border-border/40">
+      <CardHeader className="gap-0 px-5 py-3.5 border-b border-border/40">
         <CardTitle className="text-sm">Top Collectors</CardTitle>
         <CardDescription>By number of files captured</CardDescription>
       </CardHeader>
@@ -171,7 +147,7 @@ function IssuesCard({ collectors }: { collectors: Collector[] }) {
 
   return (
     <Card className="gap-0 py-0">
-      <CardHeader className="gap-0 px-5 py-4 border-b border-border/40">
+      <CardHeader className="gap-0 px-5 py-3.5 border-b border-border/40">
         <CardTitle className="text-sm">Issues</CardTitle>
         <CardDescription>
           {errors.length} error{errors.length !== 1 ? "s" : ""}
@@ -189,7 +165,7 @@ function IssuesCard({ collectors }: { collectors: Collector[] }) {
               {errors.map((err) => (
                 <li
                   key={`${err.collector}-${err.message}`}
-                  className="border-l-2 border-destructive/40 pl-3 py-1.5"
+                  className="border-l-2 border-destructive/40 pl-3 py-1"
                 >
                   <p className="text-xs font-medium text-foreground">{err.collector}</p>
                   <p className="text-xs text-destructive/80 mt-0.5">{err.message}</p>
@@ -207,7 +183,7 @@ function IssuesCard({ collectors }: { collectors: Collector[] }) {
             <ul className="space-y-1.5">
               {skipped.map((item, i) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: static display list, no reordering
-                <li key={i} className="border-l-2 border-border pl-3 py-1.5">
+                <li key={i} className="border-l-2 border-border pl-3 py-1">
                   <p className="text-xs font-medium text-foreground">{item.collector}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{item.message}</p>
                 </li>
@@ -226,30 +202,51 @@ function IssuesCard({ collectors }: { collectors: Collector[] }) {
 
 export function OverviewTab({ meta, collectors, totalFiles, totalLists }: OverviewTabProps) {
   return (
-    <div className="space-y-6">
-      {/* Machine info grid */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard icon={Monitor} label="Host" value={meta.hostname} />
-        <StatCard icon={Cpu} label="Platform" value={`${meta.platform}/${meta.arch}`} />
-        <StatCard icon={User} label="User" value={meta.username} />
-        <StatCard
-          icon={Archive}
-          label="Content"
-          value={`${totalFiles} files, ${totalLists} items`}
-        />
-        <StatCard icon={HardDrive} label="Size" value={formatSize(meta.sizeBytes)} />
-      </div>
+    <div className="space-y-4 md:space-y-6">
+      {/* ── Machine Info ──────────────────────────────────── */}
+      <DashboardSegment title="Machine Info">
+        <StatGrid columns={5}>
+          <StatCard
+            title="Host"
+            value={meta.hostname}
+            icon={Monitor}
+            iconColor="text-primary"
+            accentColor="bg-primary"
+          />
+          <StatCard
+            title="Platform"
+            value={`${meta.platform}/${meta.arch}`}
+            icon={Cpu}
+            accentColor="bg-chart-3"
+          />
+          <StatCard title="User" value={meta.username} icon={User} accentColor="bg-chart-5" />
+          <StatCard
+            title="Content"
+            value={`${totalFiles} files, ${totalLists} items`}
+            icon={Archive}
+            accentColor="bg-chart-6"
+          />
+          <StatCard
+            title="Size"
+            value={formatSize(meta.sizeBytes)}
+            icon={HardDrive}
+            accentColor="bg-chart-7"
+          />
+        </StatGrid>
+      </DashboardSegment>
 
-      {/* Charts row */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Collector summary with donut chart */}
-        <CollectorSummaryCard collectors={collectors} />
+      {/* ── Charts ────────────────────────────────────────── */}
+      <DashboardSegment title="Breakdown">
+        <div className="grid gap-4 lg:grid-cols-2">
+          {/* Collector summary with donut chart */}
+          <CollectorSummaryCard collectors={collectors} />
 
-        {/* Top collectors bar chart */}
-        <TopCollectorsCard collectors={collectors} />
-      </div>
+          {/* Top collectors bar chart */}
+          <TopCollectorsCard collectors={collectors} />
+        </div>
+      </DashboardSegment>
 
-      {/* Errors & skipped */}
+      {/* ── Errors & skipped ──────────────────────────────── */}
       <IssuesCard collectors={collectors} />
     </div>
   );
