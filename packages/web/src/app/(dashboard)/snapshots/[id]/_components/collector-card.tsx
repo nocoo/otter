@@ -74,8 +74,8 @@ export function CollectorCard({ collector }: { collector: Collector }) {
       </CardHeader>
 
       {/* Content */}
-      <CardContent className="px-5 py-5">
-        <div className="divide-y divide-border/30 [&>*]:py-5 first:[&>*]:pt-0 last:[&>*]:pb-0">
+      <CardContent className="px-5 py-4">
+        <div className="divide-y divide-border/30 [&>*]:py-3 first:[&>*]:pt-0 last:[&>*]:pb-0">
           {/* Files */}
           {totalFiles > 0 && (
             <div className="space-y-2">
