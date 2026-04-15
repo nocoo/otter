@@ -1,0 +1,4 @@
+[[IgnoredVulns]]
+# Add known false positives or accepted risks below
+# id = "GHSA-xxxx-yyyy-zzzz"
+# reason = "Not applicable: we don't use the affected code path"
