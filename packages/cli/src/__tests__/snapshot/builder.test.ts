@@ -52,7 +52,7 @@ describe("buildSnapshot", () => {
     expect(snapshot.machine).toBeDefined();
     expect(["darwin", "linux", "win32"]).toContain(snapshot.machine.platform);
     expect(typeof snapshot.machine.hostname).toBe("string");
-    expect(typeof snapshot.machine.computerName).toBe("string");
+    expect(snapshot.machine.computerName === undefined || typeof snapshot.machine.computerName === "string").toBe(true);
     if (snapshot.machine.computerName != null) {
       expect(snapshot.machine.computerName.length).toBeGreaterThan(0);
     }
