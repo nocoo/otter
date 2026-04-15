@@ -13,5 +13,7 @@ jobs:
     with:
       test-command: "bun run test"
       typecheck-command: "bun run lint"
+      lint-command: "bun run lint:biome"
+      osv-config: "osv-scanner.toml"
       enable-l2: "false"
     secrets: inherit
