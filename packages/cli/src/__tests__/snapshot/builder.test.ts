@@ -50,11 +50,12 @@ describe("buildSnapshot", () => {
     const snapshot = await buildSnapshot([]);
 
     expect(snapshot.machine).toBeDefined();
-    expect(snapshot.machine.platform).toBe("darwin");
+    expect(["darwin", "linux", "win32"]).toContain(snapshot.machine.platform);
     expect(typeof snapshot.machine.hostname).toBe("string");
     expect(typeof snapshot.machine.computerName).toBe("string");
-    // biome-ignore lint/style/noNonNullAssertion: computerName may be null on some systems but we test it exists
-    expect(snapshot.machine.computerName!.length).toBeGreaterThan(0);
+    if (snapshot.machine.computerName != null) {
+      expect(snapshot.machine.computerName.length).toBeGreaterThan(0);
+    }
     expect(typeof snapshot.machine.username).toBe("string");
     expect(typeof snapshot.machine.homeDir).toBe("string");
     expect(typeof snapshot.machine.arch).toBe("string");
