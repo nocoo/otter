@@ -370,6 +370,27 @@ describe("redactYamlSecrets", () => {
     expect(result).toContain("model: claude-4");
   });
 
+  it("should redact block scalar with digit-then-chomp order (|2-, >1+)", () => {
+    const input = [
+      "token: |2- # compact",
+      "  ghp_secret123",
+      "  more-secret",
+      "password: >1+",
+      "  hunter2",
+      "",
+      "name: ok",
+    ].join("\n");
+
+    const result = redactYamlSecrets(input);
+
+    expect(result).toContain("token: [REDACTED]");
+    expect(result).not.toContain("ghp_secret123");
+    expect(result).not.toContain("more-secret");
+    expect(result).toContain("password: [REDACTED]");
+    expect(result).not.toContain("hunter2");
+    expect(result).toContain("name: ok");
+  });
+
   it("should handle nested list items with sensitive keys", () => {
     const input = [
       "platforms:",
