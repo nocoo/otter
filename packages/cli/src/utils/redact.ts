@@ -81,6 +81,35 @@ export function redactJsonSecrets(jsonContent: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// YAML redaction (for config.yaml, etc.)
+// ---------------------------------------------------------------------------
+
+/** Match a YAML key: value line, capturing the key name and the prefix */
+const YAML_KV_RE = /^(\s*(\w+)\s*:\s*).+$/;
+
+/**
+ * Redact sensitive values in YAML content.
+ * Matches `key: value` lines where the key contains a sensitive keyword.
+ * Reuses the same key-sensitivity heuristic as JSON redaction.
+ */
+export function redactYamlSecrets(content: string): string {
+  return content
+    .split("\n")
+    .map((line) => {
+      // Skip comments
+      const trimmed = line.trimStart();
+      if (trimmed.startsWith("#")) return line;
+
+      const match = line.match(YAML_KV_RE);
+      if (match?.[2] && isSensitiveKey(match[2])) {
+        return `${match[1]}${REDACTED}`;
+      }
+      return line;
+    })
+    .join("\n");
+}
+
+// ---------------------------------------------------------------------------
 // Line-oriented redaction (for .npmrc, .gitconfig, etc.)
 // ---------------------------------------------------------------------------
 
@@ -313,6 +342,11 @@ export function redactSecrets(content: string, filePath: string): string {
 
   if (lower.endsWith(".json")) {
     return redactJsonSecrets(content);
+  }
+
+  // YAML files: key-based line redaction
+  if (lower.endsWith(".yaml") || lower.endsWith(".yml")) {
+    return redactYamlSecrets(content);
   }
 
   // JSONL files (e.g. history.jsonl): value-pattern + key-based redaction

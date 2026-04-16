@@ -202,13 +202,16 @@ describe("HermesCollector", () => {
   it("should collect skills from named profiles with correct profile meta", async () => {
     const hermesDir = join(tempHome, ".hermes");
 
-    // Main profile with 1 skill
+    // Main profile with 1 valid skill (has SKILL.md)
     await mkdir(join(hermesDir, "skills", "skill-a"), { recursive: true });
+    await writeFile(join(hermesDir, "skills", "skill-a", "SKILL.md"), "# Skill A");
 
-    // Named profile with 2 skills
+    // Named profile with 2 valid skills (have SKILL.md)
     const tomatoDir = join(hermesDir, "profiles", "tomato");
     await mkdir(join(tomatoDir, "skills", "skill-b"), { recursive: true });
+    await writeFile(join(tomatoDir, "skills", "skill-b", "SKILL.md"), "# Skill B");
     await mkdir(join(tomatoDir, "skills", "skill-c"), { recursive: true });
+    await writeFile(join(tomatoDir, "skills", "skill-c", "SKILL.md"), "# Skill C");
 
     const collector = new HermesCollector(tempHome);
     const result = await collector.collect();
@@ -231,6 +234,32 @@ describe("HermesCollector", () => {
 
     const tomatoProfile = result.lists.find((l) => l.name === "tomato" && l.meta?.type === "named");
     expect(tomatoProfile?.meta?.skillsCount).toBe("2");
+  });
+
+  it("should not count directories without SKILL.md as skills", async () => {
+    const hermesDir = join(tempHome, ".hermes");
+    const skillsDir = join(hermesDir, "skills");
+
+    // Valid skill (has SKILL.md)
+    await mkdir(join(skillsDir, "valid-skill"), { recursive: true });
+    await writeFile(join(skillsDir, "valid-skill", "SKILL.md"), "# Valid skill");
+
+    // Invalid skill directories (no SKILL.md)
+    await mkdir(join(skillsDir, "just-a-dir"), { recursive: true });
+    await mkdir(join(skillsDir, "empty-dir"), { recursive: true });
+    await writeFile(join(skillsDir, "just-a-dir", "README.md"), "# Not a skill");
+
+    const collector = new HermesCollector(tempHome);
+    const result = await collector.collect();
+
+    const skills = result.lists.filter((l) => l.meta?.type === "skill");
+    expect(skills).toHaveLength(1);
+    expect(skills[0]?.name).toBe("valid-skill");
+
+    const defaultProfile = result.lists.find(
+      (l) => l.name === "default" && l.meta?.type === "main",
+    );
+    expect(defaultProfile?.meta?.skillsCount).toBe("1");
   });
 
   // -------------------------------------------------------------------------
@@ -258,11 +287,24 @@ describe("HermesCollector", () => {
 
     const configFile = result.files.find((f) => f.path.endsWith(join("default", "config.yaml")));
     expect(configFile).toBeDefined();
-    // The redaction utility should have processed it (exact behavior depends on redactSecrets)
-    // Config files marked with redact: true are passed through redactSecrets()
+    // YAML redaction should replace api_key value with [REDACTED]
+    // biome-ignore lint/style/noNonNullAssertion: asserted defined above
+    expect(configFile!.content).toContain("model: claude-4");
+    // biome-ignore lint/style/noNonNullAssertion: asserted defined above
+    expect(configFile!.content).toContain("[REDACTED]");
+    // biome-ignore lint/style/noNonNullAssertion: asserted defined above
+    expect(configFile!.content).not.toContain("sk-ant-secret-key-12345");
+    // Non-sensitive values should remain
+    // biome-ignore lint/style/noNonNullAssertion: asserted defined above
+    expect(configFile!.content).toContain("https://api.example.com");
 
     const cronFile = result.files.find((f) => f.path.endsWith(join("default", "cron/jobs.json")));
     expect(cronFile).toBeDefined();
+    // JSON redaction should replace webhook_token value with [REDACTED]
+    // biome-ignore lint/style/noNonNullAssertion: asserted defined above
+    expect(cronFile!.content).toContain("[REDACTED]");
+    // biome-ignore lint/style/noNonNullAssertion: asserted defined above
+    expect(cronFile!.content).not.toContain("whsec_secret123");
   });
 
   it("should NOT redact SOUL.md and memory files", async () => {
@@ -350,6 +392,30 @@ describe("HermesCollector", () => {
 
     // Restore permissions for cleanup
     await chmod(skillsDir, 0o755);
+  });
+
+  it("should report permission errors from discoverProfiles", async () => {
+    const hermesDir = join(tempHome, ".hermes");
+    await mkdir(hermesDir, { recursive: true });
+    await writeFile(join(hermesDir, "config.yaml"), "model: test");
+
+    // Create profiles dir then make it unreadable
+    const profilesDir = join(hermesDir, "profiles");
+    await mkdir(profilesDir, { recursive: true });
+    await chmod(profilesDir, 0o000);
+
+    const collector = new HermesCollector(tempHome);
+    const result = await collector.collect();
+
+    // Should still collect main profile files
+    expect(result.files.length).toBeGreaterThan(0);
+
+    // Should record profiles directory error (EACCES, not ENOENT)
+    const profileError = result.errors.find((e) => e.includes("profiles"));
+    expect(profileError).toBeDefined();
+
+    // Restore permissions for cleanup
+    await chmod(profilesDir, 0o755);
   });
 
   // -------------------------------------------------------------------------

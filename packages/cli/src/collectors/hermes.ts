@@ -1,4 +1,4 @@
-import { readdir } from "node:fs/promises";
+import { access, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import type { CollectedListItem, CollectorCategory, CollectorResult } from "@otter/core";
 import { BaseCollector } from "./base.js";
@@ -56,7 +56,7 @@ export class HermesCollector extends BaseCollector {
       const hermesDir = join(this.homeDir, ".hermes");
 
       // 1. Discover all profiles (main + named)
-      const profiles = await this.discoverProfiles(hermesDir);
+      const profiles = await this.discoverProfiles(hermesDir, result);
       if (profiles.length === 0) {
         result.skipped.push("Hermes not installed (~/.hermes/ not found)");
         return;
@@ -74,13 +74,19 @@ export class HermesCollector extends BaseCollector {
    * Discover all Hermes profiles.
    * Returns empty array if ~/.hermes/ does not exist.
    */
-  private async discoverProfiles(hermesDir: string): Promise<HermesProfile[]> {
+  private async discoverProfiles(
+    hermesDir: string,
+    result: CollectorResult,
+  ): Promise<HermesProfile[]> {
     const profiles: HermesProfile[] = [];
 
     // Check if ~/.hermes/ exists at all
     try {
       await readdir(hermesDir);
-    } catch {
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+        result.errors.push(`Failed to read ${hermesDir}: ${(err as Error).message}`);
+      }
       return [];
     }
 
@@ -104,8 +110,10 @@ export class HermesCollector extends BaseCollector {
           });
         }
       }
-    } catch {
-      // No profiles/ directory — only main profile exists
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+        result.errors.push(`Failed to read ${profilesDir}: ${(err as Error).message}`);
+      }
     }
 
     return profiles;
@@ -158,6 +166,13 @@ export class HermesCollector extends BaseCollector {
       const entries = await readdir(skillsDir, { withFileTypes: true });
       for (const entry of entries) {
         if (!entry.isDirectory()) continue;
+        // Only count directories that contain a SKILL.md file
+        try {
+          // biome-ignore lint/performance/noAwaitInLoops: small fixed-size skill directories
+          await access(join(skillsDir, entry.name, "SKILL.md"));
+        } catch {
+          continue; // Not a valid skill directory
+        }
         items.push({
           name: entry.name,
           meta: {

@@ -5,6 +5,7 @@ import {
   redactLineSecrets,
   redactSecrets,
   redactShellSecrets,
+  redactYamlSecrets,
 } from "../../utils/redact.js";
 
 describe("redactJsonSecrets", () => {
@@ -198,6 +199,58 @@ describe("redactShellSecrets", () => {
     const input = "export DB_PASSWORD=hunter2";
     const result = redactShellSecrets(input);
     expect(result).toBe("export DB_PASSWORD=[REDACTED]");
+  });
+});
+
+describe("redactYamlSecrets", () => {
+  it("should redact api_key values", () => {
+    const input =
+      'model: claude-4\napi_key: "sk-ant-secret-key-12345"\nendpoint: https://api.example.com';
+    const result = redactYamlSecrets(input);
+
+    expect(result).toContain("model: claude-4");
+    expect(result).toContain("[REDACTED]");
+    expect(result).not.toContain("sk-ant-secret-key-12345");
+    expect(result).toContain("https://api.example.com");
+  });
+
+  it("should redact various sensitive key names", () => {
+    const input = [
+      "token: my-secret-token",
+      "secret: super-secret",
+      "password: hunter2",
+      "authorization: Bearer abc123",
+      "credential: base64stuff",
+      "openai_api_key: sk-proj-abc",
+      "normal_setting: keep-this",
+    ].join("\n");
+
+    const result = redactYamlSecrets(input);
+
+    expect(result).not.toContain("my-secret-token");
+    expect(result).not.toContain("super-secret");
+    expect(result).not.toContain("hunter2");
+    expect(result).not.toContain("Bearer abc123");
+    expect(result).not.toContain("base64stuff");
+    expect(result).not.toContain("sk-proj-abc");
+    expect(result).toContain("normal_setting: keep-this");
+  });
+
+  it("should skip comment lines", () => {
+    const input = "# api_key: old-secret\napi_key: new-secret";
+    const result = redactYamlSecrets(input);
+
+    expect(result).toContain("# api_key: old-secret");
+    expect(result).not.toContain("new-secret");
+  });
+
+  it("should handle empty content", () => {
+    expect(redactYamlSecrets("")).toBe("");
+  });
+
+  it("should handle content with no sensitive lines", () => {
+    const input = "model: claude-4\nendpoint: https://api.example.com\ntemperature: 0.7";
+    expect(redactYamlSecrets(input)).toBe(input);
   });
 });
 
@@ -395,6 +448,22 @@ describe("redactSecrets (auto-detect)", () => {
     const result = redactSecrets(input, "/path/to/settings.json");
     const parsed = JSON.parse(result);
     expect(parsed.api_key).toBe("[REDACTED]");
+  });
+
+  it("should use YAML redaction for .yaml files", () => {
+    const input = "api_key: sk-secret-123\nmodel: claude-4";
+    const result = redactSecrets(input, "/home/user/.hermes/config.yaml");
+    expect(result).toContain("[REDACTED]");
+    expect(result).not.toContain("sk-secret-123");
+    expect(result).toContain("model: claude-4");
+  });
+
+  it("should use YAML redaction for .yml files", () => {
+    const input = "token: my-token-value\nname: test";
+    const result = redactSecrets(input, "/app/config.yml");
+    expect(result).toContain("[REDACTED]");
+    expect(result).not.toContain("my-token-value");
+    expect(result).toContain("name: test");
   });
 
   it("should use line redaction for .npmrc files", () => {
