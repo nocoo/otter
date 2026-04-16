@@ -138,9 +138,9 @@ export class HermesCollector extends BaseCollector {
     // Collect skill names (list only, not content)
     const skills = await this.collectSkillNames(profile, result);
 
-    // Add profile as a list item
+    // Add profile as a list item (prefixed to avoid collisions with skill names)
     result.lists.push({
-      name: profile.name,
+      name: `profile:${profile.name}`,
       meta: {
         type: profile.type,
         skillsCount: String(skills.length),
@@ -174,7 +174,7 @@ export class HermesCollector extends BaseCollector {
           continue; // Not a valid skill directory
         }
         items.push({
-          name: entry.name,
+          name: `${profile.name}/${entry.name}`,
           meta: {
             profile: profile.name,
             type: "skill",

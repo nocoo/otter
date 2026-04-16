@@ -75,7 +75,7 @@ describe("HermesCollector", () => {
     expect(paths).toContain(join("~/.hermes", "default", "cron/jobs.json"));
 
     // Profile list item
-    const profileItem = result.lists.find((l) => l.name === "default");
+    const profileItem = result.lists.find((l) => l.name === "profile:default");
     expect(profileItem).toBeDefined();
     // biome-ignore lint/style/noNonNullAssertion: asserted defined above
     expect(profileItem!.meta?.type).toBe("main");
@@ -120,15 +120,15 @@ describe("HermesCollector", () => {
 
     // Profile list items
     const profileNames = result.lists.filter((l) => l.meta?.type !== "skill").map((l) => l.name);
-    expect(profileNames).toContain("default");
-    expect(profileNames).toContain("tomato");
-    expect(profileNames).toContain("babaco");
+    expect(profileNames).toContain("profile:default");
+    expect(profileNames).toContain("profile:tomato");
+    expect(profileNames).toContain("profile:babaco");
 
     // Check profile types
-    const defaultProfile = result.lists.find((l) => l.name === "default");
+    const defaultProfile = result.lists.find((l) => l.name === "profile:default");
     expect(defaultProfile?.meta?.type).toBe("main");
 
-    const tomatoProfile = result.lists.find((l) => l.name === "tomato");
+    const tomatoProfile = result.lists.find((l) => l.name === "profile:tomato");
     expect(tomatoProfile?.meta?.type).toBe("named");
   });
 
@@ -183,8 +183,8 @@ describe("HermesCollector", () => {
     expect(skills).toHaveLength(2);
 
     const skillNames = skills.map((s) => s.name);
-    expect(skillNames).toContain("deploy");
-    expect(skillNames).toContain("search");
+    expect(skillNames).toContain("default/deploy");
+    expect(skillNames).toContain("default/search");
 
     // Check meta
     for (const skill of skills) {
@@ -194,7 +194,7 @@ describe("HermesCollector", () => {
 
     // Profile should report correct skillsCount
     const defaultProfile = result.lists.find(
-      (l) => l.name === "default" && l.meta?.type === "main",
+      (l) => l.name === "profile:default" && l.meta?.type === "main",
     );
     expect(defaultProfile?.meta?.skillsCount).toBe("2");
   });
@@ -221,18 +221,20 @@ describe("HermesCollector", () => {
 
     const mainSkills = skills.filter((s) => s.meta?.profile === "default");
     expect(mainSkills).toHaveLength(1);
-    expect(mainSkills[0]?.name).toBe("skill-a");
+    expect(mainSkills[0]?.name).toBe("default/skill-a");
 
     const tomatoSkills = skills.filter((s) => s.meta?.profile === "tomato");
     expect(tomatoSkills).toHaveLength(2);
 
     // Profile skillsCount
     const defaultProfile = result.lists.find(
-      (l) => l.name === "default" && l.meta?.type === "main",
+      (l) => l.name === "profile:default" && l.meta?.type === "main",
     );
     expect(defaultProfile?.meta?.skillsCount).toBe("1");
 
-    const tomatoProfile = result.lists.find((l) => l.name === "tomato" && l.meta?.type === "named");
+    const tomatoProfile = result.lists.find(
+      (l) => l.name === "profile:tomato" && l.meta?.type === "named",
+    );
     expect(tomatoProfile?.meta?.skillsCount).toBe("2");
   });
 
@@ -254,12 +256,40 @@ describe("HermesCollector", () => {
 
     const skills = result.lists.filter((l) => l.meta?.type === "skill");
     expect(skills).toHaveLength(1);
-    expect(skills[0]?.name).toBe("valid-skill");
+    expect(skills[0]?.name).toBe("default/valid-skill");
 
     const defaultProfile = result.lists.find(
-      (l) => l.name === "default" && l.meta?.type === "main",
+      (l) => l.name === "profile:default" && l.meta?.type === "main",
     );
     expect(defaultProfile?.meta?.skillsCount).toBe("1");
+  });
+
+  it("should produce unique list names when profiles share skill names", async () => {
+    const hermesDir = join(tempHome, ".hermes");
+
+    // Both profiles have a skill named "deploy"
+    await mkdir(join(hermesDir, "skills", "deploy"), { recursive: true });
+    await writeFile(join(hermesDir, "skills", "deploy", "SKILL.md"), "# Deploy");
+
+    const tomatoDir = join(hermesDir, "profiles", "tomato");
+    await mkdir(join(tomatoDir, "skills", "deploy"), { recursive: true });
+    await writeFile(join(tomatoDir, "skills", "deploy", "SKILL.md"), "# Deploy");
+
+    const collector = new HermesCollector(tempHome);
+    const result = await collector.collect();
+
+    const allNames = result.lists.map((l) => l.name);
+
+    // Names must be unique (Set size equals array length)
+    expect(new Set(allNames).size).toBe(allNames.length);
+
+    // Skills are qualified: profile/skillName
+    expect(allNames).toContain("default/deploy");
+    expect(allNames).toContain("tomato/deploy");
+
+    // Profiles are prefixed: profile:name
+    expect(allNames).toContain("profile:default");
+    expect(allNames).toContain("profile:tomato");
   });
 
   // -------------------------------------------------------------------------
@@ -464,7 +494,7 @@ describe("HermesCollector", () => {
     // Only main profile
     const profileItems = result.lists.filter((l) => l.meta?.type !== "skill");
     expect(profileItems).toHaveLength(1);
-    expect(profileItems[0]?.name).toBe("default");
+    expect(profileItems[0]?.name).toBe("profile:default");
   });
 
   // -------------------------------------------------------------------------
@@ -480,7 +510,7 @@ describe("HermesCollector", () => {
     const result = await collector.collect();
 
     const defaultProfile = result.lists.find(
-      (l) => l.name === "default" && l.meta?.type === "main",
+      (l) => l.name === "profile:default" && l.meta?.type === "main",
     );
     expect(defaultProfile?.meta?.skillsCount).toBe("0");
     expect(result.errors).toHaveLength(0);
