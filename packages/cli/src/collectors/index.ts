@@ -5,6 +5,7 @@ export { CloudCLICollector } from "./cloud-cli.js";
 export { DevToolchainCollector } from "./dev-toolchain.js";
 export { DockerCollector } from "./docker.js";
 export { FontsCollector } from "./fonts.js";
+export { HermesCollector } from "./hermes.js";
 export { HomebrewCollector } from "./homebrew.js";
 export { LaunchAgentsCollector } from "./launch-agents.js";
 export { MacOSDefaultsCollector } from "./macos-defaults.js";
@@ -20,6 +21,7 @@ import { CloudCLICollector } from "./cloud-cli.js";
 import { DevToolchainCollector } from "./dev-toolchain.js";
 import { DockerCollector } from "./docker.js";
 import { FontsCollector } from "./fonts.js";
+import { HermesCollector } from "./hermes.js";
 import { HomebrewCollector } from "./homebrew.js";
 import { LaunchAgentsCollector } from "./launch-agents.js";
 import { MacOSDefaultsCollector } from "./macos-defaults.js";
@@ -61,5 +63,6 @@ export function createDefaultCollectors(
     new CloudCLICollector(homeDir),
     new MacOSDefaultsCollector(homeDir),
     new LaunchAgentsCollector(homeDir),
+    new HermesCollector(homeDir),
   ];
 }
