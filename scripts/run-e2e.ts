@@ -95,6 +95,9 @@ async function main() {
       env: {
         ...process.env,
         E2E_PORT,
+        // Pass test Worker URL to test runner so ingest calls hit the
+        // same Worker that BFF created the webhook on (not production).
+        WORKER_API_URL: "https://otter-test.nocoo.workers.dev",
       },
     },
   );
