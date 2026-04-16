@@ -17,6 +17,7 @@
 | Phase P0 | Homebrew + Applications 增强 | 已完成 | Homebrew 已补版本 / taps / pinned，Applications 已补 ~/Applications 与版本 |
 | Phase P1 | Dev Toolchain / VS Code / Docker / Cloud CLI | 已完成 | 已完成 collector、注册、dashboard metadata 展示、L1/L2/L3/L4 验证 |
 | Phase P2 | macOS Defaults / Launch Agents / Fonts | 已完成 | 已完成系统级 collector 与轻量环境 collector，并纳入默认注册 |
+| Phase P3 | Hermes Agent Profiles | 已完成 | 新增 HermesCollector，备份 Hermes 多 profile 配置、记忆和技能列表 |
 | Dashboard | Snapshot detail 同步适配新元数据 | 已完成 | 已支持 version / meta badges、collector 搜索、分类过滤与概览统计 |
 | Testing | 四层测试补强 | 进行中 | L1/L2 现有基线可复用，L3/L4 补 rich snapshot 验证 |
 
@@ -33,6 +34,7 @@
 - 2026-03-07 9) 完成 dashboard 第三轮：snapshot detail 已按 category 分组折叠展示 collector，并再次通过四层测试
 - 2026-03-07 10) 开始补 CLI ↔ API ↔ Dashboard 连调覆盖：新增 rich snapshot fixture，目标覆盖全部新 collector 的 webhook 入库、detail API 返回和 dashboard 渲染
 - 2026-03-07 11) 完成 rich collector 连调覆盖：L3 已验证全部新 collector 的 webhook 入库与 detail API 返回，L4 已验证 dashboard 对 rich fixture 的完整渲染、搜索和分组交互
+- 2026-04-16 12) 完成 P3：新增 `hermes` collector，采集 Hermes Agent 多 profile 配置（config.yaml、SOUL.md、memories、cron）和 skills 列表，通过 L1 验证（15 测试用例）。设计文档见 `docs/features/01-hermes-collector.md`
 
 ---
 
@@ -504,6 +506,7 @@ gpg --list-keys --keyid-format long 2>/dev/null
 | P2-1 | 新建 | MacOSDefaultsCollector | 新建 1 文件 | 2.5h |
 | P2-2 | 新建 | LaunchAgentsCollector | 新建 1 文件 | 1.5h |
 | P2-3 | 新建 | FontsCollector | 新建 1 文件 | 0.5h |
+| P3-1 | 新建 | HermesCollector（Hermes Agent 多 profile 备份） | 新建 1 文件 | 2h |
 | — | 注册 | collectors/index.ts 注册新采集器 | 改 1 文件 | 0.5h |
 | — | 文档 | 更新 02-collectors.md | 改 1 文件 | 1h |
 | — | 测试 | 各采集器单元测试 | 新建多文件 | 含在各项中 |
