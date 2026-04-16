@@ -213,14 +213,12 @@ private async collectProfile(
 
   // Add profile as list item
   const skills = await this.collectSkillNames(profile, result);
-  const hasGateway = /* check config.yaml for gateway config */ false;
 
   result.lists.push({
     name: profile.name,
     meta: {
       type: profile.type,
       skillsCount: String(skills.length),
-      has_gateway: String(hasGateway),
     },
   });
 
@@ -243,6 +241,12 @@ private async collectSkillNames(
     const entries = await readdir(skillsDir, { withFileTypes: true });
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
+      // Only count directories that contain a SKILL.md file
+      try {
+        await access(join(skillsDir, entry.name, "SKILL.md"));
+      } catch {
+        continue; // Not a valid skill directory
+      }
       items.push({
         name: entry.name,
         meta: {

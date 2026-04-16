@@ -8,4 +8,4 @@
 
 | 编号 | 标题 | 状态 |
 |------|------|------|
-| 01 | [Hermes Collector — Hermes Agent Profile 备份](./01-hermes-collector.md) | 设计中 |
+| 01 | [Hermes Collector — Hermes Agent Profile 备份](./01-hermes-collector.md) | 已完成 |
