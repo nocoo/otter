@@ -215,7 +215,7 @@ private async collectProfile(
   const skills = await this.collectSkillNames(profile, result);
 
   result.lists.push({
-    name: profile.name,
+    name: `profile:${profile.name}`,
     meta: {
       type: profile.type,
       skillsCount: String(skills.length),
@@ -248,7 +248,7 @@ private async collectSkillNames(
         continue; // Not a valid skill directory
       }
       items.push({
-        name: entry.name,
+        name: `${profile.name}/${entry.name}`,
         meta: {
           profile: profile.name,
           type: "skill",
