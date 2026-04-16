@@ -20,6 +20,7 @@ describe("createDefaultCollectors", () => {
       "cloud-cli",
       "macos-defaults",
       "launch-agents",
+      "hermes",
     ]);
   });
 });
