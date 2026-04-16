@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-04-16
+
+### Features
+
+- **Hermes Agent collector**: New collector backing up Hermes AI agent profiles (`~/.hermes/`)
+  - Collects `config.yaml`, `SOUL.md`, `memories/`, `cron/jobs.json` per profile
+  - Lists skills by directory name (content not collected)
+  - Supports main profile and named sub-profiles under `~/.hermes/profiles/`
+  - Silently skips when Hermes is not installed
+
+### Fixes
+
+- **YAML redaction**: Fixed multiple gaps in YAML secret redaction
+  - List items (`- token: abc`) now properly redacted
+  - Block scalar continuation lines (`key: >\n  secret`) no longer leak values
+  - Kebab-case keys (`api-key`, `auth-token`) now matched by sensitivity patterns
+  - Block scalars with trailing comments (`key: > # comment`) handled correctly
+  - Both indicator orderings supported per YAML 1.2 spec (`|2-`, `>1+`)
+- **Hermes error handling**: Distinguished ENOENT (not installed) from EACCES (permission denied) — no longer shows misleading "not installed" skip message on permission errors
+- **Hermes list item uniqueness**: Used qualified names (`profile:name`, `profile/skill`) to prevent snapshot diff from swallowing changes when profiles share skill names
+
+### UI Improvements
+
+- **Dashboard redesign**: Redesigned Breakdown section cards with `DashboardSegment` and `StatCard` components
+- **Card styling**: Removed border and shadow from Card, using `bg-secondary` for visual hierarchy
+
+### Chores
+
+- **CLI login**: Migrated to cli-base 0.2.0 with mandatory CSRF and accentColor support
+- **Quality gates**: 451+ tests maintained
+
 ## [1.4.1] - 2026-04-05
 
 ### Chores
