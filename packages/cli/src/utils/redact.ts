@@ -99,7 +99,7 @@ const YAML_KV_RE = /^(\s*(?:-\s+)?([\w-]+)\s*:\s*).+$/;
  * When a sensitive key's value starts with one of these, every
  * continuation line (indented deeper) must also be redacted.
  */
-const BLOCK_SCALAR_RE = /^[|>][+-]?\d?\s*$/;
+const BLOCK_SCALAR_RE = /^[|>][+-]?\d?(\s+#.*|\s*)$/;
 
 /**
  * Skip YAML block-scalar continuation lines starting from index `start`.

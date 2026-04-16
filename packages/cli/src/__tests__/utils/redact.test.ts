@@ -338,6 +338,38 @@ describe("redactYamlSecrets", () => {
     expect(result).toContain("model: claude-4");
   });
 
+  it("should redact block scalar with inline comment (> # comment)", () => {
+    const input = [
+      "api_key: > # long key",
+      "  sk-ant-very-long",
+      "  -secret-key-here",
+      "endpoint: https://api.example.com",
+    ].join("\n");
+
+    const result = redactYamlSecrets(input);
+
+    expect(result).toContain("api_key: [REDACTED]");
+    expect(result).not.toContain("sk-ant-very-long");
+    expect(result).not.toContain("-secret-key-here");
+    expect(result).toContain("endpoint: https://api.example.com");
+  });
+
+  it("should redact block scalar with indent width and comment (|2 # comment)", () => {
+    const input = [
+      "token: |2 # indented",
+      "  ghp_reallyLongToken123",
+      "  more-secret-lines",
+      "model: claude-4",
+    ].join("\n");
+
+    const result = redactYamlSecrets(input);
+
+    expect(result).toContain("token: [REDACTED]");
+    expect(result).not.toContain("ghp_reallyLongToken123");
+    expect(result).not.toContain("more-secret-lines");
+    expect(result).toContain("model: claude-4");
+  });
+
   it("should handle nested list items with sensitive keys", () => {
     const input = [
       "platforms:",
