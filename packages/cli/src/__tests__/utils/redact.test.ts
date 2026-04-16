@@ -271,6 +271,89 @@ describe("redactYamlSecrets", () => {
     expect(result).not.toContain("tok_xyz");
     expect(result).not.toContain("sec-456");
   });
+
+  it("should redact sensitive keys in YAML list items", () => {
+    const input = [
+      "accounts:",
+      "  - token: sk-secret-1",
+      "  - token: sk-secret-2",
+      "  - name: safe-value",
+    ].join("\n");
+
+    const result = redactYamlSecrets(input);
+
+    expect(result).not.toContain("sk-secret-1");
+    expect(result).not.toContain("sk-secret-2");
+    expect(result).toContain("- token: [REDACTED]");
+    expect(result).toContain("- name: safe-value");
+  });
+
+  it("should redact block scalar values (folded >)", () => {
+    const input = [
+      "model: claude-4",
+      "api_key: >",
+      "  sk-ant-very-long",
+      "  -secret-key-here",
+      "endpoint: https://api.example.com",
+    ].join("\n");
+
+    const result = redactYamlSecrets(input);
+
+    expect(result).toContain("model: claude-4");
+    expect(result).toContain("api_key: [REDACTED]");
+    expect(result).not.toContain("sk-ant-very-long");
+    expect(result).not.toContain("-secret-key-here");
+    expect(result).toContain("endpoint: https://api.example.com");
+  });
+
+  it("should redact block scalar values (literal |)", () => {
+    const input = ["secret: |", "  line-one-of-secret", "  line-two-of-secret", "name: safe"].join(
+      "\n",
+    );
+
+    const result = redactYamlSecrets(input);
+
+    expect(result).toContain("secret: [REDACTED]");
+    expect(result).not.toContain("line-one-of-secret");
+    expect(result).not.toContain("line-two-of-secret");
+    expect(result).toContain("name: safe");
+  });
+
+  it("should redact block scalar with chomp indicators (|-, >+)", () => {
+    const input = [
+      "token: |-",
+      "  ghp_reallyLongToken123",
+      "password: >+",
+      "  hunter2",
+      "",
+      "model: claude-4",
+    ].join("\n");
+
+    const result = redactYamlSecrets(input);
+
+    expect(result).toContain("token: [REDACTED]");
+    expect(result).not.toContain("ghp_reallyLongToken123");
+    expect(result).toContain("password: [REDACTED]");
+    expect(result).not.toContain("hunter2");
+    expect(result).toContain("model: claude-4");
+  });
+
+  it("should handle nested list items with sensitive keys", () => {
+    const input = [
+      "platforms:",
+      "  - api_key: sk-platform-1",
+      "    name: openai",
+      "  - api_key: sk-platform-2",
+      "    name: anthropic",
+    ].join("\n");
+
+    const result = redactYamlSecrets(input);
+
+    expect(result).not.toContain("sk-platform-1");
+    expect(result).not.toContain("sk-platform-2");
+    expect(result).toContain("name: openai");
+    expect(result).toContain("name: anthropic");
+  });
 });
 
 describe("redactJsonlSecrets", () => {

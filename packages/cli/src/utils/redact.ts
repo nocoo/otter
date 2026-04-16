@@ -87,29 +87,83 @@ export function redactJsonSecrets(jsonContent: string): string {
 // YAML redaction (for config.yaml, etc.)
 // ---------------------------------------------------------------------------
 
-/** Match a YAML key: value line, capturing the key name and the prefix */
-const YAML_KV_RE = /^(\s*([\w-]+)\s*:\s*).+$/;
+/** Match a YAML key: value line, optionally preceded by a list marker.
+ *  Group 1 = everything up to (and including) the colon + whitespace
+ *  Group 2 = the key name itself
+ *  The `.+$` tail ensures we only match lines that have an inline value.  */
+const YAML_KV_RE = /^(\s*(?:-\s+)?([\w-]+)\s*:\s*).+$/;
+
+/**
+ * Match YAML block-scalar indicators (`|`, `>`, `|+`, `>-`, etc.)
+ * optionally followed by an explicit indent width digit.
+ * When a sensitive key's value starts with one of these, every
+ * continuation line (indented deeper) must also be redacted.
+ */
+const BLOCK_SCALAR_RE = /^[|>][+-]?\d?\s*$/;
+
+/**
+ * Skip YAML block-scalar continuation lines starting from index `start`.
+ * Continuation lines are either empty or indented deeper than `keyIndent`.
+ * Returns the index of the first non-continuation line.
+ */
+function skipBlockScalarLines(lines: string[], start: number, keyIndent: number): number {
+  let i = start;
+  while (i < lines.length) {
+    const next = lines[i] as string;
+    // Continuation: empty line or indented deeper than the key line
+    if (next.trim() === "" || next.length - next.trimStart().length > keyIndent) {
+      i++;
+    } else {
+      break;
+    }
+  }
+  return i;
+}
 
 /**
  * Redact sensitive values in YAML content.
- * Matches `key: value` lines where the key contains a sensitive keyword.
+ *
+ * Handles three value forms:
+ *  1. Inline scalars  — `key: secret`   → `key: [REDACTED]`
+ *  2. Block scalars   — `key: >\n  ...` → `key: [REDACTED]` (continuation lines removed)
+ *  3. List items      — `- token: abc`  → `- token: [REDACTED]`
+ *
  * Reuses the same key-sensitivity heuristic as JSON redaction.
  */
 export function redactYamlSecrets(content: string): string {
-  return content
-    .split("\n")
-    .map((line) => {
-      // Skip comments
-      const trimmed = line.trimStart();
-      if (trimmed.startsWith("#")) return line;
+  const lines = content.split("\n");
+  const result: string[] = [];
 
-      const match = line.match(YAML_KV_RE);
-      if (match?.[2] && isSensitiveKey(match[2])) {
-        return `${match[1]}${REDACTED}`;
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i] as string;
+
+    // Skip comments
+    if (line.trimStart().startsWith("#")) {
+      result.push(line);
+      i++;
+      continue;
+    }
+
+    const match = line.match(YAML_KV_RE);
+    if (match?.[1] && match[2] && isSensitiveKey(match[2])) {
+      const prefix = match[1];
+      const valueStr = line.slice(prefix.length).trim();
+      result.push(`${prefix}${REDACTED}`);
+      i++;
+
+      // Block scalar: also skip continuation lines
+      if (BLOCK_SCALAR_RE.test(valueStr)) {
+        const keyIndent = line.length - line.trimStart().length;
+        i = skipBlockScalarLines(lines, i, keyIndent);
       }
-      return line;
-    })
-    .join("\n");
+    } else {
+      result.push(line);
+      i++;
+    }
+  }
+
+  return result.join("\n");
 }
 
 // ---------------------------------------------------------------------------
