@@ -56,9 +56,13 @@ export class HermesCollector extends BaseCollector {
       const hermesDir = join(this.homeDir, ".hermes");
 
       // 1. Discover all profiles (main + named)
+      // null = not installed (ENOENT), empty = error already recorded
       const profiles = await this.discoverProfiles(hermesDir, result);
-      if (profiles.length === 0) {
+      if (profiles === null) {
         result.skipped.push("Hermes not installed (~/.hermes/ not found)");
+        return;
+      }
+      if (profiles.length === 0) {
         return;
       }
 
@@ -72,21 +76,23 @@ export class HermesCollector extends BaseCollector {
 
   /**
    * Discover all Hermes profiles.
-   * Returns empty array if ~/.hermes/ does not exist.
+   * Returns null if ~/.hermes/ does not exist (ENOENT).
+   * Returns empty array if ~/.hermes/ exists but is unreadable (error already recorded).
    */
   private async discoverProfiles(
     hermesDir: string,
     result: CollectorResult,
-  ): Promise<HermesProfile[]> {
+  ): Promise<HermesProfile[] | null> {
     const profiles: HermesProfile[] = [];
 
     // Check if ~/.hermes/ exists at all
     try {
       await readdir(hermesDir);
     } catch (err) {
-      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
-        result.errors.push(`Failed to read ${hermesDir}: ${(err as Error).message}`);
+      if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+        return null; // Not installed
       }
+      result.errors.push(`Failed to read ${hermesDir}: ${(err as Error).message}`);
       return [];
     }
 

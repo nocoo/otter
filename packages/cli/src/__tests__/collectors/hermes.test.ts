@@ -448,6 +448,27 @@ describe("HermesCollector", () => {
     await chmod(profilesDir, 0o755);
   });
 
+  it("should not report 'not installed' when ~/.hermes/ is unreadable (EACCES)", async () => {
+    const hermesDir = join(tempHome, ".hermes");
+    await mkdir(hermesDir, { recursive: true });
+
+    // Make the root hermes dir unreadable
+    await chmod(hermesDir, 0o000);
+
+    const collector = new HermesCollector(tempHome);
+    const result = await collector.collect();
+
+    // Should record an error (EACCES), not a skip
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.errors[0]).toContain(".hermes");
+
+    // Should NOT say "Hermes not installed"
+    expect(result.skipped).toHaveLength(0);
+
+    // Restore permissions for cleanup
+    await chmod(hermesDir, 0o755);
+  });
+
   // -------------------------------------------------------------------------
   // Excluded files
   // -------------------------------------------------------------------------
