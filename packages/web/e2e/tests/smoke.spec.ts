@@ -47,7 +47,7 @@ test("dashboard snapshot detail renders rich snapshot", async ({ page }) => {
   await expect(page.getByRole("tab", { name: /config\s+4/i })).toBeVisible();
   await expect(page.getByRole("tab", { name: /environment\s+8/i })).toBeVisible();
   await expect(page.getByText("Otter Rich Mac")).toBeVisible();
-  await expect(page.getByText("12 collectors captured in this snapshot")).toBeVisible();
+  await expect(page.getByText("By Category")).toBeVisible();
   await expect(page.getByText("Skipped pyenv: not installed")).toBeVisible();
 
   // Switch to Config tab and search

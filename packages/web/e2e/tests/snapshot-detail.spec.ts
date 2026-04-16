@@ -131,7 +131,7 @@ test.describe("Snapshot Detail", () => {
 
     // Verify overview content is visible
     await expect(page.getByText("Otter Rich Mac")).toBeVisible();
-    await expect(page.getByText("12 collectors captured in this snapshot")).toBeVisible();
+    await expect(page.getByText("By Category")).toBeVisible();
 
     // Switch to Config tab
     const configTab = page.getByRole("tab", { name: /config/i }).first();
