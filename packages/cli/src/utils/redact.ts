@@ -23,7 +23,10 @@ const SENSITIVE_KEY_PATTERNS = [
 ];
 
 function isSensitiveKey(key: string): boolean {
-  return SENSITIVE_KEY_PATTERNS.some((p) => p.test(key));
+  // Normalize hyphens to underscores so kebab-case keys
+  // (e.g. "api-key", "auth-token") match the same patterns.
+  const normalized = key.replace(/-/g, "_");
+  return SENSITIVE_KEY_PATTERNS.some((p) => p.test(normalized));
 }
 
 /**
@@ -85,7 +88,7 @@ export function redactJsonSecrets(jsonContent: string): string {
 // ---------------------------------------------------------------------------
 
 /** Match a YAML key: value line, capturing the key name and the prefix */
-const YAML_KV_RE = /^(\s*(\w+)\s*:\s*).+$/;
+const YAML_KV_RE = /^(\s*([\w-]+)\s*:\s*).+$/;
 
 /**
  * Redact sensitive values in YAML content.

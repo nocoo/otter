@@ -252,6 +252,25 @@ describe("redactYamlSecrets", () => {
     const input = "model: claude-4\nendpoint: https://api.example.com\ntemperature: 0.7";
     expect(redactYamlSecrets(input)).toBe(input);
   });
+
+  it("should redact kebab-case sensitive keys", () => {
+    const input = [
+      "api-key: sk-abc123",
+      "auth-token: tok_xyz",
+      "client-secret: sec-456",
+      "normal-setting: value",
+    ].join("\n");
+
+    const result = redactYamlSecrets(input);
+
+    expect(result).toContain("api-key: [REDACTED]");
+    expect(result).toContain("auth-token: [REDACTED]");
+    expect(result).toContain("client-secret: [REDACTED]");
+    expect(result).toContain("normal-setting: value");
+    expect(result).not.toContain("sk-abc123");
+    expect(result).not.toContain("tok_xyz");
+    expect(result).not.toContain("sec-456");
+  });
 });
 
 describe("redactJsonlSecrets", () => {
