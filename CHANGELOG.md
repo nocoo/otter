@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.1] - 2026-04-16
+
+### Fixes
+
+- **E2E test runner**: Fixed L2 API E2E tests — test runner was using production Worker URL instead of test Worker, causing 401 on ingest calls
+- **Playwright tests**: Updated snapshot detail assertions to match redesigned dashboard UI (removed "12 collectors captured" text replaced by category breakdown)
+- **Dependencies**: Fixed 11 vulnerabilities — hono ≥4.12.14, @hono/node-server ≥1.19.13, next 16.2.3, vite ≥7.3.2
+
 ## [1.5.0] - 2026-04-16
 
 ### Features

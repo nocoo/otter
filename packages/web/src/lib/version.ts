@@ -6,4 +6,4 @@
  *
  * Works in both server and client components.
  */
-export const APP_VERSION: string = process.env.NEXT_PUBLIC_APP_VERSION ?? "1.5.0";
+export const APP_VERSION: string = process.env.NEXT_PUBLIC_APP_VERSION ?? "1.5.1";
