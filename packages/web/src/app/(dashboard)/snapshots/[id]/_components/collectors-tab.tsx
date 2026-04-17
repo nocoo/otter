@@ -29,7 +29,7 @@ export function CollectorsTab({ collectors, category }: CollectorsTabProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search collectors, files, items, or metadata..."
-          className="bg-background/70"
+          className="bg-background"
         />
         <Badge variant="secondary" className="text-2xs font-normal shrink-0">
           {filtered.length}/{categoryCollectors.length}
