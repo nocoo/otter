@@ -295,7 +295,7 @@ export default function SettingsPage() {
 
       {/* Account Section */}
       <section className="space-y-4">
-        <h2 className="text-sm font-medium text-foreground flex items-center gap-2">
+        <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2">
           <User className="h-4 w-4" strokeWidth={1.5} />
           Account
         </h2>
@@ -327,7 +327,7 @@ export default function SettingsPage() {
       {/* Webhooks Section */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium text-foreground flex items-center gap-2">
+          <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2">
             <Webhook className="h-4 w-4" strokeWidth={1.5} />
             Webhook Tokens
           </h2>
@@ -430,7 +430,7 @@ export default function SettingsPage() {
 
       {/* Danger Zone */}
       <section className="space-y-4">
-        <h2 className="text-sm font-medium text-destructive">Danger Zone</h2>
+        <h2 className="text-xs font-medium uppercase tracking-wider text-destructive">Danger Zone</h2>
         <div className="rounded-xl border border-destructive/20 p-5">
           <div className="flex items-center justify-between">
             <div>
