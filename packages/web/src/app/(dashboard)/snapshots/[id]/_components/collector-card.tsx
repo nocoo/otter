@@ -43,7 +43,7 @@ export function CollectorCard({ collector }: { collector: Collector }) {
   }, [isApps, collector.lists, totalLists]);
 
   return (
-    <Card className="gap-0 py-0 overflow-hidden">
+    <Card className="overflow-hidden">
       {/* Header */}
       <CardHeader className="gap-0 px-5 py-4 border-b border-border/40">
         <div className="flex items-center justify-between">
