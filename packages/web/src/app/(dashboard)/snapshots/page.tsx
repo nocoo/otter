@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDateTime, formatSize, formatTimeAgo } from "@/lib/utils";
@@ -221,16 +222,17 @@ export default function SnapshotsPage() {
       ) : error ? (
         <div className="rounded-xl bg-secondary p-12 text-center">
           <p className="text-sm text-destructive">{error}</p>
-          <button
-            type="button"
+          <Button
+            variant="link"
+            size="sm"
             onClick={() => {
               setCursors([]);
               void fetchPage();
             }}
-            className="mt-2 text-xs text-muted-foreground hover:text-foreground underline"
+            className="mt-2 text-xs text-muted-foreground"
           >
             Retry
-          </button>
+          </Button>
         </div>
       ) : snapshots.length === 0 ? (
         <div className="rounded-xl bg-secondary p-12 text-center">
@@ -345,27 +347,27 @@ export default function SnapshotsPage() {
               Showing {showStart}-{showEnd} of {total} snapshots
             </p>
             <div className="flex items-center gap-1">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon"
                 disabled={currentPage === 1}
                 onClick={currentPage === 2 ? handlePrevToFirst : handlePrev}
-                className="flex h-8 w-8 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 transition-colors"
                 aria-label="Previous page"
               >
                 <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-              </button>
+              </Button>
               <span className="px-2 text-xs text-muted-foreground" aria-current="page">
                 Page {currentPage} of {totalPages}
               </span>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon"
                 disabled={nextBefore === null}
                 onClick={handleNext}
-                className="flex h-8 w-8 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 transition-colors"
                 aria-label="Next page"
               >
                 <ChevronRight className="h-4 w-4" aria-hidden="true" />
-              </button>
+              </Button>
             </div>
           </nav>
         </>
