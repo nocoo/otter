@@ -53,7 +53,7 @@ export default function CliConnectPage() {
 
 function CliConnectSkeleton() {
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl space-y-4 md:space-y-6">
       <Header />
       <WebhooksConnectSkeleton />
     </div>
@@ -120,7 +120,7 @@ function CliConnectContent() {
   // No callback param
   if (!callback) {
     return (
-      <div className="max-w-2xl space-y-6">
+      <div className="max-w-2xl space-y-4 md:space-y-6">
         <Header />
         <ErrorCard
           icon={<Terminal className="h-8 w-8 text-muted-foreground/40" />}
@@ -135,7 +135,7 @@ function CliConnectContent() {
   // Invalid callback
   if (!callbackValid) {
     return (
-      <div className="max-w-2xl space-y-6">
+      <div className="max-w-2xl space-y-4 md:space-y-6">
         <Header />
         <ErrorCard
           icon={<ShieldAlert className="h-8 w-8 text-destructive/60" />}
@@ -147,7 +147,7 @@ function CliConnectContent() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl space-y-4 md:space-y-6">
       <Header />
 
       <div className="rounded-xl bg-secondary p-4">
