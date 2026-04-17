@@ -290,7 +290,7 @@ export default function SettingsPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-semibold font-display tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground">Manage your account and webhook tokens</p>
+        <p className="text-sm text-muted-foreground mt-1">Manage your account and webhook tokens</p>
       </div>
 
       {/* Account Section */}
