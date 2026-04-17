@@ -37,7 +37,9 @@ export function ListItemRow({ item, iconUrl, isSshKey }: ListItemRowProps) {
         <AppWindow className="h-5 w-5 text-muted-foreground shrink-0" strokeWidth={1.5} />
       ) : (
         <div className="h-5 w-5 rounded-[4px] bg-muted flex items-center justify-center shrink-0">
-          <span className="text-2xs text-muted-foreground font-medium">{item.name.charAt(0).toUpperCase()}</span>
+          <span className="text-2xs text-muted-foreground font-medium">
+            {item.name.charAt(0).toUpperCase()}
+          </span>
         </div>
       )}
       <div className="min-w-0 flex-1">
