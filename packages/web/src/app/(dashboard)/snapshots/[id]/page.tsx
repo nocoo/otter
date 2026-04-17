@@ -38,7 +38,7 @@ function SnapshotDetailSkeleton() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: skeleton cards are static, never reorder
-            <div key={`stat-${i}`} className="rounded-xl bg-card p-4 space-y-2">
+            <div key={`stat-${i}`} className="rounded-[var(--radius-card)] bg-card p-4 space-y-2">
               <Skeleton className="h-4 w-16" />
               <Skeleton className="h-8 w-12" />
             </div>
@@ -48,8 +48,11 @@ function SnapshotDetailSkeleton() {
         {/* Collectors list skeleton */}
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton cards are static, never reorder
-            <div key={`collector-${i}`} className="rounded-xl bg-card p-4 space-y-3">
+            <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: skeleton cards are static, never reorder
+              key={`collector-${i}`}
+              className="rounded-[var(--radius-card)] bg-card p-4 space-y-3"
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Skeleton className="h-8 w-8 rounded-lg" />
@@ -66,7 +69,7 @@ function SnapshotDetailSkeleton() {
       </div>
 
       {/* Export section skeleton */}
-      <div className="rounded-xl bg-secondary p-4">
+      <div className="rounded-[var(--radius-card)] bg-secondary p-4">
         <Skeleton className="h-4 w-32" />
       </div>
     </div>
