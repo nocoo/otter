@@ -53,7 +53,9 @@ export function ListItemRow({ item, iconUrl, isSshKey }: ListItemRowProps) {
         )}
       </div>
       {item.version && (
-        <code className="text-2xs text-muted-foreground font-mono shrink-0 mt-0.5">{item.version}</code>
+        <code className="text-2xs text-muted-foreground font-mono shrink-0 mt-0.5">
+          {item.version}
+        </code>
       )}
     </div>
   );
