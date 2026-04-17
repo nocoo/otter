@@ -233,7 +233,7 @@ function CliConnectContent() {
 function Header() {
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-tight">Connect CLI</h1>
+      <h1 className="text-2xl md:text-3xl font-semibold font-display tracking-tight">Connect CLI</h1>
       <p className="text-sm text-muted-foreground">Link your Otter CLI to this dashboard</p>
     </div>
   );

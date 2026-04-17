@@ -133,7 +133,7 @@ export default function SnapshotDetailPage({ params }: { params: Promise<{ id: s
       {/* Header */}
       <div>
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="text-2xl md:text-3xl font-semibold font-display tracking-tight">
             Snapshot <code className="font-mono text-lg">{id.slice(0, 8)}</code>
           </h1>
         </div>

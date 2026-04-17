@@ -289,7 +289,7 @@ export default function SettingsPage() {
     <div className="max-w-3xl space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+        <h1 className="text-2xl md:text-3xl font-semibold font-display tracking-tight">Settings</h1>
         <p className="text-sm text-muted-foreground">Manage your account and webhook tokens</p>
       </div>
 
