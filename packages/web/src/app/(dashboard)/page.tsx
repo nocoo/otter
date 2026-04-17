@@ -17,7 +17,14 @@ import { AreaChart, type AreaChartDataPoint } from "@/components/charts";
 import { DashboardSegment } from "@/components/dashboard/dashboard-segment";
 import { StatCard, StatGrid } from "@/components/dashboard/stat-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { formatSize, formatTimeAgo } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------

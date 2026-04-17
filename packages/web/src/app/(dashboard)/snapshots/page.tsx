@@ -8,7 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { formatDateTime, formatSize, formatTimeAgo } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -313,7 +320,9 @@ export default function SnapshotsPage() {
                           {snap.platform}/{snap.arch}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">{snap.collectorCount}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {snap.collectorCount}
+                      </TableCell>
                       <TableCell className="text-right tabular-nums">{snap.fileCount}</TableCell>
                       <TableCell className="text-right tabular-nums">{snap.listCount}</TableCell>
                       <TableCell className="text-right tabular-nums text-muted-foreground">
