@@ -286,7 +286,7 @@ export default function SettingsPage() {
   const userInitial = userName[0] ?? "?";
 
   return (
-    <div className="max-w-3xl space-y-8">
+    <div className="max-w-3xl space-y-4 md:space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-semibold font-display tracking-tight">Settings</h1>
