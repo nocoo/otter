@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateTime, formatSize, formatTimeAgo } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -247,43 +248,43 @@ export default function SnapshotsPage() {
           {/* Table */}
           <div className="rounded-xl bg-secondary p-1">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm" aria-label="Snapshots list">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">
+              <Table aria-label="Snapshots list">
+                <TableHeader>
+                  <TableRow className="border-b border-border">
+                    <TableHead className="font-medium text-muted-foreground text-xs">
                       Snapshot
-                    </th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">
+                    </TableHead>
+                    <TableHead className="font-medium text-muted-foreground text-xs">
                       Host
-                    </th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">
+                    </TableHead>
+                    <TableHead className="font-medium text-muted-foreground text-xs">
                       Platform
-                    </th>
-                    <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">
+                    </TableHead>
+                    <TableHead className="font-medium text-muted-foreground text-xs text-right">
                       Collectors
-                    </th>
-                    <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">
+                    </TableHead>
+                    <TableHead className="font-medium text-muted-foreground text-xs text-right">
                       Files
-                    </th>
-                    <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">
+                    </TableHead>
+                    <TableHead className="font-medium text-muted-foreground text-xs text-right">
                       Lists
-                    </th>
-                    <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">
+                    </TableHead>
+                    <TableHead className="font-medium text-muted-foreground text-xs text-right">
                       Size
-                    </th>
-                    <th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">
+                    </TableHead>
+                    <TableHead className="font-medium text-muted-foreground text-xs text-right">
                       Created
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {snapshots.map((snap) => (
-                    <tr
+                    <TableRow
                       key={snap.id}
-                      className="group border-b border-border/50 last:border-0 hover:bg-accent/50 focus-within:bg-accent/50 transition-colors cursor-pointer"
+                      className="group border-b border-border/50 last:border-0 hover:bg-accent/50 focus-within:bg-accent/50 cursor-pointer"
                       onClick={() => router.push(`/snapshots/${snap.id}`)}
                     >
-                      <td className="px-4 py-3">
+                      <TableCell>
                         <Link
                           href={`/snapshots/${snap.id}`}
                           className="inline-flex items-center gap-2 text-foreground group-hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded transition-colors"
@@ -297,8 +298,8 @@ export default function SnapshotsPage() {
                           />
                           <code className="text-xs font-mono">{snap.id.slice(0, 8)}</code>
                         </Link>
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell>
                         <div className="flex items-center gap-2">
                           <Monitor
                             className="h-3.5 w-3.5 text-muted-foreground"
@@ -306,19 +307,19 @@ export default function SnapshotsPage() {
                           />
                           <span className="font-medium">{snap.hostname}</span>
                         </div>
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell>
                         <Badge variant="secondary" className="text-xs font-normal">
                           {snap.platform}/{snap.arch}
                         </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-right tabular-nums">{snap.collectorCount}</td>
-                      <td className="px-4 py-3 text-right tabular-nums">{snap.fileCount}</td>
-                      <td className="px-4 py-3 text-right tabular-nums">{snap.listCount}</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{snap.collectorCount}</TableCell>
+                      <TableCell className="text-right tabular-nums">{snap.fileCount}</TableCell>
+                      <TableCell className="text-right tabular-nums">{snap.listCount}</TableCell>
+                      <TableCell className="text-right tabular-nums text-muted-foreground">
                         {formatSize(snap.sizeBytes)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
+                      </TableCell>
+                      <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <div className="flex flex-col items-end">
                             <span className="text-xs text-muted-foreground">
@@ -333,11 +334,11 @@ export default function SnapshotsPage() {
                             strokeWidth={1.5}
                           />
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </div>
 
