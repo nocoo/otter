@@ -53,7 +53,7 @@ export default function CliConnectPage() {
 
 function CliConnectSkeleton() {
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl space-y-4 md:space-y-6">
       <Header />
       <WebhooksConnectSkeleton />
     </div>
@@ -120,7 +120,7 @@ function CliConnectContent() {
   // No callback param
   if (!callback) {
     return (
-      <div className="max-w-2xl space-y-6">
+      <div className="max-w-2xl space-y-4 md:space-y-6">
         <Header />
         <ErrorCard
           icon={<Terminal className="h-8 w-8 text-muted-foreground/40" />}
@@ -135,7 +135,7 @@ function CliConnectContent() {
   // Invalid callback
   if (!callbackValid) {
     return (
-      <div className="max-w-2xl space-y-6">
+      <div className="max-w-2xl space-y-4 md:space-y-6">
         <Header />
         <ErrorCard
           icon={<ShieldAlert className="h-8 w-8 text-destructive/60" />}
@@ -147,10 +147,10 @@ function CliConnectContent() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl space-y-4 md:space-y-6">
       <Header />
 
-      <div className="rounded-xl bg-secondary p-4">
+      <div className="rounded-[var(--radius-card)] bg-secondary p-4">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Terminal className="h-3.5 w-3.5" strokeWidth={1.5} />
           <span>
@@ -163,7 +163,7 @@ function CliConnectContent() {
       {loading ? (
         <WebhooksConnectSkeleton />
       ) : error ? (
-        <div className="rounded-xl bg-secondary p-8 text-center">
+        <div className="rounded-[var(--radius-card)] bg-secondary p-8 text-center">
           <p className="text-sm text-destructive">{error}</p>
           <Button
             variant="ghost"
@@ -178,7 +178,7 @@ function CliConnectContent() {
           </Button>
         </div>
       ) : webhooks.length === 0 ? (
-        <div className="rounded-xl bg-secondary p-8 text-center space-y-3">
+        <div className="rounded-[var(--radius-card)] bg-secondary p-8 text-center space-y-3">
           <Webhook className="h-8 w-8 text-muted-foreground/40 mx-auto" strokeWidth={1.5} />
           <div>
             <p className="text-sm text-muted-foreground">No webhook tokens yet</p>
@@ -210,7 +210,7 @@ function CliConnectContent() {
               />
             ))}
           {webhooks.filter((wh) => wh.isActive).length === 0 && (
-            <div className="rounded-xl bg-secondary p-6 text-center space-y-3">
+            <div className="rounded-[var(--radius-card)] bg-secondary p-6 text-center space-y-3">
               <p className="text-sm text-muted-foreground">All your webhook tokens are inactive.</p>
               <Button variant="outline" size="sm" className="gap-1.5" asChild>
                 <a href="/settings">
@@ -246,8 +246,11 @@ function WebhooksConnectSkeleton() {
     <div className="space-y-3">
       <Skeleton className="h-4 w-48" />
       {Array.from({ length: 2 }).map((_, i) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton cards are static, never reorder
-        <div key={`connect-skeleton-${i}`} className="rounded-xl bg-secondary p-4 space-y-3">
+        <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: skeleton cards are static, never reorder
+          key={`connect-skeleton-${i}`}
+          className="rounded-[var(--radius-card)] bg-secondary p-4 space-y-3"
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <Skeleton className="h-4 w-4" />
@@ -276,7 +279,7 @@ function ErrorCard({
   code?: string;
 }) {
   return (
-    <div className="rounded-xl bg-secondary p-8 text-center space-y-3">
+    <div className="rounded-[var(--radius-card)] bg-secondary p-8 text-center space-y-3">
       {icon}
       <div>
         <p className="text-sm font-medium text-foreground">{title}</p>
@@ -306,7 +309,7 @@ function WebhookConnectRow({
   const maskedToken = `${webhook.token.slice(0, 8)}...${webhook.token.slice(-4)}`;
 
   return (
-    <div className="rounded-xl bg-secondary p-4 space-y-3">
+    <div className="rounded-[var(--radius-card)] bg-secondary p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <Webhook className="h-4 w-4 text-primary" strokeWidth={1.5} />
