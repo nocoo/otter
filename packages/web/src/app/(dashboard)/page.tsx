@@ -17,6 +17,14 @@ import { AreaChart, type AreaChartDataPoint } from "@/components/charts";
 import { DashboardSegment } from "@/components/dashboard/dashboard-segment";
 import { StatCard, StatGrid } from "@/components/dashboard/stat-card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { formatSize, formatTimeAgo } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -298,37 +306,37 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm" aria-label="Recent snapshots">
-                      <thead>
-                        <tr className="border-b border-border text-left">
-                          <th className="pb-2 pr-4 font-medium text-muted-foreground text-xs">
+                    <Table aria-label="Recent snapshots">
+                      <TableHeader>
+                        <TableRow className="border-b border-border">
+                          <TableHead className="font-medium text-muted-foreground text-xs">
                             Host
-                          </th>
-                          <th className="pb-2 pr-4 font-medium text-muted-foreground text-xs">
+                          </TableHead>
+                          <TableHead className="font-medium text-muted-foreground text-xs">
                             Platform
-                          </th>
-                          <th className="pb-2 pr-4 font-medium text-muted-foreground text-xs text-right">
+                          </TableHead>
+                          <TableHead className="font-medium text-muted-foreground text-xs text-right">
                             Files
-                          </th>
-                          <th className="pb-2 pr-4 font-medium text-muted-foreground text-xs text-right">
+                          </TableHead>
+                          <TableHead className="font-medium text-muted-foreground text-xs text-right">
                             Lists
-                          </th>
-                          <th className="pb-2 pr-4 font-medium text-muted-foreground text-xs text-right">
+                          </TableHead>
+                          <TableHead className="font-medium text-muted-foreground text-xs text-right">
                             Size
-                          </th>
-                          <th className="pb-2 font-medium text-muted-foreground text-xs text-right">
+                          </TableHead>
+                          <TableHead className="font-medium text-muted-foreground text-xs text-right">
                             When
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {data?.snapshots.map((snap) => (
-                          <tr
+                          <TableRow
                             key={snap.id}
-                            className="group border-b border-border/50 last:border-0 hover:bg-accent/50 focus-within:bg-accent/50 transition-colors cursor-pointer"
+                            className="group border-b border-border/50 last:border-0 hover:bg-accent/50 focus-within:bg-accent/50 cursor-pointer"
                             onClick={() => router.push(`/snapshots/${snap.id}`)}
                           >
-                            <td className="py-2.5 pr-4">
+                            <TableCell>
                               <Link
                                 href={`/snapshots/${snap.id}`}
                                 className="flex items-center gap-2 group-hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded transition-colors"
@@ -342,20 +350,20 @@ export default function DashboardPage() {
                                 />
                                 <span className="font-medium">{snap.hostname}</span>
                               </Link>
-                            </td>
-                            <td className="py-2.5 pr-4 text-muted-foreground">
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
                               {snap.platform}/{snap.arch}
-                            </td>
-                            <td className="py-2.5 pr-4 text-right tabular-nums">
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
                               {snap.fileCount}
-                            </td>
-                            <td className="py-2.5 pr-4 text-right tabular-nums">
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
                               {snap.listCount}
-                            </td>
-                            <td className="py-2.5 pr-4 text-right tabular-nums text-muted-foreground">
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums text-muted-foreground">
                               {formatSize(snap.sizeBytes)}
-                            </td>
-                            <td className="py-2.5 text-right">
+                            </TableCell>
+                            <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-2">
                                 <span className="text-muted-foreground text-xs">
                                   {formatTimeAgo(snap.snapshotAt)}
@@ -365,11 +373,11 @@ export default function DashboardPage() {
                                   strokeWidth={1.5}
                                 />
                               </div>
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ))}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   </div>
                 )}
               </div>
