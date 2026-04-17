@@ -194,7 +194,7 @@ function IssuesSection({ collectors }: { collectors: Collector[] }) {
 
   return (
     <DashboardSegment title="Issues">
-      <div className="rounded-[var(--radius-card)] bg-secondary p-4 md:p-5 space-y-4">
+      <div className="rounded-[var(--radius-card)] bg-secondary p-4 md:p-5 space-y-6">
         {errors.length > 0 && (
           <div className="space-y-2">
             <h4 className="text-xs font-medium text-destructive uppercase tracking-wider flex items-center gap-1.5">
