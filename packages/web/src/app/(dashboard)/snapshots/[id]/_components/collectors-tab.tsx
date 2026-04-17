@@ -42,7 +42,7 @@ export function CollectorsTab({ collectors, category }: CollectorsTabProps) {
           <p className="text-sm text-muted-foreground">No collectors match the current search.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {filtered
             .sort((a, b) => a.label.localeCompare(b.label))
             .map((collector) => (
