@@ -61,68 +61,71 @@ function SnapshotsPageSkeleton() {
       {/* Table skeleton */}
       <div className="rounded-[var(--radius-card)] bg-secondary p-1">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="px-4 py-3 text-left">
+          <Table aria-label="Loading snapshots">
+            <TableHeader>
+              <TableRow className="border-b border-border">
+                <TableHead>
                   <Skeleton className="h-3 w-16" />
-                </th>
-                <th className="px-4 py-3 text-left">
+                </TableHead>
+                <TableHead>
                   <Skeleton className="h-3 w-10" />
-                </th>
-                <th className="px-4 py-3 text-left">
+                </TableHead>
+                <TableHead>
                   <Skeleton className="h-3 w-16" />
-                </th>
-                <th className="px-4 py-3 text-right">
+                </TableHead>
+                <TableHead className="text-right">
                   <Skeleton className="h-3 w-16 ml-auto" />
-                </th>
-                <th className="px-4 py-3 text-right">
+                </TableHead>
+                <TableHead className="text-right">
                   <Skeleton className="h-3 w-10 ml-auto" />
-                </th>
-                <th className="px-4 py-3 text-right">
+                </TableHead>
+                <TableHead className="text-right">
                   <Skeleton className="h-3 w-10 ml-auto" />
-                </th>
-                <th className="px-4 py-3 text-right">
+                </TableHead>
+                <TableHead className="text-right">
                   <Skeleton className="h-3 w-10 ml-auto" />
-                </th>
-                <th className="px-4 py-3 text-right">
+                </TableHead>
+                <TableHead className="text-right">
                   <Skeleton className="h-3 w-16 ml-auto" />
-                </th>
-              </tr>
-            </thead>
-            <tbody>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {Array.from({ length: 5 }).map((_, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows are static, never reorder
-                <tr key={`skeleton-row-${i}`} className="border-b border-border/50 last:border-0">
-                  <td className="px-4 py-3">
+                <TableRow
+                  // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows are static, never reorder
+                  key={`skeleton-row-${i}`}
+                  className="border-b border-border/50 last:border-0"
+                >
+                  <TableCell>
                     <Skeleton className="h-4 w-20" />
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
                     <Skeleton className="h-4 w-24" />
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
                     <Skeleton className="h-5 w-20 rounded-full" />
-                  </td>
-                  <td className="px-4 py-3 text-right">
+                  </TableCell>
+                  <TableCell className="text-right">
                     <Skeleton className="h-4 w-6 ml-auto" />
-                  </td>
-                  <td className="px-4 py-3 text-right">
+                  </TableCell>
+                  <TableCell className="text-right">
                     <Skeleton className="h-4 w-8 ml-auto" />
-                  </td>
-                  <td className="px-4 py-3 text-right">
+                  </TableCell>
+                  <TableCell className="text-right">
                     <Skeleton className="h-4 w-6 ml-auto" />
-                  </td>
-                  <td className="px-4 py-3 text-right">
+                  </TableCell>
+                  <TableCell className="text-right">
                     <Skeleton className="h-4 w-12 ml-auto" />
-                  </td>
-                  <td className="px-4 py-3 text-right">
+                  </TableCell>
+                  <TableCell className="text-right">
                     <Skeleton className="h-3 w-12 ml-auto" />
                     <Skeleton className="h-2 w-20 ml-auto mt-1" />
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </div>
 
