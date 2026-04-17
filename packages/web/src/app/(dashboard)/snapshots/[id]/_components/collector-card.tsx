@@ -4,6 +4,7 @@ import { AlertTriangle, FileText, Info, List, SkipForward } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { FileRow } from "./file-row";
 import { computeIconUrl, listItemKey, resolveIconUrl } from "./helpers";
 import { ListItemRow } from "./list-item-row";
@@ -47,7 +48,19 @@ export function CollectorCard({ collector }: { collector: Collector }) {
       {/* Header */}
       <CardHeader className="gap-0 px-5 py-4 border-b border-border/40">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm">{collector.label}</CardTitle>
+          <div className="flex items-center gap-2">
+            <div
+              className={cn(
+                "h-2 w-2 rounded-full shrink-0",
+                collector.errors?.length
+                  ? "bg-destructive"
+                  : collector.skipped?.length
+                    ? "bg-amber-500"
+                    : "bg-emerald-500",
+              )}
+            />
+            <CardTitle className="text-sm">{collector.label}</CardTitle>
+          </div>
           <div className="flex items-center gap-3">
             {totalFiles > 0 && (
               <span className="text-xs text-muted-foreground flex items-center gap-1">
