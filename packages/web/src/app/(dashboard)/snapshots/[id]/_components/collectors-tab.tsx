@@ -38,7 +38,7 @@ export function CollectorsTab({ collectors, category }: CollectorsTabProps) {
 
       {/* Collector cards */}
       {filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-card px-5 py-8 text-center">
+        <div className="rounded-[var(--radius-card)] border border-dashed border-border bg-card px-5 py-8 text-center">
           <p className="text-sm text-muted-foreground">No collectors match the current search.</p>
         </div>
       ) : (
