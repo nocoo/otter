@@ -149,8 +149,11 @@ function WebhooksSkeleton() {
   return (
     <div className="space-y-3">
       {Array.from({ length: 2 }).map((_, i) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton cards are static, never reorder
-        <div key={`webhook-skeleton-${i}`} className="rounded-[var(--radius-card)] bg-secondary p-4 space-y-3">
+        <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: skeleton cards are static, never reorder
+          key={`webhook-skeleton-${i}`}
+          className="rounded-[var(--radius-card)] bg-secondary p-4 space-y-3"
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <Skeleton className="h-4 w-4" />

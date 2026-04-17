@@ -120,9 +120,7 @@ function AppShellInner({ children }: AppShellProps) {
         </header>
 
         {/* Content area */}
-        <div className="flex-1 p-4 md:p-5 overflow-y-auto">
-          {children}
-        </div>
+        <div className="flex-1 p-4 md:p-5 overflow-y-auto">{children}</div>
       </main>
     </div>
   );
