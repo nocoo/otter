@@ -95,7 +95,7 @@ function WebhookRow({
   const fullUrl = `${baseUrl}/api/webhook/${webhook.token}`;
 
   return (
-    <div className="rounded-xl bg-secondary p-4 space-y-3">
+    <div className="rounded-[var(--radius-card)] bg-secondary p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <Webhook className="h-4 w-4 text-primary" strokeWidth={1.5} />
@@ -149,8 +149,11 @@ function WebhooksSkeleton() {
   return (
     <div className="space-y-3">
       {Array.from({ length: 2 }).map((_, i) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton cards are static, never reorder
-        <div key={`webhook-skeleton-${i}`} className="rounded-xl bg-secondary p-4 space-y-3">
+        <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: skeleton cards are static, never reorder
+          key={`webhook-skeleton-${i}`}
+          className="rounded-[var(--radius-card)] bg-secondary p-4 space-y-3"
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <Skeleton className="h-4 w-4" />
@@ -286,7 +289,7 @@ export default function SettingsPage() {
   const userInitial = userName[0] ?? "?";
 
   return (
-    <div className="max-w-3xl space-y-8">
+    <div className="max-w-3xl space-y-4 md:space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-semibold font-display tracking-tight">Settings</h1>
@@ -299,7 +302,7 @@ export default function SettingsPage() {
           <User className="h-4 w-4" strokeWidth={1.5} />
           Account
         </h2>
-        <div className="rounded-xl bg-secondary p-5">
+        <div className="rounded-[var(--radius-card)] bg-secondary p-5">
           <div className="flex items-center gap-4">
             <Avatar className="h-14 w-14">
               {userImage && <AvatarImage src={userImage} alt={userName} />}
@@ -387,7 +390,7 @@ export default function SettingsPage() {
         {loading ? (
           <WebhooksSkeleton />
         ) : error ? (
-          <div className="rounded-xl bg-secondary p-8 text-center">
+          <div className="rounded-[var(--radius-card)] bg-secondary p-8 text-center">
             <p className="text-sm text-destructive">{error}</p>
             <Button
               variant="ghost"
@@ -402,7 +405,7 @@ export default function SettingsPage() {
             </Button>
           </div>
         ) : webhooks.length === 0 ? (
-          <div className="rounded-xl bg-secondary p-8 text-center">
+          <div className="rounded-[var(--radius-card)] bg-secondary p-8 text-center">
             <Webhook className="h-8 w-8 text-muted-foreground/40 mx-auto" strokeWidth={1.5} />
             <p className="mt-3 text-sm text-muted-foreground">No webhook tokens yet</p>
             <p className="mt-1 text-xs text-muted-foreground/60">
@@ -433,7 +436,7 @@ export default function SettingsPage() {
         <h2 className="text-xs font-medium uppercase tracking-wider text-destructive">
           Danger Zone
         </h2>
-        <div className="rounded-xl border border-destructive/20 p-5">
+        <div className="rounded-[var(--radius-card)] border border-destructive/20 p-5">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-foreground">Delete all snapshots</p>

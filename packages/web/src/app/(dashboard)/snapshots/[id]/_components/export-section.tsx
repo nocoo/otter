@@ -24,7 +24,7 @@ export function ExportSection({ data, snapshotId }: ExportSectionProps) {
   };
 
   return (
-    <Card className="py-0">
+    <Card>
       <CardContent className="px-5 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

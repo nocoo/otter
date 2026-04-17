@@ -48,7 +48,7 @@ const PAGE_SIZE = 20;
 
 function SnapshotsPageSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header skeleton */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -59,7 +59,7 @@ function SnapshotsPageSkeleton() {
       </div>
 
       {/* Table skeleton */}
-      <div className="rounded-xl bg-secondary p-1">
+      <div className="rounded-[var(--radius-card)] bg-secondary p-1">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -208,7 +208,7 @@ export default function SnapshotsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -230,7 +230,7 @@ export default function SnapshotsPage() {
       {loading ? (
         <SnapshotsPageSkeleton />
       ) : error ? (
-        <div className="rounded-xl bg-secondary p-12 text-center">
+        <div className="rounded-[var(--radius-card)] bg-secondary p-12 text-center">
           <p className="text-sm text-destructive">{error}</p>
           <Button
             variant="link"
@@ -245,7 +245,7 @@ export default function SnapshotsPage() {
           </Button>
         </div>
       ) : snapshots.length === 0 ? (
-        <div className="rounded-xl bg-secondary p-12 text-center">
+        <div className="rounded-[var(--radius-card)] bg-secondary p-12 text-center">
           <Archive className="h-8 w-8 text-muted-foreground/40 mx-auto" strokeWidth={1.5} />
           <p className="mt-3 text-sm text-muted-foreground">No snapshots yet</p>
           <p className="mt-1 text-xs text-muted-foreground/60">
@@ -255,7 +255,7 @@ export default function SnapshotsPage() {
       ) : (
         <>
           {/* Table */}
-          <div className="rounded-xl bg-secondary p-1">
+          <div className="rounded-[var(--radius-card)] bg-secondary p-1">
             <div className="overflow-x-auto">
               <Table aria-label="Snapshots list">
                 <TableHeader>
