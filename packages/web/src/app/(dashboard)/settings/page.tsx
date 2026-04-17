@@ -430,7 +430,9 @@ export default function SettingsPage() {
 
       {/* Danger Zone */}
       <section className="space-y-4">
-        <h2 className="text-xs font-medium uppercase tracking-wider text-destructive">Danger Zone</h2>
+        <h2 className="text-xs font-medium uppercase tracking-wider text-destructive">
+          Danger Zone
+        </h2>
         <div className="rounded-xl border border-destructive/20 p-5">
           <div className="flex items-center justify-between">
             <div>
