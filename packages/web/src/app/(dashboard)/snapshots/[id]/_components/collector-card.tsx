@@ -75,10 +75,10 @@ export function CollectorCard({ collector }: { collector: Collector }) {
 
       {/* Content */}
       <CardContent className="px-5 py-4">
-        <div className="divide-y divide-border/30 [&>*]:py-3 first:[&>*]:pt-0 last:[&>*]:pb-0">
+        <div className="divide-y divide-border/30 [&>*]:py-4 first:[&>*]:pt-0 last:[&>*]:pb-0">
           {/* Files */}
           {totalFiles > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <FileText className="h-3 w-3" strokeWidth={1.5} />
                 Files
@@ -93,7 +93,7 @@ export function CollectorCard({ collector }: { collector: Collector }) {
 
           {/* Items */}
           {totalLists > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <List className="h-3 w-3" strokeWidth={1.5} />
                 Items
@@ -104,7 +104,7 @@ export function CollectorCard({ collector }: { collector: Collector }) {
                   Keys are detected only — content is never backed up.
                 </p>
               )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                 {collector.lists.map((item, index) => {
                   const icon = isApps ? iconUrls[item.name] : item.meta?.iconUrl;
                   const isSshKey = item.meta?.source === ".ssh";
@@ -123,7 +123,7 @@ export function CollectorCard({ collector }: { collector: Collector }) {
 
           {/* Errors */}
           {hasErrors && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <h4 className="text-xs font-medium text-destructive uppercase tracking-wider flex items-center gap-1.5">
                 <AlertTriangle className="h-3 w-3" strokeWidth={1.5} aria-hidden="true" />
                 Errors
@@ -140,7 +140,7 @@ export function CollectorCard({ collector }: { collector: Collector }) {
 
           {/* Skipped */}
           {hasSkipped && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <SkipForward className="h-3 w-3" strokeWidth={1.5} aria-hidden="true" />
                 Skipped
