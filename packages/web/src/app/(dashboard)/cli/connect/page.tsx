@@ -155,7 +155,7 @@ function CliConnectContent() {
           <Terminal className="h-3.5 w-3.5" strokeWidth={1.5} />
           <span>
             Connecting to{" "}
-            <code className="bg-background/50 px-1.5 py-0.5 rounded text-xs">{callback}</code>
+            <code className="bg-secondary px-1.5 py-0.5 rounded text-xs">{callback}</code>
           </span>
         </div>
       </div>
@@ -286,7 +286,7 @@ function ErrorCard({
         <p className="mt-1 text-xs text-muted-foreground">{description}</p>
       </div>
       {code && (
-        <code className="block text-sm bg-background/50 px-4 py-2 rounded-lg text-foreground">
+        <code className="block text-sm bg-secondary px-4 py-2 rounded-lg text-foreground">
           {code}
         </code>
       )}
@@ -338,7 +338,7 @@ function WebhookConnectRow({
         </Button>
       </div>
 
-      <div className="flex items-center gap-2 rounded-lg bg-background/50 px-3 py-2">
+      <div className="flex items-center gap-2 rounded-lg bg-secondary px-3 py-2">
         <code className="flex-1 text-xs font-mono text-muted-foreground truncate">
           {maskedToken}
         </code>

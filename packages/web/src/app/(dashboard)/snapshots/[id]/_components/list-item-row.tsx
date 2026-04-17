@@ -18,7 +18,7 @@ export function ListItemRow({ item, iconUrl, isSshKey }: ListItemRowProps) {
   const [iconError, setIconError] = useState(false);
 
   return (
-    <div className="group flex items-start gap-3 rounded-lg border border-border/50 bg-card px-3 py-2.5 hover:border-border hover:bg-accent/30 transition-colors">
+    <div className="group flex items-start gap-3 rounded-lg bg-secondary px-3 py-2.5 hover:bg-accent/30 transition-colors">
       {isSshKey ? (
         <CircleCheck className="h-4 w-4 text-success shrink-0" strokeWidth={1.5} />
       ) : iconUrl && !iconError ? (

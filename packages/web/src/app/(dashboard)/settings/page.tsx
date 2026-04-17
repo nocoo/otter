@@ -127,7 +127,7 @@ function WebhookRow({
       </div>
 
       {/* Webhook URL */}
-      <div className="flex items-center gap-2 rounded-lg bg-background/50 px-3 py-2">
+      <div className="flex items-center gap-2 rounded-lg bg-secondary px-3 py-2">
         <code className="flex-1 text-xs font-mono text-muted-foreground truncate">{fullUrl}</code>
         <CopyButton text={fullUrl} />
       </div>
@@ -382,7 +382,7 @@ export default function SettingsPage() {
 
         <p className="text-xs text-muted-foreground">
           Use webhook tokens to authenticate CLI uploads. Configure in your CLI with:{" "}
-          <code className="text-xs bg-background/50 px-1.5 py-0.5 rounded">
+          <code className="text-xs bg-secondary px-1.5 py-0.5 rounded">
             otter config set webhook.url &lt;url&gt;
           </code>
         </p>

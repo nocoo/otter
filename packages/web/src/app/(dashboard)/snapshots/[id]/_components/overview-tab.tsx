@@ -162,7 +162,7 @@ function TopCollectorsChart({ collectors }: { collectors: Collector[] }) {
                 {item.value} file{item.value !== 1 ? "s" : ""}
               </span>
             </div>
-            <div className="h-2 rounded-full bg-card overflow-hidden">
+            <div className="h-2 rounded-full bg-secondary overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-300"
                 style={{

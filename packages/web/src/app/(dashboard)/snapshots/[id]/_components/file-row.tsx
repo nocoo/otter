@@ -22,7 +22,7 @@ export function FileRow({ file }: { file: FileData }) {
 
   return (
     <>
-      <div className="group relative flex items-center gap-3 rounded-lg border border-border/50 bg-card px-3 py-2.5 overflow-hidden hover:border-border hover:bg-accent/30 transition-colors">
+      <div className="group relative flex items-center gap-3 rounded-lg bg-secondary px-3 py-2.5 overflow-hidden hover:bg-accent/30 transition-colors">
         <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/40 rounded-full" />
         <FileText className="h-4 w-4 text-primary/60 shrink-0" strokeWidth={1.5} />
         <code className="text-xs font-mono text-foreground truncate flex-1" title={file.path}>

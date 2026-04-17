@@ -80,7 +80,7 @@ export function StatCard({
           {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
         </div>
         {Icon && (
-          <div className={cn("rounded-md bg-card p-2", iconColor)}>
+          <div className={cn("rounded-md bg-background p-2", iconColor)}>
             <Icon className={cn(isPrimary ? "h-6 w-6" : "h-5 w-5")} strokeWidth={1.5} />
           </div>
         )}

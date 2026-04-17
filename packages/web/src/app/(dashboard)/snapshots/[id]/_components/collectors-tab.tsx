@@ -29,7 +29,6 @@ export function CollectorsTab({ collectors, category }: CollectorsTabProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search collectors, files, items, or metadata..."
-          className="bg-background"
         />
         <Badge variant="secondary" className="text-2xs font-normal shrink-0">
           {filtered.length}/{categoryCollectors.length}
@@ -38,7 +37,7 @@ export function CollectorsTab({ collectors, category }: CollectorsTabProps) {
 
       {/* Collector cards */}
       {filtered.length === 0 ? (
-        <div className="rounded-[var(--radius-card)] border border-dashed border-border bg-card px-5 py-8 text-center">
+        <div className="rounded-[var(--radius-card)] bg-secondary px-5 py-8 text-center">
           <p className="text-sm text-muted-foreground">No collectors match the current search.</p>
         </div>
       ) : (
