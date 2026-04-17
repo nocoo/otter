@@ -86,7 +86,7 @@ function LoginContent() {
       <div className="flex flex-col items-center">
         {/* Badge card — bank card flipped vertical: 54/86 */}
         <div
-          className="relative aspect-[54/86] w-72 overflow-hidden rounded-2xl bg-card flex flex-col ring-1 ring-border"
+          className="relative aspect-[54/86] w-72 overflow-hidden rounded-2xl bg-card flex flex-col"
           style={{
             boxShadow: [
               "0 1px 2px rgba(0,0,0,0.06)",
