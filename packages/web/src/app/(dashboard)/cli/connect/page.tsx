@@ -245,7 +245,7 @@ function WebhooksConnectSkeleton() {
       <Skeleton className="h-4 w-48" />
       {Array.from({ length: 2 }).map((_, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: skeleton cards are static, never reorder
-        <div key={`connect-skeleton-${i}`} className="rounded-xl bg-card p-4 space-y-3">
+        <div key={`connect-skeleton-${i}`} className="rounded-xl bg-secondary p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <Skeleton className="h-4 w-4" />
@@ -304,7 +304,7 @@ function WebhookConnectRow({
   const maskedToken = `${webhook.token.slice(0, 8)}...${webhook.token.slice(-4)}`;
 
   return (
-    <div className="rounded-xl bg-card p-4 space-y-3">
+    <div className="rounded-xl bg-secondary p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <Webhook className="h-4 w-4 text-primary" strokeWidth={1.5} />
