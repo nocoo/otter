@@ -37,8 +37,11 @@ function SnapshotDetailSkeleton() {
         {/* Overview content skeleton */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton cards are static, never reorder
-            <div key={`stat-${i}`} className="rounded-[var(--radius-card)] bg-secondary p-4 space-y-2">
+            <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: skeleton cards are static, never reorder
+              key={`stat-${i}`}
+              className="rounded-[var(--radius-card)] bg-secondary p-4 space-y-2"
+            >
               <Skeleton className="h-4 w-16" />
               <Skeleton className="h-8 w-12" />
             </div>
