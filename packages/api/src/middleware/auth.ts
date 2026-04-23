@@ -1,7 +1,7 @@
 import { decode } from "@auth/core/jwt";
 import type { Context, MiddlewareHandler } from "hono";
 import { getCookie } from "hono/cookie";
-import { execute } from "../lib/cf/d1.js";
+import { execute } from "../lib/cf/d1";
 
 export interface AuthUser {
   id: string;

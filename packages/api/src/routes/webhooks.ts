@@ -6,8 +6,8 @@ import {
   listWebhooks,
   updateWebhook,
   WorkerError,
-} from "../lib/worker-client.js";
-import { type AuthUser, authMiddleware } from "../middleware/auth.js";
+} from "../lib/worker-client";
+import { type AuthUser, authMiddleware } from "../middleware/auth";
 
 // biome-ignore lint/style/useNamingConvention: Hono requires `Variables` key
 const app = new Hono<{ Variables: { user: AuthUser } }>();

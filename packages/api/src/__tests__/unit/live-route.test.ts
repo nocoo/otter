@@ -1,18 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../../lib/cf/d1.js", () => ({
+vi.mock("../../lib/cf/d1", () => ({
   queryFirst: vi.fn(),
 }));
 
-vi.mock("../../lib/version.js", () => ({
+vi.mock("../../lib/version", () => ({
   APP_VERSION: "1.5.1",
 }));
 
-import { createApp } from "../../app.js";
+import { createApp } from "../../app";
 
 const app = createApp();
 
-import { queryFirst } from "../../lib/cf/d1.js";
+import { queryFirst } from "../../lib/cf/d1";
 
 const mockQueryFirst = vi.mocked(queryFirst);
 

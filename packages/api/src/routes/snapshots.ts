@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { deleteSnapshot, getSnapshot, listSnapshots, WorkerError } from "../lib/worker-client.js";
-import { type AuthUser, authMiddleware } from "../middleware/auth.js";
+import { deleteSnapshot, getSnapshot, listSnapshots, WorkerError } from "../lib/worker-client";
+import { type AuthUser, authMiddleware } from "../middleware/auth";
 
 // biome-ignore lint/style/useNamingConvention: Hono requires `Variables` key
 const app = new Hono<{ Variables: { user: AuthUser } }>();

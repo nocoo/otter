@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../../middleware/auth.js", () => {
+vi.mock("../../middleware/auth", () => {
   let currentUser: { id: string; email: string; name: string | null; image: string | null } | null =
     null;
   return {
@@ -24,7 +24,7 @@ vi.mock("../../middleware/auth.js", () => {
   };
 });
 
-vi.mock("../../lib/worker-client.js", () => ({
+vi.mock("../../lib/worker-client", () => ({
   getSnapshot: vi.fn(),
   deleteSnapshot: vi.fn(),
   WorkerError: class WorkerError extends Error {
@@ -39,13 +39,13 @@ vi.mock("../../lib/worker-client.js", () => ({
   },
 }));
 
-import { createApp } from "../../app.js";
+import { createApp } from "../../app";
 
 const app = createApp();
 
-import { deleteSnapshot, getSnapshot, WorkerError } from "../../lib/worker-client.js";
+import { deleteSnapshot, getSnapshot, WorkerError } from "../../lib/worker-client";
 
-const { __setUser } = (await import("../../middleware/auth.js")) as any;
+const { __setUser } = (await import("../../middleware/auth")) as any;
 
 const mockGetSnapshot = vi.mocked(getSnapshot);
 const mockDeleteSnapshot = vi.mocked(deleteSnapshot);

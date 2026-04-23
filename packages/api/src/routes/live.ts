@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import { queryFirst } from "../lib/cf/d1.js";
-import { APP_VERSION } from "../lib/version.js";
+import { queryFirst } from "../lib/cf/d1";
+import { APP_VERSION } from "../lib/version";
 
 interface CountRow {
   count: number;

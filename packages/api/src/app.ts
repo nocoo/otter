@@ -1,7 +1,7 @@
 import { Hono } from "hono";
-import live from "./routes/live.js";
-import snapshots from "./routes/snapshots.js";
-import webhooks from "./routes/webhooks.js";
+import live from "./routes/live";
+import snapshots from "./routes/snapshots";
+import webhooks from "./routes/webhooks";
 
 export function createApp() {
   const app = new Hono();
