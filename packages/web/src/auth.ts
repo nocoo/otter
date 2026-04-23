@@ -1,6 +1,6 @@
+import { execute } from "@otter/api/lib/cf/d1";
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
-import { execute } from "@/lib/cf/d1";
 
 // Get allowed emails from environment variable
 const allowedEmails = (process.env.ALLOWED_EMAILS ?? "")

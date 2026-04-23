@@ -5,7 +5,7 @@ import {
   groupCollectorsByCategory,
   matchesCollectorQuery,
   type SnapshotCollector,
-} from "@/lib/snapshot-collectors";
+} from "../../lib/snapshot-collectors";
 
 const collectors: SnapshotCollector[] = [
   {

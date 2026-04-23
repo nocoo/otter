@@ -13,9 +13,24 @@
         "vitest": "^3.0.0",
       },
     },
+    "packages/api": {
+      "name": "@otter/api",
+      "version": "1.5.1",
+      "dependencies": {
+        "@auth/core": "0.41.0",
+        "@aws-sdk/client-s3": "^3.1003.0",
+        "@hono/node-server": ">=1.19.13",
+        "hono": ">=4.12.14",
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@types/node": "^25.3.4",
+        "typescript": "^5.9.3",
+      },
+    },
     "packages/cli": {
       "name": "@nocoo/otter",
-      "version": "1.5.0",
+      "version": "1.5.1",
       "bin": {
         "otter": "dist/bin.js",
       },
@@ -39,6 +54,7 @@
       "version": "1.4.1",
       "dependencies": {
         "@aws-sdk/client-s3": "^3.1003.0",
+        "@otter/api": "workspace:*",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "lucide-react": "^0.577.0",
@@ -465,6 +481,8 @@
     "@open-draft/logger": ["@open-draft/logger@0.3.0", "", { "dependencies": { "is-node-process": "^1.2.0", "outvariant": "^1.4.0" } }, "sha512-X2g45fzhxH238HKO4xbSr7+wBS8Fvw6ixhTDuvLd5mqh6bJJCFAPwU9mPDxbcrRtfxv4u5IHCEH77BmxvXmmxQ=="],
 
     "@open-draft/until": ["@open-draft/until@2.1.0", "", {}, "sha512-U69T3ItWHvLwGg5eJ0n3I62nWuE6ilHlmz7zM0npLBRvPRd7e6NYmg54vvRtP5mZG7kZqZCFVdsTWo7BPtBujg=="],
+
+    "@otter/api": ["@otter/api@workspace:packages/api"],
 
     "@otter/core": ["@otter/core@workspace:packages/core"],
 

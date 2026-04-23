@@ -35,6 +35,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    const base = process.env.API_INTERNAL_URL ?? "http://localhost:7020";
+    return [
+      { source: "/api/snapshots/:path*", destination: `${base}/v1/snapshots/:path*` },
+      { source: "/api/snapshots", destination: `${base}/v1/snapshots` },
+      { source: "/api/webhooks/:path*", destination: `${base}/v1/webhooks/:path*` },
+      { source: "/api/webhooks", destination: `${base}/v1/webhooks` },
+      { source: "/api/live", destination: `${base}/v1/live` },
+    ];
+  },
 };
 
 export default nextConfig;

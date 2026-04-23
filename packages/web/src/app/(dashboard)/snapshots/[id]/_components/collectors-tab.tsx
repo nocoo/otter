@@ -1,9 +1,9 @@
 "use client";
 
+import { filterCollectors, type SnapshotCollector } from "@otter/api/lib/snapshot-collectors";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { filterCollectors, type SnapshotCollector } from "@/lib/snapshot-collectors";
 import { CollectorCard } from "./collector-card";
 
 interface CollectorsTabProps {

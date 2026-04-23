@@ -1,0 +1,31 @@
+{
+  "name": "@otter/api",
+  "version": "1.5.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./lib/cf/d1": "./src/lib/cf/d1.ts",
+    "./lib/worker-client": "./src/lib/worker-client.ts",
+    "./lib/snapshot-collectors": "./src/lib/snapshot-collectors.ts"
+  },
+  "scripts": {
+    "dev": "bun --watch src/server.ts",
+    "start": "bun src/server.ts",
+    "build": "tsc",
+    "lint": "biome check --error-on-warnings",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@auth/core": "0.41.0",
+    "@aws-sdk/client-s3": "^3.1003.0",
+    "@hono/node-server": ">=1.19.13",
+    "hono": ">=4.12.14",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.4",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,11 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock dependencies
-vi.mock("@/lib/session", () => ({
-  getAuthUser: vi.fn(),
-}));
+vi.mock("../../middleware/auth.js", () => {
+  let currentUser: { id: string; email: string; name: string | null; image: string | null } | null =
+    null;
+  return {
+    __esModule: true,
+    authMiddleware: async (
+      c: {
+        json: (body: unknown, status?: number) => unknown;
+        set: (k: string, v: unknown) => void;
+      },
+      next: () => Promise<void>,
+    ) => {
+      if (!currentUser) {
+        return c.json({ error: "Unauthorized" }, 401);
+      }
+      c.set("user", currentUser);
+      await next();
+    },
+    __setUser(user: typeof currentUser) {
+      currentUser = user;
+    },
+  };
+});
 
-vi.mock("@/lib/worker-client", () => ({
+vi.mock("../../lib/worker-client.js", () => ({
   getSnapshot: vi.fn(),
   deleteSnapshot: vi.fn(),
   WorkerError: class WorkerError extends Error {
@@ -20,21 +39,13 @@ vi.mock("@/lib/worker-client", () => ({
   },
 }));
 
-import { DELETE, GET } from "@/app/api/snapshots/[id]/route";
-import { getAuthUser } from "@/lib/session";
-import { deleteSnapshot, getSnapshot, WorkerError } from "@/lib/worker-client";
+import app from "../../app.js";
+import { deleteSnapshot, getSnapshot, WorkerError } from "../../lib/worker-client.js";
 
-const mockGetAuthUser = vi.mocked(getAuthUser);
+const { __setUser } = (await import("../../middleware/auth.js")) as any;
+
 const mockGetSnapshot = vi.mocked(getSnapshot);
 const mockDeleteSnapshot = vi.mocked(deleteSnapshot);
-
-function makeParams(id: string): { params: Promise<{ id: string }> } {
-  return { params: Promise.resolve({ id }) };
-}
-
-function makeRequest(): Request {
-  return new Request("http://localhost/api/snapshots/snap-1");
-}
 
 const mockUser = {
   id: "user-1",
@@ -80,131 +91,106 @@ const mockSnapshotData = {
   ],
 };
 
-describe("GET /api/snapshots/[id]", () => {
+describe("GET /v1/snapshots/:id", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    __setUser(mockUser);
   });
 
   it("returns 401 when not authenticated", async () => {
-    mockGetAuthUser.mockResolvedValue(null);
-    const response = await GET(makeRequest(), makeParams("snap-1"));
-    expect(response.status).toBe(401);
-    const data = await response.json();
+    __setUser(null);
+    const res = await app.request("/v1/snapshots/snap-1");
+    expect(res.status).toBe(401);
+    const data = await res.json();
     expect(data.error).toBe("Unauthorized");
   });
 
   it("returns 404 when snapshot not found", async () => {
-    mockGetAuthUser.mockResolvedValue(mockUser);
     mockGetSnapshot.mockRejectedValue(new WorkerError("Snapshot not found", 404));
-
-    const response = await GET(makeRequest(), makeParams("nonexistent"));
-    expect(response.status).toBe(404);
-    const data = await response.json();
+    const res = await app.request("/v1/snapshots/nonexistent");
+    expect(res.status).toBe(404);
+    const data = await res.json();
     expect(data.error).toBe("Snapshot not found");
   });
 
   it("returns snapshot metadata and full data", async () => {
-    mockGetAuthUser.mockResolvedValue(mockUser);
     mockGetSnapshot.mockResolvedValue({
       snapshot: mockSnapshotMeta,
       data: mockSnapshotData,
     });
-
-    const response = await GET(makeRequest(), makeParams("snap-1"));
-    expect(response.status).toBe(200);
-    const result = await response.json();
-
+    const res = await app.request("/v1/snapshots/snap-1");
+    expect(res.status).toBe(200);
+    const result = await res.json();
     expect(result.snapshot).toEqual(mockSnapshotMeta);
     expect(result.data).toEqual(mockSnapshotData);
   });
 
   it("passes user ID and snapshot ID to Worker", async () => {
-    mockGetAuthUser.mockResolvedValue({
-      id: "user-42",
-      email: "test@example.com",
-      name: "Test",
-      image: null,
-    });
+    __setUser({ id: "user-42", email: "test@example.com", name: "Test", image: null });
     mockGetSnapshot.mockRejectedValue(new WorkerError("Not found", 404));
-
-    await GET(makeRequest(), makeParams("snap-abc"));
+    await app.request("/v1/snapshots/snap-abc");
     expect(mockGetSnapshot).toHaveBeenCalledWith("user-42", "snap-abc");
   });
 
   it("handles Worker errors with correct status", async () => {
-    mockGetAuthUser.mockResolvedValue(mockUser);
     mockGetSnapshot.mockRejectedValue(new WorkerError("Snapshot data not found in storage", 404));
-
-    const response = await GET(makeRequest(), makeParams("snap-1"));
-    expect(response.status).toBe(404);
-    const data = await response.json();
+    const res = await app.request("/v1/snapshots/snap-1");
+    expect(res.status).toBe(404);
+    const data = await res.json();
     expect(data.error).toBe("Snapshot data not found in storage");
   });
 
   it("handles generic errors", async () => {
-    mockGetAuthUser.mockResolvedValue(mockUser);
     mockGetSnapshot.mockRejectedValue(new Error("Network error"));
-
-    const response = await GET(makeRequest(), makeParams("snap-1"));
-    expect(response.status).toBe(500);
-    const data = await response.json();
+    const res = await app.request("/v1/snapshots/snap-1");
+    expect(res.status).toBe(500);
+    const data = await res.json();
     expect(data.error).toBe("Failed to fetch snapshot");
   });
 });
 
-describe("DELETE /api/snapshots/[id]", () => {
+describe("DELETE /v1/snapshots/:id", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    __setUser(mockUser);
   });
 
   it("returns 401 when not authenticated", async () => {
-    mockGetAuthUser.mockResolvedValue(null);
-    const response = await DELETE(makeRequest(), makeParams("snap-1"));
-    expect(response.status).toBe(401);
-    const data = await response.json();
+    __setUser(null);
+    const res = await app.request("/v1/snapshots/snap-1", { method: "DELETE" });
+    expect(res.status).toBe(401);
+    const data = await res.json();
     expect(data.error).toBe("Unauthorized");
   });
 
   it("returns success when snapshot is deleted", async () => {
-    mockGetAuthUser.mockResolvedValue(mockUser);
     mockDeleteSnapshot.mockResolvedValue({ success: true });
-
-    const response = await DELETE(makeRequest(), makeParams("snap-1"));
-    expect(response.status).toBe(200);
-    const data = await response.json();
+    const res = await app.request("/v1/snapshots/snap-1", { method: "DELETE" });
+    expect(res.status).toBe(200);
+    const data = await res.json();
     expect(data.success).toBe(true);
   });
 
   it("returns 404 when snapshot not found", async () => {
-    mockGetAuthUser.mockResolvedValue(mockUser);
     mockDeleteSnapshot.mockRejectedValue(new WorkerError("Snapshot not found", 404));
-
-    const response = await DELETE(makeRequest(), makeParams("nonexistent"));
-    expect(response.status).toBe(404);
-    const data = await response.json();
+    const res = await app.request("/v1/snapshots/nonexistent", { method: "DELETE" });
+    expect(res.status).toBe(404);
+    const data = await res.json();
     expect(data.error).toBe("Snapshot not found");
   });
 
   it("passes user ID and snapshot ID to Worker", async () => {
-    mockGetAuthUser.mockResolvedValue({
-      id: "user-42",
-      email: "test@example.com",
-      name: "Test",
-      image: null,
-    });
+    __setUser({ id: "user-42", email: "test@example.com", name: "Test", image: null });
     mockDeleteSnapshot.mockResolvedValue({ success: true });
-
-    await DELETE(makeRequest(), makeParams("snap-abc"));
+    await app.request("/v1/snapshots/snap-abc", { method: "DELETE" });
     expect(mockDeleteSnapshot).toHaveBeenCalledWith("user-42", "snap-abc");
   });
 
   it("handles generic errors", async () => {
-    mockGetAuthUser.mockResolvedValue(mockUser);
     mockDeleteSnapshot.mockRejectedValue(new Error("Network error"));
-
-    const response = await DELETE(makeRequest(), makeParams("snap-1"));
-    expect(response.status).toBe(500);
-    const data = await response.json();
+    const res = await app.request("/v1/snapshots/snap-1", { method: "DELETE" });
+    expect(res.status).toBe(500);
+    const data = await res.json();
     expect(data.error).toBe("Failed to delete snapshot");
   });
 });

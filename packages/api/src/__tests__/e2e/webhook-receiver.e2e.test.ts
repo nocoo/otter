@@ -16,7 +16,7 @@ import {
   ALL_COLLECTOR_IDS,
   buildRichSnapshotFixture,
   getRichSnapshotCounts,
-} from "../../../test-support/rich-snapshot";
+} from "../../../../web/test-support/rich-snapshot";
 
 const BASE_URL = `http://localhost:${process.env.E2E_PORT || "17019"}`;
 const WORKER_URL = process.env.WORKER_API_URL || "https://otter-test.nocoo.workers.dev";

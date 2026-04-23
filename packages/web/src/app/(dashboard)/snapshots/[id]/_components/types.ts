@@ -1,4 +1,4 @@
-import type { SnapshotCollector } from "@/lib/snapshot-collectors";
+import type { SnapshotCollector } from "@otter/api/lib/snapshot-collectors";
 
 export type FileData = SnapshotCollector["files"][number];
 export type ListItem = SnapshotCollector["lists"][number];

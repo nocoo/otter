@@ -50,19 +50,19 @@ describe("D1 client", () => {
 
   it("throws when CF_ACCOUNT_ID is missing", async () => {
     delete process.env.CF_ACCOUNT_ID;
-    const { query } = await import("@/lib/cf/d1");
+    const { query } = await import("../../lib/cf/d1");
     await expect(query("SELECT 1")).rejects.toThrow("Missing Cloudflare D1 env vars");
   });
 
   it("throws when CF_D1_DATABASE_ID is missing", async () => {
     delete process.env.CF_D1_DATABASE_ID;
-    const { query } = await import("@/lib/cf/d1");
+    const { query } = await import("../../lib/cf/d1");
     await expect(query("SELECT 1")).rejects.toThrow("Missing Cloudflare D1 env vars");
   });
 
   it("throws when CF_D1_API_TOKEN is missing", async () => {
     delete process.env.CF_D1_API_TOKEN;
-    const { query } = await import("@/lib/cf/d1");
+    const { query } = await import("../../lib/cf/d1");
     await expect(query("SELECT 1")).rejects.toThrow("Missing Cloudflare D1 env vars");
   });
 
@@ -78,7 +78,7 @@ describe("D1 client", () => {
       json: async () => makeD1Response(rows),
     });
 
-    const { query } = await import("@/lib/cf/d1");
+    const { query } = await import("../../lib/cf/d1");
     const result = await query("SELECT * FROM users");
 
     expect(result).toEqual(rows);
@@ -102,7 +102,7 @@ describe("D1 client", () => {
       json: async () => makeD1Response([{ id: 1 }]),
     });
 
-    const { query } = await import("@/lib/cf/d1");
+    const { query } = await import("../../lib/cf/d1");
     await query("SELECT * FROM users WHERE id = ?1", ["user-1"]);
 
     // biome-ignore lint/style/noNonNullAssertion: mock array access in test
@@ -118,7 +118,7 @@ describe("D1 client", () => {
       json: async () => makeD1Response([{ id: 1 }, { id: 2 }]),
     });
 
-    const { queryFirst } = await import("@/lib/cf/d1");
+    const { queryFirst } = await import("../../lib/cf/d1");
     const result = await queryFirst("SELECT * FROM users");
 
     expect(result).toEqual({ id: 1 });
@@ -130,7 +130,7 @@ describe("D1 client", () => {
       json: async () => makeD1Response([]),
     });
 
-    const { queryFirst } = await import("@/lib/cf/d1");
+    const { queryFirst } = await import("../../lib/cf/d1");
     const result = await queryFirst("SELECT * FROM users WHERE id = ?1", ["none"]);
 
     expect(result).toBeNull();
@@ -144,7 +144,7 @@ describe("D1 client", () => {
       json: async () => makeD1Response([], { changes: 1, last_row_id: 42 }),
     });
 
-    const { execute } = await import("@/lib/cf/d1");
+    const { execute } = await import("../../lib/cf/d1");
     const result = await execute("INSERT INTO users (name) VALUES (?1)", ["test"]);
 
     expect(result).toEqual({ changes: 1, lastRowId: 42 });
@@ -163,7 +163,7 @@ describe("D1 client", () => {
         json: async () => makeD1Response([]),
       });
 
-    const { batch } = await import("@/lib/cf/d1");
+    const { batch } = await import("../../lib/cf/d1");
     await batch([
       { sql: "INSERT INTO a (x) VALUES (?1)", params: [1] },
       { sql: "INSERT INTO b (y) VALUES (?1)", params: [2] },
@@ -188,7 +188,7 @@ describe("D1 client", () => {
       json: async () => makeD1Response([]),
     });
 
-    const { batch } = await import("@/lib/cf/d1");
+    const { batch } = await import("../../lib/cf/d1");
     await batch([{ sql: "DELETE FROM cache" }]);
 
     // biome-ignore lint/style/noNonNullAssertion: mock array access in test
@@ -205,7 +205,7 @@ describe("D1 client", () => {
       text: async () => "Internal Server Error",
     });
 
-    const { query } = await import("@/lib/cf/d1");
+    const { query } = await import("../../lib/cf/d1");
     await expect(query("SELECT 1")).rejects.toThrow("D1 API error (500)");
   });
 
@@ -220,7 +220,7 @@ describe("D1 client", () => {
       }),
     });
 
-    const { query } = await import("@/lib/cf/d1");
+    const { query } = await import("../../lib/cf/d1");
     await expect(query("INVALID SQL")).rejects.toThrow("D1 query failed: syntax error");
   });
 
@@ -235,7 +235,7 @@ describe("D1 client", () => {
       }),
     });
 
-    const { batch } = await import("@/lib/cf/d1");
+    const { batch } = await import("../../lib/cf/d1");
     await expect(batch([{ sql: "BAD SQL" }])).rejects.toThrow("D1 batch failed: batch error");
   });
 
@@ -243,7 +243,7 @@ describe("D1 client", () => {
 
   it("throws in E2E mode when CF_D1_TEST_DATABASE_ID is missing", async () => {
     process.env.E2E_SKIP_AUTH = "true";
-    const { query } = await import("@/lib/cf/d1");
+    const { query } = await import("../../lib/cf/d1");
     await expect(query("SELECT 1")).rejects.toThrow(
       "D1 safety: E2E mode active but CF_D1_TEST_DATABASE_ID not set",
     );
@@ -252,7 +252,7 @@ describe("D1 client", () => {
   it("throws in E2E mode when database IDs don't match", async () => {
     process.env.E2E_SKIP_AUTH = "true";
     process.env.CF_D1_TEST_DATABASE_ID = "different-db";
-    const { query } = await import("@/lib/cf/d1");
+    const { query } = await import("../../lib/cf/d1");
     await expect(query("SELECT 1")).rejects.toThrow("D1 safety: CF_D1_DATABASE_ID");
   });
 
@@ -263,7 +263,7 @@ describe("D1 client", () => {
       ok: true,
       json: async () => makeD1Response([{ id: 1 }]),
     });
-    const { query } = await import("@/lib/cf/d1");
+    const { query } = await import("../../lib/cf/d1");
     const result = await query("SELECT 1");
     expect(result).toEqual([{ id: 1 }]);
   });
@@ -274,7 +274,7 @@ describe("D1 client", () => {
       ok: true,
       json: async () => makeD1Response([{ id: 1 }]),
     });
-    const { query } = await import("@/lib/cf/d1");
+    const { query } = await import("../../lib/cf/d1");
     const result = await query("SELECT 1");
     expect(result).toEqual([{ id: 1 }]);
   });
@@ -288,7 +288,7 @@ describe("D1 client", () => {
       json: async () => makeD1Response(rows),
     });
 
-    const { query } = await import("@/lib/cf/d1");
+    const { query } = await import("../../lib/cf/d1");
     const result = await query("SELECT 1");
 
     expect(result).toEqual(rows);
@@ -298,7 +298,7 @@ describe("D1 client", () => {
   it("exhausts retries and throws last error", async () => {
     fetchMock.mockRejectedValue(new Error("persistent failure"));
 
-    const { query } = await import("@/lib/cf/d1");
+    const { query } = await import("../../lib/cf/d1");
     await expect(query("SELECT 1")).rejects.toThrow("persistent failure");
 
     // 3 retries total

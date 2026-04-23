@@ -21,17 +21,31 @@ otter/
 │   │   └── src/
 │   │       ├── types.ts      # 全部接口定义
 │   │       └── index.ts      # 统一导出
-│   └── cli/           # @otter/cli — CLI 实现
+│   ├── cli/           # @otter/cli — CLI 实现
+│   │   └── src/
+│   │       ├── bin.ts         # 入口（#!/usr/bin/env node）
+│   │       ├── cli.ts         # 命令注册（citty 框架）
+│   │       ├── collectors/    # 5 个采集器
+│   │       ├── commands/      # scan / config / backup / snapshot 命令逻辑
+│   │       ├── config/        # ConfigManager（~/.config/otter/）
+│   │       ├── storage/       # SnapshotStore（~/.config/otter/snapshots/）
+│   │       ├── snapshot/      # 快照构建器
+│   │       ├── uploader/      # Webhook 上传
+│   │       └── utils/         # 工具函数（凭据脱敏等）
+│   ├── api/           # @otter/api — Hono BFF 服务（端口 7020）
+│   │   └── src/
+│   │       ├── server.ts      # @hono/node-server 入口
+│   │       ├── app.ts         # Hono app 装配（vitest 直测）
+│   │       ├── routes/        # /v1/snapshots, /v1/webhooks, /v1/live
+│   │       ├── middleware/    # auth：解 next-auth JWT cookie + E2E bypass
+│   │       └── lib/           # worker-client / cf/d1 / snapshot-collectors（导出供 web 复用）
+│   └── web/           # @otter/web — Next.js UI（端口 7019）
 │       └── src/
-│           ├── bin.ts         # 入口（#!/usr/bin/env node）
-│           ├── cli.ts         # 命令注册（citty 框架）
-│           ├── collectors/    # 5 个采集器
-│           ├── commands/      # scan / config / backup / snapshot 命令逻辑
-│           ├── config/        # ConfigManager（~/.config/otter/）
-│           ├── storage/       # SnapshotStore（~/.config/otter/snapshots/）
-│           ├── snapshot/      # 快照构建器
-│           ├── uploader/      # Webhook 上传
-│           └── utils/         # 工具函数（凭据脱敏等）
+│           ├── app/                       # App Router 页面
+│           ├── app/api/auth/[...nextauth] # next-auth 路由（仅此一个 API route）
+│           ├── components/                # React 组件
+│           ├── auth.ts                    # next-auth v5 配置
+│           └── proxy.ts                   # 页面级 middleware
 ├── docs/              # 项目文档
 ├── vitest.config.ts   # 统一测试配置
 ├── tsconfig.json      # 基础 TypeScript 配置
@@ -99,6 +113,12 @@ CLI 包内还定义了以下类型（`packages/cli/src/storage/local.ts`）：
 | 测试 | Vitest |
 | 覆盖率 | @vitest/coverage-v8 |
 | Git hooks | Husky |
+
+## Web ↔ API 通信
+
+浏览器仅访问 web 同域 `/api/...`；Next.js `rewrites()` 把 `/api/snapshots`、`/api/webhooks`、`/api/live` 反代到 api 服务的 `/v1/...`（默认 `http://localhost:7020`，可通过 `API_INTERNAL_URL` 覆盖）。`/api/auth/*` 不走 rewrites，留给 next-auth。
+
+鉴权解耦：next-auth 仍由 web 颁发 JWT cookie；api 用 `@auth/core/jwt.decode` 共享 `AUTH_SECRET` 解码同一个 cookie。无需 CORS、无需 Bearer token。
 
 ## 相关文档
 

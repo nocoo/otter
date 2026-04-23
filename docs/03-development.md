@@ -29,6 +29,7 @@ bun run test
 | 命令 | 说明 |
 |------|------|
 | `bun run build` | 构建所有 packages（TypeScript → dist/） |
+| `bun run dev` | 并行启动 web (`:7019`) + api (`:7020`)（concurrently） |
 | `bun run test` | 运行全部单元测试（Vitest） |
 | `bun run test:watch` | 监听模式运行测试 |
 | `bun run test:coverage` | 运行测试并生成覆盖率报告 |
@@ -90,6 +91,15 @@ packages/
             ├── uploader/
             └── utils/
 ```
+
+## 启动 web + api
+
+`bun run dev` 通过 `concurrently` 同时拉起：
+
+- **web**：Next.js dev server（`packages/web`，端口 7019）
+- **api**：Hono dev server（`packages/api`，端口 7020，`bun --watch`）
+
+浏览器访问 `http://localhost:7019`。前端 `fetch("/api/snapshots")` 等请求由 Next.js `rewrites()` 反代到 api 的 `/v1/...`，cookie 自动跟随同域请求。两端共享同一个 `AUTH_SECRET` 环境变量解码 next-auth JWT。
 
 ## Git Hooks
 

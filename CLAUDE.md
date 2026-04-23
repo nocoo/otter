@@ -4,10 +4,10 @@ README.md
 
 CLI package `@nocoo/otter` is published to npm. Steps to release a new version:
 
-1. **Bump version** — Update `version` in ALL `package.json` files (root, core, cli, web), plus:
+1. **Bump version** — Update `version` in ALL `package.json` files (root, core, cli, web, api), plus:
    - `packages/cli/src/cli.ts` (`meta.version`)
-   - `packages/web/src/lib/version.ts` (fallback)
-   - `packages/web/src/__tests__/unit/live-route.test.ts` (mock + assertion)
+   - `packages/api/src/lib/version.ts` (fallback)
+   - `packages/api/src/__tests__/unit/live-route.test.ts` (mock + assertion)
 2. **Build** — `bun install && bun run build`
 3. **Test** — `bun run test` (444+ tests must pass)
 4. **Dry-run** — `npm publish --dry-run` in `packages/cli/`
@@ -35,15 +35,18 @@ CLI package `@nocoo/otter` is published to npm. Steps to release a new version:
 - **`biome-ignore` in JSX must be on the line directly above the error**: For `noArrayIndexKey`, the error is on the `key=` prop, not the opening tag. Prefer content-based keys over `biome-ignore`.
 - **`bun update <pkg> --filter` still adds to root package.json**: When updating workspace package deps, edit the specific `package.json` directly and run `bun install`, don't use `bun update --filter`.
 - **Transitive dep vulnerabilities via `overrides`**: Use `"overrides"` in root `package.json` to pin transitive deps to patched versions (e.g. `"fast-xml-parser": ">=5.5.7"`).
+- **next-auth JWT cookie name differs by env**: v5 uses `__Secure-authjs.session-token` in prod (HTTPS) and `authjs.session-token` in dev. A sibling service decoding the cookie via `@auth/core/jwt.decode` must replicate web's `useSecureCookies` logic exactly — the cookie name is also the `salt` argument, so a mismatch fails silently. Both services must share the same `AUTH_SECRET`.
+- **`@auth/core` version must match next-auth's bundled version**: next-auth v5 pins a specific `@auth/core` (e.g. `0.41.0`). Using a different version in a sibling package can break JWT decode because salt/encryption defaults shift between versions. Pin the api package to whatever next-auth resolves.
+- **Next.js stale `.next/**/validator.ts` after deleting routes**: Next.js caches a generated route validator; deleting `app/api/foo/route.ts` without clearing `.next*` leaves dangling references that fail `tsc`. Fix: `rm -rf packages/web/.next*` after any app-router file deletion.
 
 ## Quality Gates (S-tier)
 
 | Dim | Gate | Hook |
 |-----|------|------|
 | G1 | Biome strict check (lint + format, 0 errors) + lint-staged | pre-commit |
-| L1 | 444+ vitest tests, 90%/89% coverage thresholds | pre-commit |
-| tsc | TypeScript strict type check + 5 extras (core → cli → web) | pre-commit |
+| L1 | 445+ vitest tests, 90%/89% coverage thresholds | pre-commit |
+| tsc | TypeScript strict type check + 5 extras (core → cli → web → api) | pre-commit |
 | G2 | osv-scanner (0 vulns) + gitleaks (0 leaks) | pre-push |
-| L2 | 4 API E2E tests on real HTTP (:17019) | pre-push |
-| L3 | 6 Playwright specs / 28 tests (:27019) | pre-push |
+| L2 | 4 API E2E tests on real HTTP (web :17019 → api :17020) | pre-push |
+| L3 | 6 Playwright specs / 28 tests (web :27019 → api :27020) | pre-push |
 | D1 | `otter-db-test` D1 + `otter-snapshots-test` R2 (env override + guard + marker) | E2E runner |
