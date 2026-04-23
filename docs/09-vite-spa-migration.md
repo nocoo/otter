@@ -30,6 +30,7 @@
 - ~~`wrangler.toml` 写真实 `CF_ACCESS_TEAM_DOMAIN` / `CF_ACCESS_AUD`~~ ✅ 2026-04-24 已写入 `nocoo.cloudflareaccess.com` + AUD
 - 复刻 web_legacy 的 dashboard / charts / shadcn 组件到新 web
 - ~~CLI 切 Bearer token + 跑 `/auth/cli/{start,callback}` 流程~~ ✅ 2026-04-24 协议收口为 `/cli/connect → /api/auth/cli?callback=&state= → 302 callback?token=&state=&email=`，删除 `callback_url` / `api_key` 旧别名
+- ~~worker 手工拼装 `/api/*`~~ ✅ 2026-04-24 收口到 `@otter/api` 的 `createApp({ basePath, driver, bucket, auth })`：snapshots/webhooks 路由工厂迁入 `@otter/api/routes/api-{snapshots,webhooks}`，worker 仅作 binding 适配；新增 13 个 `create-app.test.ts` 集成用例
 - 删除 `packages/api/src/lib/worker-client.ts`（仅 web_legacy 仍依赖）
 
 ---

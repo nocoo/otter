@@ -1,11 +1,13 @@
 // Unit tests for createApiSnapshotsRoute / createApiWebhooksRoute.
-// Uses an in-memory DbDriver and a fake R2Bucket; no miniflare D1 needed.
+// Uses an in-memory DbDriver and a fake R2BucketLike; no miniflare D1 needed.
 
-import type { AppEnv } from "@otter/api/lib/app-env";
-import type { DbDriver } from "@otter/api/lib/db/driver";
 import { Hono } from "hono";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createApiSnapshotsRoute, createApiWebhooksRoute } from "../routes/api-snapshots.js";
+import type { AppEnv } from "../../lib/app-env";
+import type { DbDriver } from "../../lib/db/driver";
+import type { R2BucketLike } from "../../lib/r2";
+import { createApiSnapshotsRoute } from "../../routes/api-snapshots";
+import { createApiWebhooksRoute } from "../../routes/api-webhooks";
 
 interface SnapRow {
   id: string;
@@ -123,7 +125,7 @@ function memoryDriver(state: { snaps: SnapRow[]; webhooks: WebhookRow[] }): DbDr
   };
 }
 
-function fakeBucket(): { bucket: R2Bucket; store: Map<string, string> } {
+function fakeBucket(): { bucket: R2BucketLike; store: Map<string, string> } {
   const store = new Map<string, string>();
   const bucket = {
     async get(key: string) {
@@ -142,13 +144,13 @@ function fakeBucket(): { bucket: R2Bucket; store: Map<string, string> } {
     async delete(key: string) {
       store.delete(key);
     },
-  } as unknown as R2Bucket;
+  } as unknown as R2BucketLike;
   return { bucket, store };
 }
 
 function buildApp(opts: {
   driver: DbDriver;
-  bucket: R2Bucket;
+  bucket: R2BucketLike;
   email?: string | null;
   mountWebhooks?: boolean;
 }) {

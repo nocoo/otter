@@ -30,6 +30,12 @@ export default defineConfig({
         "**/bin.ts",
         "**/cli.ts",
         "**/types.ts",
+        "**/lib/app-env.ts",
+        "**/lib/db/driver.ts",
+        "**/lib/r2.ts",
+        // createApp() wiring factory — exercised by create-app.test.ts integration
+        // suite, but v8 source-map mapping reports 0 functions on this file.
+        "packages/api/src/app.ts",
         "**/hooks/**",
         "**/lib/palette.ts",
         "**/lib/utils.ts",
@@ -39,6 +45,8 @@ export default defineConfig({
         "**/api/auth/**",
         // Worker has its own vitest config with cloudflare pool
         "packages/worker/**",
+        // New Vite SPA — tests deferred until business UI is ported (plan §12)
+        "packages/web/**",
       ],
       thresholds: {
         statements: 90,

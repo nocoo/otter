@@ -16,11 +16,14 @@
     "./lib/webhook-repo": "./src/lib/webhook-repo.ts",
     "./lib/api-token-repo": "./src/lib/api-token-repo.ts",
     "./lib/app-env": "./src/lib/app-env.ts",
+    "./lib/r2": "./src/lib/r2.ts",
     "./middleware/access-auth": "./src/middleware/access-auth.ts",
     "./middleware/api-key-auth": "./src/middleware/api-key-auth.ts",
     "./middleware/is-localhost": "./src/middleware/is-localhost.ts",
     "./routes/me": "./src/routes/me.ts",
-    "./routes/auth-cli": "./src/routes/auth-cli.ts"
+    "./routes/auth-cli": "./src/routes/auth-cli.ts",
+    "./routes/api-snapshots": "./src/routes/api-snapshots.ts",
+    "./routes/api-webhooks": "./src/routes/api-webhooks.ts"
   },
   "scripts": {
     "build": "tsc",
