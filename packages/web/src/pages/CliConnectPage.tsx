@@ -1,74 +1,267 @@
+import { Check, ExternalLink, Loader2, ShieldAlert, Terminal, Webhook } from "lucide-react";
+import { useState } from "react";
 import { useSearchParams } from "react-router";
+import { useApi } from "@/api";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// CLI pairing — Step 2 of the unified protocol.
-//
-// The CLI opens this page in a browser with `?callback=http://127.0.0.1:PORT/callback&state=NONCE`.
-// On confirmation we full-page-redirect to `/api/auth/cli?callback=…&state=…` so the
-// CF Access cookie attaches; the API mints a token and 302s back to the loopback callback
-// with `?token=…&state=…&email=…`, which the CLI's local server captures.
+interface WebhookToken {
+  id: string;
+  token: string;
+  label: string;
+  isActive: boolean;
+  createdAt: number;
+  lastUsedAt: number | null;
+}
 
-function isLoopbackHttp(value: string): boolean {
+interface WebhooksResponse {
+  webhooks: WebhookToken[];
+}
+
+function isValidCallback(callback: string): boolean {
   try {
-    const url = new URL(value);
-    if (url.protocol !== "http:") return false;
-    return url.hostname === "localhost" || url.hostname === "127.0.0.1";
+    const url = new URL(callback);
+    const isLocalhost = url.hostname === "localhost" || url.hostname === "127.0.0.1";
+    const isHttp = url.protocol === "http:";
+    return isLocalhost && isHttp;
   } catch {
     return false;
   }
 }
 
+function Header() {
+  return (
+    <div>
+      <h1 className="text-2xl font-semibold tracking-tight">Connect CLI</h1>
+      <p className="text-sm text-muted-foreground">Link your Otter CLI to this dashboard</p>
+    </div>
+  );
+}
+
+function WebhooksConnectSkeleton() {
+  return (
+    <div className="space-y-3">
+      <Skeleton className="h-4 w-48" />
+      {Array.from({ length: 2 }).map((_, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton cards are static, never reorder
+        <div key={`connect-skeleton-${i}`} className="rounded-xl bg-card p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="h-4 w-4" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-5 w-14 rounded-full" />
+            </div>
+            <Skeleton className="h-8 w-24 rounded-md" />
+          </div>
+          <Skeleton className="h-9 w-full rounded-lg" />
+          <Skeleton className="h-3 w-48" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+interface ErrorCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  code?: string;
+}
+
+function ErrorCard({ icon, title, description, code }: ErrorCardProps) {
+  return (
+    <div className="rounded-xl bg-secondary p-8 text-center space-y-3">
+      {icon}
+      <div>
+        <p className="text-sm font-medium text-foreground">{title}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+      </div>
+      {code && (
+        <code className="block text-sm bg-background/50 px-4 py-2 rounded-lg text-foreground">
+          {code}
+        </code>
+      )}
+    </div>
+  );
+}
+
+interface WebhookConnectRowProps {
+  webhook: WebhookToken;
+  baseUrl: string;
+  onConnect: (webhook: WebhookToken) => void;
+  isConnecting: boolean;
+}
+
+function WebhookConnectRow({ webhook, baseUrl, onConnect, isConnecting }: WebhookConnectRowProps) {
+  const fullUrl = `${baseUrl}/api/webhook/${webhook.token}`;
+  const maskedToken = `${webhook.token.slice(0, 8)}...${webhook.token.slice(-4)}`;
+
+  return (
+    <div className="rounded-xl bg-card p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <Webhook className="h-4 w-4 text-primary" strokeWidth={1.5} />
+          <span className="font-medium text-sm">{webhook.label}</span>
+          <Badge variant="default" className="text-2xs font-normal">
+            Active
+          </Badge>
+        </div>
+        <Button
+          size="sm"
+          className="gap-1.5"
+          onClick={() => onConnect(webhook)}
+          disabled={isConnecting}
+        >
+          {isConnecting ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Connecting...
+            </>
+          ) : (
+            <>
+              <Check className="h-3.5 w-3.5" strokeWidth={1.5} />
+              Connect
+            </>
+          )}
+        </Button>
+      </div>
+
+      <div className="flex items-center gap-2 rounded-lg bg-background/50 px-3 py-2">
+        <code className="flex-1 text-xs font-mono text-muted-foreground truncate">
+          {maskedToken}
+        </code>
+      </div>
+
+      <div className="text-2xs text-muted-foreground">
+        Webhook URL: <span className="font-mono">{fullUrl.slice(0, 50)}...</span>
+      </div>
+    </div>
+  );
+}
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: handles multiple branch states
 export function CliConnectPage() {
-  const [params] = useSearchParams();
-  const callback = params.get("callback") ?? "";
-  const state = params.get("state") ?? "";
-  const callbackValid = callback.length > 0 && isLoopbackHttp(callback);
+  const [searchParams] = useSearchParams();
+  const callback = searchParams.get("callback");
+  const state = searchParams.get("state");
+
+  const callbackValid = callback ? isValidCallback(callback) : false;
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://otter.hexly.ai";
+
+  const [connectingId, setConnectingId] = useState<string | null>(null);
+  const { data, error, isLoading, mutate } = useApi<WebhooksResponse>(
+    callbackValid ? "/api/webhooks" : null,
+  );
+  const webhooks = data?.webhooks ?? [];
+
+  const handleConnect = (webhook: WebhookToken) => {
+    if (!callback) return;
+    setConnectingId(webhook.id);
+    let redirectUrl = `${callback}/callback?token=${encodeURIComponent(webhook.token)}`;
+    if (state) {
+      redirectUrl += `&state=${encodeURIComponent(state)}`;
+    }
+    window.location.href = redirectUrl;
+  };
 
   if (!callback) {
     return (
-      <section>
-        <h1 className="text-2xl font-semibold mb-4">Connect CLI</h1>
-        <p className="text-sm text-gray-500">
-          Run <code>otter login</code> from your terminal to start the pairing flow.
-        </p>
-      </section>
+      <div className="max-w-2xl space-y-6">
+        <Header />
+        <ErrorCard
+          icon={<Terminal className="h-8 w-8 text-muted-foreground/40" />}
+          title="No callback URL"
+          description="This page should be opened from the CLI. Run:"
+          code="otter login"
+        />
+      </div>
     );
   }
 
   if (!callbackValid) {
     return (
-      <section>
-        <h1 className="text-2xl font-semibold mb-4">Connect CLI</h1>
-        <p className="text-sm text-red-500">
-          Invalid callback URL — only <code>http://localhost</code> or <code>http://127.0.0.1</code>{" "}
-          are accepted.
-        </p>
-      </section>
+      <div className="max-w-2xl space-y-6">
+        <Header />
+        <ErrorCard
+          icon={<ShieldAlert className="h-8 w-8 text-destructive/60" />}
+          title="Invalid callback URL"
+          description="For security, only localhost callbacks are allowed. The callback URL must start with http://localhost or http://127.0.0.1."
+        />
+      </div>
     );
   }
 
-  const mintUrl = `/api/auth/cli?callback=${encodeURIComponent(callback)}${
-    state ? `&state=${encodeURIComponent(state)}` : ""
-  }`;
-
-  const handleConnect = () => {
-    window.location.href = mintUrl;
-  };
+  const activeWebhooks = webhooks.filter((wh) => wh.isActive);
 
   return (
-    <section className="max-w-xl space-y-4">
-      <h1 className="text-2xl font-semibold">Connect CLI</h1>
-      <p className="text-sm text-gray-500">
-        Authorize <code>otter</code> CLI to use this dashboard. A new API token will be issued and
-        sent back to{" "}
-        <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">{callback}</code>.
-      </p>
-      <button
-        type="button"
-        onClick={handleConnect}
-        className="px-4 py-2 rounded-md bg-orange-500 text-white text-sm font-medium hover:bg-orange-600"
-      >
-        Authorize CLI
-      </button>
-    </section>
+    <div className="max-w-2xl space-y-6">
+      <Header />
+
+      <div className="rounded-xl bg-secondary p-4">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Terminal className="h-3.5 w-3.5" strokeWidth={1.5} />
+          <span>
+            Connecting to{" "}
+            <code className="bg-background/50 px-1.5 py-0.5 rounded text-xs">{callback}</code>
+          </span>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <WebhooksConnectSkeleton />
+      ) : error ? (
+        <div className="rounded-xl bg-secondary p-8 text-center">
+          <p className="text-sm text-destructive">
+            {error instanceof Error ? error.message : "Failed to load webhooks"}
+          </p>
+          <Button variant="ghost" size="sm" className="mt-2" onClick={() => mutate()}>
+            Retry
+          </Button>
+        </div>
+      ) : webhooks.length === 0 ? (
+        <div className="rounded-xl bg-secondary p-8 text-center space-y-3">
+          <Webhook className="h-8 w-8 text-muted-foreground/40 mx-auto" strokeWidth={1.5} />
+          <div>
+            <p className="text-sm text-muted-foreground">No webhook tokens yet</p>
+            <p className="mt-1 text-xs text-muted-foreground/60">
+              Create a webhook token in Settings first, then come back here.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" className="gap-1.5" asChild>
+            <a href="/settings">
+              Go to Settings
+              <ExternalLink className="h-3 w-3" strokeWidth={1.5} />
+            </a>
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Select a webhook token to connect your CLI:
+          </p>
+          {activeWebhooks.map((wh) => (
+            <WebhookConnectRow
+              key={wh.id}
+              webhook={wh}
+              baseUrl={baseUrl}
+              onConnect={handleConnect}
+              isConnecting={connectingId === wh.id}
+            />
+          ))}
+          {activeWebhooks.length === 0 && (
+            <div className="rounded-xl bg-secondary p-6 text-center space-y-3">
+              <p className="text-sm text-muted-foreground">All your webhook tokens are inactive.</p>
+              <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                <a href="/settings">
+                  Manage in Settings
+                  <ExternalLink className="h-3 w-3" strokeWidth={1.5} />
+                </a>
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
