@@ -4,7 +4,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     alias: {
-      "@": resolve(__dirname, "packages/web_legacy/src"),
+      "@": resolve(__dirname, "packages/web/src"),
     },
   },
   test: {
@@ -45,8 +45,12 @@ export default defineConfig({
         "**/api/auth/**",
         // Worker has its own vitest config with cloudflare pool
         "packages/worker/**",
-        // New Vite SPA — tests deferred until business UI is ported (plan §12)
-        "packages/web/**",
+        // New Vite SPA UI components — covered via E2E later (plan §12)
+        "packages/web/src/components/**",
+        "packages/web/src/pages/**",
+        "packages/web/src/AppShell.tsx",
+        "packages/web/src/main.tsx",
+        "packages/web/src/api.ts",
       ],
       thresholds: {
         statements: 90,

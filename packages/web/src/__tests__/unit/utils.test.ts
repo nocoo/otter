@@ -1,9 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cn, formatDate, formatDateTime, formatSize, formatTimeAgo } from "../../lib/utils";
+import { cn, formatDate, formatDateTime, formatSize, formatTimeAgo } from "@/lib/utils";
 
 describe("utils", () => {
-  // --- cn (class name merge) ---
-
   describe("cn", () => {
     it("merges class names", () => {
       expect(cn("foo", "bar")).toBe("foo bar");
@@ -17,8 +15,6 @@ describe("utils", () => {
       expect(cn("px-2", "px-4")).toBe("px-4");
     });
   });
-
-  // --- formatSize ---
 
   describe("formatSize", () => {
     it("formats bytes", () => {
@@ -40,8 +36,6 @@ describe("utils", () => {
     });
   });
 
-  // --- formatTimeAgo ---
-
   describe("formatTimeAgo", () => {
     beforeEach(() => {
       vi.useFakeTimers();
@@ -53,42 +47,40 @@ describe("utils", () => {
     });
 
     it('returns "just now" for recent timestamps', () => {
-      const ts = Date.now() - 30 * 1000; // 30 seconds ago
+      const ts = Date.now() - 30 * 1000;
       expect(formatTimeAgo(ts)).toBe("just now");
     });
 
     it("returns minutes ago", () => {
-      const ts = Date.now() - 5 * 60 * 1000; // 5 minutes ago
+      const ts = Date.now() - 5 * 60 * 1000;
       expect(formatTimeAgo(ts)).toBe("5m ago");
     });
 
     it("returns hours ago", () => {
-      const ts = Date.now() - 3 * 60 * 60 * 1000; // 3 hours ago
+      const ts = Date.now() - 3 * 60 * 60 * 1000;
       expect(formatTimeAgo(ts)).toBe("3h ago");
     });
 
     it("returns days ago", () => {
-      const ts = Date.now() - 2 * 24 * 60 * 60 * 1000; // 2 days ago
+      const ts = Date.now() - 2 * 24 * 60 * 60 * 1000;
       expect(formatTimeAgo(ts)).toBe("2d ago");
     });
 
     it("returns weeks ago", () => {
-      const ts = Date.now() - 14 * 24 * 60 * 60 * 1000; // 2 weeks ago
+      const ts = Date.now() - 14 * 24 * 60 * 60 * 1000;
       expect(formatTimeAgo(ts)).toBe("2w ago");
     });
 
     it("returns months ago", () => {
-      const ts = Date.now() - 60 * 24 * 60 * 60 * 1000; // ~2 months ago
+      const ts = Date.now() - 60 * 24 * 60 * 60 * 1000;
       expect(formatTimeAgo(ts)).toBe("2mo ago");
     });
 
     it("returns years ago", () => {
-      const ts = Date.now() - 400 * 24 * 60 * 60 * 1000; // ~1 year ago
+      const ts = Date.now() - 400 * 24 * 60 * 60 * 1000;
       expect(formatTimeAgo(ts)).toBe("1y ago");
     });
   });
-
-  // --- formatDate ---
 
   describe("formatDate", () => {
     it("formats timestamp to short date", () => {
@@ -99,8 +91,6 @@ describe("utils", () => {
       expect(result).toContain("15");
     });
   });
-
-  // --- formatDateTime ---
 
   describe("formatDateTime", () => {
     it("formats timestamp to date and time", () => {

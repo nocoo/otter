@@ -7,24 +7,18 @@ import {
   listItemKey,
   metaEntries,
   resolveIconUrl,
-} from "../../app/(dashboard)/snapshots/[id]/_components/helpers";
+} from "@/components/snapshot/helpers";
 
-describe("helpers", () => {
-  // --- formatDateTime ---
-
+describe("snapshot helpers", () => {
   describe("formatDateTime", () => {
     it("formats a timestamp to a human-readable date string", () => {
-      // Use a fixed timestamp: 2026-01-15T10:30:00Z
       const ts = new Date("2026-01-15T10:30:00Z").getTime();
       const result = formatDateTime(ts);
-      // Should contain the year and month
       expect(result).toContain("2026");
       expect(result).toContain("Jan");
       expect(result).toContain("15");
     });
   });
-
-  // --- computeIconUrl ---
 
   describe("computeIconUrl", () => {
     it("returns a deterministic URL based on app name hash", async () => {
@@ -45,8 +39,6 @@ describe("helpers", () => {
     });
   });
 
-  // --- resolveIconUrl ---
-
   describe("resolveIconUrl", () => {
     it("returns iconUrl from meta", () => {
       const item = { name: "App", meta: { iconUrl: "https://example.com/icon.png" } };
@@ -63,8 +55,6 @@ describe("helpers", () => {
       expect(resolveIconUrl(item)).toBeUndefined();
     });
   });
-
-  // --- metaEntries ---
 
   describe("metaEntries", () => {
     it("returns entries excluding iconUrl", () => {
@@ -89,8 +79,6 @@ describe("helpers", () => {
     });
   });
 
-  // --- formatMetaLabel ---
-
   describe("formatMetaLabel", () => {
     it("replaces dashes with spaces", () => {
       expect(formatMetaLabel("installed-at")).toBe("installed at");
@@ -108,8 +96,6 @@ describe("helpers", () => {
       expect(formatMetaLabel("version")).toBe("version");
     });
   });
-
-  // --- badgeClassName ---
 
   describe("badgeClassName", () => {
     it("returns success classes for pinned", () => {
@@ -132,8 +118,6 @@ describe("helpers", () => {
       expect(badgeClassName("version")).toBe("");
     });
   });
-
-  // --- listItemKey ---
 
   describe("listItemKey", () => {
     it("generates a key from name, version, meta, and index", () => {
