@@ -114,6 +114,19 @@
   },
   "overrides": [
     {
+      "includes": ["packages/web/src/**"],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noImgElement": "off"
+          },
+          "style": {
+            "useNamingConvention": "off"
+          }
+        }
+      }
+    },
+    {
       "includes": ["packages/web_legacy/src/components/ui/**", "packages/web/src/components/ui/**"],
       "linter": {
         "rules": {

@@ -4,7 +4,6 @@ interface Webhook {
   id: string;
   token: string;
   label: string;
-  // biome-ignore lint/style/useNamingConvention: D1 column name
   created_at: number;
 }
 
