@@ -1,41 +1,121 @@
-import { Link, NavLink, Outlet } from "react-router";
+import { Github, Menu } from "lucide-react";
+import { useEffect } from "react";
+import { Outlet, useLocation } from "react-router";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { Sidebar } from "@/components/layout/sidebar";
+import { SidebarProvider, useSidebar } from "@/components/layout/sidebar-context";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-interface NavItem {
-  to: string;
-  label: string;
-  end?: boolean;
+const ROUTE_LABELS: Record<string, string> = {
+  snapshots: "Snapshots",
+  settings: "Settings",
+  cli: "CLI",
+  connect: "Connect",
+};
+
+function breadcrumbsFromPathname(pathname: string) {
+  const segments = pathname.split("/").filter(Boolean);
+  const items: { label: string; href?: string }[] = [{ label: "Home", href: "/" }];
+
+  let href = "";
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i];
+    if (!seg) continue;
+    href += `/${seg}`;
+    const isLast = i === segments.length - 1;
+    const label = ROUTE_LABELS[seg] ?? seg.slice(0, 8);
+    items.push(isLast ? { label } : { label, href });
+  }
+
+  return items;
 }
 
-const NAV: readonly NavItem[] = [
-  { to: "/", label: "Dashboard", end: true },
-  { to: "/snapshots", label: "Snapshots" },
-  { to: "/settings", label: "Settings" },
-  { to: "/cli/connect", label: "CLI" },
-];
+function AppShellInner() {
+  const isMobile = useIsMobile();
+  const { mobileOpen, setMobileOpen } = useSidebar();
+  const { pathname } = useLocation();
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: pathname triggers the effect intentionally
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname, setMobileOpen]);
+
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
+
+  const breadcrumbs = breadcrumbsFromPathname(pathname);
+
+  return (
+    <div className="flex min-h-screen w-full bg-background">
+      {!isMobile && <Sidebar />}
+
+      {isMobile && mobileOpen && (
+        <>
+          {/* biome-ignore lint/a11y/noNoninteractiveElementInteractions: backdrop overlay dismiss */}
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: backdrop overlay dismiss */}
+          {/* biome-ignore lint/a11y/useKeyWithClickEvents: backdrop overlay dismiss */}
+          <div
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-xs"
+            onClick={() => setMobileOpen(false)}
+          />
+          <div className="fixed inset-y-0 left-0 z-50 w-[260px]">
+            <Sidebar />
+          </div>
+        </>
+      )}
+
+      <main className="flex flex-1 flex-col min-h-screen min-w-0">
+        <header className="flex h-14 shrink-0 items-center justify-between px-4 md:px-6">
+          <div className="flex items-center gap-3">
+            {isMobile && (
+              <button
+                type="button"
+                onClick={() => setMobileOpen(true)}
+                aria-label="Open navigation"
+                className="flex h-8 w-8 min-h-11 min-w-11 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              >
+                <Menu className="h-5 w-5" aria-hidden="true" strokeWidth={1.5} />
+              </button>
+            )}
+            <Breadcrumbs items={breadcrumbs} />
+          </div>
+          <div className="flex items-center gap-1">
+            <a
+              href="https://github.com/nocoo/otter"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub repository"
+              className="flex h-8 w-8 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            >
+              <Github className="h-[18px] w-[18px]" aria-hidden="true" strokeWidth={1.5} />
+            </a>
+            <ThemeToggle />
+          </div>
+        </header>
+
+        <div className="flex-1 px-2 pb-2 md:px-3 md:pb-3">
+          <div className="h-full rounded-[16px] md:rounded-[20px] bg-card p-3 md:p-5 overflow-y-auto">
+            <Outlet />
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
 
 export function AppShell() {
   return (
-    <div className="min-h-screen flex">
-      <aside className="w-56 border-r border-black/10 dark:border-white/10 p-4 flex flex-col gap-2">
-        <Link to="/" className="font-semibold text-lg mb-4">
-          🦦 Otter
-        </Link>
-        {NAV.map((n) => (
-          <NavLink
-            key={n.to}
-            to={n.to}
-            end={n.end ?? false}
-            className={({ isActive }) =>
-              `px-3 py-2 rounded text-sm ${isActive ? "bg-black/5 dark:bg-white/10 font-medium" : "hover:bg-black/5 dark:hover:bg-white/5"}`
-            }
-          >
-            {n.label}
-          </NavLink>
-        ))}
-      </aside>
-      <main className="flex-1 p-8 overflow-auto">
-        <Outlet />
-      </main>
-    </div>
+    <SidebarProvider>
+      <AppShellInner />
+    </SidebarProvider>
   );
 }
