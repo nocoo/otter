@@ -114,7 +114,7 @@
   },
   "overrides": [
     {
-      "includes": ["packages/web_legacy/src/components/ui/**"],
+      "includes": ["packages/web_legacy/src/components/ui/**", "packages/web/src/components/ui/**"],
       "linter": {
         "rules": {
           "a11y": "off",
