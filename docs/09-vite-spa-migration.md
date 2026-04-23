@@ -4,7 +4,7 @@
 
 把 `packages/web` 从 Next.js 16 + next-auth 重写为 Vite 6 SPA，并把原独立的 `otter-test.nocoo.workers.dev` 业务逻辑回迁到新 `packages/worker`，鉴权切 Cloudflare Access。本文档既是执行计划，也是进度看板。
 
-## 执行进度（2026-04-23 更新）
+## 执行进度（2026-04-24 更新）
 
 | 步骤 | 状态 | 提交 / 备注 |
 |---|---|---|
@@ -16,10 +16,10 @@
 | 10. 路由前缀对齐 | ✅ done | dual-stack: 新 `/api/*` + 老 `/v1/*` 共存 |
 | 01. 重命名 web → web_legacy | ✅ done | `e4da9c8 refactor: rename packages/web → packages/web_legacy` |
 | 06. Vite SPA 脚手架 | ✅ done | `18fded0 feat(web): scaffold vite spa skeleton at packages/web`（占位页骨架） |
-| 07. 平移 UI 组件 | ⏳ 推迟 | 当前只有占位页；shadcn/charts/dashboard 全套留给下一轮 |
-| 08. 平移页面 | ⏳ 推迟 | 同上，先过 build/lint，业务复刻另开一轮 |
+| 07. 平移 UI 组件 | ✅ done | A1–A5 + B 完成：globals/lib/ui/charts/dashboard/layout 全套从 web_legacy 平移 |
+| 08. 平移页面 | ✅ done | C11–C19 完成：snapshots/snapshot detail/dashboard/settings/cli connect 业务页全部上线 |
 | 11. worker 单测 | ✅ done | `22df574 test(worker): unit tests for /api/snapshots and /api/webhooks routes`（15 个用例，in-memory driver） |
-| 12. 平移 web 单测 + Playwright | ⏳ 推迟 | web_legacy 测试原地保留；新 web 仅占位骨架，等业务复刻后再补 |
+| 12. 平移 web 单测 + Playwright | 🟡 部分 | utils + snapshot helpers 单测已平移；Playwright E2E 留下一轮 |
 | 13. E2E runner 重写 | ⏳ 推迟 | 当前 `scripts/run-e2e*.ts` 仍指 web_legacy；新 worker 的 E2E 留待业务复刻 |
 | 14. 根 scripts 调整 | ✅ done | `1ff61d4 chore(scripts): add dev:worker / build / deploy targets for new worker` |
 | 15. 删 web_legacy | ⏭️ 跳过 | 计划本身约定本轮不删 |
@@ -28,7 +28,7 @@
 **遗留事项**（待哥确认后开下一轮）：
 - ~~D1 实跑 `0002_api_tokens.sql` migration~~ ✅ 2026-04-24 prod (`otter-db`) + test (`otter-db-test`) 均已建表
 - ~~`wrangler.toml` 写真实 `CF_ACCESS_TEAM_DOMAIN` / `CF_ACCESS_AUD`~~ ✅ 2026-04-24 已写入 `nocoo.cloudflareaccess.com` + AUD
-- 复刻 web_legacy 的 dashboard / charts / shadcn 组件到新 web
+- ~~复刻 web_legacy 的 dashboard / charts / shadcn 组件到新 web~~ ✅ 2026-04-24 完成（Phase A/B/C 共 19 个原子提交）
 - ~~CLI 切 Bearer token + 跑 `/auth/cli/{start,callback}` 流程~~ ✅ 2026-04-24 协议收口为 `/cli/connect → /api/auth/cli?callback=&state= → 302 callback?token=&state=&email=`，删除 `callback_url` / `api_key` 旧别名
 - ~~worker 手工拼装 `/api/*`~~ ✅ 2026-04-24 收口到 `@otter/api` 的 `createApp({ basePath, driver, bucket, auth })`：snapshots/webhooks 路由工厂迁入 `@otter/api/routes/api-{snapshots,webhooks}`，worker 仅作 binding 适配；新增 13 个 `create-app.test.ts` 集成用例
 - 删除 `packages/api/src/lib/worker-client.ts`（仅 web_legacy 仍依赖）
