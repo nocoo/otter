@@ -3,6 +3,28 @@ import type { Context, MiddlewareHandler } from "hono";
 import { getCookie } from "hono/cookie";
 import { execute } from "../lib/cf/d1";
 
+const CHUNK_SUFFIX = /^\d+$/;
+
+function reassembleChunkedCookie(
+  cookies: Record<string, string>,
+  baseName: string,
+): string | undefined {
+  const exact = cookies[baseName];
+  if (exact !== undefined) return exact;
+
+  const prefix = `${baseName}.`;
+  const chunks: Array<{ index: number; value: string }> = [];
+  for (const [name, value] of Object.entries(cookies)) {
+    if (!name.startsWith(prefix)) continue;
+    const suffix = name.slice(prefix.length);
+    if (!CHUNK_SUFFIX.test(suffix)) continue;
+    chunks.push({ index: Number.parseInt(suffix, 10), value });
+  }
+  if (chunks.length === 0) return undefined;
+  chunks.sort((a, b) => a.index - b.index);
+  return chunks.map((c) => c.value).join("");
+}
+
 export interface AuthUser {
   id: string;
   email: string;
@@ -59,7 +81,7 @@ export const authMiddleware: MiddlewareHandler<{ Variables: Variables }> = async
   }
 
   const cookieName = getCookieName();
-  const token = getCookie(c, cookieName);
+  const token = reassembleChunkedCookie(getCookie(c), cookieName);
   if (!token) {
     return c.json({ error: "Unauthorized" }, 401);
   }
