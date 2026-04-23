@@ -254,6 +254,217 @@ otter/
 
 ---
 
+## 搬运执行手册（步骤 07 + 08 细化）
+
+> 这一节是**搬运索引**：每条 = 一个原子提交。按顺序往下做，每条做完跑 `bun run lint && bun run --cwd packages/web build` 验证再 commit。
+
+### 通用改造规则（所有页面/组件适用）
+
+| Next 习惯 | Vite 替换 |
+|---|---|
+| `import Link from "next/link"` | `import { Link } from "react-router"` |
+| `import Image from "next/image"` + `<Image src=… width=… height=… alt=…/>` | `<img src=… width=… height=… alt=… />`（src 直接走 `public/` 绝对路径，如 `/logo-24.png`） |
+| `usePathname()` | `useLocation().pathname`（react-router） |
+| `useRouter().push(x)` | `useNavigate()` 拿到 `navigate`，调用 `navigate(x)` |
+| `useSearchParams()` (next/navigation) | `useSearchParams()` (react-router) — API 略不同：返回 `[params, setParams]` |
+| `useParams<{id:string}>()` (next, async via `use(params)`) | `useParams<{id:string}>()` (react-router) — 同步 |
+| `useSession()` + next-auth | `useSWR<{email,sub}>("/api/me", fetcher)` |
+| `signOut({callbackUrl})` | `window.location.href = "/cdn-cgi/access/logout"`（CF Access SSO 登出） |
+| `dynamic(() => import(x), { ssr: false })` | `React.lazy(() => import(x))` + `<Suspense fallback>` |
+| `"use client"` 指令 | 删除（Vite 全是 client） |
+| `fetch("/api/...").then(r => r.json())` | 用 SWR：`useSWR("/api/...", fetcher)`；变更操作走 `fetch` + `mutate(key)` |
+| 跨域 cookie | 不需要——SPA 与 worker 同源 |
+
+### 搬运顺序（原子提交清单）
+
+每行一个 commit。⭐ = 阻塞后续提交的基础设施。
+
+#### Phase A — 基础设施（先把"搬运容器"装好）
+
+1. ⭐ **`feat(web): port globals.css with full tailwind tokens + theme variables`**
+   - 复制 `packages/web_legacy/src/app/globals.css`（357 行）到 `packages/web/src/globals.css`
+   - 验证 `@import "tailwindcss"` + 主题变量（OKLCH palette、Inter/DM Sans 字体引入、dark mode `:root.dark` 块）齐全
+   - 删除 next/font 相关引用，改 `@import url("https://fonts.googleapis.com/...")` 或本地 woff
+   - **测试**：`bun run --cwd packages/web build`，hash 后 CSS 体积应从 ~9KB 涨到 ~30KB
+
+2. ⭐ **`feat(web): port lib utils + version helpers`**
+   - 复制 `packages/web_legacy/src/lib/{utils.ts,palette.ts,version.ts}` → `packages/web/src/lib/`
+   - `lib/utils.ts`：`cn()` (clsx + tailwind-merge) + `formatSize/formatDate/formatDateTime/formatTimeAgo`
+   - `lib/palette.ts`：`CHART_COLORS` 数组
+   - `lib/version.ts`：`APP_VERSION` 常量（注意：从 `package.json` 读，确保新 web 的 `package.json` 也有 version 字段）
+   - 复制 `packages/web_legacy/src/hooks/use-mobile.tsx` → `packages/web/src/hooks/use-mobile.tsx`
+   - **测试**：`tsc --noEmit -p packages/web/tsconfig.json`
+
+3. ⭐ **`feat(web): port shadcn ui primitives (button/card/input/badge/...)`**
+   - 复制 `components/ui/*` 全部 16 个文件（avatar / badge / button / card / dialog / dropdown-menu / input / label / separator / sheet / skeleton / switch / table / tabs / tooltip）到 `packages/web/src/components/ui/`
+   - 这些纯 radix-ui + cva + tailwind，**零 next 依赖**，整体复制即可
+   - 在 `packages/web/package.json` 加依赖：`@radix-ui/react-{avatar,dialog,dropdown-menu,label,separator,slot,switch,tabs,tooltip}`、`class-variance-authority`、`clsx`、`tailwind-merge`、`lucide-react`、`tw-animate-css`
+   - **测试**：build 通过
+
+4. **`feat(web): port chart primitives (area/bar/donut from recharts)`**
+   - 复制 `components/charts/{area-chart,bar-chart,donut-chart,index}.tsx`
+   - 加依赖 `recharts`
+   - 不依赖 Next，零改动
+
+5. **`feat(web): port dashboard segment + stat-card components`**
+   - 复制 `components/dashboard/{stat-card,dashboard-segment}.tsx`
+   - 用到 `cn`、`Skeleton`、lucide 图标，零 Next 依赖
+
+#### Phase B — Layout chrome（页面骨架）
+
+6. ⭐ **`feat(web): port theme toggle (sync with localStorage + prefers-color-scheme)`**
+   - 复制 `components/layout/theme-toggle.tsx`
+   - 用 `useSyncExternalStore` 订阅 `theme-change` 事件 + OS 偏好
+   - 三态切换：light → dark → system
+   - 写 `localStorage["theme"]` + toggle `document.documentElement.classList.dark`
+   - **额外**：在 `packages/web/index.html` 的 `<head>` 加 inline script 在 React mount 前同步主题，避免闪烁（参考 web_legacy 的 `app/layout.tsx`）
+
+7. ⭐ **`feat(web): port sidebar context provider`**
+   - 复制 `components/layout/sidebar-context.tsx`
+   - 暴露 `{collapsed, toggle, setCollapsed, mobileOpen, setMobileOpen}`
+
+8. **`feat(web): port breadcrumbs (next/link → react-router Link)`**
+   - 复制 `components/layout/breadcrumbs.tsx`
+   - 改 `next/link` → react-router
+
+9. ⭐ **`feat(web): port sidebar with /api/me session + react-router nav`**
+   - 复制 `components/layout/sidebar.tsx`
+   - 改造：
+     - `next/image` 的 logo → `<img src="/logo-24.png" width=24 height=24 />`
+     - `next/link` → react-router `<Link>`
+     - `usePathname` → `useLocation().pathname`
+     - `useSession`/`signOut` → `useSWR<{email,sub}>("/api/me", fetcher)` + 登出按钮 `window.location.href = "/cdn-cgi/access/logout"`
+     - 折叠/展开宽度逻辑、active 高亮、版本徽章保持不动
+   - 依赖：`<TooltipProvider>` 包裹（已在 ui 里）
+
+10. ⭐ **`feat(web): rewrite AppShell with sidebar + breadcrumbs + outlet`**
+    - **重写**当前占位 `packages/web/src/AppShell.tsx`，参考 `components/layout/app-shell.tsx`
+    - 桌面 sidebar + 移动 slide-over（带 backdrop + body-scroll lock）
+    - 头部：hamburger（mobile）+ Breadcrumbs + GitHub 链接 + ThemeToggle
+    - URL 驱动 breadcrumb（Home / Snapshots / Settings + dynamic-id slice）
+    - 内容用 `<Outlet />`（react-router）
+    - `usePathname` → `useLocation`
+
+#### Phase C — 业务页面（按依赖顺序）
+
+11. **`feat(web): port not-found page`**
+    - 复制 `app/not-found.tsx`，改 `next/image` + `next/link`
+    - 路由已有 `path="*"`
+
+12. ⭐ **`feat(web): port snapshots list page (table + cursor pagination)`**
+    - 替换占位 `pages/SnapshotsPage.tsx`
+    - 参考 `app/(dashboard)/snapshots/page.tsx` (375 行)
+    - 用 `useSWR("/api/snapshots?limit=20&before=" + cursor, fetcher)`
+    - 游标栈：`const [cursorStack, setCursorStack] = useState<(string|null)[]>([null])`
+    - row-click `useNavigate()` 跳详情；Link 包裹 ID 列
+    - 状态：skeleton / empty / error
+    - 顶部 disabled 搜索框（保留 UI 不接逻辑）
+
+13. **`feat(web): port snapshot detail _components (helpers/types/file-row/list-item-row/export-section)`**
+    - 复制 `app/(dashboard)/snapshots/[id]/_components/{helpers.ts,types.ts,file-row.tsx,list-item-row.tsx,export-section.tsx}` → `packages/web/src/components/snapshot/`
+    - 全部零 Next 依赖
+    - **暂不**复制 collector-card / overview-tab / collectors-tab（依赖 file-viewer-dialog，下一条做）
+
+14. **`feat(web): port file-viewer-dialog with shiki syntax highlighting`**
+    - 复制 `components/file-viewer-dialog.tsx`（366 行）
+    - 加依赖 `shiki`
+    - 主题订阅逻辑零改动（`useSyncExternalStore` + MutationObserver + theme-change 事件）
+
+15. **`feat(web): port snapshot collector-card / overview-tab / collectors-tab`**
+    - 复制三件套到 `packages/web/src/components/snapshot/`
+    - `overview-tab` 的 recharts donut + bar 已经平移过 charts 了，直接 import
+    - `collectors-tab` 的 `filterCollectors` 走 `@otter/api/lib/snapshot-collectors`，packages/web 的 `package.json` 加 workspace 依赖 `"@otter/api": "workspace:*"`
+
+16. ⭐ **`feat(web): port snapshot detail page with tabs`**
+    - 替换 `pages/SnapshotDetailPage.tsx`
+    - 参考 `app/(dashboard)/snapshots/[id]/page.tsx` (187 行)
+    - `useParams<{id:string}>()`（react-router 同步版，去掉 `use(params)` Promise unwrap）
+    - `useSWR("/api/snapshots/:id", fetcher)`
+    - Tabs：Overview / Config（带 count badge）/ Environment（带 count badge）+ ExportSection
+    - 状态：skeleton / 404 / error
+
+17. ⭐ **`feat(web): port dashboard overview page (stats + recent + trend chart)`**
+    - 替换 `pages/DashboardPage.tsx`
+    - 参考 `app/(dashboard)/page.tsx` (397 行)
+    - 三路 SWR：`/api/snapshots?limit=50`（trend）+ `/api/snapshots?limit=5`（recent table）+ `/api/webhooks`（active count）
+    - 4 个 StatCard：Total Snapshots / Active Webhooks / Config Files / Last Backup
+    - Recent snapshots 表（2/3 宽）+ AreaChart 7 天趋势（1/3 宽）
+    - row-click + Link 跳详情
+    - skeleton / error retry
+
+18. ⭐ **`feat(web): port settings page with webhook crud`**
+    - 替换 `pages/SettingsPage.tsx`
+    - 参考 `app/(dashboard)/settings/page.tsx` (455 行)
+    - Account 卡：`useSWR<{email,sub}>("/api/me")` 替换 `useSession`，去掉 Google badge（CF Access 不暴露 provider）
+    - Webhooks 区：
+      - `useSWR("/api/webhooks", fetcher)`
+      - 创建：`POST /api/webhooks`（label input dialog，Enter 提交）
+      - 切换 active：`PATCH /api/webhooks/:id`（switch）
+      - 删除：`DELETE /api/webhooks/:id`（confirm dialog）
+      - copy-URL：`navigator.clipboard.writeText(\`${origin}/api/webhook/${token}\`)`
+    - Danger zone "Delete All"（disabled，UI 占位）
+    - 所有变更后调 `mutate("/api/webhooks")`
+
+19. **`feat(web): port cli connect page (callback validation + redirect)`**
+    - 替换 `pages/CliConnectPage.tsx`
+    - 参考 `app/(dashboard)/cli/connect/page.tsx` (347 行)
+    - `useSearchParams()`（react-router 版）拿 `callback` query
+    - 验证 `callback` 是 `http://localhost|127.0.0.1`（沿用 web_legacy 的 sanitize 逻辑）
+    - `useSWR("/api/webhooks", fetcher)` 列出活跃 webhook
+    - Connect 按钮：`window.location.href = \`${callback}/callback?token=${token}&state=${state}\``
+    - 错误卡：missing/invalid callback
+    - 删除外层 `<Suspense>`（react-router 不需要）
+
+#### Phase D — 测试 + 收尾
+
+20. **`test(web): port unit tests for lib helpers`**
+    - 复制 `packages/web_legacy/src/__tests__/unit/{utils,helpers}.test.ts` → `packages/web/src/__tests__/unit/`
+    - 改 import 路径
+    - vitest 自动拾取
+    - 在 `vitest.config.ts` 把 `@/` 别名指向 `packages/web/src`（替换当前 web_legacy 的指向）
+
+21. **`feat(api): add /api/me route returning {email, sub} from access JWT or bearer`**
+    - 检查 `packages/api/src/routes/me.ts` 是否已存在并适配 dual-auth（`accessEmail` 优先，fallback `apiTokenEmail`）
+    - worker 已挂 `/api/*`，应能直接命中
+    - 加 unit test
+
+22. **`feat(worker): add /api/me to dual-stack route + smoke test`**
+    - 确认 `packages/worker/src/index.ts` 把 `/api/me` 路由暴露
+    - `wrangler dev --local`（绕过 access）测 200 返回 `{email:"dev@localhost", sub:"localhost"}`
+
+23. **`docs: mark step 07 + 08 done in 09-vite-spa-migration plan`**
+    - 把执行进度表 07/08 状态改 ✅
+    - 删除遗留事项中"复刻 web_legacy 的 dashboard / charts / shadcn 组件到新 web"
+
+#### Phase E（可选，下一轮再做）
+
+- E2E + Playwright 平移（步骤 12）
+- E2E runner 重写（步骤 13）
+- CLI 切 Bearer token（独立子任务）
+- 删除 `packages/web_legacy`（步骤 15）
+- 删除 `packages/api/src/lib/worker-client.ts`
+
+### 验证脚本（每次 commit 前）
+
+```bash
+# 类型 + lint
+bun run lint
+
+# 单包测试 + 构建
+bun run --cwd packages/web build
+
+# 整仓测试
+bun run test
+```
+
+### 当前阻塞 / 提示
+
+- ⚠️ `packages/web/package.json` 缺一票依赖（radix-ui 全家、recharts、shiki、lucide-react、clsx、cva、tailwind-merge、tw-animate-css）。建议在 Phase A step 3 一次性 `bun add` 进去，避免每条 commit 都改 package.json
+- ⚠️ `vitest.config.ts` 当前 `@/` 别名指 `packages/web_legacy/src` —— 在 Phase D step 20 调整
+- ⚠️ `/api/me` 必须在 worker 挂载到位，否则 Sidebar / Settings 页拿不到 session 信息（access-auth 中间件设的 `c.get("accessEmail")` 要透出）
+
+---
+
 ## 关键复用
 
 | 来源 | 复用对象 |
