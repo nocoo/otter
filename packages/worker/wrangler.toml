@@ -9,9 +9,8 @@ ENVIRONMENT = "production"
 D1_DATABASE_NAME = "otter-db"
 R2_BUCKET_NAME = "otter-snapshots"
 ICON_PREFIX = "apps/otter"
-# CF Access — set via `wrangler secret put` or here once known
-# CF_ACCESS_TEAM_DOMAIN = "nocoo.cloudflareaccess.com"
-# CF_ACCESS_AUD = "..."
+CF_ACCESS_TEAM_DOMAIN = "nocoo.cloudflareaccess.com"
+CF_ACCESS_AUD = "a920d3430b1e5a636590cd5d4f04dc657f89f9939c76a6870140015c0381d9b3"
 
 [[d1_databases]]
 binding = "DB"
@@ -38,7 +37,7 @@ run_worker_first = ["/api/*", "/v1/*", "/health", "/ingest/*"]
 
 # --- 测试环境 (CI/E2E) ---
 [env.test]
-vars = { ENVIRONMENT = "test", D1_DATABASE_NAME = "otter-db-test", R2_BUCKET_NAME = "otter-snapshots-test", ICON_PREFIX = "apps/otter" }
+vars = { ENVIRONMENT = "test", D1_DATABASE_NAME = "otter-db-test", R2_BUCKET_NAME = "otter-snapshots-test", ICON_PREFIX = "apps/otter", CF_ACCESS_TEAM_DOMAIN = "nocoo.cloudflareaccess.com", CF_ACCESS_AUD = "a920d3430b1e5a636590cd5d4f04dc657f89f9939c76a6870140015c0381d9b3" }
 
 [[env.test.d1_databases]]
 binding = "DB"
