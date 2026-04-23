@@ -72,24 +72,19 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+const WORKER_URL =
+  (import.meta.env.VITE_WORKER_URL as string | undefined) ?? "https://otter.worker.hexly.ai";
+
 interface WebhookRowProps {
   webhook: WebhookToken;
-  baseUrl: string;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
   isToggling: boolean;
   isDeleting: boolean;
 }
 
-function WebhookRow({
-  webhook,
-  baseUrl,
-  onToggle,
-  onDelete,
-  isToggling,
-  isDeleting,
-}: WebhookRowProps) {
-  const fullUrl = `${baseUrl}/api/webhook/${webhook.token}`;
+function WebhookRow({ webhook, onToggle, onDelete, isToggling, isDeleting }: WebhookRowProps) {
+  const fullUrl = `${WORKER_URL}/ingest/${webhook.token}`;
 
   return (
     <div className="rounded-xl bg-card p-4 space-y-3">
@@ -164,7 +159,6 @@ function WebhooksSkeleton() {
   );
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: settings page with multiple sections
 export function SettingsPage() {
   const { data: me } = useSWR<MeResponse>("/api/me", (k: string) => apiFetch<MeResponse>(k));
   const { data, error, isLoading, mutate } = useApi<WebhooksResponse>("/api/webhooks");
@@ -175,7 +169,6 @@ export function SettingsPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://otter.hexly.ai";
   const webhooks = data?.webhooks ?? [];
 
   const handleToggle = async (id: string) => {
@@ -342,7 +335,6 @@ export function SettingsPage() {
               <WebhookRow
                 key={wh.id}
                 webhook={wh}
-                baseUrl={baseUrl}
                 onToggle={handleToggle}
                 onDelete={handleDelete}
                 isToggling={togglingId === wh.id}
