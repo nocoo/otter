@@ -29,7 +29,7 @@
 - ~~D1 实跑 `0002_api_tokens.sql` migration~~ ✅ 2026-04-24 prod (`otter-db`) + test (`otter-db-test`) 均已建表
 - ~~`wrangler.toml` 写真实 `CF_ACCESS_TEAM_DOMAIN` / `CF_ACCESS_AUD`~~ ✅ 2026-04-24 已写入 `nocoo.cloudflareaccess.com` + AUD
 - 复刻 web_legacy 的 dashboard / charts / shadcn 组件到新 web
-- CLI 切 Bearer token + 跑 `/auth/cli/{start,callback}` 流程
+- ~~CLI 切 Bearer token + 跑 `/auth/cli/{start,callback}` 流程~~ ✅ 2026-04-24 协议收口为 `/cli/connect → /api/auth/cli?callback=&state= → 302 callback?token=&state=&email=`，删除 `callback_url` / `api_key` 旧别名
 - 删除 `packages/api/src/lib/worker-client.ts`（仅 web_legacy 仍依赖）
 
 ---

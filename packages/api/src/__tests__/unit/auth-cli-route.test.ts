@@ -36,38 +36,36 @@ describe("isLocalhostUrl", () => {
 });
 
 describe("/api/auth/cli", () => {
-  it("400 without callback_url", async () => {
+  it("400 without callback", async () => {
     const { driver } = createMockDriver();
     const app = makeApp(driver);
     const r = await app.fetch(new Request("https://x/api/auth/cli"));
     expect(r.status).toBe(400);
+    expect(await r.json()).toEqual({ error: "callback is required" });
   });
 
-  it("400 with non-localhost callback_url", async () => {
+  it("400 with non-loopback callback", async () => {
     const { driver } = createMockDriver();
     const app = makeApp(driver);
-    const r = await app.fetch(
-      new Request("https://x/api/auth/cli?callback_url=https://evil.com/cb"),
-    );
+    const r = await app.fetch(new Request("https://x/api/auth/cli?callback=https://evil.com/cb"));
     expect(r.status).toBe(400);
+    expect(await r.json()).toEqual({ error: "callback must be a loopback http URL" });
   });
 
   it("400 when no accessEmail in context", async () => {
     const { driver } = createMockDriver();
     const app = makeApp(driver);
-    const r = await app.fetch(
-      new Request("https://x/api/auth/cli?callback_url=http://127.0.0.1:9/cb"),
-    );
+    const r = await app.fetch(new Request("https://x/api/auth/cli?callback=http://127.0.0.1:9/cb"));
     expect(r.status).toBe(400);
   });
 
-  it("302 redirects with api_key + email + state when authed", async () => {
+  it("302 redirects with token + email + state when authed", async () => {
     const { driver, calls } = createMockDriver();
     const app = makeApp(driver, (c) => {
       c.set("accessEmail", "u@example.com");
     });
     const r = await app.fetch(
-      new Request("https://x/api/auth/cli?callback_url=http://127.0.0.1:9876/cb&state=abc", {
+      new Request("https://x/api/auth/cli?callback=http://127.0.0.1:9876/cb&state=abc", {
         redirect: "manual",
       }),
     );
@@ -76,11 +74,23 @@ describe("/api/auth/cli", () => {
     expect(loc.hostname).toBe("127.0.0.1");
     expect(loc.searchParams.get("state")).toBe("abc");
     expect(loc.searchParams.get("email")).toBe("u@example.com");
-    expect(loc.searchParams.get("api_key")?.startsWith("otk_")).toBe(true);
+    expect(loc.searchParams.get("token")?.startsWith("otk_")).toBe(true);
+    expect(loc.searchParams.get("api_key")).toBeNull();
     expect(calls.some((c) => c.sql?.includes("INSERT INTO api_tokens"))).toBe(true);
   });
 
-  it("accepts `callback` alias", async () => {
+  it("rejects deprecated callback_url alias", async () => {
+    const { driver } = createMockDriver();
+    const app = makeApp(driver, (c) => {
+      c.set("accessEmail", "u@example.com");
+    });
+    const r = await app.fetch(
+      new Request("https://x/api/auth/cli?callback_url=http://localhost:1234/cb"),
+    );
+    expect(r.status).toBe(400);
+  });
+
+  it("works without state (state is optional)", async () => {
     const { driver } = createMockDriver();
     const app = makeApp(driver, (c) => {
       c.set("accessEmail", "u@example.com");
@@ -91,5 +101,7 @@ describe("/api/auth/cli", () => {
       }),
     );
     expect(r.status).toBe(302);
+    const loc = new URL(r.headers.get("Location") ?? "");
+    expect(loc.searchParams.get("state")).toBeNull();
   });
 });
