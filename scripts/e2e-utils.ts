@@ -7,11 +7,11 @@ import { resolve } from "node:path";
 import { verifyTestDatabase } from "./verify-test-resources";
 
 /**
- * Load packages/web/.env into process.env (without overriding existing vars).
+ * Load packages/web_legacy/.env into process.env (without overriding existing vars).
  * Runner scripts execute from repo root, so Next.js auto-loading doesn't apply.
  */
 function loadWebEnv(): void {
-  const envPath = resolve("packages/web/.env");
+  const envPath = resolve("packages/web_legacy/.env");
   if (!existsSync(envPath)) return;
 
   const content = readFileSync(envPath, "utf-8");
@@ -85,7 +85,7 @@ export function cleanupBuildDir(dir: string): void {
 export async function buildE2eEnv(options: {
   distDir: string;
 }): Promise<Record<string, string | undefined> | null> {
-  // Load packages/web/.env since runner scripts execute from repo root
+  // Load packages/web_legacy/.env since runner scripts execute from repo root
   loadWebEnv();
 
   const testDbId = process.env.CF_D1_TEST_DATABASE_ID;

@@ -12,7 +12,7 @@ import { type Subprocess, spawn } from "bun";
 import { buildE2eEnv, cleanupBuildDir, ensurePortFree } from "./e2e-utils";
 
 const E2E_UI_PORT = process.env.E2E_UI_PORT || "27019";
-const E2E_DIST_DIR = "packages/web/.next-e2e-ui";
+const E2E_DIST_DIR = "packages/web_legacy/.next-e2e-ui";
 
 let serverProcess: Subprocess | null = null;
 
@@ -65,7 +65,7 @@ async function main() {
 
   console.log("🌐 Starting E2E UI server on port", E2E_UI_PORT, "...");
   serverProcess = spawn(["bun", "run", "next", "dev", "-p", E2E_UI_PORT], {
-    cwd: "packages/web",
+    cwd: "packages/web_legacy",
     env: e2eEnv,
     stdout: "pipe",
     stderr: "pipe",
@@ -91,7 +91,7 @@ async function main() {
       ...process.argv.slice(2),
     ],
     {
-      cwd: "packages/web",
+      cwd: "packages/web_legacy",
       stdout: "inherit",
       stderr: "inherit",
       env: {

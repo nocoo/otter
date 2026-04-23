@@ -27,7 +27,7 @@ binding = "ICONS"
 bucket_name = "zhe"
 
 # SPA assets — fall through to the Vite build output for non-/api/* paths.
-# The directory is populated by `bun run --cwd packages/web build`.
+# The directory is populated by `bun run --cwd packages/web build` (new Vite SPA).
 [assets]
 directory = "../web/dist"
 not_found_handling = "single-page-application"

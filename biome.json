@@ -9,8 +9,8 @@
     "includes": [
       "packages/*/src/**",
       "!**/*.css",
-      "packages/web/e2e/**",
-      "packages/web/test-support/**",
+      "packages/web_legacy/e2e/**",
+      "packages/web_legacy/test-support/**",
       "scripts/**",
       "vitest.config.ts"
     ]
@@ -114,7 +114,7 @@
   },
   "overrides": [
     {
-      "includes": ["packages/web/src/components/ui/**"],
+      "includes": ["packages/web_legacy/src/components/ui/**"],
       "linter": {
         "rules": {
           "a11y": "off",
@@ -150,7 +150,7 @@
       }
     },
     {
-      "includes": ["packages/web/e2e/**"],
+      "includes": ["packages/web_legacy/e2e/**"],
       "linter": {
         "rules": {
           "performance": {

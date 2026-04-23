@@ -12,7 +12,7 @@ import { type Subprocess, spawn } from "bun";
 import { buildE2eEnv, cleanupBuildDir, ensurePortFree } from "./e2e-utils";
 
 const E2E_PORT = process.env.E2E_PORT || "17019";
-const E2E_DIST_DIR = "packages/web/.next-e2e";
+const E2E_DIST_DIR = "packages/web_legacy/.next-e2e";
 
 let webProcess: Subprocess | null = null;
 
@@ -65,7 +65,7 @@ async function main() {
 
   console.log("🌐 Starting web server on port", E2E_PORT, "...");
   webProcess = spawn(["bun", "run", "next", "dev", "-p", E2E_PORT], {
-    cwd: "packages/web",
+    cwd: "packages/web_legacy",
     env: e2eEnv,
     stdout: "pipe",
     stderr: "pipe",

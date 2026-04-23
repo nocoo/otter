@@ -1,5 +1,5 @@
 {
-  "name": "@otter/web",
+  "name": "@otter/web-legacy",
   "version": "1.4.1",
   "private": true,
   "scripts": {

@@ -4,7 +4,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     alias: {
-      "@": resolve(__dirname, "packages/web/src"),
+      "@": resolve(__dirname, "packages/web_legacy/src"),
     },
   },
   test: {
