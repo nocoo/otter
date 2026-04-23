@@ -5,6 +5,17 @@
     <link rel="icon" type="image/png" href="/logo-24.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Otter</title>
+    <script>
+      // Sync theme before React mounts to avoid FOUC.
+      (function () {
+        try {
+          var stored = localStorage.getItem("theme");
+          var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var dark = stored === "dark" || (stored !== "light" && prefersDark);
+          document.documentElement.classList.toggle("dark", dark);
+        } catch (_) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
