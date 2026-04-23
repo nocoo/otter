@@ -11,8 +11,6 @@
     "./lib/snapshot-collectors": "./src/lib/snapshot-collectors.ts"
   },
   "scripts": {
-    "dev": "bun --watch src/server.ts",
-    "start": "bun src/server.ts",
     "build": "tsc",
     "lint": "biome check --error-on-warnings",
     "typecheck": "tsc --noEmit"
@@ -20,7 +18,6 @@
   "dependencies": {
     "@auth/core": "0.41.0",
     "@aws-sdk/client-s3": "^3.1003.0",
-    "@hono/node-server": ">=1.19.13",
     "hono": ">=4.12.14",
     "zod": "^4.3.6"
   },

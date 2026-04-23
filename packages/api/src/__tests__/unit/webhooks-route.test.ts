@@ -39,7 +39,10 @@ vi.mock("../../lib/worker-client.js", () => ({
   },
 }));
 
-import app from "../../app.js";
+import { createApp } from "../../app.js";
+
+const app = createApp();
+
 import { createWebhook, listWebhooks, WorkerError } from "../../lib/worker-client.js";
 
 const { __setUser } = (await import("../../middleware/auth.js")) as any;

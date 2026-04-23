@@ -8,7 +8,10 @@ vi.mock("../../lib/version.js", () => ({
   APP_VERSION: "1.5.1",
 }));
 
-import app from "../../app.js";
+import { createApp } from "../../app.js";
+
+const app = createApp();
+
 import { queryFirst } from "../../lib/cf/d1.js";
 
 const mockQueryFirst = vi.mocked(queryFirst);
