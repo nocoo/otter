@@ -219,6 +219,8 @@ Otter 对敏感数据采取严格保护：
 | [安全机制](docs/05-security.md) | 四层安全体系、脱敏模式、审计清单 |
 | [Dashboard](docs/06-dashboard.md) | 服务端设计、DB Schema、API 路由 |
 | [采集器增强计划](docs/07-collector-enhancement-plan.md) | P0/P1/P2 采集器增强与执行进度 |
+| [Otter Worker 迁移](docs/08-worker-migration.md) | 旧 worker 回迁 + dual-stack 路由设计 |
+| [Vite SPA + 单 Worker 迁移计划](docs/09-vite-spa-migration.md) | 当前迁移计划 + 16 步执行进度看板 |
 
 ## License
 
