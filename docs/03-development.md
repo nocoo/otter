@@ -29,7 +29,7 @@ bun run test
 | 命令 | 说明 |
 |------|------|
 | `bun run build` | 构建所有 packages（TypeScript → dist/） |
-| `bun run dev` | 并行启动 web (`:7019`) + api (`:7020`)（concurrently） |
+| `bun run dev` | 启动 Next.js dev server（`:7019`，api 嵌入同一进程） |
 | `bun run test` | 运行全部单元测试（Vitest） |
 | `bun run test:watch` | 监听模式运行测试 |
 | `bun run test:coverage` | 运行测试并生成覆盖率报告 |
@@ -92,14 +92,11 @@ packages/
             └── utils/
 ```
 
-## 启动 web + api
+## 启动 web (含嵌入式 api)
 
-`bun run dev` 通过 `concurrently` 同时拉起：
+`bun run dev` 启动 Next.js dev server（端口 7019），`packages/api` 作为纯逻辑库被 `app/api/[...slug]/route.ts` 在同一进程内 import 并通过 `app.fetch()` 调用——不再有独立的 api 进程或端口。
 
-- **web**：Next.js dev server（`packages/web`，端口 7019）
-- **api**：Hono dev server（`packages/api`，端口 7020，`bun --watch`）
-
-浏览器访问 `http://localhost:7019`。前端 `fetch("/api/snapshots")` 等请求由 Next.js `rewrites()` 反代到 api 的 `/v1/...`，cookie 自动跟随同域请求。两端共享同一个 `AUTH_SECRET` 环境变量解码 next-auth JWT。
+浏览器访问 `http://localhost:7019`。前端 `fetch("/api/snapshots")` 等请求被 catch-all 路由捕获，路径前缀 `/api/` 重写为 `/v1/`，再交给 Hono app 处理；cookie 由 next-auth 颁发并随同域请求自动跟随。需在 `.env` 中设置 `AUTH_SECRET` 以解码 JWT。
 
 ## Git Hooks
 

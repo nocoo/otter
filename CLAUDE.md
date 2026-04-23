@@ -24,6 +24,9 @@ CLI package `@nocoo/otter` is published to npm. Steps to release a new version:
 
 ## Retrospective
 
+- **`packages/api` is a pure logic library, not a standalone server**: It exports `createApp()` (Hono app factory) plus middleware/lib utilities. The web package embeds it via `app/api/[...slug]/route.ts` which rewrites `/api/*` to `/v1/*` and calls `app.fetch()` in-process. Single container, single Node process. Future Vite + cf worker migration just feeds the same `createApp()` to a worker entry — the api source stays put.
+- **Auth.js chunks session cookies > 4KB into `.0/.1/...` suffixed cookies**: The auth middleware must scan all cookies starting with the base name, sort by numeric suffix, and concatenate before calling `decode()`. Reading only the bare cookie name returns 401 for any large session (e.g. with extra OAuth claims).
+- **Next.js Turbopack does NOT accept `./foo.js` for a `./foo.ts` file**: Unlike `tsc`/Node ESM resolution, Turbopack uses webpack-style resolution. Strip `.js` extensions from intra-package imports when the package is consumed by Next.js.
 - **Railway + Next.js standalone containers require `HOSTNAME=0.0.0.0`**: Next.js standalone server defaults to binding `localhost`, which is inaccessible from Railway's reverse proxy. Must set `HOSTNAME=0.0.0.0` env var so it listens on all interfaces.
 - **Next.js 16 Turbopack monorepo builds require `turbopack.root`**: In Docker builds where the workspace root differs from the Next.js project dir, Turbopack cannot infer the root. Must set `turbopack: { root: path.join(__dirname, "../..") }` in `next.config.ts`.
 - **Railway `dockerfilePath` format**: Use `./Dockerfile` (with `./` prefix), not bare `Dockerfile`.

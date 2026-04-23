@@ -32,17 +32,18 @@ otter/
 │   │       ├── snapshot/      # 快照构建器
 │   │       ├── uploader/      # Webhook 上传
 │   │       └── utils/         # 工具函数（凭据脱敏等）
-│   ├── api/           # @otter/api — Hono BFF 服务（端口 7020）
+│   ├── api/           # @otter/api — 纯逻辑包（无独立进程）
 │   │   └── src/
-│   │       ├── server.ts      # @hono/node-server 入口
-│   │       ├── app.ts         # Hono app 装配（vitest 直测）
-│   │       ├── routes/        # /v1/snapshots, /v1/webhooks, /v1/live
-│   │       ├── middleware/    # auth：解 next-auth JWT cookie + E2E bypass
-│   │       └── lib/           # worker-client / cf/d1 / snapshot-collectors（导出供 web 复用）
-│   └── web/           # @otter/web — Next.js UI（端口 7019）
+│   │       ├── index.ts        # 入口（导出 createApp / 中间件 / lib）
+│   │       ├── app.ts          # Hono app 装配（vitest 直测）
+│   │       ├── routes/         # /v1/snapshots, /v1/webhooks, /v1/live
+│   │       ├── middleware/     # auth：解 next-auth JWT cookie + 分片重组 + E2E bypass
+│   │       └── lib/            # worker-client / cf/d1 / snapshot-collectors
+│   └── web/           # @otter/web — Next.js UI + BFF 宿主（端口 7019）
 │       └── src/
 │           ├── app/                       # App Router 页面
-│           ├── app/api/auth/[...nextauth] # next-auth 路由（仅此一个 API route）
+│           ├── app/api/[...slug]/route.ts # 嵌入 Hono：转发 /api/* → app.fetch /v1/*
+│           ├── app/api/auth/[...nextauth] # next-auth 路由（保留在 web）
 │           ├── components/                # React 组件
 │           ├── auth.ts                    # next-auth v5 配置
 │           └── proxy.ts                   # 页面级 middleware
@@ -116,9 +117,11 @@ CLI 包内还定义了以下类型（`packages/cli/src/storage/local.ts`）：
 
 ## Web ↔ API 通信
 
-浏览器仅访问 web 同域 `/api/...`；Next.js `rewrites()` 把 `/api/snapshots`、`/api/webhooks`、`/api/live` 反代到 api 服务的 `/v1/...`（默认 `http://localhost:7020`，可通过 `API_INTERNAL_URL` 覆盖）。`/api/auth/*` 不走 rewrites，留给 next-auth。
+`packages/api` 是**纯逻辑包**（不启进程），通过 Next.js catch-all `app/api/[...slug]/route.ts` 嵌入 web 进程。请求路径 `/api/snapshots/...` 在路由内重写为 `/v1/snapshots/...` 后调用 `app.fetch(request)`，由 Hono 在同一 Node 进程内处理。`/api/auth/*` 由专用 next-auth 路由抢占，不会落到 catch-all。
 
-鉴权解耦：next-auth 仍由 web 颁发 JWT cookie；api 用 `@auth/core/jwt.decode` 共享 `AUTH_SECRET` 解码同一个 cookie。无需 CORS、无需 Bearer token。
+部署只跑一个容器 / 一个 Node 进程；未来切 Vite + Cloudflare Worker 时，只需把同一 `createApp()` 喂给 worker 入口即可，业务逻辑零改动。
+
+鉴权：next-auth 颁发的 JWT 以 cookie 形式下发；中间件读 `authjs.session-token`（生产为 `__Secure-` 前缀），自动重组 Auth.js 大于 4KB 时切出的 `.0/.1/...` 分片，再用共享 `AUTH_SECRET` 调 `@auth/core/jwt.decode` 解码。无需 CORS、无需 Bearer token。
 
 ## 相关文档
 
