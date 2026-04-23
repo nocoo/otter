@@ -28,8 +28,11 @@ bun run test
 
 | 命令 | 说明 |
 |------|------|
-| `bun run build` | 构建所有 packages（TypeScript → dist/） |
-| `bun run dev` | 启动 Next.js dev server（`:7019`，api 嵌入同一进程） |
+| `bun run build` | 构建 web SPA（vite，输出到 `packages/web/dist`） |
+| `bun run dev` | 启动新 Vite SPA dev server（`:7019`，自带 `/api → :7020` proxy） |
+| `bun run dev:worker` | 启动 wrangler dev (`:7020`)，挂 `/api/*` + 老 `/v1/*` 路由（建议另开终端） |
+| `bun run dev:legacy` | 启动冻结的 Next.js `web_legacy` (`:7019`)，仅用于回滚对照 |
+| `bun run deploy` / `deploy:test` | 先 vite build，再 `wrangler deploy [--env test]` |
 | `bun run test` | 运行全部单元测试（Vitest） |
 | `bun run test:watch` | 监听模式运行测试 |
 | `bun run test:coverage` | 运行测试并生成覆盖率报告 |

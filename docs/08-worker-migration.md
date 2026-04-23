@@ -812,3 +812,47 @@ describe("Ingest API", () => {
 - [ ] 5.2 更新环境变量文档
 - [ ] 5.3 更新架构文档
 - [ ] 5.4 发布新版 CLI
+
+---
+
+## 2026-04 增补：Vite SPA + 单 Worker 架构（CF Access）
+
+> 本节追加自后续一轮迁移，与上文「Next.js 直连 → Worker 中转」方案叠加但不替换。
+
+### 现状
+
+- `packages/web` = 新 Vite 6 SPA（React 19 + react-router 7 + SWR + Tailwind v4）
+- `packages/web_legacy` = 冻结的 Next.js 16 应用（next-auth + Google OAuth），仅作回滚兜底
+- `packages/worker` = 单 Cloudflare Worker，dual-stack：
+  - `/api/*` → 新栈：D1 binding driver + CF Access JWT (jose) + Bearer token (api_tokens 表)
+  - `/v1/*`、`/health`、`/ingest/*` → 老栈：原 apiKeyMiddleware + envGuardMiddleware（兼容 web_legacy）
+  - 其它路径 → `[assets]` SPA fallback (`packages/web/dist`)，配合 `not_found_handling = "single-page-application"` + `run_worker_first = ["/api/*", "/v1/*", "/health", "/ingest/*"]`
+
+### 鉴权
+
+- 浏览器：CF Access SSO 注入 `Cf-Access-Jwt-Assertion`，`accessAuth` 中间件用 `jose.createRemoteJWKSet` + `jwtVerify` 验签，set `accessEmail` 到 Hono context；失败/缺失则 fall through 让 `apiKeyAuth` 接管（不直接 401）
+- CLI：`Authorization: Bearer otk_<base64url-32>`，`apiKeyAuth` 调 `verifyApiToken`（SHA-256 hash 比对，含 `expires_at` 检查），mint 流程走 `/api/auth/cli/{start,callback}`
+- 本地：`isLocalhost(c)` 在缺 Bearer 时直接把 `accessEmail` 设为 `dev@localhost`，让 `wrangler dev --local` 不需要伪造 JWT
+
+### DbDriver 抽象
+
+`@otter/api/lib/db/driver.ts` 定义 `query / queryFirst / execute / batch` 接口，两套实现：
+- `d1-binding.ts`：worker 用，零网络开销（`c.env.DB.prepare().bind()`）
+- `d1-http.ts`：web_legacy 用，走 Cloudflare D1 REST API
+
+`snapshot-repo.ts` / `webhook-repo.ts` / `api-token-repo.ts` 接 `DbDriver` 参数，与运行时无关。
+
+### 测试
+
+- worker 新 `/api/*` 路由：`packages/worker/src/__tests__/api-snapshots.test.ts`，15 个用例，用 in-memory DbDriver + 假 R2Bucket，跳过 miniflare D1 migration
+- api 层新增 49 个单测覆盖 access-auth / api-key-auth / me / auth-cli / api-token-repo / is-localhost
+- 老 web_legacy 单测和 4+6 个 E2E spec 全部保留在原位，仍用 vitest `@` 别名指向 `packages/web_legacy/src`
+
+### 还没做（留给下一轮）
+
+- D1 实际跑 `0002_api_tokens.sql` migration（目前只在仓库里）
+- `wrangler.toml` 写入 `CF_ACCESS_TEAM_DOMAIN` / `CF_ACCESS_AUD` 真实值
+- 新 web 复刻全部 dashboard / charts / shadcn 组件（当前只有占位骨架）
+- CLI 切到 Bearer token 流程（当前 CLI 仍走 webhook URL token）
+- web_legacy 内的 `/v1/*` E2E migration 到新 worker
+- 删除 `packages/api/src/lib/worker-client.ts`（web_legacy 仍依赖）

@@ -34,19 +34,17 @@ otter/
 │   │       └── utils/         # 工具函数（凭据脱敏等）
 │   ├── api/           # @otter/api — 纯逻辑包（无独立进程）
 │   │   └── src/
-│   │       ├── index.ts        # 入口（导出 createApp / 中间件 / lib）
-│   │       ├── app.ts          # Hono app 装配（vitest 直测）
-│   │       ├── routes/         # /v1/snapshots, /v1/webhooks, /v1/live
-│   │       ├── middleware/     # auth：解 next-auth JWT cookie + 分片重组 + E2E bypass
-│   │       └── lib/            # worker-client / cf/d1 / snapshot-collectors
-│   └── web/           # @otter/web — Next.js UI + BFF 宿主（端口 7019）
-│       └── src/
-│           ├── app/                       # App Router 页面
-│           ├── app/api/[...slug]/route.ts # 嵌入 Hono：转发 /api/* → app.fetch /v1/*
-│           ├── app/api/auth/[...nextauth] # next-auth 路由（保留在 web）
-│           ├── components/                # React 组件
-│           ├── auth.ts                    # next-auth v5 配置
-│           └── proxy.ts                   # 页面级 middleware
+│   │       ├── index.ts            # 入口（导出 createApp / 中间件 / lib）
+│   │       ├── app.ts              # Hono app 装配（vitest 直测）
+│   │       ├── routes/             # /v1/snapshots, /v1/webhooks, /v1/live, /me, /auth/cli
+│   │       ├── middleware/         # auth (next-auth, web_legacy 用) + access-auth (CF Access JWT) + api-key-auth (Bearer)
+│   │       └── lib/                # db/{driver,d1-binding,d1-http} + snapshot-repo + webhook-repo + api-token-repo
+│   ├── web/           # @otter/web — Vite 6 SPA（端口 7019，本轮新建）
+│   │   └── src/                    # React 19 + react-router 7 + SWR + Tailwind v4
+│   ├── web_legacy/    # @otter/web-legacy — 冻结的 Next.js 16 + next-auth 应用，回滚兜底
+│   │   └── (内容不变，bun run dev:legacy 仍可起)
+│   └── worker/        # @otter/worker — Cloudflare Worker（同时托管 /api/* + SPA 静态资源）
+│       └── src/                    # Hono dual-stack: /api/* 走 D1 binding + CF Access; /v1/* 兼容 web_legacy
 ├── docs/              # 项目文档
 ├── vitest.config.ts   # 统一测试配置
 ├── tsconfig.json      # 基础 TypeScript 配置
