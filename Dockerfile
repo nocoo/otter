@@ -1,8 +1,9 @@
 # --- Stage 1: Install dependencies ---
 FROM oven/bun:1 AS deps
 WORKDIR /app
-COPY package.json ./
+COPY package.json bun.lock ./
 COPY packages/core/package.json ./packages/core/
+COPY packages/api/package.json ./packages/api/
 COPY packages/web/package.json ./packages/web/
 RUN bun install
 
@@ -10,8 +11,6 @@ RUN bun install
 FROM oven/bun:1 AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages/core/node_modules ./packages/core/node_modules
-COPY --from=deps /app/packages/web/node_modules ./packages/web/node_modules
 COPY . .
 RUN bun run --cwd packages/web build
 
@@ -22,7 +21,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=7019
 
-# Copy built assets and dependencies
+# Next.js standalone output already inlines @otter/api source via Turbopack
+# tracing — we only need the standalone server, static assets, and public dir.
 COPY --from=builder /app/packages/web/.next/standalone ./
 COPY --from=builder /app/packages/web/.next/static ./packages/web/.next/static
 COPY --from=builder /app/packages/web/public ./packages/web/public
