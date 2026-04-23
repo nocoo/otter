@@ -55,8 +55,9 @@ export async function accessAuth(c: Context<AppEnv>, next: Next) {
       audience: aud,
     });
     c.set("accessAuthenticated", true);
-    if (typeof payload.email === "string") {
-      c.set("accessEmail", payload.email);
+    const email = (payload as { email?: unknown }).email;
+    if (typeof email === "string") {
+      c.set("accessEmail", email);
     }
   } catch {
     // verification failed — let apiKeyAuth try

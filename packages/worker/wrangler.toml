@@ -1,6 +1,7 @@
 name = "otter"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
 
 # --- 生产环境 (默认) ---
 [vars]
@@ -8,6 +9,9 @@ ENVIRONMENT = "production"
 D1_DATABASE_NAME = "otter-db"
 R2_BUCKET_NAME = "otter-snapshots"
 ICON_PREFIX = "apps/otter"
+# CF Access — set via `wrangler secret put` or here once known
+# CF_ACCESS_TEAM_DOMAIN = "nocoo.cloudflareaccess.com"
+# CF_ACCESS_AUD = "..."
 
 [[d1_databases]]
 binding = "DB"
@@ -22,8 +26,15 @@ bucket_name = "otter-snapshots"
 binding = "ICONS"
 bucket_name = "zhe"
 
+# SPA assets — fall through to the Vite build output for non-/api/* paths.
+# The directory is populated by `bun run --cwd packages/web build`.
+[assets]
+directory = "../web/dist"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*", "/v1/*", "/health", "/ingest/*"]
+
 # 生产环境 secrets (通过 wrangler secret put 设置):
-# - API_KEY: Next.js 调用 Worker 的密钥
+# - API_KEY: legacy /v1/* 密钥（web_legacy 兼容期）
 
 # --- 测试环境 (CI/E2E) ---
 [env.test]

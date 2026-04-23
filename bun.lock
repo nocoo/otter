@@ -84,7 +84,9 @@
       "name": "@otter/worker",
       "version": "0.1.0",
       "dependencies": {
+        "@otter/api": "workspace:*",
         "hono": "^4.7.10",
+        "jose": "^6.0.11",
       },
       "devDependencies": {
         "@cloudflare/vitest-pool-workers": "^0.8.71",

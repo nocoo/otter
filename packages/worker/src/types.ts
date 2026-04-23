@@ -21,6 +21,10 @@ export interface Env {
   R2_BUCKET_NAME: string;
   // biome-ignore lint/style/useNamingConvention: env var naming
   ICON_PREFIX: string;
+  // biome-ignore lint/style/useNamingConvention: env var naming
+  CF_ACCESS_TEAM_DOMAIN?: string;
+  // biome-ignore lint/style/useNamingConvention: env var naming
+  CF_ACCESS_AUD?: string;
 }
 
 /** Hono context variables */
