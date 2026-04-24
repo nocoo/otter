@@ -23,6 +23,7 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 7019,
       strictPort: true,
+      allowedHosts: ["otter.dev.hexly.ai", ".dev.hexly.ai"],
       proxy: {
         "/api": {
           target,
