@@ -19,7 +19,7 @@ const WEB_DIR = resolve(REPO_ROOT, "packages/web");
 const WORKER_DIR = resolve(REPO_ROOT, "packages/worker");
 const PERSIST_DIR = ".wrangler/state-e2e-spa";
 const SCHEMA_FILES = [
-  resolve(REPO_ROOT, "packages/web_legacy/migrations/0001_init.sql"),
+  resolve(WORKER_DIR, "migrations/0001_init.sql"),
   resolve(WORKER_DIR, "migrations/0002_api_tokens.sql"),
 ];
 const HEALTH_TIMEOUT_MS = 60_000;
