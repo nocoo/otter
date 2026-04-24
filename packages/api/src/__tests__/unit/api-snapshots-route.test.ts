@@ -399,4 +399,47 @@ describe("createApiWebhooksRoute", () => {
     const res = await app.request("/webhooks/w1", { method: "DELETE" });
     expect(res.status).toBe(404);
   });
+
+  it("returns 401 from POST /webhooks without auth", async () => {
+    const app = buildApp({
+      driver: memoryDriver(state),
+      bucket: fakeBucket().bucket,
+      email: null,
+    });
+    const res = await app.request("/webhooks", { method: "POST", body: "{}" });
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 401 from GET /webhooks/:id without auth", async () => {
+    const app = buildApp({
+      driver: memoryDriver(state),
+      bucket: fakeBucket().bucket,
+      email: null,
+    });
+    const res = await app.request("/webhooks/w1");
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 401 from PATCH /webhooks/:id without auth", async () => {
+    const app = buildApp({
+      driver: memoryDriver(state),
+      bucket: fakeBucket().bucket,
+      email: null,
+    });
+    const res = await app.request("/webhooks/w1", {
+      method: "PATCH",
+      body: JSON.stringify({ label: "x" }),
+    });
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 401 from DELETE /webhooks/:id without auth", async () => {
+    const app = buildApp({
+      driver: memoryDriver(state),
+      bucket: fakeBucket().bucket,
+      email: null,
+    });
+    const res = await app.request("/webhooks/w1", { method: "DELETE" });
+    expect(res.status).toBe(401);
+  });
 });
