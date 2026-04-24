@@ -1,23 +1,23 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  banner,
+  blank,
+  box,
+  error,
+  errorBox,
+  formatDate,
   formatDuration,
   formatSize,
-  formatDate,
+  info,
+  item,
+  S,
+  statusLine,
+  step,
+  success,
   table,
   tree,
-  banner,
-  step,
-  item,
-  statusLine,
-  box,
-  errorBox,
-  blank,
-  info,
   warn,
-  error,
-  success,
-  S,
-} from "../src/ui";
+} from "../../ui";
 
 describe("ui", () => {
   // --- formatDuration ---
@@ -85,10 +85,7 @@ describe("ui", () => {
     });
 
     it("renders header, separator, and data rows", () => {
-      const columns = [
-        { label: "Name" },
-        { label: "Size", align: "right" as const },
-      ];
+      const columns = [{ label: "Name" }, { label: "Size", align: "right" as const }];
       const rows = [
         ["foo.txt", "1.2 KB"],
         ["bar.json", "512 B"],
@@ -122,11 +119,7 @@ describe("ui", () => {
     });
 
     it("renders tree with correct branch symbols", () => {
-      const result = tree([
-        { text: "first" },
-        { text: "second" },
-        { text: "last" },
-      ]);
+      const result = tree([{ text: "first" }, { text: "second" }, { text: "last" }]);
       const lines = result.split("\n");
       expect(lines).toHaveLength(3);
       // First two use treeItem (├──), last uses treeLast (└──)
@@ -162,7 +155,7 @@ describe("ui", () => {
     let logSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
-      logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
     });
 
     it("banner prints version", () => {
@@ -272,7 +265,7 @@ describe("ui", () => {
     it("box calls consola.box", async () => {
       // Import consola from cli-base (same module as ui.ts uses)
       const { consola } = await import("@nocoo/cli-base");
-      const boxSpy = vi.spyOn(consola, "box").mockImplementation(() => {});
+      const boxSpy = vi.spyOn(consola, "box").mockImplementation(() => undefined);
 
       box({ title: "Summary", lines: ["Line 1", "Line 2"] });
       expect(boxSpy).toHaveBeenCalledOnce();
@@ -282,7 +275,7 @@ describe("ui", () => {
     it("errorBox calls consola.box with red style", async () => {
       // Import consola from cli-base (same module as ui.ts uses)
       const { consola } = await import("@nocoo/cli-base");
-      const boxSpy = vi.spyOn(consola, "box").mockImplementation(() => {});
+      const boxSpy = vi.spyOn(consola, "box").mockImplementation(() => undefined);
 
       errorBox("Error", ["Something failed"]);
       expect(boxSpy).toHaveBeenCalledOnce();
