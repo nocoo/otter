@@ -8,7 +8,6 @@ export default defineWorkersConfig({
         wrangler: { configPath: "./wrangler.toml" },
         miniflare: {
           bindings: {
-            API_KEY: "test-api-key",
             ENVIRONMENT: "test",
             D1_DATABASE_NAME: "otter-db-test",
             R2_BUCKET_NAME: "otter-snapshots-test",

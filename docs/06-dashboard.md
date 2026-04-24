@@ -166,8 +166,6 @@ zhe                            # 共享 icons bucket
 | POST | `/ingest/{token}` | CLI 上传快照入口（gzip JSON） |
 | POST | `/ingest/{token}/icons` | CLI 上传应用图标（base64 PNG） |
 | GET | `/health` | Worker 端 health |
-| GET | `/v1/snapshots` | 老 HTTP-D1 调用方兼容 |
-| GET | `/v1/webhooks` | 同上 |
 
 ### Webhook 接收流程（CLI → Worker）
 

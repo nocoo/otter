@@ -12,8 +12,6 @@ export interface Env {
 
   // Environment variables (SCREAMING_SNAKE_CASE is standard for env vars)
   // biome-ignore lint/style/useNamingConvention: env var naming
-  API_KEY: string;
-  // biome-ignore lint/style/useNamingConvention: env var naming
   ENVIRONMENT: "production" | "staging" | "test";
   // biome-ignore lint/style/useNamingConvention: env var naming
   D1_DATABASE_NAME: string;
@@ -27,7 +25,5 @@ export interface Env {
   CF_ACCESS_AUD?: string;
 }
 
-/** Hono context variables */
-export interface Variables {
-  userId: string;
-}
+/** Hono context variables (currently unused; kept for future per-request state). */
+export type Variables = Record<string, never>;

@@ -39,7 +39,7 @@ not_found_handling = "single-page-application"
 run_worker_first = ["/api/*", "/v1/*", "/health", "/ingest/*"]
 
 # 生产环境 secrets (通过 wrangler secret put 设置):
-# - API_KEY: legacy /v1/* 密钥
+# - (无；CF Access JWT + Bearer api_token 都在 D1 中验证)
 
 # --- 测试环境 (CI/E2E) ---
 [env.test]
