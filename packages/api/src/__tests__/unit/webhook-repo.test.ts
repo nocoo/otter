@@ -91,6 +91,13 @@ describe("webhook-repo", () => {
     expect(update?.params).toEqual(["Y", 0, "w1"]);
   });
 
+  it("updateWebhook with isActive=true encodes 1", async () => {
+    const { driver, calls } = createMockDriver();
+    await updateWebhook(driver, "w1", { isActive: true });
+    const update = calls.find((c) => c.method === "execute");
+    expect(update?.params).toEqual([1, "w1"]);
+  });
+
   it("updateWebhook with no fields returns null without executing", async () => {
     const { driver, calls } = createMockDriver();
     const row = await updateWebhook(driver, "w1", {});

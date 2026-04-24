@@ -75,4 +75,30 @@ describe("/api/me", () => {
     );
     expect(await r.json()).toEqual({ email: null, name: null, authenticated: false });
   });
+
+  it("uses explicit JWT payload.name when present", async () => {
+    const app = makeApp();
+    const payload = b64url(JSON.stringify({ email: "e@x", name: "Explicit Name" }));
+    const r = await app.fetch(
+      new Request("https://x/api/me", {
+        headers: { "Cf-Access-Jwt-Assertion": `h.${payload}.s` },
+      }),
+    );
+    expect(await r.json()).toEqual({
+      email: "e@x",
+      name: "Explicit Name",
+      authenticated: true,
+    });
+  });
+
+  it("returns null name and email when JWT payload empty", async () => {
+    const app = makeApp();
+    const payload = b64url(JSON.stringify({}));
+    const r = await app.fetch(
+      new Request("https://x/api/me", {
+        headers: { "Cf-Access-Jwt-Assertion": `h.${payload}.s` },
+      }),
+    );
+    expect(await r.json()).toEqual({ email: null, name: null, authenticated: true });
+  });
 });

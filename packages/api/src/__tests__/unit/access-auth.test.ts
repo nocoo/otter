@@ -109,6 +109,17 @@ describe("accessAuth", () => {
     expect(json.auth).toBe(false);
   });
 
+  it("falls through when only CF_ACCESS_TEAM_DOMAIN set (missing AUD)", async () => {
+    const app = makeApp({ CF_ACCESS_TEAM_DOMAIN: "team.cloudflareaccess.com" });
+    const r = await app.fetch(
+      new Request("https://prod.example.com/api/me", {
+        headers: { host: "prod.example.com", "Cf-Access-Jwt-Assertion": "jwt" },
+      }),
+    );
+    const json = (await r.json()) as { auth: boolean };
+    expect(json.auth).toBe(false);
+  });
+
   it("falls through when no Cf-Access-Jwt-Assertion header on edge", async () => {
     const app = makeApp({
       CF_ACCESS_TEAM_DOMAIN: "team.cloudflareaccess.com",

@@ -255,6 +255,13 @@ describe("createApiSnapshotsRoute", () => {
     const res = await app.request("/snapshots/s2", { method: "DELETE" });
     expect(res.status).toBe(404);
   });
+
+  it("forwards limit and before query params to listSnapshots", async () => {
+    const driver = memoryDriver(state);
+    const app = buildApp({ driver, bucket: bucketPair.bucket, email: "alice@x" });
+    const res = await app.request("/snapshots?limit=5&before=12345");
+    expect(res.status).toBe(200);
+  });
 });
 
 describe("createApiWebhooksRoute", () => {
@@ -318,6 +325,18 @@ describe("createApiWebhooksRoute", () => {
     });
     const res = await app.request("/webhooks/w1");
     expect(res.status).toBe(404);
+  });
+
+  it("get :id returns webhook when owner", async () => {
+    const app = buildApp({
+      driver: memoryDriver(state),
+      bucket: fakeBucket().bucket,
+      email: "alice@x",
+    });
+    const res = await app.request("/webhooks/w1");
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { webhook: { id: string } };
+    expect(body.webhook.id).toBe("w1");
   });
 
   it("patch :id updates owner's webhook", async () => {
