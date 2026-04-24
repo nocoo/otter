@@ -11,6 +11,7 @@
       "!**/*.css",
       "packages/web_legacy/e2e/**",
       "packages/web_legacy/test-support/**",
+      "packages/web/e2e/**",
       "scripts/**",
       "vitest.config.ts"
     ]
@@ -163,7 +164,7 @@
       }
     },
     {
-      "includes": ["packages/web_legacy/e2e/**"],
+      "includes": ["packages/web_legacy/e2e/**", "packages/web/e2e/**"],
       "linter": {
         "rules": {
           "performance": {

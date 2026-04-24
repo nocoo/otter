@@ -21,6 +21,7 @@
     "lint:biome:fix": "bunx biome check --write .",
     "test:e2e": "bun run scripts/run-e2e.ts",
     "test:e2e:ui": "bun run scripts/run-e2e-ui.ts",
+    "test:e2e:spa": "bun run --cwd packages/web playwright test --config e2e/playwright.config.ts",
     "prepare": "husky"
   },
   "lint-staged": {
