@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # Pre-commit: run independent stages in parallel and replay logs in order.
-# G1 (lint-staged Biome) + L1 (vitest+coverage) + tsc + gitleaks (staged).
+# G1 (lint-staged Biome) + L1 (vitest tests — coverage moved to pre-push) + tsc + gitleaks (staged).
 set -o pipefail
 
 TMPDIR_HOOK=$(mktemp -d -t otter-precommit-XXXXXX)
@@ -27,13 +27,13 @@ wait_stage() {
 }
 
 run_bg lint      bunx lint-staged
-run_bg unit_cov  bun run test:coverage
+run_bg unit      bun run test
 run_bg typecheck bun run lint
 run_bg gitleaks  gitleaks protect --staged --no-banner
 
 wait_stage lint
-wait_stage unit_cov
+wait_stage unit
 wait_stage typecheck
 wait_stage gitleaks
 
-echo "✅ pre-commit: G1 + L1 + tsc + gitleaks passed."
+echo "✅ pre-commit: G1 + L1 (tests, no coverage) + tsc + gitleaks passed."
