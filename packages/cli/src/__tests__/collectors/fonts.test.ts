@@ -28,4 +28,24 @@ describe("FontsCollector", () => {
       { name: "JetBrainsMono", meta: { type: "font", format: "ttf" } },
     ]);
   });
+
+  it("treats files with no extension as 'unknown' format and skips subdirectories", async () => {
+    await writeFile(join(tempHome, "Library", "Fonts", "NoExtension"), "fake");
+    await mkdir(join(tempHome, "Library", "Fonts", "subdir"));
+
+    const collector = new FontsCollector(tempHome);
+    const result = await collector.collect();
+
+    expect(result.lists).toEqual([
+      { name: "NoExtension", meta: { type: "font", format: "unknown" } },
+    ]);
+  });
+
+  it("silently ignores ENOENT", async () => {
+    await rm(join(tempHome, "Library", "Fonts"), { recursive: true });
+    const collector = new FontsCollector(tempHome);
+    const result = await collector.collect();
+    expect(result.errors).toEqual([]);
+    expect(result.lists).toEqual([]);
+  });
 });

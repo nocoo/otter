@@ -166,6 +166,37 @@ describe("uploadIconsToServer", () => {
     expect(result.error).toContain("timed out after 5000ms");
   });
 
+  it("falls back when 207 body omits stored field and uses default error message on 500 with no body.error", async () => {
+    const icons = await setupTestIcons(1);
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: async () => ({}),
+    });
+
+    const result = await uploadIconsToServer(icons, {
+      iconsUrl: "https://example.com/api/webhook/tok/icons",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("Server returned 500");
+  });
+
+  it("defaults stored to 0 when missing in 200 body", async () => {
+    const icons = await setupTestIcons(1);
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({}),
+    });
+
+    const result = await uploadIconsToServer(icons, {
+      iconsUrl: "https://example.com/api/webhook/tok/icons",
+    });
+    expect(result.success).toBe(true);
+    expect(result.stored).toBe(0);
+  });
+
   it("passes AbortSignal to fetch", async () => {
     const icons = await setupTestIcons(1);
     const mockFetch = vi.fn().mockResolvedValue({

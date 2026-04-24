@@ -1,5 +1,24 @@
 import type { Collector, CollectorResult } from "@otter/core";
 import { describe, expect, it, vi } from "vitest";
+
+// Mocks for node:os/child_process must be declared before importing builder.
+const platformMock = vi.fn(() => "darwin");
+const execSyncMock = vi.fn(() => "MyMac");
+vi.mock("node:os", async () => {
+  const actual = await vi.importActual<typeof import("node:os")>("node:os");
+  return {
+    ...actual,
+    platform: () => platformMock(),
+  };
+});
+vi.mock("node:child_process", async () => {
+  const actual = await vi.importActual<typeof import("node:child_process")>("node:child_process");
+  return {
+    ...actual,
+    execSync: (cmd: string, opts?: object) => execSyncMock(cmd, opts),
+  };
+});
+
 import { buildSnapshot } from "../../snapshot/builder.js";
 
 /** Create a mock collector for testing */
@@ -111,5 +130,25 @@ describe("buildSnapshot", () => {
 
     expect(parsed.version).toBe(1);
     expect(parsed.collectors[0].files[0].content).toBe("hello\nworld");
+  });
+
+  it("omits computerName on non-darwin platforms", async () => {
+    platformMock.mockReturnValue("linux");
+    try {
+      const snapshot = await buildSnapshot([]);
+      expect(snapshot.machine.computerName).toBeUndefined();
+      expect(snapshot.machine.platform).toBe("linux");
+    } finally {
+      platformMock.mockReturnValue("darwin");
+    }
+  });
+
+  it("omits computerName when scutil command fails", async () => {
+    platformMock.mockReturnValueOnce("darwin");
+    execSyncMock.mockImplementationOnce(() => {
+      throw new Error("scutil not found");
+    });
+    const snapshot = await buildSnapshot([]);
+    expect(snapshot.machine.computerName).toBeUndefined();
   });
 });

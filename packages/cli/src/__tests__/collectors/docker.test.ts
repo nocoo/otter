@@ -37,6 +37,24 @@ describe("DockerCollector", () => {
     expect(result.files[0].content).toContain("[REDACTED]");
   });
 
+  it("records error when docker context ls fails", async () => {
+    const collector = new DockerCollector(tempHome);
+    collector._execCommand = async () => {
+      throw new Error("docker not installed");
+    };
+    const result = await collector.collect();
+    expect(result.errors.some((e) => e.includes("docker not installed"))).toBe(true);
+  });
+
+  it("skips lines with no Name and tolerates malformed JSON", async () => {
+    const collector = new DockerCollector(tempHome);
+    collector._execCommand = async () =>
+      ['{"Current":true}', "not-json", '{"Name":"ok"}', "  "].join("\n");
+    const result = await collector.collect();
+    expect(result.lists.map((l) => l.name)).toEqual(["ok"]);
+    expect(result.lists[0].meta).toEqual({ type: "docker-context" });
+  });
+
   it("should parse docker contexts", async () => {
     const collector = new DockerCollector(tempHome);
     collector._execCommand = async () =>
