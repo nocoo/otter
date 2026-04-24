@@ -39,10 +39,10 @@ otter/
 │   │       ├── routes/             # live, me, auth-cli, api-snapshots, api-webhooks
 │   │       ├── middleware/         # access-auth (CF Access JWT) + api-key-auth (Bearer)
 │   │       └── lib/                # db/{driver,d1-binding,d1-http} + snapshot-repo + webhook-repo + api-token-repo
-│   ├── web/           # @otter/web — Vite 6 SPA (端口 7019)
+│   ├── web/           # @otter/web — Vite 7 SPA (端口 7019)
 │   │   └── src/                    # React 19 + react-router 7 + SWR + Tailwind v4
 │   └── worker/        # @otter/worker — 单一 Cloudflare Worker（custom domain otter.hexly.ai + workers.dev fallback）
-│       └── src/                    # Hono dual-stack: /api/* 走 D1 binding + CF Access; /v1/* 兼容老 HTTP-D1 调用方
+│       └── src/                    # Hono: /api/* 走 D1 binding + CF Access JWT/Bearer; /v1/live 公共探针
 ├── docs/              # 项目文档
 ├── vitest.config.ts   # 统一测试配置
 ├── tsconfig.json      # 基础 TypeScript 配置

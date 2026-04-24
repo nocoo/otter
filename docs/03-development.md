@@ -51,7 +51,7 @@ packages/
 ├── core/                          # @otter/core — 共享类型定义（零运行时）
 ├── cli/                           # @nocoo/otter — npm 发布的 CLI
 ├── api/                           # @otter/api — Hono createApp 工厂 + middleware/lib
-├── web/                           # @otter/web — Vite 6 SPA
+├── web/                           # @otter/web — Vite 7 SPA
 │   ├── src/                       #   React 19 + react-router 7 + SWR + Tailwind v4
 │   ├── e2e/                       #   Playwright specs
 │   ├── vite.config.ts             #   端口 7019，proxy /api → OTTER_API_URL
