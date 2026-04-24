@@ -69,6 +69,7 @@ describe("VSCodeCollector", () => {
     await writeFile(join(userDir, "settings.json"), '{"apiKey":"secret"}');
     await writeFile(join(userDir, "keybindings.json"), "[]");
     await writeFile(join(userDir, "snippets", "ts.json"), '{"Print":{}}');
+    await writeFile(join(userDir, "snippets", "react.code-snippets"), '{"Comp":{}}');
 
     const collector = new VSCodeCollector(tempHome);
     collector._execCommand = async () => "";
@@ -80,9 +81,31 @@ describe("VSCodeCollector", () => {
         join(userDir, "settings.json"),
         join(userDir, "keybindings.json"),
         join(userDir, "snippets", "ts.json"),
+        join(userDir, "snippets", "react.code-snippets"),
       ]),
     );
     const settings = result.files.find((file) => file.path.endsWith("settings.json"));
     expect(settings?.content).toContain("[REDACTED]");
+  });
+
+  it("falls back to ext dir parsing for names without version suffix and skips unparseable empty names", async () => {
+    // Directory name without `-<version>` suffix → parseExtensionDirName returns {name} via the
+    // "no regex match" branch (length > 0).
+    await mkdir(join(tempHome, ".vscode", "extensions", "loose-extension"), { recursive: true });
+    // Directory name where the regex matches but parsedName is the empty string ("-1.0.0").
+    // parseExtensionDirName then falls into the `if (!parsedName)` branch and returns the raw
+    // name as the item name.
+    await mkdir(join(tempHome, ".vscode", "extensions", "-1.0.0"), { recursive: true });
+
+    const collector = new VSCodeCollector(tempHome);
+    collector._execCommand = async () => {
+      throw new Error("cli missing");
+    };
+
+    const result = await collector.collect();
+
+    const names = result.lists.map((l) => l.name);
+    expect(names).toContain("loose-extension");
+    expect(names).toContain("-1.0.0");
   });
 });
