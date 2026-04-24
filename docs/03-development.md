@@ -6,8 +6,10 @@
 
 | 依赖 | 最低版本 |
 |------|----------|
-| Node.js | 18+ |
+| Node.js | 20+ |
 | Bun | 1.0+ |
+| Wrangler | 4.x（已 `wrangler login`，账号能访问 `otter` worker / D1 / R2） |
+| Caddy | 任意（可选，仅本地 TLS 调试 `*.dev.hexly.ai` 时） |
 
 ```bash
 # 克隆仓库
@@ -17,10 +19,10 @@ cd otter
 # 安装依赖
 bun install
 
-# 构建所有包
+# 构建 SPA（生成 packages/web/dist）
 bun run build
 
-# 运行测试
+# 跑全部测试
 bun run test
 ```
 
@@ -28,95 +30,102 @@ bun run test
 
 | 命令 | 说明 |
 |------|------|
+| `bun run dev` | 启动 Vite SPA dev server（`:7019`，`/api/*` 反代到生产 worker） |
+| `bun run dev:worker` | （可选）`wrangler dev --local`（`:8787`），本地 D1 / R2 模拟，挂 `/api/*` + 老 `/v1/*` |
 | `bun run build` | 构建 web SPA（vite，输出到 `packages/web/dist`） |
-| `bun run dev` | 启动新 Vite SPA dev server（`:7019`，自带 `/api → :7020` proxy） |
-| `bun run dev:worker` | 启动 wrangler dev (`:7020`)，挂 `/api/*` + 老 `/v1/*` 路由（建议另开终端） |
-| `bun run deploy` / `deploy:test` | 先 vite build，再 `wrangler deploy [--env test]` |
-| `bun run test` | 运行全部单元测试（Vitest） |
-| `bun run test:e2e` | Playwright E2E（启 `run-e2e-spa.ts` → vite build + wrangler dev `--env test --local`） |
-| `bun run test:watch` | 监听模式运行测试 |
-| `bun run test:coverage` | 运行测试并生成覆盖率报告 |
-| `bun run lint` | TypeScript 类型检查（`tsc --noEmit`） |
-| `node packages/cli/dist/bin.js scan` | 执行扫描（人类可读输出） |
-| `node packages/cli/dist/bin.js scan --json` | 执行扫描（JSON 输出） |
-| `node packages/cli/dist/bin.js scan --slim` | 精简模式扫描（排除 history.jsonl 等） |
-| `node packages/cli/dist/bin.js scan --save` | 扫描并保存快照到本地 |
-| `node packages/cli/dist/bin.js config show` | 查看当前配置 |
-| `node packages/cli/dist/bin.js config set webhookUrl <url>` | 设置 Webhook 地址 |
-| `node packages/cli/dist/bin.js backup` | 扫描并上传快照（自动本地保存） |
-| `node packages/cli/dist/bin.js backup --slim` | 精简模式上传 |
-| `node packages/cli/dist/bin.js snapshot list` | 查看本地快照列表 |
-| `node packages/cli/dist/bin.js snapshot show <id>` | 查看快照详情 |
-| `node packages/cli/dist/bin.js snapshot diff <id1> <id2>` | 比较两个快照差异 |
-| `node packages/cli/dist/bin.js export-icons` | 导出应用图标为 PNG |
+| `bun run deploy` | build + `wrangler deploy`（推到生产 worker） |
+| `bun run deploy:test` | build + `wrangler deploy --env test`（推到 test 环境） |
+| `bun run test` | 运行全部单元测试（Vitest，502+ tests） |
+| `bun run test:watch` | 监听模式 |
+| `bun run test:coverage` | 覆盖率报告 |
+| `bun run test:e2e` | Playwright BDD E2E（`scripts/run-e2e-spa.ts` 启 vite + wrangler dev `--env test --local`） |
+| `bun run lint` | TypeScript 类型检查（4 个 tsconfig：core → cli → web → api） |
+| `bun run lint:biome` / `lint:biome:fix` | Biome 检查 / 自动修 |
+
+CLI 命令请直接看 `node packages/cli/dist/bin.js --help` 或 [README 命令一览](../README.md#命令一览)。
 
 ## 项目结构
 
 ```
 packages/
-├── core/                          # @otter/core
-│   └── src/
-│       ├── types.ts               # 所有接口和类型定义
-│       └── index.ts               # 统一导出
-└── cli/                           # @otter/cli
-    └── src/
-        ├── bin.ts                 # CLI 入口
-        ├── cli.ts                 # 命令注册（scan / backup / config / snapshot / export-icons）
-        ├── index.ts               # 库导出
-        ├── collectors/
-        │   ├── base.ts            # BaseCollector 抽象基类
-        │   ├── claude-config.ts   # Claude Code 配置采集
-        │   ├── opencode-config.ts # OpenCode 配置采集
-        │   ├── shell-config.ts    # Shell dotfiles 采集
-        │   ├── homebrew.ts        # Homebrew 包列表采集
-        │   ├── applications.ts    # 已安装应用列表采集
-        │   └── index.ts           # 采集器注册工厂
-        ├── commands/
-        │   ├── scan.ts            # scan 命令逻辑
-        │   ├── config.ts          # config 命令逻辑
-        │   └── snapshot.ts        # snapshot list/show/diff 命令逻辑
-        ├── config/
-        │   └── manager.ts         # 配置文件管理器
-        ├── snapshot/
-        │   └── builder.ts         # 快照构建器
-        ├── storage/
-        │   └── local.ts           # 本地快照存储（SnapshotStore）
-        ├── uploader/
-        │   └── webhook.ts         # Webhook 上传器
-        ├── utils/
-        │   ├── redact.ts          # 凭据脱敏工具
-        │   └── icons.ts           # 应用图标导出工具
-        └── __tests__/             # 单元测试（镜像 src 结构）
-            ├── collectors/
-            ├── commands/
-            ├── config/
-            ├── snapshot/
-            ├── uploader/
-            └── utils/
+├── core/                          # @otter/core — 共享类型定义（零运行时）
+├── cli/                           # @nocoo/otter — npm 发布的 CLI
+├── api/                           # @otter/api — Hono createApp 工厂 + middleware/lib
+├── web/                           # @otter/web — Vite 6 SPA
+│   ├── src/                       #   React 19 + react-router 7 + SWR + Tailwind v4
+│   ├── e2e/                       #   Playwright specs
+│   ├── vite.config.ts             #   端口 7019，proxy /api → OTTER_API_URL
+│   └── .env                       #   本地 dev 用（gitignore，复制 .env.example）
+└── worker/                        # @otter/worker — 单一 Cloudflare Worker
+    ├── src/index.ts               #   Hono dispatcher: /api/* → createApp; 其余 → legacy
+    └── wrangler.toml              #   routes = otter.hexly.ai；workers_dev = true；D1/R2 binding
 ```
 
-## 启动 web + worker
+## 启动 Web SPA — 两种模式
 
-`bun run dev` 启动 Vite SPA dev server（端口 7019），`bun run dev:worker` 在另一个终端启动 wrangler dev（端口 7020），挂 `/api/*`（D1 binding + CF Access JWT/Bearer 双栈鉴权）以及老 `/v1/*` 兼容路由。Vite 的 dev server 自动把 `/api/*` 反代到 :7020；浏览器只看一份地址 `http://localhost:7019`。
+### Surety 模式：vite 本地 + 线上 worker（默认 / 推荐）
 
-生产部署是单一 Cloudflare Worker：`packages/web/dist` 通过 `[assets]` 直接由 Worker 托管，`/api/*` 与 SPA fallback 同进程同源，无 CORS、无 cookie 依赖。本地开发因 vite + wrangler 是两个进程才需要 `dev` + `dev:worker` 一起跑。
+适合调 UI、复用生产数据。
+
+1. 复制 env 模板（vite 从 `packages/web/` 读 .env）：
+   ```bash
+   cp .env.example packages/web/.env
+   ```
+2. 浏览器打开下面这条 URL（先过 Cloudflare Access SSO，redirect URL 里会带回 `?token=otk_...`）：
+   ```
+   https://otter.hexly.ai/api/auth/cli?callback=http://127.0.0.1:65535/cb&state=mint
+   ```
+3. 把 token 粘进 `packages/web/.env` 的 `OTTER_DEV_API_TOKEN`。
+4. `bun run dev` 启 vite，然后访问 `http://localhost:7019` 或 `https://otter.dev.hexly.ai`（caddy 反代到 7019）。
+
+vite proxy 行为：每个 `/api/*` 请求自动注入 `Authorization: Bearer <OTTER_DEV_API_TOKEN>`，命中 `apiKeyAuth`，绕开 CF Access SSO。
+
+### Bat 模式：vite 本地 + wrangler 本地（完全离线）
+
+适合调后端逻辑、改 D1 schema、避免触碰生产数据。
+
+1. 把 `packages/web/.env` 的 `OTTER_API_URL` 改成 `http://localhost:8787`，把 `OTTER_DEV_API_TOKEN` 留空。
+2. 终端 A：`bun run dev:worker`（启动 `wrangler dev --local`，端口 8787，本地 D1 / R2 模拟）
+3. 终端 B：`bun run dev`（启动 vite，端口 7019）
+
+`accessAuth` 中间件检测到 `Host: localhost` 时自动 stamp `accessEmail = "dev@localhost"`，所以本地 dev 不需要 Bearer。
+
+### Caddy（可选，TLS 本地调试）
+
+如果想用 `https://otter.dev.hexly.ai`（避开 Service Worker / Cookie 同源限制），在本地 Caddyfile 加：
+
+```caddy
+otter.dev.hexly.ai {
+  tls /path/to/cert.pem /path/to/key.pem
+  reverse_proxy localhost:7019
+}
+```
+
+vite 已在 `server.allowedHosts` 里放行 `*.dev.hexly.ai`。
+
+## 部署
+
+```bash
+bun run deploy        # 生产 worker（custom domain otter.hexly.ai + workers.dev fallback）
+bun run deploy:test   # test 环境
+```
+
+`wrangler deploy` 一次性把 SPA（来自 `packages/web/dist`）和 worker 代码都推上去——`[assets]` binding 直接托管 dist 目录。
 
 ## Git Hooks
 
-项目使用 Husky 管理 Git hooks。`pre-commit` hook 会自动执行：
+项目使用 Husky 管理 Git hooks：
 
-1. `vitest run` — 运行全部单元测试
-2. `tsc --noEmit` — TypeScript 类型检查
+| Hook | 内容 |
+|---|---|
+| pre-commit | lint-staged（biome check --write） + vitest run + tsc --noEmit |
+| pre-push | osv-scanner（vuln） + gitleaks（secrets） + L2 API E2E + L3 Playwright |
 
-所有测试通过且类型检查无误后才允许提交。
+所有 gates 通过才允许 commit / push。
 
 ## Commit 规范
 
-遵循 **Conventional Commits** 格式：
-
-```
-<type>: <description>
-```
+遵循 **Conventional Commits**：`<type>: <description>`，祈使句小写，50 字符以内。
 
 | 类型 | 用途 |
 |------|------|
@@ -127,12 +136,7 @@ packages/
 | `docs` | 文档 |
 | `chore` | 构建、依赖等杂务 |
 
-**要求**：
-
-- 祈使句，全小写，50 字符以内
-- **原子化提交**：每个 commit 仅包含一个逻辑完整的变更
-- 严禁混合功能与修复
-- 每次 commit 后的代码必须能通过测试和构建
+**要求**：原子化提交（每个 commit 一个逻辑变更，能独立通过测试和构建）；严禁混合功能与修复。
 
 ## 文档同步要求
 
@@ -141,11 +145,12 @@ packages/
 - 新增采集器 → 更新 [02-collectors.md](./02-collectors.md) 和 [README.md](../README.md)
 - 修改安全机制 → 更新 [05-security.md](./05-security.md)
 - 修改测试配置 → 更新 [04-testing.md](./04-testing.md)
-- 修改架构 → 更新 [01-architecture.md](./01-architecture.md)
-- 新增命令 → 更新 [README.md](../README.md) 的命令表格
+- 修改架构 / API 路由 → 更新 [01-architecture.md](./01-architecture.md) 和 [06-dashboard.md](./06-dashboard.md)
+- 新增 CLI 命令 → 更新 [README.md](../README.md) 的命令表格
 
 ## 相关文档
 
 - [架构概览](./01-architecture.md)
 - [测试规范](./04-testing.md)
 - [安全机制](./05-security.md)
+- [Dashboard](./06-dashboard.md)
