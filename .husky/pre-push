@@ -1,23 +1,29 @@
 #!/usr/bin/env sh
+# Pre-push: G2 security gates in parallel.
+# osv-scanner (lockfile vulnerabilities) + gitleaks (full git history secret scan).
+# gitleaks runs at pre-commit too (staged-only), this is the deeper full-history scan.
+set -o pipefail
 
-# G2a: Dependency vulnerability scanning
-echo "🔍 G2a: Running osv-scanner..."
-osv-scanner scan --lockfile=bun.lock --config=.osv-scanner.toml 2>&1
-OSV_EXIT=$?
+TMPDIR_HOOK=$(mktemp -d -t otter-prepush-XXXXXX)
+trap 'rm -rf "$TMPDIR_HOOK"' EXIT
 
-if [ $OSV_EXIT -ne 0 ]; then
-  echo "❌ G2 FAILED: osv-scanner found vulnerabilities."
-  exit 1
-fi
+( osv-scanner scan --lockfile=bun.lock --config=.osv-scanner.toml >"$TMPDIR_HOOK/osv.log" 2>&1; echo $? >"$TMPDIR_HOOK/osv.exit" ) &
+OSV_PID=$!
+( gitleaks git --no-banner -v >"$TMPDIR_HOOK/gitleaks.log" 2>&1; echo $? >"$TMPDIR_HOOK/gitleaks.exit" ) &
+GITLEAKS_PID=$!
 
-# G2b: Secret detection
-echo "🔍 G2b: Running gitleaks..."
-gitleaks git --no-banner -v 2>&1
-GITLEAKS_EXIT=$?
+wait "$OSV_PID" 2>/dev/null || true
+wait "$GITLEAKS_PID" 2>/dev/null || true
 
-if [ $GITLEAKS_EXIT -ne 0 ]; then
-  echo "❌ G2 FAILED: gitleaks detected secrets."
-  exit 1
-fi
+OSV_STATUS=$(cat "$TMPDIR_HOOK/osv.exit" 2>/dev/null || echo 1)
+GITLEAKS_STATUS=$(cat "$TMPDIR_HOOK/gitleaks.exit" 2>/dev/null || echo 1)
 
-echo "✅ G2 (Security) passed."
+echo "━━━ osv-scanner (exit=$OSV_STATUS) ━━━"
+cat "$TMPDIR_HOOK/osv.log"
+echo "━━━ gitleaks (exit=$GITLEAKS_STATUS) ━━━"
+cat "$TMPDIR_HOOK/gitleaks.log"
+
+[ "$OSV_STATUS" -eq 0 ] || { echo "❌ pre-push: osv-scanner failed" >&2; exit "$OSV_STATUS"; }
+[ "$GITLEAKS_STATUS" -eq 0 ] || { echo "❌ pre-push: gitleaks failed" >&2; exit "$GITLEAKS_STATUS"; }
+
+echo "✅ pre-push: G2 (osv + gitleaks) passed."

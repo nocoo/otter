@@ -1,30 +1,39 @@
 #!/usr/bin/env sh
+# Pre-commit: run independent stages in parallel and replay logs in order.
+# G1 (lint-staged Biome) + L1 (vitest+coverage) + tsc + gitleaks (staged).
+set -o pipefail
 
-# G1: Biome lint + format (incremental, staged files only)
-bunx lint-staged 2>&1
-LINT_STAGED_EXIT=$?
+TMPDIR_HOOK=$(mktemp -d -t otter-precommit-XXXXXX)
+trap 'rm -rf "$TMPDIR_HOOK"' EXIT
 
-if [ $LINT_STAGED_EXIT -ne 0 ]; then
-  echo "❌ G1 FAILED: Biome lint/format errors on staged files."
-  exit 1
-fi
+run_bg() {
+  name="$1"; shift
+  ( "$@" >"$TMPDIR_HOOK/$name.log" 2>&1; echo $? >"$TMPDIR_HOOK/$name.exit" ) &
+  eval "PID_$name=$!"
+}
 
-# L1: Unit Tests + Coverage Thresholds (≥90%)
-bun run test:coverage 2>&1
-TEST_EXIT=$?
+wait_stage() {
+  name="$1"
+  pid_var="PID_$1"
+  pid=$(eval echo \$$pid_var)
+  wait "$pid" 2>/dev/null || true
+  status=$(cat "$TMPDIR_HOOK/$name.exit" 2>/dev/null || echo 1)
+  echo "━━━ $name (exit=$status) ━━━"
+  cat "$TMPDIR_HOOK/$name.log"
+  if [ "$status" -ne 0 ]; then
+    echo "❌ pre-commit stage '$name' failed" >&2
+    exit "$status"
+  fi
+}
 
-if [ $TEST_EXIT -ne 0 ]; then
-  echo "❌ L1 FAILED: Unit tests or coverage thresholds did not pass."
-  exit 1
-fi
+run_bg lint      bunx lint-staged
+run_bg unit_cov  bun run test:coverage
+run_bg typecheck bun run lint
+run_bg gitleaks  gitleaks protect --staged --no-banner
 
-# Type checking (tsc strict)
-bun run lint 2>&1
-TSC_EXIT=$?
+wait_stage lint
+wait_stage unit_cov
+wait_stage typecheck
+wait_stage gitleaks
 
-if [ $TSC_EXIT -ne 0 ]; then
-  echo "❌ Type check FAILED: TypeScript errors found."
-  exit 1
-fi
-
-echo "✅ G1 (Biome) + L1 (UT) + tsc passed."
+echo "✅ pre-commit: G1 + L1 + tsc + gitleaks passed."
