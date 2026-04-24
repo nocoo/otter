@@ -7,7 +7,7 @@ set -o pipefail
 TMPDIR_HOOK=$(mktemp -d -t otter-prepush-XXXXXX)
 trap 'rm -rf "$TMPDIR_HOOK"' EXIT
 
-( osv-scanner scan --lockfile=bun.lock --config=.osv-scanner.toml >"$TMPDIR_HOOK/osv.log" 2>&1; echo $? >"$TMPDIR_HOOK/osv.exit" ) &
+( osv-scanner scan --lockfile=bun.lock >"$TMPDIR_HOOK/osv.log" 2>&1; echo $? >"$TMPDIR_HOOK/osv.exit" ) &
 OSV_PID=$!
 ( gitleaks git --no-banner -v >"$TMPDIR_HOOK/gitleaks.log" 2>&1; echo $? >"$TMPDIR_HOOK/gitleaks.exit" ) &
 GITLEAKS_PID=$!
