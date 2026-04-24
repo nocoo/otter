@@ -12,7 +12,9 @@ export default defineConfig({
     pool: "threads",
     poolOptions: {
       threads: {
-        isolate: false,
+        // isolate: true (default) keeps module/global state per test file so
+        // vi.mock factories don't leak across files; threads pool still cuts
+        // worker startup vs the default forks pool by ~50%.
         useAtomics: true,
       },
     },
