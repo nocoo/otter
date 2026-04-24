@@ -23,4 +23,20 @@ describe("MacOSDefaultsCollector", () => {
       { name: "CleanShot X", meta: { type: "login-item" } },
     ]);
   });
+
+  it("records errors for failing defaults domains and swallows osascript failures", async () => {
+    const collector = new MacOSDefaultsCollector("/fake/home");
+    collector._execCommand = async (cmd: string) => {
+      if (cmd.startsWith("defaults export")) throw new Error("not permitted");
+      if (cmd.startsWith("osascript")) throw new Error("headless: no system events");
+      return "";
+    };
+
+    const result = await collector.collect();
+
+    expect(result.files).toHaveLength(0);
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.errors[0]).toContain("Failed to export defaults domain");
+    expect(result.lists).toHaveLength(0);
+  });
 });

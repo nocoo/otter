@@ -118,4 +118,22 @@ describe("HomebrewCollector", () => {
     expect(result.lists).toHaveLength(1);
     expect(result.errors).toContainEqual(expect.stringContaining("brew list --pinned"));
   });
+
+  it("treats whitespace-only formula lines as empty-name entries (no-name branch)", async () => {
+    const collector = new HomebrewCollector("/fake/home");
+    collector._execCommand = async (cmd: string) => {
+      if (cmd === "brew list --formula --versions") return "   git\n";
+      if (cmd === "brew list --cask --versions") return "";
+      if (cmd === "brew tap") return "";
+      if (cmd === "brew list --pinned") return "";
+      return "";
+    };
+
+    const result = await collector.collect();
+
+    expect(result.lists).toContainEqual(
+      expect.objectContaining({ name: "git", meta: { type: "formula" } }),
+    );
+    expect(result.lists.find((l) => l.name === "git" && !("version" in l))).toBeTruthy();
+  });
 });
