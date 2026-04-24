@@ -11,9 +11,19 @@ const start = performance.now();
 
 type Stage = { name: string; cmd: string[] };
 const stages: Stage[] = [
-  { name: "lint", cmd: ["bunx", "lint-staged"] },
-  { name: "unit", cmd: ["bun", "run", "test"] },
-  { name: "typecheck", cmd: ["bun", "run", "lint"] },
+  { name: "lint", cmd: ["./node_modules/.bin/lint-staged"] },
+  { name: "unit", cmd: ["./node_modules/.bin/vitest", "run"] },
+  {
+    name: "typecheck",
+    cmd: [
+      "./node_modules/.bin/tsc",
+      "-b",
+      "packages/core",
+      "packages/cli",
+      "packages/web",
+      "packages/api",
+    ],
+  },
   { name: "gitleaks", cmd: ["gitleaks", "protect", "--staged", "--no-banner"] },
 ];
 
