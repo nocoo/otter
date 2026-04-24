@@ -1,6 +1,6 @@
 // HTTP D1 driver — wraps the existing module-scoped functions in lib/cf/d1.ts.
-// Keeping cf/d1.ts intact lets web_legacy keep importing it directly while
-// new code routes through this DbDriver-shaped facade.
+// Keeping cf/d1.ts intact lets existing callers keep importing it directly
+// while new code routes through this DbDriver-shaped facade.
 import { batch, execute, query, queryFirst } from "../cf/d1";
 import type { DbDriver } from "./driver";
 

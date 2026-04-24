@@ -2,7 +2,7 @@ import type { DbDriver } from "./driver";
 
 // Minimal subset of the Cloudflare Workers D1Database type we depend on.
 // We re-declare it here to avoid pulling @cloudflare/workers-types into
-// @otter/api's runtime types (web_legacy doesn't need it).
+// @otter/api's runtime types (the legacy HTTP-D1 path doesn't need it).
 interface D1Meta {
   changes?: number;
   // biome-ignore lint/style/useNamingConvention: D1 meta field name

@@ -1,5 +1,5 @@
 // DbDriver — abstract D1 access so the same routes/repos can target either:
-//   - Cloudflare HTTP D1 REST API (used by web_legacy via @otter/api in Node)
+//   - Cloudflare HTTP D1 REST API (Node consumers via @otter/api)
 //   - D1Database binding (used by @otter/worker on Cloudflare Workers)
 //
 // The interface mirrors the minimum surface our SQL needs.

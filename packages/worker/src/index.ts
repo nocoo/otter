@@ -1,12 +1,12 @@
 // Cloudflare Worker entry — single Worker hosts:
 //   - /api/*  : new D1-binding-backed routes (CF Access + Bearer token auth)
-//   - /v1/*   : legacy API key + X-User-ID routes (for web_legacy bridge,
-//                kept until we cut traffic over)
+//   - /v1/*   : legacy API key + X-User-ID routes (kept for any remaining
+//                HTTP-D1 consumers; not currently wired to the SPA)
 //   - all other paths fall through to the [assets] binding (SPA static files)
 //
 // All /api/* wiring lives in @otter/api's createApp(); this file only injects
-// CF bindings (D1 + R2) and preserves the untouched legacy /v1/* + /ingest/*
-// + /health stack until cutover.
+// CF bindings (D1 + R2) and preserves the legacy /v1/* + /ingest/* + /health
+// stack.
 
 import { createApp } from "@otter/api";
 import { createBindingDriver } from "@otter/api/lib/db/d1-binding";
@@ -21,7 +21,7 @@ import { snapshotsRoutes } from "./routes/snapshots.js";
 import { webhooksRoutes } from "./routes/webhooks.js";
 import type { Env, Variables } from "./types.js";
 
-// Legacy app — preserves /health, /ingest, /v1/* surface for web_legacy.
+// Legacy app — preserves /health, /ingest, /v1/* surface.
 // biome-ignore lint/style/useNamingConvention: Hono generic key
 const legacyApp = new Hono<{ Bindings: Env; Variables: Variables }>();
 legacyApp.use("*", envGuardMiddleware);

@@ -1,7 +1,7 @@
 // ApiTokenRepo — DbDriver-based access for the `api_tokens` table.
 //
 // Uses Web Crypto (SubtleCrypto + getRandomValues) so it runs unchanged in
-// both Node.js (web_legacy) and Cloudflare Workers (no nodejs_compat needed).
+// both Node.js and Cloudflare Workers (no nodejs_compat needed).
 import type { DbDriver } from "./db/driver";
 
 export interface ApiTokenRow {

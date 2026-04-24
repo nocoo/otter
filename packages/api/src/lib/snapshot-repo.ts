@@ -1,5 +1,5 @@
 // SnapshotRepo — SQL access for the `snapshots` D1 table, agnostic to whether
-// the backing driver talks to D1 over HTTP (web_legacy) or via a binding (worker).
+// the backing driver talks to D1 over HTTP (Node) or via a binding (worker).
 //
 // R2 I/O is intentionally NOT in this module. Callers handle blob storage:
 //   - worker routes use c.env.SNAPSHOTS (R2Bucket binding) directly

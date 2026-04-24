@@ -22,7 +22,7 @@
 | 12. 平移 web 单测 + Playwright | ✅ done | utils + snapshot helpers 单测 + 6 specs / 27 tests 平移到 `packages/web/e2e/`（含 navigation/dashboard/snapshots/snapshot-detail/settings/smoke） |
 | 13. E2E runner 重写 | ✅ done | `scripts/run-e2e-spa.ts`：build SPA → apply D1 schema → `wrangler dev --env test --local` 单端口；`isLocalhost` 不再依赖 `cf` 字段（miniflare local 也注入 cf），改为只看 host=localhost/127.0.0.1 |
 | 14. 根 scripts 调整 | ✅ done | `1ff61d4 chore(scripts): add dev:worker / build / deploy targets for new worker` |
-| 15. 删 web_legacy | ⏭️ 跳过 | 计划本身约定本轮不删 |
+| 15. 删 web_legacy | ✅ done | 整包删除 + 旧 E2E runner（`run-e2e.ts` / `run-e2e-ui.ts` / `e2e-utils.ts`）下线；`0001_init.sql` 迁入 `packages/worker/migrations/`；根 `package.json` 去掉 `dev:legacy`/`test:e2e:ui`，`test:e2e` 直接指向 SPA Playwright；biome `web_legacy` 引用清空 |
 | 16. 文档 | ✅ done | `e41d3d8 docs: capture vite spa + single worker + cf access migration` |
 
 **遗留事项**（待哥确认后开下一轮）：

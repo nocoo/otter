@@ -1,8 +1,9 @@
 // createApp — single Hono factory used by every consumer:
-//   - web_legacy:  createApp() → mounts only legacy /v1/* (worker-client based).
 //   - new worker:  createApp({ basePath: "/api", driver, bucket, auth: { access: true } })
 //                  → mounts /live, /me, /auth/cli, /snapshots, /webhooks at basePath
 //                  with driver/bucket injection + accessAuth + apiKeyAuth middleware.
+//   - legacy /v1/* surface (worker-client based) is always mounted for any
+//     remaining HTTP-D1 consumers.
 //
 // Keeping every wiring decision in one place means docs, tests and the runtime
 // share a single source of truth — there is no longer a hand-assembled api app
@@ -41,8 +42,8 @@ export interface CreateAppOptions {
 export function createApp(opts: CreateAppOptions = {}) {
   const app = new Hono<AppEnv>();
 
-  // Always mount the legacy /v1/* surface so web_legacy keeps working
-  // through the cutover.
+  // Always mount the legacy /v1/* surface (kept for any non-binding HTTP-D1
+  // consumers; the new worker only routes /api/* through the binding stack).
   app.route("/v1/snapshots", legacySnapshots);
   app.route("/v1/webhooks", legacyWebhooks);
   app.route("/v1/live", live);
