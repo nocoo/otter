@@ -118,8 +118,8 @@ bun run deploy:test   # test 环境
 
 | Hook | 内容 |
 |---|---|
-| pre-commit | lint-staged（biome check --write） + vitest run + tsc --noEmit |
-| pre-push | osv-scanner（vuln） + gitleaks（secrets） + L2 API E2E + L3 Playwright |
+| pre-commit | 并行执行：lint-staged（Biome） + `bun run test:coverage`（L1） + `bun run lint`（tsc） + `gitleaks protect --staged` |
+| pre-push | 并行执行：`osv-scanner`（lockfile vuln） + `gitleaks git`（全历史 secret 扫描） |
 
 所有 gates 通过才允许 commit / push。
 

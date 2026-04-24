@@ -56,10 +56,8 @@ CLI package `@nocoo/otter` is published to npm. Steps to release a new version:
 
 | Dim | Gate | Hook |
 |-----|------|------|
-| G1 | Biome strict check (lint + format, 0 errors) + lint-staged | pre-commit |
-| L1 | 445+ vitest tests, 90%/89% coverage thresholds | pre-commit |
-| tsc | TypeScript strict type check + 5 extras (core → cli → web → api) | pre-commit |
-| G2 | osv-scanner (0 vulns) + gitleaks (0 leaks) | pre-push |
-| L2 | 4 API E2E tests on real HTTP (web :17019 → api :17020) | pre-push |
-| L3 | 6 Playwright specs / 28 tests (web :27019 → api :27020) | pre-push |
-| D1 | `otter-db-test` D1 + `otter-snapshots-test` R2 (env override + guard + marker) | E2E runner |
+| G1 | Biome strict check (lint + format, 0 errors, 0 warnings) + lint-staged | pre-commit |
+| L1 | 559+ vitest tests, 95%/88%/95%/95% (stmt/branch/func/line) coverage | pre-commit |
+| tsc | TypeScript strict type check (core → cli → web → api) | pre-commit |
+| G2 | osv-scanner (lockfile, 0 vulns) + gitleaks (full history, 0 leaks) | pre-push |
+| CI  | `nocoo/base-ci/.github/workflows/bun-quality.yml@v2026.1` (L1+G1+tsc+G2) | GitHub Actions |

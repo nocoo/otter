@@ -133,21 +133,15 @@ collector._execCommand = async (cmd: string) => "package1\npackage2\n";
 | 命令降级 | 外部命令不可用时优雅降级或回退 |
 | 元数据完整性 | `version` / `meta` / 虚拟路径等增强字段正确 |
 
-## 四层测试执行
+## 测试执行（6DQ 维度）
 
-| 层 | 命令 | 目标 |
+| 维度 | 命令 | 目标 |
 |---|---|---|
-| L1 | `bun run test` | Collector、CLI、Web 单元测试与轻量集成测试 |
-| L2 | `bun run lint` | core / cli / web 全量类型检查 |
-| L3 | `bun run test:e2e` | Web API E2E，验证 webhook → D1/R2 → snapshots API |
-| L4 | `bun run test:e2e:ui` | Playwright BDD，验证 dashboard 主干流程与 rich metadata 展示 |
+| L1 | `bun run test:coverage` | Vitest 单元/集成测试 + v8 覆盖率门槛（statements/lines/functions ≥95%，branches ≥88%） |
+| G1 | `bun run lint` + `bun run lint:biome` | TypeScript 严格类型检查 + Biome 0 error/0 warning |
+| G2 | `osv-scanner` + `gitleaks` | lockfile 漏洞 + 全历史 secret 扫描（pre-push） |
 
-### L3 / L4 约定
-
-- L3 使用独立 dev server，端口默认 `17019`
-- L4 使用独立 dev server，端口默认 `27019`
-- 两层都通过 `E2E_SKIP_AUTH=true` 绕过真实登录
-- L4 新增 rich snapshot fixture，验证 collector `meta` 在 dashboard 中可视化
+> L2/L3 端到端测试随 `web_legacy` 一并下线；当前依赖 vitest + Playwright(可选) 覆盖核心路径。
 
 ### 4. 脱敏测试
 
@@ -165,9 +159,10 @@ collector._execCommand = async (cmd: string) => "package1\npackage2\n";
 
 | 指标 | 数值 |
 |------|------|
-| 测试文件 | 34 |
-| 测试用例 | 338 |
+| 测试文件 | 53 |
+| 测试用例 | 559 |
 | 通过率 | 100% |
+| 覆盖率门槛 | statements 95% / branches 88% / functions 95% / lines 95% |
 
 ## 相关文档
 
