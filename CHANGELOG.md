@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.0] - 2026-04-24
+
+Major release: web stack rewrite + single Cloudflare Worker + auth overhaul.
+
+### Breaking
+
+- **Web stack**: `packages/web` rewritten from Next.js 16 + next-auth to Vite 6 SPA + React 19 + react-router 7 + SWR + Tailwind v4. Old `packages/web_legacy` deleted.
+- **Hosting**: Single Cloudflare Worker now hosts both `/api/*` (D1 binding) and SPA static assets. Web container (Railway) retired.
+- **Auth**: Browser auth switched from Google OAuth (next-auth) to Cloudflare Access SSO (`Cf-Access-Jwt-Assertion`). CLI auth switched to opaque Bearer tokens (`api_tokens` D1 table) minted via `/api/auth/cli`.
+- **Removed `/v1/snapshots` + `/v1/webhooks`** (HTTP-D1 forward layer). SPA uses `/api/*`, CLI uses `/ingest/*`. `apiKeyMiddleware` + `X-User-ID` + `Env.API_KEY` dropped.
+- **D1 user_id migration**: `users.id` / `webhooks.user_id` / `snapshots.user_id` migrated from Google OAuth `sub` to email (`0003_user_id_to_email.sql`). Old R2 prefixes preserved via persisted `r2_key` column.
+- **`@otter/api` no longer ships HTTP-D1 client**: `worker-client.ts`, dead `routes/snapshots.ts` + `routes/webhooks.ts`, next-auth `middleware/auth.ts` deleted. `@auth/core` + `@aws-sdk/client-s3` removed from deps.
+
+### Features
+
+- **`createApp({ basePath, driver, bucket, auth })`**: `@otter/api` exposes a route-factory entrypoint consumed by the worker (D1 binding driver).
+- **Custom domains**: `otter.hexly.ai` (CF Access) + `otter.worker.hexly.ai` (Bearer-only, CLI ingest) on the same worker, plus `*.workers.dev` fallback.
+- **Surety dev mode**: vite dev server proxies `/api/*` to the production worker with `Authorization: Bearer <OTTER_DEV_API_TOKEN>` injected — bypasses CF Access SSO for local development.
+
+### Infrastructure
+
+- New `packages/worker` — Hono on Cloudflare Workers, ingest + assets + `/api/*` adapter.
+- `[assets]` block in `wrangler.toml` serves SPA fallback with `not_found_handling = "single-page-application"`.
+- Quality gates: 502 vitest tests + tsc strict + Biome strict + osv-scanner + gitleaks + Playwright (28 tests / 6 specs).
+
 ## [1.5.1] - 2026-04-16
 
 ### Fixes

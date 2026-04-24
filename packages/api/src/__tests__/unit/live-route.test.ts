@@ -5,7 +5,7 @@ vi.mock("../../lib/cf/d1", () => ({
 }));
 
 vi.mock("../../lib/version", () => ({
-  APP_VERSION: "1.5.1",
+  APP_VERSION: "2.0.0",
 }));
 
 import { createApp } from "../../app";
@@ -35,7 +35,7 @@ describe("GET /v1/live", () => {
     expect(typeof body.latencyMs).toBe("number");
 
     expect(body.system).toBeDefined();
-    expect(body.system.version).toBe("1.5.1");
+    expect(body.system.version).toBe("2.0.0");
     expect(typeof body.system.node).toBe("string");
     expect(typeof body.system.uptime).toBe("number");
     expect(typeof body.system.env).toBe("string");

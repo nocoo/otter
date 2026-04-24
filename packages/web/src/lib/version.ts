@@ -6,4 +6,4 @@
 declare const __APP_VERSION__: string;
 
 export const APP_VERSION: string =
-  typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "1.5.1";
+  typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "2.0.0";
