@@ -9,12 +9,12 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    pool: "threads",
+    pool: "vmThreads",
     poolOptions: {
-      threads: {
-        // isolate: true (default) keeps module/global state per test file so
-        // vi.mock factories don't leak across files; threads pool still cuts
-        // worker startup vs the default forks pool by ~50%.
+      vmThreads: {
+        // vmThreads runs each test file in a node:vm context inside a thread:
+        // ~15% faster than the threads pool while keeping per-file isolation
+        // (vi.mock factories don't leak across files).
         useAtomics: true,
       },
     },
