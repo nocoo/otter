@@ -9,6 +9,13 @@ export default defineConfig({
   },
   test: {
     globals: true,
+    pool: "threads",
+    poolOptions: {
+      threads: {
+        isolate: false,
+        useAtomics: true,
+      },
+    },
     exclude: [
       "**/node_modules/**",
       "**/dist/**",

@@ -39,11 +39,17 @@ describe("D1 client", () => {
     setupEnv();
     fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
+    // Skip real backoff sleeps in retry loop — fire callbacks synchronously.
+    vi.spyOn(globalThis, "setTimeout").mockImplementation(((cb: () => void) => {
+      cb();
+      return 0 as unknown as ReturnType<typeof setTimeout>;
+    }) as typeof setTimeout);
   });
 
   afterEach(() => {
     process.env = { ...originalEnv };
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   // --- env validation ---
