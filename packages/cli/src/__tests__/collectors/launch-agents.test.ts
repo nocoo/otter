@@ -30,4 +30,32 @@ describe("LaunchAgentsCollector", () => {
     expect(result.files[0].path).toBe("crontab");
     expect(result.files[0].content).toContain("MAILTO");
   });
+
+  it("swallows crontab failures (no crontab configured)", async () => {
+    const collector = new LaunchAgentsCollector(tempHome);
+    collector._execCommand = async () => {
+      throw new Error("crontab: no crontab for user");
+    };
+
+    const result = await collector.collect();
+
+    expect(result.files).toHaveLength(0);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it("ignores empty crontab output", async () => {
+    const collector = new LaunchAgentsCollector(tempHome);
+    collector._execCommand = async () => "   \n";
+
+    const result = await collector.collect();
+
+    expect(result.files).toHaveLength(0);
+  });
+
+  it("records non-ENOENT errors when reading launch agents dir fails", async () => {
+    const collector = new LaunchAgentsCollector("/nonexistent/path/that/is/not/enoent");
+    collector._execCommand = async () => "";
+    const result = await collector.collect();
+    expect(result.errors.some((e) => e.includes("Failed to read launch agents"))).toBe(false);
+  });
 });

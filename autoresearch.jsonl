@@ -1,0 +1,1 @@
+{"type":"config","name":"Optimize pre-commit hook execution time","metricName":"precommit_s","metricUnit":"s","bestDirection":"lower"}

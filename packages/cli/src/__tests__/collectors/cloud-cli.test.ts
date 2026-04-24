@@ -51,4 +51,19 @@ describe("CloudCLICollector", () => {
     });
     expect(result.files.some((file) => file.content.includes("[REDACTED]"))).toBe(true);
   });
+
+  it("ignores aws sections that are neither 'default' nor 'profile <name>'", async () => {
+    await mkdir(join(tempHome, ".aws"), { recursive: true });
+    await writeFile(
+      join(tempHome, ".aws", "config"),
+      "[default]\nregion=us-east-1\n[other]\nfoo=bar\n[profile work]\nregion=us-west-2\n",
+    );
+
+    const collector = new CloudCLICollector(tempHome);
+    const result = await collector.collect();
+
+    const profiles = result.lists.filter((l) => l.meta?.type === "aws-profile").map((l) => l.name);
+    expect(profiles).toEqual(["default", "work"]);
+    expect(profiles).not.toContain("other");
+  });
 });
