@@ -94,8 +94,6 @@
     },
   },
   "overrides": {
-    "fast-xml-parser": ">=5.5.7",
-    "flatted": ">=3.4.2",
     "hono": ">=4.12.14",
     "path-to-regexp": ">=8.4.0",
     "picomatch": ">=4.0.4",
