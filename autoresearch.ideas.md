@@ -9,7 +9,8 @@
 - Bun.spawn with `stdout/stderr=ignore` + re-run failing stage with inherit — within noise on success path, complicates code, slows failure path by ~550ms.
 - Merging lint+gitleaks into a single bg subprocess (`sh -c 'lint-staged && gitleaks'`) to drop parallel stages from 4 to 3 — isolated test showed +50ms gain but in the actual hook, `sh -c` overhead nudged unit_cov_s from 0.62s → 0.66s (median 0.78s vs prior 0.72s). Slight regression.
 - `nice -n 19` for non-unit stages — no measurable change on macOS scheduler with 16 cores.
-- `pool: "threads", isolate: false` — breaks `builder.test.ts` mock isolation.
+- `pool: "threads", isolate: false` — breaks `builder.test.ts` mock isolation (also seen with `--no-isolate`: occasional 15s+ hang on 1/3 runs).
+- `bun build scripts/precommit.ts --target=bun --outfile=precommit.js` then `bun precommit.js` — no speedup (Bun's TS transform is essentially free).
 - `pool: "vmForks"` — slower than vmThreads.
 - `pool: "vmThreads", singleThread: true` — 3x slower (no parallelism).
 - `--no-file-parallelism` — 3x slower.
