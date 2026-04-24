@@ -19,8 +19,8 @@
 | 07. 平移 UI 组件 | ✅ done | A1–A5 + B 完成：globals/lib/ui/charts/dashboard/layout 全套从 web_legacy 平移 |
 | 08. 平移页面 | ✅ done | C11–C19 完成：snapshots/snapshot detail/dashboard/settings/cli connect 业务页全部上线 |
 | 11. worker 单测 | ✅ done | `22df574 test(worker): unit tests for /api/snapshots and /api/webhooks routes`（15 个用例，in-memory driver） |
-| 12. 平移 web 单测 + Playwright | 🟡 部分 | utils + snapshot helpers 单测已平移；Playwright E2E 留下一轮 |
-| 13. E2E runner 重写 | ⏳ 推迟 | 当前 `scripts/run-e2e*.ts` 仍指 web_legacy；新 worker 的 E2E 留待业务复刻 |
+| 12. 平移 web 单测 + Playwright | ✅ done | utils + snapshot helpers 单测 + 6 specs / 27 tests 平移到 `packages/web/e2e/`（含 navigation/dashboard/snapshots/snapshot-detail/settings/smoke） |
+| 13. E2E runner 重写 | ✅ done | `scripts/run-e2e-spa.ts`：build SPA → apply D1 schema → `wrangler dev --env test --local` 单端口；`isLocalhost` 不再依赖 `cf` 字段（miniflare local 也注入 cf），改为只看 host=localhost/127.0.0.1 |
 | 14. 根 scripts 调整 | ✅ done | `1ff61d4 chore(scripts): add dev:worker / build / deploy targets for new worker` |
 | 15. 删 web_legacy | ⏭️ 跳过 | 计划本身约定本轮不删 |
 | 16. 文档 | ✅ done | `e41d3d8 docs: capture vite spa + single worker + cf access migration` |
