@@ -12,6 +12,9 @@ bun.lock
 packages/web/playwright-report/
 packages/web/test-results/
 
+# Wrangler local state (D1/R2 emulator persistence)
+.wrangler/
+
 # Environment
 .env
 .env.local
