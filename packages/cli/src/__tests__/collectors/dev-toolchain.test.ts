@@ -116,4 +116,137 @@ describe("DevToolchainCollector", () => {
     );
     expect(result.errors).not.toContainEqual(expect.stringContaining("Failed to collect bun"));
   });
+
+  it("classifies missing-tool errors via every error-message branch", async () => {
+    const collector = new DevToolchainCollector("/fake/home");
+    const errs: Record<string, Error> = {
+      "fnm list": new Error("fnm: command not found"),
+      "volta list all": new Error("spawn volta ENOENT not found"),
+      "npm list -g --depth=0 --json": new Error("ENOENT: No such file or directory"),
+      "bun pm ls -g": new Error('Run "bun init" to initialize a project'),
+      "rustup show": new Error("totally unexpected rustup failure"),
+      "cargo install --list": new Error("not found"),
+      "pyenv versions --bare": new Error("not found"),
+      "rbenv versions --bare": new Error("not found"),
+      "go version": new Error("not found"),
+    };
+    collector._execCommand = async (cmd: string) => {
+      const err = errs[cmd];
+      if (err) throw err;
+      throw new Error(`unexpected cmd: ${cmd}`);
+    };
+
+    const result = await collector.collect();
+
+    expect(result.skipped).toContain("Skipped fnm: not installed");
+    expect(result.skipped).toContain("Skipped volta: not installed");
+    expect(result.skipped).toContain("Skipped npm: not installed");
+    expect(result.errors).toContainEqual(
+      expect.stringContaining("Failed to collect rustup: totally unexpected rustup failure"),
+    );
+    expect(result.errors).not.toContainEqual(expect.stringContaining("Failed to collect bun"));
+  });
+
+  it("covers parser edge cases (rustup empty/colon-terminated, volta missing tool, npm no deps, cargo skip patterns, go regex miss)", async () => {
+    const collector = new DevToolchainCollector("/fake/home");
+    collector._execCommand = async (cmd: string) => {
+      switch (cmd) {
+        case "fnm list":
+          return "v22.11.0\n";
+        case "volta list all":
+          return "npm 10.0.0\n";
+        case "npm list -g --depth=0 --json":
+          return "{}";
+        case "bun pm ls -g":
+          return "";
+        case "rustup show":
+          return [
+            "installed toolchains",
+            "--------------------",
+            "stable-aarch64-apple-darwin",
+            "nightly-aarch64-apple-darwin:",
+          ].join("\n");
+        case "cargo install --list":
+          return [
+            "header without v marker",
+            "no-v-prefix vNotMatching",
+            "valid-tool v1.2.3:",
+            " v0.1.0:",
+          ].join("\n");
+        case "pyenv versions --bare":
+          return "";
+        case "rbenv versions --bare":
+          return "";
+        case "go version":
+          return "garbage output without version pattern";
+        default:
+          throw new Error(`unexpected cmd: ${cmd}`);
+      }
+    };
+
+    const result = await collector.collect();
+
+    expect(result.lists).toContainEqual(
+      expect.objectContaining({
+        name: "stable-aarch64-apple-darwin",
+        meta: { type: "rust-toolchain" },
+      }),
+    );
+    expect(result.lists).not.toContainEqual(
+      expect.objectContaining({ name: expect.stringContaining("nightly") }),
+    );
+    expect(result.lists).toContainEqual(
+      expect.objectContaining({
+        name: "npm",
+        version: "10.0.0",
+        meta: { type: "tool-version", manager: "volta" },
+      }),
+    );
+    expect(result.lists).toContainEqual(
+      expect.objectContaining({
+        name: "valid-tool",
+        version: "1.2.3",
+        meta: { type: "cargo-global" },
+      }),
+    );
+    expect(result.lists).not.toContainEqual(
+      expect.objectContaining({ meta: { type: "go-version" } }),
+    );
+  });
+
+  it("rustup with empty installed-toolchains section (startIndex resolves but no toolchains)", async () => {
+    const collector = new DevToolchainCollector("/fake/home");
+    collector._execCommand = async (cmd: string) => {
+      if (cmd === "rustup show") return "no toolchains header here";
+      throw new Error("not found");
+    };
+    const result = await collector.collect();
+    expect(result.lists.filter((l) => l.meta?.type === "rust-toolchain")).toHaveLength(0);
+  });
+
+  it("npm without dependencies key + cargo entry without version capture", async () => {
+    const collector = new DevToolchainCollector("/fake/home");
+    collector._execCommand = async (cmd: string) => {
+      switch (cmd) {
+        case "npm list -g --depth=0 --json":
+          return '{"name":"root"}';
+        case "cargo install --list":
+          return "tool v:";
+        default:
+          throw new Error("not found");
+      }
+    };
+    const result = await collector.collect();
+    expect(result.lists.filter((l) => l.meta?.type === "npm-global")).toHaveLength(0);
+  });
+
+  it("npm dep without version field falls into the no-version branch", async () => {
+    const collector = new DevToolchainCollector("/fake/home");
+    collector._execCommand = async (cmd: string) => {
+      if (cmd === "npm list -g --depth=0 --json") return '{"dependencies":{"orphan":{}}}';
+      throw new Error("not found");
+    };
+    const result = await collector.collect();
+    expect(result.lists).toContainEqual({ name: "orphan", meta: { type: "npm-global" } });
+  });
 });
