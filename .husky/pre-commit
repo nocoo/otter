@@ -1,39 +1,4 @@
 #!/usr/bin/env sh
-# Pre-commit: run independent stages in parallel and replay logs in order.
-# G1 (lint-staged Biome) + L1 (vitest tests — coverage moved to pre-push) + tsc + gitleaks (staged).
-set -o pipefail
-
-TMPDIR_HOOK=$(mktemp -d -t otter-precommit-XXXXXX)
-trap 'rm -rf "$TMPDIR_HOOK"' EXIT
-
-run_bg() {
-  name="$1"; shift
-  ( "$@" >"$TMPDIR_HOOK/$name.log" 2>&1; echo $? >"$TMPDIR_HOOK/$name.exit" ) &
-  eval "PID_$name=$!"
-}
-
-wait_stage() {
-  name="$1"
-  pid_var="PID_$1"
-  pid=$(eval echo \$$pid_var)
-  wait "$pid" 2>/dev/null || true
-  status=$(cat "$TMPDIR_HOOK/$name.exit" 2>/dev/null || echo 1)
-  echo "━━━ $name (exit=$status) ━━━"
-  cat "$TMPDIR_HOOK/$name.log"
-  if [ "$status" -ne 0 ]; then
-    echo "❌ pre-commit stage '$name' failed" >&2
-    exit "$status"
-  fi
-}
-
-run_bg lint      bunx lint-staged
-run_bg unit      bun run test
-run_bg typecheck bun run lint
-run_bg gitleaks  gitleaks protect --staged --no-banner
-
-wait_stage lint
-wait_stage unit
-wait_stage typecheck
-wait_stage gitleaks
-
-echo "✅ pre-commit: G1 + L1 (tests, no coverage) + tsc + gitleaks passed."
+# Pre-commit: parallel stage orchestration via Bun.spawn (scripts/precommit.ts).
+# G1 (lint-staged Biome) + L1 (vitest tests, coverage at pre-push) + tsc + gitleaks (staged).
+exec bun scripts/precommit.ts
