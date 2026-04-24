@@ -62,13 +62,13 @@ test("snapshot detail renders rich snapshot", async ({ page }) => {
 
   await page.goto(`/snapshots/${richSnapshotId}`);
 
-  await expect(page.getByRole("tab", { name: /config\s+4/i })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /config\s+5/i })).toBeVisible();
   await expect(page.getByRole("tab", { name: /environment\s+8/i })).toBeVisible();
   await expect(page.getByText("Otter Rich Mac")).toBeVisible();
   await expect(page.getByText("By Category")).toBeVisible();
   await expect(page.getByText("Skipped pyenv: not installed")).toBeVisible();
 
-  await page.getByRole("tab", { name: /config\s+4/i }).click();
+  await page.getByRole("tab", { name: /config\s+5/i }).click();
   await page.getByPlaceholder("Search collectors, files, items, or metadata...").fill("copilot");
   await expect(page.getByText("VS Code / Cursor Configuration")).toBeVisible();
 

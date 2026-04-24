@@ -13,6 +13,7 @@ export const ALL_COLLECTOR_IDS = [
   "cloud-cli",
   "macos-defaults",
   "launch-agents",
+  "hermes",
 ] as const;
 
 function collectorFile(path: string, content: string) {
@@ -260,6 +261,25 @@ export function buildRichSnapshotFixture(snapshotId: string): Snapshot {
         errors: [],
         skipped: [],
         durationMs: 14,
+      },
+      {
+        id: "hermes",
+        label: "Hermes Agent Profiles",
+        category: "config",
+        files: [
+          collectorFile(
+            "/Users/e2e-tester/.hermes/config.yaml",
+            "model: anthropic/claude-opus-4\napi_key: [REDACTED]",
+          ),
+          collectorFile("/Users/e2e-tester/.hermes/SOUL.md", "# Soul\n\nAgent persona definition."),
+        ],
+        lists: [
+          { name: "default", meta: { type: "hermes-profile", scope: "main" } },
+          { name: "research", meta: { type: "hermes-profile", scope: "named" } },
+        ],
+        errors: [],
+        skipped: [],
+        durationMs: 11,
       },
     ],
   };
