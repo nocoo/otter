@@ -1,4 +1,6 @@
 #!/usr/bin/env sh
 # Pre-commit: parallel stage orchestration via Bun.spawn (scripts/precommit.ts).
 # G1 (lint-staged Biome) + L1 (vitest tests, coverage at pre-push) + tsc + gitleaks (staged).
+# Husky 9 invokes hooks under `sh -e $hook` ignoring shebangs, so this thin
+# wrapper exec's bun for the actual logic.
 exec bun scripts/precommit.ts

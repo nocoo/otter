@@ -1,7 +1,5 @@
 #!/usr/bin/env bun
 // Orchestrate pre-commit stages in parallel using Bun.spawn.
-// Replaces the previous bash background-process structure to cut shell/process
-// coordination overhead by ~100ms (median 0.59s vs 0.70s wall).
 // Stages (all run in parallel):
 //   • lint       = G1 lint-staged (Biome)
 //   • unit       = L1 vitest tests (coverage runs at pre-push)
@@ -59,6 +57,4 @@ if (failed) {
   process.stderr.write(`❌ pre-commit failed in ${total}ms\n`);
   process.exit(1);
 }
-process.stderr.write(
-  `✅ pre-commit: G1 + L1 (tests, no coverage) + tsc + gitleaks passed in ${total}ms\n`,
-);
+process.stderr.write(`✅ pre-commit: G1 + L1 (tests, no coverage) + tsc + gitleaks passed in ${total}ms\n`);
