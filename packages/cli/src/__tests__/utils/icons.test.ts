@@ -81,6 +81,14 @@ describe("extractIconFileName", async () => {
 </dict></plist>`;
     expect(extractIconFileName(plist)).toBe("icon.icns");
   });
+
+  it("should return null when CFBundleIconFile value is whitespace-only", () => {
+    const plist = `<plist><dict>
+  <key>CFBundleIconFile</key>
+  <string>   </string>
+</dict></plist>`;
+    expect(extractIconFileName(plist)).toBeNull();
+  });
 });
 
 describe("exportIcons", async () => {
@@ -278,5 +286,58 @@ describe("exportIcons", async () => {
 
     expect(progressResults).toHaveLength(1);
     expect(progressResults[0]).toEqual({ appName: "ProgressApp", success: true });
+  });
+
+  it("should report sips failure even when no onProgress callback is supplied", async () => {
+    mockExecFile.mockImplementation(
+      (
+        cmd: string,
+        _args: string[],
+        cb: (err: Error | null, stdout: string, stderr: string) => void,
+      ) => {
+        if (cmd === "/usr/bin/plutil") {
+          cb(new Error("unexpected plutil call"), "", "");
+          return;
+        }
+        cb(new Error("sips boom"), "", "");
+      },
+    );
+
+    const appPath = join(appsDir, "NoCallbackApp.app");
+    await mkdir(join(appPath, "Contents", "Resources"), { recursive: true });
+    await writeFile(
+      join(appPath, "Contents", "Info.plist"),
+      `<?xml version="1.0"?>
+<plist><dict>
+  <key>CFBundleIconFile</key>
+  <string>X.icns</string>
+</dict></plist>`,
+    );
+    await writeFile(join(appPath, "Contents", "Resources", "X.icns"), "data");
+
+    const results = await exportIcons({ appsDir, outputDir });
+    expect(results).toHaveLength(1);
+    expect(results[0].success).toBe(false);
+    expect(results[0].error).toContain("sips conversion failed");
+  });
+
+  it("ignores whitespace-only CFBundleIconName candidates while still using CFBundleIconFile", async () => {
+    const appPath = join(appsDir, "MixedApp.app");
+    await mkdir(join(appPath, "Contents", "Resources"), { recursive: true });
+    await writeFile(
+      join(appPath, "Contents", "Info.plist"),
+      `<?xml version="1.0"?>
+<plist><dict>
+  <key>CFBundleIconName</key>
+  <string>   </string>
+  <key>CFBundleIconFile</key>
+  <string>RealIcon</string>
+</dict></plist>`,
+    );
+    await writeFile(join(appPath, "Contents", "Resources", "RealIcon.icns"), "data");
+
+    const results = await exportIcons({ appsDir, outputDir });
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({ appName: "MixedApp", success: true });
   });
 });
