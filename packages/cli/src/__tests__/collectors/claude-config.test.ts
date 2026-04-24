@@ -270,4 +270,32 @@ describe("ClaudeConfigCollector", () => {
     expect(paths).toContain(join(claudeDir, "history.jsonl"));
     expect(paths.some((p) => p.endsWith("__sessions-summary.json"))).toBe(true);
   });
+
+  it("should skip non-directory entries under projects/ and fall back to entry name when originalPath is missing", async () => {
+    const claudeDir = join(tempHome, ".claude");
+    const projectsDir = join(claudeDir, "projects");
+    const projectDir = join(projectsDir, "no-orig-path");
+    await mkdir(projectDir, { recursive: true });
+    // Stray file directly under projects/ — should be skipped (not a directory)
+    await writeFile(join(projectsDir, "stray.txt"), "ignore");
+    await writeFile(
+      join(projectDir, "sessions-index.json"),
+      JSON.stringify({
+        entries: [{ sessionId: "s1", firstPrompt: "p", isSidechain: true }, { sessionId: "s2" }],
+        // no originalPath — must fall back to entry.name
+      }),
+    );
+
+    const collector = new ClaudeConfigCollector(tempHome);
+    const result = await collector.collect();
+
+    const summaryFile = result.files.find((f) => f.path.endsWith("__sessions-summary.json"));
+    expect(summaryFile).toBeDefined();
+    // biome-ignore lint/style/noNonNullAssertion: asserted defined above
+    const summaries = JSON.parse(summaryFile!.content);
+    expect(summaries).toHaveLength(1);
+    expect(summaries[0].projectPath).toBe("no-orig-path");
+    expect(summaries[0].sessions[0].isSidechain).toBe(true);
+    expect(summaries[0].sessions[1].isSidechain).toBeUndefined();
+  });
 });
