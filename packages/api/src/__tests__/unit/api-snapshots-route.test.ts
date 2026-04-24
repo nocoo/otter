@@ -187,6 +187,18 @@ describe("createApiSnapshotsRoute", () => {
     expect(res.status).toBe(401);
   });
 
+  it("returns 401 from GET /snapshots/:id without auth", async () => {
+    const app = buildApp({ driver: memoryDriver(state), bucket: bucketPair.bucket, email: null });
+    const res = await app.request("/snapshots/s1");
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 401 from DELETE /snapshots/:id without auth", async () => {
+    const app = buildApp({ driver: memoryDriver(state), bucket: bucketPair.bucket, email: null });
+    const res = await app.request("/snapshots/s1", { method: "DELETE" });
+    expect(res.status).toBe(401);
+  });
+
   it("lists only the caller's snapshots", async () => {
     const app = buildApp({
       driver: memoryDriver(state),
