@@ -4,7 +4,8 @@ compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
 
 routes = [
-  { pattern = "otter.hexly.ai", custom_domain = true }
+  { pattern = "otter.hexly.ai", custom_domain = true },
+  { pattern = "otter.worker.hexly.ai", custom_domain = true }
 ]
 workers_dev = true
 
