@@ -12,7 +12,6 @@
     "dev": "bun run --cwd packages/web dev",
     "dev:worker": "bun run --cwd packages/worker dev",
     "build": "bun run --cwd packages/web build",
-    "build:web": "bun run --cwd packages/web build",
     "deploy": "bun run build && bun run --cwd packages/worker deploy",
     "deploy:test": "bun run build && bun run --cwd packages/worker deploy:test",
     "lint": "tsc -p packages/core/tsconfig.json && tsc --noEmit -p packages/cli/tsconfig.json && tsc --noEmit -p packages/web/tsconfig.json && tsc --noEmit -p packages/api/tsconfig.json",
