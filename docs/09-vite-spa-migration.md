@@ -31,7 +31,7 @@
 - ~~复刻 web_legacy 的 dashboard / charts / shadcn 组件到新 web~~ ✅ 2026-04-24 完成（Phase A/B/C 共 19 个原子提交）
 - ~~CLI 切 Bearer token + 跑 `/auth/cli/{start,callback}` 流程~~ ✅ 2026-04-24 协议收口为 `/cli/connect → /api/auth/cli?callback=&state= → 302 callback?token=&state=&email=`，删除 `callback_url` / `api_key` 旧别名
 - ~~worker 手工拼装 `/api/*`~~ ✅ 2026-04-24 收口到 `@otter/api` 的 `createApp({ basePath, driver, bucket, auth })`：snapshots/webhooks 路由工厂迁入 `@otter/api/routes/api-{snapshots,webhooks}`，worker 仅作 binding 适配；新增 13 个 `create-app.test.ts` 集成用例
-- 删除 `packages/api/src/lib/worker-client.ts`（仅 web_legacy 仍依赖）
+- ~~删除 `packages/api/src/lib/worker-client.ts`（仅 web_legacy 仍依赖）~~ ✅ 2026-04-24 删除 worker-client + 死的 `routes/snapshots.ts`/`routes/webhooks.ts`（HTTP D1 转发层）+ next-auth `middleware/auth.ts`；同步去掉 `@auth/core` / `@aws-sdk/client-s3` 依赖；`createApp()` 仅保留 `/v1/live` 与 `/api/*`
 
 ---
 

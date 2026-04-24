@@ -25,7 +25,7 @@ describe("GET /v1/live", () => {
     mockQueryFirst.mockResolvedValue({ count: 42 });
 
     const res = await app.request("/v1/live");
-    const body = await res.json();
+    const body = (await res.json()) as any;
 
     expect(res.status).toBe(200);
     expect(body.status).toBe("ok");
@@ -45,7 +45,7 @@ describe("GET /v1/live", () => {
     mockQueryFirst.mockResolvedValue(null);
 
     const res = await app.request("/v1/live");
-    const body = await res.json();
+    const body = (await res.json()) as any;
 
     expect(res.status).toBe(200);
     expect(body.status).toBe("ok");
@@ -57,7 +57,7 @@ describe("GET /v1/live", () => {
     mockQueryFirst.mockRejectedValue(new Error("D1 API error (500): timeout"));
 
     const res = await app.request("/v1/live");
-    const body = await res.json();
+    const body = (await res.json()) as any;
 
     expect(res.status).toBe(503);
     expect(body.status).toBe("error");
@@ -73,7 +73,7 @@ describe("GET /v1/live", () => {
     mockQueryFirst.mockRejectedValue("network failure");
 
     const res = await app.request("/v1/live");
-    const body = await res.json();
+    const body = (await res.json()) as any;
 
     expect(res.status).toBe(503);
     expect(body.status).toBe("error");
@@ -85,7 +85,7 @@ describe("GET /v1/live", () => {
     mockQueryFirst.mockRejectedValue(new Error("Something went wrong"));
 
     const res = await app.request("/v1/live");
-    const body = await res.json();
+    const body = (await res.json()) as any;
 
     expect(body.status).toBe("error");
     expect(body.status).not.toBe("ok");
@@ -112,7 +112,7 @@ describe("GET /v1/live", () => {
     mockQueryFirst.mockResolvedValue({ count: 0 });
 
     const res = await app.request("/v1/live");
-    const body = await res.json();
+    const body = (await res.json()) as any;
 
     expect(res.status).toBe(200);
     expect(body.status).toBe("ok");
@@ -133,7 +133,7 @@ describe("GET /v1/live", () => {
     );
 
     const res = await app.request("/v1/live");
-    const body = await res.json();
+    const body = (await res.json()) as any;
 
     expect(body.latencyMs).toBeGreaterThanOrEqual(0);
     expect(body.checks.d1.latencyMs).toBeGreaterThanOrEqual(0);

@@ -114,7 +114,7 @@ async function executeRaw<T = Record<string, unknown>>(
     throw new Error(`D1 API error (${response.status}): ${text}`);
   }
 
-  const data: D1Response<T> = await response.json();
+  const data = (await response.json()) as D1Response<T>;
   if (!data.success) {
     throw new Error(`D1 query failed: ${data.errors.map((e) => e.message).join(", ")}`);
   }
@@ -184,7 +184,7 @@ export async function batch(statements: Array<{ sql: string; params?: unknown[] 
         throw new Error(`D1 API error (${response.status}): ${text}`);
       }
 
-      const data: D1Response = await response.json();
+      const data = (await response.json()) as D1Response;
       if (!data.success) {
         throw new Error(`D1 batch failed: ${data.errors.map((e) => e.message).join(", ")}`);
       }

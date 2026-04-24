@@ -857,4 +857,4 @@ describe("Ingest API", () => {
 - 新 web 复刻全部 dashboard / charts / shadcn 组件（当前只有占位骨架）
 - CLI 切到 Bearer token 流程（当前 CLI 仍走 webhook URL token）
 - ~~web_legacy 内的 `/v1/*` E2E migration 到新 worker~~ → web_legacy 已删除，残留 `/v1/*` 仅服务外部 HTTP-D1 调用方
-- 删除 `packages/api/src/lib/worker-client.ts`（原 web_legacy 依赖；目前已无工作区内消费方，可独立清理）
+- ~~删除 `packages/api/src/lib/worker-client.ts`（原 web_legacy 依赖；目前已无工作区内消费方，可独立清理）~~ ✅ 已删除（含 `routes/snapshots.ts` / `routes/webhooks.ts` HTTP 转发层 + next-auth `middleware/auth.ts`），`createApp()` 仅保留 `/v1/live` 与 `/api/*`

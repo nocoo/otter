@@ -36,7 +36,7 @@ otter/
 │   │   └── src/
 │   │       ├── index.ts            # 入口（导出 createApp / 中间件 / lib）
 │   │       ├── app.ts              # Hono app 装配（vitest 直测）
-│   │       ├── routes/             # /v1/snapshots, /v1/webhooks, /v1/live, /me, /auth/cli
+│   │       ├── routes/             # /v1/live, /me, /auth/cli, /api-snapshots, /api-webhooks
 │   │       ├── middleware/         # access-auth (CF Access JWT) + api-key-auth (Bearer)
 │   │       └── lib/                # db/{driver,d1-binding,d1-http} + snapshot-repo + webhook-repo + api-token-repo
 │   ├── web/           # @otter/web — Vite 6 SPA (端口 7019)
