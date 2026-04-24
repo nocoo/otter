@@ -2,11 +2,24 @@
 // the legacy /v1/* surface and the new /api/* surface based on options.
 
 import { Hono } from "hono";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../app";
 import type { DbDriver } from "../../lib/db/driver";
 import type { R2BucketLike } from "../../lib/r2";
 import { createMockDriver } from "./_mock-driver";
+
+beforeEach(() => {
+  // Skip real D1 retry backoff sleeps (200ms + 400ms) when /v1/live probes
+  // the http D1 client without env — fires callbacks synchronously.
+  vi.spyOn(globalThis, "setTimeout").mockImplementation(((cb: () => void) => {
+    cb();
+    return 0 as unknown as ReturnType<typeof setTimeout>;
+  }) as typeof setTimeout);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 function fakeBucket() {
   const store = new Map<string, string>();

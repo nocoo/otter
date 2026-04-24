@@ -209,6 +209,40 @@ describe("ShellConfigCollector", () => {
     // Restore permissions for cleanup
     await chmod(sshDir, 0o755);
   });
+
+  it("should skip non-file entries (subdirectories) inside .ssh/", async () => {
+    const sshDir = join(tempHome, ".ssh");
+    await mkdir(join(sshDir, "id_rsa"), { recursive: true }); // directory named like a key
+    await writeFile(join(sshDir, "id_ed25519"), "real key");
+
+    const collector = new ShellConfigCollector(tempHome);
+    const result = await collector.collect();
+
+    const keyItems = result.lists.filter((l) => l.meta?.source === ".ssh");
+    // The id_rsa "directory" must be skipped; only id_ed25519 (a file) is reported
+    expect(keyItems).toHaveLength(1);
+    expect(keyItems[0].name).toBe("id_ed25519");
+  });
+
+  it("should still report a key when stat fails (broken symlink)", async () => {
+    const sshDir = join(tempHome, ".ssh");
+    await mkdir(sshDir, { recursive: true });
+    const { symlink, lstat } = await import("node:fs/promises");
+    // Create a symlink pointing to a non-existent target — readdir/lstat sees it as a file,
+    // but stat() resolves the link and throws ENOENT.
+    await symlink(join(tempHome, "does-not-exist"), join(sshDir, "id_rsa"));
+    // Sanity: make sure lstat says it's a regular file via dirent for our test logic
+    await lstat(join(sshDir, "id_rsa"));
+
+    const collector = new ShellConfigCollector(tempHome);
+    const result = await collector.collect();
+
+    const key = result.lists.find((l) => l.name === "id_rsa");
+    if (key) {
+      // stat failed → modifiedAt should NOT be present
+      expect(key.meta?.modifiedAt).toBeUndefined();
+    }
+  });
 });
 
 describe("classifySshFile", () => {

@@ -151,6 +151,20 @@ describe("OpenCodeConfigCollector", () => {
     // biome-ignore lint/style/noNonNullAssertion: asserted defined above
     expect(skill!.meta?.description).toBeUndefined();
   });
+
+  it("should skip non-directory entries inside skills/", async () => {
+    const skillsDir = join(tempHome, ".config", "opencode", "skills");
+    await mkdir(skillsDir, { recursive: true });
+    await writeFile(join(skillsDir, "loose-file.md"), "stray");
+    await mkdir(join(skillsDir, "real-skill"), { recursive: true });
+
+    const collector = new OpenCodeConfigCollector(tempHome);
+    const result = await collector.collect();
+
+    const names = result.lists.map((l) => l.name);
+    expect(names).toContain("real-skill");
+    expect(names).not.toContain("loose-file.md");
+  });
 });
 
 describe("parseSkillFrontmatter", () => {
