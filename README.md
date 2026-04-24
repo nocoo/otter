@@ -243,6 +243,8 @@ bun run deploy:test  # build SPA → wrangler deploy --env test
 | [安全机制](docs/05-security.md) | 四层安全体系、脱敏模式、审计清单 |
 | [Dashboard](docs/06-dashboard.md) | Vite SPA 路由、API 端点、D1 schema |
 | [采集器增强计划](docs/07-collector-enhancement-plan.md) | P0/P1/P2 采集器增强进度 |
+| [archive/08-worker-migration](docs/archive/08-worker-migration.md) | （已完成）旧 worker 回迁 + dual-stack 路由设计 |
+| [archive/09-vite-spa-migration](docs/archive/09-vite-spa-migration.md) | （已完成）Vite SPA + 单 Worker 迁移 16 步执行进度 |
 
 ## License
 
