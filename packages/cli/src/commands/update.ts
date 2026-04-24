@@ -4,13 +4,12 @@
  * Uses cli-base createUpdateCommand for standard update behavior.
  */
 
-import { createUpdateCommand } from "@nocoo/cli-base";
-
 // CLI_VERSION is defined in cli.ts, we need to import it
 // For now, read from package.json at runtime
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createUpdateCommand } from "@nocoo/cli-base";
 
 function getVersion(): string {
   try {

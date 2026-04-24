@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+
 /**
  * release.ts — Bump CLI version and sync across the monorepo.
  *
@@ -18,33 +19,32 @@
  *   7. Print next steps (commit, push, npm publish)
  */
 
+import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { execSync } from "node:child_process";
 
-const ROOT = join(import.meta.dirname!, "..");
+const ROOT = join(import.meta.dirname ?? ".", "..");
 const CLI_PKG_PATH = join(ROOT, "packages/cli/package.json");
 const CLI_TS_PATH = join(ROOT, "packages/cli/src/cli.ts");
 const ROOT_PKG_PATH = join(ROOT, "package.json");
+
+const SEMVER_RE = /^(\d+)\.(\d+)\.(\d+)$/;
 
 function readJson(path: string): Record<string, unknown> {
   return JSON.parse(readFileSync(path, "utf-8"));
 }
 
 function writeJson(path: string, data: Record<string, unknown>): void {
-  writeFileSync(path, JSON.stringify(data, null, 2) + "\n");
+  writeFileSync(path, `${JSON.stringify(data, null, 2)}\n`);
 }
 
 function parseVersion(v: string): [number, number, number] {
-  const match = v.match(/^(\d+)\.(\d+)\.(\d+)$/);
+  const match = v.match(SEMVER_RE);
   if (!match) throw new Error(`Invalid semver: ${v}`);
   return [Number(match[1]), Number(match[2]), Number(match[3])];
 }
 
-function bumpVersion(
-  current: string,
-  type: "patch" | "minor" | "major"
-): string {
+function bumpVersion(current: string, type: "patch" | "minor" | "major"): string {
   const [major, minor, patch] = parseVersion(current);
   switch (type) {
     case "patch":
@@ -91,7 +91,7 @@ console.log(`   ✓ packages/cli/package.json`);
 const cliTs = readFileSync(CLI_TS_PATH, "utf-8");
 const updatedCliTs = cliTs.replace(
   /const CLI_VERSION = "[^"]+";/,
-  `const CLI_VERSION = "${newVersion}";`
+  `const CLI_VERSION = "${newVersion}";`,
 );
 if (updatedCliTs === cliTs) {
   console.error("   ✗ Failed to update CLI_VERSION in cli.ts");
