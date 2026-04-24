@@ -12,6 +12,7 @@ import { type Context, Hono } from "hono";
 import type { AppEnv } from "./lib/app-env";
 import type { DbDriver } from "./lib/db/driver";
 import type { R2BucketLike } from "./lib/r2";
+import { APP_VERSION } from "./lib/version";
 import { accessAuth } from "./middleware/access-auth";
 import { createApiKeyAuth } from "./middleware/api-key-auth";
 import { createApiSnapshotsRoute } from "./routes/api-snapshots";
@@ -61,7 +62,7 @@ export function createApp(opts: CreateAppOptions = {}) {
       apiApp.use("*", createApiKeyAuth({ getDriver: () => driver }));
     }
 
-    apiApp.get("/live", (c) => c.json({ ok: true }));
+    apiApp.get("/live", (c) => c.json({ ok: true, version: APP_VERSION }));
     apiApp.route("/me", meRoute);
     apiApp.route("/auth/cli", createAuthCliRoute({ getDriver: () => driver }));
     apiApp.route("/webhooks", createApiWebhooksRoute({ getDriver: () => driver }));
