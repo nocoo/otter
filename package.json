@@ -14,7 +14,7 @@
     "build": "bun run --cwd packages/web build",
     "deploy": "bun run build && bun run --cwd packages/worker deploy",
     "deploy:test": "bun run build && bun run --cwd packages/worker deploy:test",
-    "lint": "tsc -p packages/core/tsconfig.json && bash scripts/typecheck-parallel.sh",
+    "lint": "bash scripts/typecheck-parallel.sh",
     "lint:biome": "bunx biome check .",
     "lint:biome:fix": "bunx biome check --write .",
     "test:e2e": "bun run --cwd packages/web playwright test --config e2e/playwright.config.ts",
