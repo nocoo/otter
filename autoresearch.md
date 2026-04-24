@@ -34,11 +34,11 @@
 
 | 指标 | 基线 | 优化后 | 改善 |
 |------|------|--------|------|
-| precommit_s | 6.541s | **0.689s** | **−89.5%** |
-| unit_cov_s | 6.456s | 0.612s | −90.5% |
-| typecheck_s | 2.692s | 0.122s | −95.5% |
-| lint_s | 0.176s | 0.160s | −9.1% |
-| gitleaks_s | 0.057s | 0.053s | −7.0% |
+| precommit_s | 6.541s | **0.587s** | **−91.0%** |
+| unit_cov_s | 6.456s | 0.548s | −91.5% |
+| typecheck_s | 2.692s | 0.052s | −98.1% |
+| lint_s | 0.176s | 0.116s | −34.1% |
+| gitleaks_s | 0.057s | 0.016s | −71.9% |
 
 ## 应用的优化（按贡献排序）
 
@@ -55,9 +55,13 @@
    原先 ≈ 700ms 并行）。
 5. **`incremental: true` + `tsBuildInfoFile`** — 添加到 cli/web/api tsconfig，
    核心前置条件让上面 #4 生效。
-6. **vitest `pool: "vmThreads"`** — 用 node:vm context 替代默认 forks pool；
+6. **vitest `pool: "vmThreads"` (+ maxThreads=12)** — 用 node:vm context 替代默认 forks pool;
    保留 per-file 隔离（必要——`pool: threads, isolate: false` 会让
-   `builder.test.ts` 的 `vi.mock` 跨文件污染）。**节省 ≈ 0.3s**。
+   `builder.test.ts` 的 `vi.mock` 跨文件污染）。提高 maxThreads 到 12 压榜出
+   额外 30ms。**节省 ≈ 0.3s**。
+7. **Bun.spawn-based 并行编排器 (`scripts/precommit.ts`)** — 用 Bun 原生进程
+   管理替换 bash background-process 结构；直接调用 `./node_modules/.bin/{vitest,tsc,lint-staged}`
+   跳过 `bun run` / `bunx` 间接。**节省 ≈ 0.1s** 协调开销。
 
 ## 弃用尝试
 - vitest `pool: "vmForks"`（比 vmThreads 慢）。
@@ -65,5 +69,6 @@
 - 缩窄 coverage reporter 到 text-summary（无明显收益，损失本地 DX）。
 
 ## 当前瓶颈
-`unit (vitest tests) ≈ 0.61s` 是 vitest 启动 + 547 个测试并行执行的实际下限。
+`unit (vitest tests) ≈ 0.55s` 是 vitest 启动 + 547 个测试并行执行的实际下限。
+协调开销已压近 ~30ms (sh wrapper + bun 启动 + Bun.spawn fan-out)。
 进一步明显提升需要切换测试框架（如 `bun:test`）或大改架构，超出本次范围。

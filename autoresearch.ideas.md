@@ -4,6 +4,8 @@
 - Replace `bunx lint-staged` with `biome check --staged --write` directly in the hook (saves ~60ms of lint-staged wrapper overhead). lint-staged also auto-`git add`s rewritten files; need to add an explicit `git diff --name-only --cached --diff-filter=AM | xargs -r git add` step. Lint isn't on the critical path though, so wall-clock impact is zero — only matters if the parallel structure changes.
 
 ## Tried & rejected (do NOT re-explore)
+- `#!/usr/bin/env bun` shebang on .husky/pre-commit directly (no sh wrapper) — husky 9 invokes hooks via `sh -e $hook` ignoring shebangs; the bun TS file gets parsed by sh and breaks (`// is a directory`). Must keep an `sh` wrapper that exec's bun.
+- Bun.spawn with `stdout/stderr=ignore` + re-run failing stage with inherit — within noise on success path, complicates code, slows failure path by ~550ms.
 - Merging lint+gitleaks into a single bg subprocess (`sh -c 'lint-staged && gitleaks'`) to drop parallel stages from 4 to 3 — isolated test showed +50ms gain but in the actual hook, `sh -c` overhead nudged unit_cov_s from 0.62s → 0.66s (median 0.78s vs prior 0.72s). Slight regression.
 - `nice -n 19` for non-unit stages — no measurable change on macOS scheduler with 16 cores.
 - `pool: "threads", isolate: false` — breaks `builder.test.ts` mock isolation.
@@ -20,4 +22,9 @@
 - Moving `test:coverage` back to pre-commit — strictly worse (0.95s vs 0.69s wall).
 
 ## Current floor
-~0.68-0.74s wall (median 0.69s), bottleneck is vitest's own startup (~0.55s for transform + collect) plus parallel-stage shell coordination. Further wins require either a different test framework (`bun test`) or weakening the pre-commit semantic contract.
+~0.59s wall (median 0.587-0.594s), bottleneck is vitest's own startup (~0.55s for transform + collect) plus minimal Bun.spawn coordination (~30ms total: sh wrapper, bun startup, fan-out). Further wins require either a different test framework (`bun test`) or weakening the pre-commit semantic contract.
+
+## Recently won (kept in tree)
+- Bun.spawn-based orchestrator (`scripts/precommit.ts`) replacing bash background processes — −50-100ms wall.
+- Direct `./node_modules/.bin/{vitest,tsc,lint-staged}` invocations skip `bun run` / `bunx` indirection — −20-30ms wall.
+- vmThreads.maxThreads=12 (was default 8) — −30ms isolated, marginal in-bench.
