@@ -37,14 +37,12 @@ otter/
 │   │       ├── index.ts            # 入口（导出 createApp / 中间件 / lib）
 │   │       ├── app.ts              # Hono app 装配（vitest 直测）
 │   │       ├── routes/             # /v1/snapshots, /v1/webhooks, /v1/live, /me, /auth/cli
-│   │       ├── middleware/         # auth (next-auth, web_legacy 用) + access-auth (CF Access JWT) + api-key-auth (Bearer)
+│   │       ├── middleware/         # access-auth (CF Access JWT) + api-key-auth (Bearer)
 │   │       └── lib/                # db/{driver,d1-binding,d1-http} + snapshot-repo + webhook-repo + api-token-repo
-│   ├── web/           # @otter/web — Vite 6 SPA（端口 7019，本轮新建）
+│   ├── web/           # @otter/web — Vite 6 SPA (端口 7019)
 │   │   └── src/                    # React 19 + react-router 7 + SWR + Tailwind v4
-│   ├── web_legacy/    # @otter/web-legacy — 冻结的 Next.js 16 + next-auth 应用，回滚兜底
-│   │   └── (内容不变，bun run dev:legacy 仍可起)
-│   └── worker/        # @otter/worker — Cloudflare Worker（同时托管 /api/* + SPA 静态资源）
-│       └── src/                    # Hono dual-stack: /api/* 走 D1 binding + CF Access; /v1/* 兼容 web_legacy
+│   └── worker/        # @otter/worker — Cloudflare Worker (单进程托管 /api/* + SPA 静态资源)
+│       └── src/                    # Hono dual-stack: /api/* 走 D1 binding + CF Access; /v1/* 兼容老 HTTP-D1 调用方
 ├── docs/              # 项目文档
 ├── vitest.config.ts   # 统一测试配置
 ├── tsconfig.json      # 基础 TypeScript 配置
@@ -115,11 +113,15 @@ CLI 包内还定义了以下类型（`packages/cli/src/storage/local.ts`）：
 
 ## Web ↔ API 通信
 
-`packages/api` 是**纯逻辑包**（不启进程），通过 Next.js catch-all `app/api/[...slug]/route.ts` 嵌入 web 进程。请求路径 `/api/snapshots/...` 在路由内重写为 `/v1/snapshots/...` 后调用 `app.fetch(request)`，由 Hono 在同一 Node 进程内处理。`/api/auth/*` 由专用 next-auth 路由抢占，不会落到 catch-all。
+`packages/web`（Vite SPA）和 `packages/worker`（Cloudflare Worker）部署到**同一个 Worker**：`web/dist` 通过 wrangler 的 `[assets]` binding 由 Worker 直接托管，`/api/*` 由同一 Worker 处理。SPA 和 API 同源，浏览器 `fetch("/api/...")` 不跨域、不需要 cookie 转发。
 
-部署只跑一个容器 / 一个 Node 进程；未来切 Vite + Cloudflare Worker 时，只需把同一 `createApp()` 喂给 worker 入口即可，业务逻辑零改动。
+业务逻辑全部封装在 `@otter/api` 的 `createApp({ basePath, driver, bucket, auth })` 工厂里。Worker 入口只做 binding 适配：把 `c.env.DB`（D1 binding）包成 `DbDriver`，把 `c.env.SNAPSHOTS`（R2 binding）传进去，然后 `apiApp.fetch(c.req.raw, c.env, c.executionCtx)`。本地开发时 vite + wrangler 各自起进程，vite dev server 把 `/api/*` 反代到 `:7020`。
 
-鉴权：next-auth 颁发的 JWT 以 cookie 形式下发；中间件读 `authjs.session-token`（生产为 `__Secure-` 前缀），自动重组 Auth.js 大于 4KB 时切出的 `.0/.1/...` 分片，再用共享 `AUTH_SECRET` 调 `@auth/core/jwt.decode` 解码。无需 CORS、无需 Bearer token。
+鉴权 dual-stack：
+- 浏览器：Cloudflare Access SSO 注入 `Cf-Access-Jwt-Assertion`，`accessAuth` 中间件用 `jose` + `createRemoteJWKSet` 验签后写入 `accessEmail`
+- CLI：`api_tokens` 表里的 Bearer token，`apiKeyAuth` 中间件验证
+- 两者都不命中时，路由内 `requireUser(c)` 返回 401
+- 本地 `wrangler dev --local` 时 Host=localhost 的请求自动 stamp 为 `dev@localhost`，方便 E2E 不伪造 JWT
 
 ## 相关文档
 

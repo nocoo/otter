@@ -31,9 +31,9 @@ bun run test
 | `bun run build` | 构建 web SPA（vite，输出到 `packages/web/dist`） |
 | `bun run dev` | 启动新 Vite SPA dev server（`:7019`，自带 `/api → :7020` proxy） |
 | `bun run dev:worker` | 启动 wrangler dev (`:7020`)，挂 `/api/*` + 老 `/v1/*` 路由（建议另开终端） |
-| `bun run dev:legacy` | 启动冻结的 Next.js `web_legacy` (`:7019`)，仅用于回滚对照 |
 | `bun run deploy` / `deploy:test` | 先 vite build，再 `wrangler deploy [--env test]` |
 | `bun run test` | 运行全部单元测试（Vitest） |
+| `bun run test:e2e` | Playwright E2E（启 `run-e2e-spa.ts` → vite build + wrangler dev `--env test --local`） |
 | `bun run test:watch` | 监听模式运行测试 |
 | `bun run test:coverage` | 运行测试并生成覆盖率报告 |
 | `bun run lint` | TypeScript 类型检查（`tsc --noEmit`） |
@@ -95,11 +95,11 @@ packages/
             └── utils/
 ```
 
-## 启动 web (含嵌入式 api)
+## 启动 web + worker
 
-`bun run dev` 启动 Next.js dev server（端口 7019），`packages/api` 作为纯逻辑库被 `app/api/[...slug]/route.ts` 在同一进程内 import 并通过 `app.fetch()` 调用——不再有独立的 api 进程或端口。
+`bun run dev` 启动 Vite SPA dev server（端口 7019），`bun run dev:worker` 在另一个终端启动 wrangler dev（端口 7020），挂 `/api/*`（D1 binding + CF Access JWT/Bearer 双栈鉴权）以及老 `/v1/*` 兼容路由。Vite 的 dev server 自动把 `/api/*` 反代到 :7020；浏览器只看一份地址 `http://localhost:7019`。
 
-浏览器访问 `http://localhost:7019`。前端 `fetch("/api/snapshots")` 等请求被 catch-all 路由捕获，路径前缀 `/api/` 重写为 `/v1/`，再交给 Hono app 处理；cookie 由 next-auth 颁发并随同域请求自动跟随。需在 `.env` 中设置 `AUTH_SECRET` 以解码 JWT。
+生产部署是单一 Cloudflare Worker：`packages/web/dist` 通过 `[assets]` 直接由 Worker 托管，`/api/*` 与 SPA fallback 同进程同源，无 CORS、无 cookie 依赖。本地开发因 vite + wrangler 是两个进程才需要 `dev` + `dev:worker` 一起跑。
 
 ## Git Hooks
 

@@ -818,14 +818,16 @@ describe("Ingest API", () => {
 ## 2026-04 增补：Vite SPA + 单 Worker 架构（CF Access）
 
 > 本节追加自后续一轮迁移，与上文「Next.js 直连 → Worker 中转」方案叠加但不替换。
+>
+> **2026-04 更新（step 15, commit `ba3e175`）**：`packages/web_legacy` 已整体删除，仅保留 worker 内的 `/v1/*` 兼容路由以服务残留 HTTP-D1 调用方。下文中所有 `web_legacy` 字样均指已被删除的旧 Next.js 应用，作历史记录保留。
 
 ### 现状
 
 - `packages/web` = 新 Vite 6 SPA（React 19 + react-router 7 + SWR + Tailwind v4）
-- `packages/web_legacy` = 冻结的 Next.js 16 应用（next-auth + Google OAuth），仅作回滚兜底
+- ~~`packages/web_legacy`~~ = 已删除的 Next.js 16 应用（next-auth + Google OAuth），回滚需 revert commit `ba3e175`
 - `packages/worker` = 单 Cloudflare Worker，dual-stack：
   - `/api/*` → 新栈：D1 binding driver + CF Access JWT (jose) + Bearer token (api_tokens 表)
-  - `/v1/*`、`/health`、`/ingest/*` → 老栈：原 apiKeyMiddleware + envGuardMiddleware（兼容 web_legacy）
+  - `/v1/*`、`/health`、`/ingest/*` → 老栈：原 apiKeyMiddleware + envGuardMiddleware（兼容残留 HTTP-D1 调用方）
   - 其它路径 → `[assets]` SPA fallback (`packages/web/dist`)，配合 `not_found_handling = "single-page-application"` + `run_worker_first = ["/api/*", "/v1/*", "/health", "/ingest/*"]`
 
 ### 鉴权
@@ -838,7 +840,7 @@ describe("Ingest API", () => {
 
 `@otter/api/lib/db/driver.ts` 定义 `query / queryFirst / execute / batch` 接口，两套实现：
 - `d1-binding.ts`：worker 用，零网络开销（`c.env.DB.prepare().bind()`）
-- `d1-http.ts`：web_legacy 用，走 Cloudflare D1 REST API
+- `d1-http.ts`：原 web_legacy 用，走 Cloudflare D1 REST API；现仅供 worker 外的 HTTP-D1 调用方
 
 `snapshot-repo.ts` / `webhook-repo.ts` / `api-token-repo.ts` 接 `DbDriver` 参数，与运行时无关。
 
@@ -846,7 +848,7 @@ describe("Ingest API", () => {
 
 - worker 新 `/api/*` 路由：`packages/worker/src/__tests__/api-snapshots.test.ts`，15 个用例，用 in-memory DbDriver + 假 R2Bucket，跳过 miniflare D1 migration
 - api 层新增 49 个单测覆盖 access-auth / api-key-auth / me / auth-cli / api-token-repo / is-localhost
-- 老 web_legacy 单测和 4+6 个 E2E spec 全部保留在原位，仍用 vitest `@` 别名指向 `packages/web_legacy/src`
+- ~~老 web_legacy 单测和 4+6 个 E2E spec 全部保留在原位~~ → 已随 `packages/web_legacy` 一并删除（commit `ba3e175`）
 
 ### 还没做（留给下一轮）
 
@@ -854,5 +856,5 @@ describe("Ingest API", () => {
 - `wrangler.toml` 写入 `CF_ACCESS_TEAM_DOMAIN` / `CF_ACCESS_AUD` 真实值
 - 新 web 复刻全部 dashboard / charts / shadcn 组件（当前只有占位骨架）
 - CLI 切到 Bearer token 流程（当前 CLI 仍走 webhook URL token）
-- web_legacy 内的 `/v1/*` E2E migration 到新 worker
-- 删除 `packages/api/src/lib/worker-client.ts`（web_legacy 仍依赖）
+- ~~web_legacy 内的 `/v1/*` E2E migration 到新 worker~~ → web_legacy 已删除，残留 `/v1/*` 仅服务外部 HTTP-D1 调用方
+- 删除 `packages/api/src/lib/worker-client.ts`（原 web_legacy 依赖；目前已无工作区内消费方，可独立清理）
