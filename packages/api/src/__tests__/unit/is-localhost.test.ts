@@ -25,8 +25,14 @@ describe("isLocalhost", () => {
     expect(await probe("http://127.0.0.1/x", { host: "127.0.0.1:7020" })).toBe(true);
   });
 
-  it("false on cf edge regardless of spoofed host", async () => {
-    expect(await probe("https://x/x", { host: "localhost" }, { country: "US" })).toBe(false);
+  it("true for localhost host even when cf is populated (miniflare --local)", async () => {
+    expect(await probe("http://localhost/x", { host: "localhost" }, { country: "US" })).toBe(true);
+  });
+
+  it("false on cf edge with non-localhost host", async () => {
+    expect(await probe("https://x/x", { host: "otter.example.com" }, { country: "US" })).toBe(
+      false,
+    );
   });
 
   it("false for arbitrary public host without cf", async () => {
