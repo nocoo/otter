@@ -20,6 +20,7 @@ interface SnapRow {
   file_count: number;
   list_count: number;
   size_bytes: number;
+  r2_key: string;
   snapshot_at: number;
   uploaded_at: number;
 }
@@ -45,6 +46,7 @@ function makeSnap(id: string, user: string): SnapRow {
     file_count: 2,
     list_count: 3,
     size_bytes: 100,
+    r2_key: `${user}/${id}.json`,
     snapshot_at: 1700000000000,
     uploaded_at: 1700000001000,
   };

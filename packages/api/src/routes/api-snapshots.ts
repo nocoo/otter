@@ -13,7 +13,6 @@ import {
   getSnapshotMeta,
   listSnapshots,
   type SnapshotRow,
-  snapshotR2Key,
 } from "../lib/snapshot-repo";
 
 interface SnapshotResponse {
@@ -83,7 +82,7 @@ export function createApiSnapshotsRoute(opts: SnapshotsRouteOptions) {
     const driver = opts.getDriver(c);
     const row = await getSnapshotMeta(driver, auth.email, id);
     if (!row) return c.json({ error: "Snapshot not found" }, 404);
-    const object = await opts.getBucket(c).get(snapshotR2Key(auth.email, id));
+    const object = await opts.getBucket(c).get(row.r2_key);
     if (!object) return c.json({ error: "Snapshot data not found in storage" }, 404);
     const data = JSON.parse(await object.text());
     return c.json({ snapshot: toSnapshotResponse(row), data });
@@ -96,7 +95,7 @@ export function createApiSnapshotsRoute(opts: SnapshotsRouteOptions) {
     const driver = opts.getDriver(c);
     const row = await getSnapshotMeta(driver, auth.email, id);
     if (!row) return c.json({ error: "Snapshot not found" }, 404);
-    await opts.getBucket(c).delete(snapshotR2Key(auth.email, id));
+    await opts.getBucket(c).delete(row.r2_key);
     await deleteSnapshotMeta(driver, id);
     return c.json({ success: true });
   });

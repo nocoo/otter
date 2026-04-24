@@ -24,6 +24,8 @@ export interface SnapshotRow {
   // biome-ignore lint/style/useNamingConvention: D1 column name
   size_bytes: number;
   // biome-ignore lint/style/useNamingConvention: D1 column name
+  r2_key: string;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
   snapshot_at: number;
   // biome-ignore lint/style/useNamingConvention: D1 column name
   uploaded_at: number;
@@ -40,7 +42,7 @@ export interface SnapshotMetadata {
 }
 
 const SELECT_COLS = `id, user_id, hostname, platform, arch, username,
-  collector_count, file_count, list_count, size_bytes,
+  collector_count, file_count, list_count, size_bytes, r2_key,
   snapshot_at, uploaded_at`;
 
 export interface ListOptions {
