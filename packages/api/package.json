@@ -6,23 +6,8 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./lib/cf/d1": "./src/lib/cf/d1.ts",
-    "./lib/snapshot-collectors": "./src/lib/snapshot-collectors.ts",
-    "./lib/db/driver": "./src/lib/db/driver.ts",
     "./lib/db/d1-binding": "./src/lib/db/d1-binding.ts",
-    "./lib/db/d1-http": "./src/lib/db/d1-http.ts",
-    "./lib/snapshot-repo": "./src/lib/snapshot-repo.ts",
-    "./lib/webhook-repo": "./src/lib/webhook-repo.ts",
-    "./lib/api-token-repo": "./src/lib/api-token-repo.ts",
-    "./lib/app-env": "./src/lib/app-env.ts",
-    "./lib/r2": "./src/lib/r2.ts",
-    "./middleware/access-auth": "./src/middleware/access-auth.ts",
-    "./middleware/api-key-auth": "./src/middleware/api-key-auth.ts",
-    "./middleware/is-localhost": "./src/middleware/is-localhost.ts",
-    "./routes/me": "./src/routes/me.ts",
-    "./routes/auth-cli": "./src/routes/auth-cli.ts",
-    "./routes/api-snapshots": "./src/routes/api-snapshots.ts",
-    "./routes/api-webhooks": "./src/routes/api-webhooks.ts"
+    "./lib/snapshot-collectors": "./src/lib/snapshot-collectors.ts"
   },
   "scripts": {
     "build": "tsc",
