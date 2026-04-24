@@ -22,7 +22,9 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "incremental": true,
+    "tsBuildInfoFile": "./node_modules/.cache/tsc-web.tsbuildinfo"
   },
   "include": ["src", "vite.config.ts"]
 }
