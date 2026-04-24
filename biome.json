@@ -99,7 +99,6 @@
       }
     },
     "domains": {
-      "next": "all",
       "react": "all"
     }
   },

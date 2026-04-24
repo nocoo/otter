@@ -12,7 +12,6 @@ export default defineConfig({
     exclude: [
       "**/node_modules/**",
       "**/dist/**",
-      "**/.next/**",
       "**/__tests__/e2e/**",
       "**/e2e/**",
       // Worker tests require @cloudflare/vitest-pool-workers, run separately
