@@ -2,10 +2,11 @@
 -- user_id everywhere to the user's email, which is what @otter/api now reads from
 -- the auth context (`auth.email`).
 --
--- Order matters: rewrite children that reference users.id first while the old
--- mapping is still resolvable, then update users.id last. SQLite/D1 do not enforce
--- foreign keys by default, so updates pass even if children temporarily point at
--- the new id before users.id catches up.
+-- D1 enforces foreign keys, but PRAGMA defer_foreign_keys lets us reorder updates
+-- within the implicit transaction the migration file runs as: rewrite children
+-- first while the users.id mapping is still resolvable, then update users last.
+
+PRAGMA defer_foreign_keys = ON;
 
 UPDATE webhooks
 SET user_id = (SELECT email FROM users WHERE users.id = webhooks.user_id)
