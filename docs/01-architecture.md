@@ -36,12 +36,12 @@ otter/
 │   │   └── src/
 │   │       ├── index.ts            # 入口（导出 createApp / 中间件 / lib）
 │   │       ├── app.ts              # Hono app 装配（vitest 直测）
-│   │       ├── routes/             # /v1/live, /me, /auth/cli, /api-snapshots, /api-webhooks
+│   │       ├── routes/             # live, me, auth-cli, api-snapshots, api-webhooks
 │   │       ├── middleware/         # access-auth (CF Access JWT) + api-key-auth (Bearer)
 │   │       └── lib/                # db/{driver,d1-binding,d1-http} + snapshot-repo + webhook-repo + api-token-repo
 │   ├── web/           # @otter/web — Vite 6 SPA (端口 7019)
 │   │   └── src/                    # React 19 + react-router 7 + SWR + Tailwind v4
-│   └── worker/        # @otter/worker — Cloudflare Worker (单进程托管 /api/* + SPA 静态资源)
+│   └── worker/        # @otter/worker — 单一 Cloudflare Worker（custom domain otter.hexly.ai + workers.dev fallback）
 │       └── src/                    # Hono dual-stack: /api/* 走 D1 binding + CF Access; /v1/* 兼容老 HTTP-D1 调用方
 ├── docs/              # 项目文档
 ├── vitest.config.ts   # 统一测试配置
@@ -113,9 +113,25 @@ CLI 包内还定义了以下类型（`packages/cli/src/storage/local.ts`）：
 
 ## Web ↔ API 通信
 
-`packages/web`（Vite SPA）和 `packages/worker`（Cloudflare Worker）部署到**同一个 Worker**：`web/dist` 通过 wrangler 的 `[assets]` binding 由 Worker 直接托管，`/api/*` 由同一 Worker 处理。SPA 和 API 同源，浏览器 `fetch("/api/...")` 不跨域、不需要 cookie 转发。
+`packages/web`（Vite SPA）和 `packages/worker`（Cloudflare Worker）部署到**同一个 Worker**：`web/dist` 通过 wrangler 的 `[assets]` binding 由 Worker 直接托管，`/api/*` 由同一 Worker 处理。生产环境绑了两个域名：
 
-业务逻辑全部封装在 `@otter/api` 的 `createApp({ basePath, driver, bucket, auth })` 工厂里。Worker 入口只做 binding 适配：把 `c.env.DB`（D1 binding）包成 `DbDriver`，把 `c.env.SNAPSHOTS`（R2 binding）传进去，然后 `apiApp.fetch(c.req.raw, c.env, c.executionCtx)`。本地开发时 vite + wrangler 各自起进程，vite dev server 把 `/api/*` 反代到 `:7020`。
+- `otter.hexly.ai`（custom domain，CF Access SSO 守门）
+- `otter.nocoo.workers.dev`（workers.dev fallback，无 CF Access，纯 Bearer）
+
+业务逻辑全部封装在 `@otter/api` 的 `createApp({ basePath, driver, bucket, auth })` 工厂里。Worker 入口（`packages/worker/src/index.ts`）只做 binding 适配：把 `c.env.DB`（D1 binding）包成 `DbDriver`，把 `c.env.SNAPSHOTS`（R2 binding）传进去，然后 `apiApp.fetch(c.req.raw, c.env, c.executionCtx)`。
+
+本地开发是 surety 模式：vite dev server（`:7019`）把 `/api/*` 反代到生产 worker（默认 `https://otter.nocoo.workers.dev`，可通过 `OTTER_API_URL` 覆写），并自动注入 `Authorization: Bearer <OTTER_DEV_API_TOKEN>`。如果想完全脱离生产数据，把 `OTTER_API_URL` 指向 `http://localhost:8787` 并 `bun run dev:worker`（wrangler dev 本地 D1/R2 模拟，accessAuth 看到 localhost 自动 stamp `dev@localhost`，不需要 Bearer）。
+
+`/api/*` 路由清单（由 `createApp()` 装配，basePath 默认 `/api`）：
+
+| 路径 | 鉴权 | 说明 |
+|---|---|---|
+| `GET /api/live` | 公开 | 健康探针 `{"ok":true}` |
+| `GET /api/me` | accessEmail 或 Bearer | 当前登录用户 |
+| `GET /api/auth/cli` | accessEmail 必须 | CLI 配对：铸 Bearer token 并 302 回 loopback |
+| `GET/POST/DELETE /api/snapshots[/...]` | accessEmail 或 Bearer | 快照 CRUD（D1 + R2） |
+| `GET/POST/DELETE /api/webhooks[/...]` | accessEmail 或 Bearer | Webhook CRUD |
+| `GET /v1/live` | 公开 | 老健康探针，向后兼容 |
 
 鉴权 dual-stack：
 - 浏览器：Cloudflare Access SSO 注入 `Cf-Access-Jwt-Assertion`，`accessAuth` 中间件用 `jose` + `createRemoteJWKSet` 验签后写入 `accessEmail`
