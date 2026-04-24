@@ -133,4 +133,22 @@ describe("accessAuth", () => {
     const json = (await r.json()) as { auth: boolean };
     expect(json.auth).toBe(false);
   });
+
+  it("falls through when c.env is undefined (Hono fetch without env arg)", async () => {
+    const app = new Hono<AppEnv>();
+    app.use("*", accessAuth);
+    app.get("/api/me", (c) =>
+      c.json({
+        auth: c.get("accessAuthenticated") ?? false,
+      }),
+    );
+    // Call fetch with no env argument so c.env is undefined
+    const r = await app.fetch(
+      new Request("https://prod.example.com/api/me", {
+        headers: { host: "prod.example.com", "Cf-Access-Jwt-Assertion": "jwt" },
+      }),
+    );
+    const json = (await r.json()) as { auth: boolean };
+    expect(json.auth).toBe(false);
+  });
 });

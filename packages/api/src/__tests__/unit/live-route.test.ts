@@ -41,6 +41,19 @@ describe("GET /v1/live", () => {
     expect(typeof body.system.env).toBe("string");
   });
 
+  it("falls back to 'development' env label when NODE_ENV is unset", async () => {
+    mockQueryFirst.mockResolvedValue({ count: 0 });
+    const original = process.env.NODE_ENV;
+    delete process.env.NODE_ENV;
+    try {
+      const res = await app.request("/v1/live");
+      const body = (await res.json()) as any;
+      expect(body.system.env).toBe("development");
+    } finally {
+      if (original !== undefined) process.env.NODE_ENV = original;
+    }
+  });
+
   it("returns status ok with zero snapshots when D1 returns null", async () => {
     mockQueryFirst.mockResolvedValue(null);
 
