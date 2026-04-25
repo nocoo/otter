@@ -292,6 +292,7 @@ const configCommand = defineCommand({
       const entries = Object.entries(result as Record<string, unknown>);
       const lines = entries.map(([k, v]) => `${ui.pc.bold(k)}: ${ui.pc.dim(String(v))}`);
       lines.push("", ui.pc.dim(`Config file: ${configManager.configPath}`));
+      console.log("Configuration");
       ui.consola.box({
         title: "Configuration",
         message: lines.join("\n"),
