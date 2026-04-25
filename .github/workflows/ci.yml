@@ -27,10 +27,12 @@ jobs:
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
-      - name: Build all packages (web SPA + tsc -b for core/cli/web/api)
+      - name: Build all packages (web SPA + core/cli/api dist)
         run: |
+          bun run --cwd packages/core build
+          bun run --cwd packages/cli build
+          bun run --cwd packages/api build
           bun run build
-          bash scripts/typecheck-parallel.sh
       - name: L2 API + CLI E2E
         env:
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
