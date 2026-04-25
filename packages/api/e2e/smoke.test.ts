@@ -55,16 +55,16 @@ describe("L2 smoke", () => {
     expect(res.status).toBe(404);
   });
 
-  it("rejects bogus Bearer token with 401", async () => {
+  it("rejects bogus Bearer token with 403", async () => {
     // Force apiKeyAuth path by sending a Bearer header — accessAuth localhost
-    // bypass only kicks in WITHOUT a Bearer header.
+    // bypass only kicks in WITHOUT a Bearer header. apiKeyAuth then verifies
+    // the token against api_tokens and returns 403 for unknown tokens before
+    // the route runs.
     const res = await fetch(`${baseUrl}/api/me`, {
       headers: { Authorization: "Bearer otk_definitely_not_real" },
     });
-    // /api/me is permissive (returns auth=false rather than 401), but
-    // an unrecognized token must NOT auto-promote to authenticated=true.
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as { authenticated: boolean };
-    expect(body.authenticated).toBe(false);
+    expect(res.status).toBe(403);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toMatch(/invalid api key/i);
   });
 });
