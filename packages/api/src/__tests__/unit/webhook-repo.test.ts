@@ -53,8 +53,10 @@ describe("webhook-repo", () => {
     });
     expect(row.is_active).toBe(1);
     expect(row.last_used_at).toBe(null);
-    expect(calls[0]?.sql).toContain("INSERT INTO webhooks");
-    expect(calls[0]?.params).toEqual(["w1", "u1", "tok", "Default", 1000]);
+    expect(calls[0]?.sql).toContain("INSERT INTO users");
+    expect(calls[0]?.params).toEqual(["u1"]);
+    expect(calls[1]?.sql).toContain("INSERT INTO webhooks");
+    expect(calls[1]?.params).toEqual(["w1", "u1", "tok", "Default", 1000]);
   });
 
   it("updateWebhook with label only builds single-field UPDATE", async () => {
