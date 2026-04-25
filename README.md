@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="otter.png" alt="Otter" width="128" height="128" />
+  <img src="logo.png" alt="Otter" width="128" height="128" />
 </p>
 
 <h1 align="center">Otter</h1>
