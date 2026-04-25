@@ -139,11 +139,11 @@ describe("L2 ingest + snapshots round-trip", () => {
     const listRes = await fetch(`${baseUrl}/api/snapshots`);
     expect(listRes.status).toBe(200);
     const listBody = (await listRes.json()) as {
-      snapshots: Array<{ id: string; file_count: number; hostname: string }>;
+      snapshots: Array<{ id: string; fileCount: number; hostname: string }>;
     };
     const row = listBody.snapshots.find((s) => s.id === snapshotId);
     expect(row).toBeDefined();
-    expect(row?.file_count).toBe(1);
+    expect(row?.fileCount).toBe(1);
     expect(row?.hostname).toBe("l2-host");
 
     const detailRes = await fetch(`${baseUrl}/api/snapshots/${snapshotId}`);
