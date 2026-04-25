@@ -1,21 +1,32 @@
-import { Hono } from "hono";
-import { queryFirst } from "../lib/cf/d1";
+import { type Context, Hono } from "hono";
+import type { AppEnv } from "../lib/app-env";
+import { queryFirst as httpQueryFirst } from "../lib/cf/d1";
 import { APP_VERSION } from "../lib/version";
 
 interface CountRow {
   count: number;
 }
 
-const app = new Hono();
+const app = new Hono<AppEnv>();
+
+function fetchSnapshotCount(c: Context<AppEnv>): Promise<CountRow | null> {
+  const driver = c.get("driver");
+  if (driver) {
+    return driver.queryFirst<CountRow>("SELECT COUNT(*) as count FROM snapshots");
+  }
+  return httpQueryFirst<CountRow>("SELECT COUNT(*) as count FROM snapshots");
+}
 
 app.get("/", async (c) => {
   const start = Date.now();
 
+  // biome-ignore lint/style/useNamingConvention: env var name from wrangler.toml
+  const wEnv = (c.env ?? {}) as { ENVIRONMENT?: string };
   const system = {
     version: APP_VERSION,
     node: process.versions.node,
     uptime: Math.floor(process.uptime()),
-    env: process.env.NODE_ENV ?? "development",
+    env: wEnv.ENVIRONMENT ?? process.env.NODE_ENV ?? "development",
   };
 
   let d1Latency: number | null = null;
@@ -24,7 +35,7 @@ app.get("/", async (c) => {
 
   try {
     const d1Start = Date.now();
-    const row = await queryFirst<CountRow>("SELECT COUNT(*) as count FROM snapshots");
+    const row = await fetchSnapshotCount(c);
     d1Latency = Date.now() - d1Start;
     snapshotCount = row?.count ?? 0;
   } catch (err) {

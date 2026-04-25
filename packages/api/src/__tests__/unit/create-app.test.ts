@@ -76,7 +76,9 @@ describe("createApp({ driver }) — new /api/* mode", () => {
     const app = build(driver);
     const r = await app.fetch(new Request("https://x/api/live"));
     expect(r.status).toBe(200);
-    expect(await r.json()).toEqual({ ok: true, version: "2.0.0" });
+    const body = (await r.json()) as { status: string; system: { version: string } };
+    expect(body.status).toBe("ok");
+    expect(body.system.version).toBe("2.0.0");
   });
 
   it("/api/me returns unauthenticated when no accessEmail set", async () => {
