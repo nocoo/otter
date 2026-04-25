@@ -43,6 +43,11 @@ run_worker_first = ["/api/*", "/v1/*", "/health", "/ingest/*"]
 
 # --- 测试环境 (CI/E2E) ---
 [env.test]
+# Explicitly drop top-level routes (otter.hexly.ai is behind CF Access SSO,
+# wrangler --remote tries to attach the worker to it and hits an Access
+# challenge in non-interactive CI). Test env publishes only to workers.dev.
+routes = []
+workers_dev = true
 vars = { ENVIRONMENT = "test", D1_DATABASE_NAME = "otter-db-test", R2_BUCKET_NAME = "otter-snapshots-test", ICON_PREFIX = "apps/otter", CF_ACCESS_TEAM_DOMAIN = "nocoo.cloudflareaccess.com", CF_ACCESS_AUD = "a920d3430b1e5a636590cd5d4f04dc657f89f9939c76a6870140015c0381d9b3" }
 
 [[env.test.d1_databases]]
