@@ -57,4 +57,6 @@ if (failed) {
   process.stderr.write(`❌ pre-commit failed in ${total}ms\n`);
   process.exit(1);
 }
-process.stderr.write(`✅ pre-commit: G1 + L1 (tests, no coverage) + tsc + gitleaks passed in ${total}ms\n`);
+process.stderr.write(
+  `✅ pre-commit: G1 + L1 (tests, no coverage) + tsc + gitleaks passed in ${total}ms\n`,
+);
