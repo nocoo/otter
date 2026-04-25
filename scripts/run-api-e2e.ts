@@ -10,14 +10,20 @@
  * CF_D1_API_TOKEN / CF_API_TOKEN aborts before spawning anything.
  * `verifyTestDatabase()` then queries _test_marker so we never hit prod
  * D1 even if env values are mis-pasted.
+ *
+ * Implementation note: uses node:child_process (not bun.spawn) so vitest's
+ * globalSetup — which runs under vite-node/Node, not Bun runtime — can
+ * import this file.
  */
 
-import { resolve } from "node:path";
-import { type Subprocess, spawn } from "bun";
+import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
+import { dirname, resolve } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
+import { fileURLToPath } from "node:url";
 import { verifyTestDatabase } from "./verify-test-resources";
 
 const PORT = Number(process.env.OTTER_L2_PORT ?? 17020);
-const REPO_ROOT = resolve(import.meta.dir, "..");
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const WORKER_DIR = resolve(REPO_ROOT, "packages/worker");
 const HEALTH_TIMEOUT_MS = 90_000;
 
@@ -28,7 +34,7 @@ const REQUIRED_ENV = [
   "CF_API_TOKEN",
 ] as const;
 
-let wrangler: Subprocess | null = null;
+let wrangler: ChildProcessWithoutNullStreams | null = null;
 
 function log(msg: string): void {
   console.log(`[l2] ${msg}`);
@@ -56,7 +62,7 @@ async function waitForHealth(): Promise<void> {
     } catch (err) {
       lastErr = err;
     }
-    await Bun.sleep(500);
+    await delay(500);
   }
   throw new Error(`worker never became healthy on ${url}: ${String(lastErr)}`);
 }
@@ -64,8 +70,8 @@ async function waitForHealth(): Promise<void> {
 function startWrangler(): void {
   log(`spawning wrangler dev --env test --remote on :${PORT}`);
   wrangler = spawn(
+    "bunx",
     [
-      "bunx",
       "wrangler",
       "dev",
       "--env",
@@ -80,8 +86,6 @@ function startWrangler(): void {
     ],
     {
       cwd: WORKER_DIR,
-      stdout: "pipe",
-      stderr: "pipe",
       env: {
         ...process.env,
         WRANGLER_LOG: "error",
@@ -90,28 +94,29 @@ function startWrangler(): void {
       },
     },
   );
-  const drain = async (stream: ReadableStream<Uint8Array>, label: string): Promise<void> => {
-    const reader = stream.getReader();
-    const dec = new TextDecoder();
-    let chunk = await reader.read();
-    while (!chunk.done) {
-      if (chunk.value) process.stderr.write(`[${label}] ${dec.decode(chunk.value)}`);
-      // biome-ignore lint/performance/noAwaitInLoops: stream pump must serialize reads
-      chunk = await reader.read();
-    }
-  };
-  void drain(wrangler.stdout as ReadableStream<Uint8Array>, "wrangler");
-  void drain(wrangler.stderr as ReadableStream<Uint8Array>, "wrangler!");
+  wrangler.stdout.on("data", (buf: Buffer) => {
+    process.stderr.write(`[wrangler] ${buf.toString()}`);
+  });
+  wrangler.stderr.on("data", (buf: Buffer) => {
+    process.stderr.write(`[wrangler!] ${buf.toString()}`);
+  });
 }
 
 export async function stopWrangler(): Promise<void> {
   if (!wrangler) return;
   log("stopping wrangler dev");
-  wrangler.kill("SIGTERM");
+  const proc = wrangler;
+  proc.kill("SIGTERM");
   const t = setTimeout(() => {
-    if (wrangler && wrangler.exitCode === null) wrangler.kill("SIGKILL");
+    if (proc.exitCode === null) proc.kill("SIGKILL");
   }, 5_000);
-  await wrangler.exited;
+  await new Promise<void>((res) => {
+    if (proc.exitCode !== null) {
+      res();
+      return;
+    }
+    proc.once("exit", () => res());
+  });
   clearTimeout(t);
   wrangler = null;
 }
@@ -126,7 +131,15 @@ export async function startApiE2eServer(): Promise<{ baseUrl: string; stop: () =
   return { baseUrl, stop: stopWrangler };
 }
 
-if (import.meta.main) {
+const isMain = (() => {
+  try {
+    return fileURLToPath(import.meta.url) === process.argv[1];
+  } catch {
+    return false;
+  }
+})();
+
+if (isMain) {
   const cleanup = async (): Promise<void> => {
     await stopWrangler();
     process.exit(process.exitCode ?? 0);
@@ -134,5 +147,7 @@ if (import.meta.main) {
   process.on("SIGINT", cleanup);
   process.on("SIGTERM", cleanup);
   await startApiE2eServer();
-  if (wrangler) await wrangler.exited;
+  if (wrangler) {
+    await new Promise<void>((res) => wrangler?.once("exit", () => res()));
+  }
 }

@@ -9,10 +9,10 @@
  * not to re-test scan logic (covered in L1).
  */
 
+import { spawnSync } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { spawnSync } from "bun";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 const baseUrl = (() => {
@@ -34,7 +34,7 @@ let homeDir: string;
 let createdWebhookId: string | null = null;
 
 function runCli(args: string[]): RunResult {
-  const r = spawnSync(["node", CLI_BIN, ...args], {
+  const r = spawnSync("node", [CLI_BIN, ...args], {
     env: {
       ...process.env,
       HOME: homeDir,
@@ -42,11 +42,12 @@ function runCli(args: string[]): RunResult {
       // Disable auto-update fetch noise in tests.
       NO_COLOR: "1",
     },
+    encoding: "utf8",
   });
   return {
-    exitCode: r.exitCode ?? -1,
-    stdout: r.stdout?.toString() ?? "",
-    stderr: r.stderr?.toString() ?? "",
+    exitCode: r.status ?? -1,
+    stdout: r.stdout ?? "",
+    stderr: r.stderr ?? "",
   };
 }
 
