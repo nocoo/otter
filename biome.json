@@ -10,8 +10,11 @@
       "packages/*/src/**",
       "!**/*.css",
       "packages/web/e2e/**",
+      "packages/*/e2e/**",
       "scripts/**",
-      "vitest.config.ts"
+      "vitest.config.ts",
+      "vitest.l2.config.ts",
+      "vitest.l2.setup.ts"
     ]
   },
   "formatter": {
