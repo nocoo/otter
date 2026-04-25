@@ -9,6 +9,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:l2": "vitest run --config vitest.l2.config.ts",
+    "verify:test-db": "bun run scripts/verify-test-resources.ts",
     "dev": "bun run --cwd packages/web dev",
     "dev:worker": "bun run --cwd packages/worker dev",
     "build": "bun run --cwd packages/web build",

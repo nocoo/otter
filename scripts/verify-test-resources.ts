@@ -61,3 +61,7 @@ export async function verifyTestDatabase(): Promise<void> {
 
   console.log("✅ Test database verified (_test_marker = test)");
 }
+
+if (import.meta.main) {
+  await verifyTestDatabase();
+}
