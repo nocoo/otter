@@ -2,12 +2,20 @@ import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 import { isLocalhost } from "../../middleware/is-localhost";
 
-async function probe(url: string, headers: Record<string, string> = {}, cf?: unknown) {
+async function probe(
+  url: string,
+  headers: Record<string, string> = {},
+  cf?: unknown,
+  env?: Record<string, unknown>,
+) {
   const app = new Hono();
   let result = false;
   app.all("*", (c) => {
     if (cf !== undefined) {
       (c.req.raw as unknown as { cf: unknown }).cf = cf;
+    }
+    if (env) {
+      (c as unknown as { env: unknown }).env = env;
     }
     result = isLocalhost(c);
     return c.text("ok");
@@ -37,5 +45,27 @@ describe("isLocalhost", () => {
 
   it("false for arbitrary public host without cf", async () => {
     expect(await probe("https://example.com/x", { host: "example.com" })).toBe(false);
+  });
+
+  it("true on cf edge when ENVIRONMENT=test (L2 e2e via wrangler --remote)", async () => {
+    expect(
+      await probe(
+        "https://otter-test.workers.dev/x",
+        { host: "otter-test.workers.dev" },
+        { country: "US" },
+        { ENVIRONMENT: "test" },
+      ),
+    ).toBe(true);
+  });
+
+  it("false on cf edge when ENVIRONMENT=production", async () => {
+    expect(
+      await probe(
+        "https://otter.hexly.ai/x",
+        { host: "otter.hexly.ai" },
+        { country: "US" },
+        { ENVIRONMENT: "production" },
+      ),
+    ).toBe(false);
   });
 });
