@@ -36,3 +36,43 @@ jobs:
           CF_D1_API_TOKEN: ${{ secrets.CF_D1_API_TOKEN }}
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: bun run test:l2
+
+  deploy-test:
+    name: CD → Cloudflare Worker (env=test)
+    needs: l2
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - name: Deploy worker (env=test)
+        working-directory: packages/worker
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: bunx wrangler deploy --env test
+
+  deploy-prod:
+    name: CD → Cloudflare Worker (production)
+    needs: deploy-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - name: Deploy worker (production)
+        working-directory: packages/worker
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: bunx wrangler deploy
