@@ -16,7 +16,7 @@ D1_DATABASE_NAME = "otter-db"
 R2_BUCKET_NAME = "otter-snapshots"
 ICON_PREFIX = "apps/otter"
 CF_ACCESS_TEAM_DOMAIN = "nocoo.cloudflareaccess.com"
-CF_ACCESS_AUD = "a920d3430b1e5a636590cd5d4f04dc657f89f9939c76a6870140015c0381d9b3"
+CF_ACCESS_AUD = "1b4e139af84ad55bc8cfe8b6045f69bcf452fef999f019ec3c543d8d170aa3ff"
 
 [[d1_databases]]
 binding = "DB"
@@ -48,7 +48,7 @@ run_worker_first = ["/api/*", "/v1/*", "/health", "/ingest/*"]
 # challenge in non-interactive CI). Test env publishes only to workers.dev.
 routes = []
 workers_dev = true
-vars = { ENVIRONMENT = "test", D1_DATABASE_NAME = "otter-db-test", R2_BUCKET_NAME = "otter-snapshots-test", ICON_PREFIX = "apps/otter", CF_ACCESS_TEAM_DOMAIN = "nocoo.cloudflareaccess.com", CF_ACCESS_AUD = "a920d3430b1e5a636590cd5d4f04dc657f89f9939c76a6870140015c0381d9b3" }
+vars = { ENVIRONMENT = "test", D1_DATABASE_NAME = "otter-db-test", R2_BUCKET_NAME = "otter-snapshots-test", ICON_PREFIX = "apps/otter", CF_ACCESS_TEAM_DOMAIN = "nocoo.cloudflareaccess.com", CF_ACCESS_AUD = "1b4e139af84ad55bc8cfe8b6045f69bcf452fef999f019ec3c543d8d170aa3ff" }
 
 [[env.test.d1_databases]]
 binding = "DB"
