@@ -1,137 +1,636 @@
 #!/usr/bin/env bun
-
 /**
- * release.ts — Bump CLI version and sync across the monorepo.
+ * Automated release script for otter monorepo.
+ *
+ * Bumps version in all package.json files + source constants, syncs lockfile,
+ * generates CHANGELOG entries from conventional commits, verifies no stale
+ * version strings, commits, tags, pushes, and creates a GitHub release.
  *
  * Usage:
- *   bun scripts/release.ts patch     # 1.4.3 → 1.4.4
- *   bun scripts/release.ts minor     # 1.4.3 → 1.5.0
- *   bun scripts/release.ts major     # 1.4.3 → 2.0.0
- *   bun scripts/release.ts 1.5.0     # explicit version
+ *   bun run release              # patch bump (default)
+ *   bun run release -- minor     # minor bump
+ *   bun run release -- major     # major bump
+ *   bun run release -- 2.1.0     # explicit version
+ *   bun run release -- --dry-run # preview without side effects
  *
- * What it does:
- *   1. Read current version from packages/cli/package.json
- *   2. Compute new version (bump or explicit)
- *   3. Update packages/cli/package.json
- *   4. Update packages/cli/src/cli.ts (CLI_VERSION constant)
- *   5. Update root package.json
- *   6. Run `bun install` to update bun.lock
- *   7. Print next steps (commit, push, npm publish)
+ * Env:
+ *   Requires `gh` CLI authenticated for GitHub release creation.
+ *   Requires `rg` (ripgrep) for stale version verification.
+ *
+ * NOTE: This script does NOT npm publish or deploy. After release:
+ *   - CD auto-deploys worker on CI green (workflow_run)
+ *   - npm publish is manual: cd packages/cli && npm publish
  */
 
-import { execSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { resolve as pathResolve } from "node:path";
 
-const ROOT = join(import.meta.dirname ?? ".", "..");
-const CLI_PKG_PATH = join(ROOT, "packages/cli/package.json");
-const CLI_TS_PATH = join(ROOT, "packages/cli/src/cli.ts");
-const ROOT_PKG_PATH = join(ROOT, "package.json");
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
 
-const SEMVER_RE = /^(\d+)\.(\d+)\.(\d+)$/;
+const PROJECT_ROOT = pathResolve(import.meta.dirname as string, "..");
+const CHANGELOG_MD = pathResolve(PROJECT_ROOT, "CHANGELOG.md");
 
-function readJson(path: string): Record<string, unknown> {
-  return JSON.parse(readFileSync(path, "utf-8"));
+// ---------------------------------------------------------------------------
+// Version targets (monorepo — 8 files)
+// ---------------------------------------------------------------------------
+
+export interface VersionTarget {
+  /** Relative path from project root */
+  path: string;
+  /** How to find and replace the version string */
+  pattern: "json-version" | "const-version";
 }
 
-function writeJson(path: string, data: Record<string, unknown>): void {
-  writeFileSync(path, `${JSON.stringify(data, null, 2)}\n`);
+export const VERSION_TARGETS: VersionTarget[] = [
+  { path: "package.json", pattern: "json-version" },
+  { path: "packages/cli/package.json", pattern: "json-version" },
+  { path: "packages/core/package.json", pattern: "json-version" },
+  { path: "packages/web/package.json", pattern: "json-version" },
+  { path: "packages/api/package.json", pattern: "json-version" },
+  { path: "packages/worker/package.json", pattern: "json-version" },
+  { path: "packages/cli/src/cli.ts", pattern: "const-version" },
+  { path: "packages/api/src/lib/version.ts", pattern: "const-version" },
+];
+
+export const BUMP_TYPES = ["patch", "minor", "major"] as const;
+export type BumpType = (typeof BUMP_TYPES)[number];
+
+export interface Commit {
+  hash: string;
+  subject: string;
 }
 
-function parseVersion(v: string): [number, number, number] {
-  const match = v.match(SEMVER_RE);
-  if (!match) throw new Error(`Invalid semver: ${v}`);
-  return [Number(match[1]), Number(match[2]), Number(match[3])];
+export interface ChangelogSections {
+  breaking: string[];
+  added: string[];
+  changed: string[];
+  fixed: string[];
+  removed: string[];
 }
 
-function bumpVersion(current: string, type: "patch" | "minor" | "major"): string {
-  const [major, minor, patch] = parseVersion(current);
-  switch (type) {
-    case "patch":
-      return `${major}.${minor}.${patch + 1}`;
-    case "minor":
-      return `${major}.${minor + 1}.0`;
+const COMMIT_TYPE_MAP: Record<string, keyof ChangelogSections> = {
+  feat: "added",
+  fix: "fixed",
+  refactor: "changed",
+  chore: "changed",
+  docs: "changed",
+  test: "changed",
+  perf: "changed",
+  style: "changed",
+  ci: "changed",
+  build: "changed",
+};
+
+const REMOVED_KEYWORDS = /\b(remove|delete|drop)\b/i;
+const SEMVER_RE = /^\d+\.\d+\.\d+$/;
+const CONVENTIONAL_RE = /^(\w+)(?:\(.+?\))?(!)?:\s*(.+)$/;
+
+// ---------------------------------------------------------------------------
+// Shell helpers
+// ---------------------------------------------------------------------------
+
+interface RunResult {
+  code: number;
+  stdout: string;
+  stderr: string;
+}
+
+function run(
+  cmd: string,
+  args: string[],
+  opts?: { cwd?: string; inherit?: boolean },
+): Promise<RunResult> {
+  return new Promise((resolve) => {
+    const child = spawn(cmd, args, {
+      cwd: opts?.cwd ?? PROJECT_ROOT,
+      stdio: opts?.inherit ? "inherit" : ["ignore", "pipe", "pipe"],
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    if (!opts?.inherit) {
+      child.stdout?.on("data", (d: Buffer) => {
+        stdout += d.toString();
+      });
+      child.stderr?.on("data", (d: Buffer) => {
+        stderr += d.toString();
+      });
+    }
+
+    child.on("close", (code) => {
+      resolve({ code: code ?? 1, stdout, stderr });
+    });
+  });
+}
+
+async function runOrDie(cmd: string, args: string[], errorMsg: string): Promise<string> {
+  const result = await run(cmd, args);
+  if (result.code !== 0) {
+    console.error(`❌ ${errorMsg}`);
+    if (result.stderr.trim()) {
+      console.error(result.stderr.trim());
+    }
+    process.exit(1);
+  }
+  return result.stdout.trim();
+}
+
+// ---------------------------------------------------------------------------
+// Version helpers (exported for testing)
+// ---------------------------------------------------------------------------
+
+export function parseSemver(version: string): [number, number, number] {
+  if (!SEMVER_RE.test(version)) {
+    throw new Error(`Invalid semver: "${version}"`);
+  }
+  return version.split(".").map(Number) as [number, number, number];
+}
+
+export function compareSemver(a: string, b: string): number {
+  const [a0, a1, a2] = parseSemver(a);
+  const [b0, b1, b2] = parseSemver(b);
+  if (a0 !== b0) return a0 - b0;
+  if (a1 !== b1) return a1 - b1;
+  return a2 - b2;
+}
+
+export function bumpVersion(current: string, bumpArg: string): string {
+  if (SEMVER_RE.test(bumpArg)) {
+    if (compareSemver(bumpArg, current) <= 0) {
+      throw new Error(`Explicit version ${bumpArg} must be greater than current ${current}`);
+    }
+    return bumpArg;
+  }
+
+  if (!BUMP_TYPES.includes(bumpArg as BumpType)) {
+    throw new Error(`Invalid bump type: "${bumpArg}". Use: patch | minor | major | x.y.z`);
+  }
+
+  const [major, minor, patch] = parseSemver(current);
+  switch (bumpArg as BumpType) {
     case "major":
       return `${major + 1}.0.0`;
+    case "minor":
+      return `${major}.${minor + 1}.0`;
+    case "patch":
+      return `${major}.${minor}.${patch + 1}`;
   }
 }
 
-// --- Main ---
+// ---------------------------------------------------------------------------
+// Version update
+// ---------------------------------------------------------------------------
 
-const arg = process.argv[2];
-if (!arg) {
-  console.error("Usage: bun scripts/release.ts <patch|minor|major|X.Y.Z>");
-  process.exit(1);
+function readCurrentVersion(): string {
+  const pkgPath = pathResolve(PROJECT_ROOT, "package.json");
+  const raw = readFileSync(pkgPath, "utf-8");
+  const pkg = JSON.parse(raw);
+  return pkg.version;
 }
 
-const cliPkg = readJson(CLI_PKG_PATH);
-const rootPkg = readJson(ROOT_PKG_PATH);
-const currentVersion = cliPkg.version as string;
+function updateVersionInFile(
+  target: VersionTarget,
+  oldVersion: string,
+  newVersion: string,
+): boolean {
+  const abs = pathResolve(PROJECT_ROOT, target.path);
+  const content = readFileSync(abs, "utf-8");
+  let updated: string;
 
-let newVersion: string;
-if (arg === "patch" || arg === "minor" || arg === "major") {
-  newVersion = bumpVersion(currentVersion, arg);
-} else if (/^\d+\.\d+\.\d+$/.test(arg)) {
-  newVersion = arg;
-} else {
-  console.error(`Invalid argument: ${arg}`);
-  console.error("Usage: bun scripts/release.ts <patch|minor|major|X.Y.Z>");
-  process.exit(1);
+  if (target.pattern === "json-version") {
+    const pattern = `"version": "${oldVersion}"`;
+    const replacement = `"version": "${newVersion}"`;
+    if (!content.includes(pattern)) {
+      console.error(`  ✗ ${target.path} — pattern not found: ${pattern}`);
+      return false;
+    }
+    updated = content.replace(pattern, replacement);
+  } else {
+    const escaped = oldVersion.replace(/\./g, "\\.");
+    const re = new RegExp(`"${escaped}"`, "g");
+    if (!re.test(content)) {
+      console.error(`  ✗ ${target.path} — version "${oldVersion}" not found`);
+      return false;
+    }
+    const re2 = new RegExp(`"${escaped}"`, "g");
+    updated = content.replace(re2, `"${newVersion}"`);
+  }
+
+  writeFileSync(abs, updated, "utf-8");
+  console.log(`  ✓ ${target.path}`);
+  return true;
 }
 
-console.log(`\n📦 Releasing @nocoo/otter`);
-console.log(`   ${currentVersion} → ${newVersion}\n`);
+// ---------------------------------------------------------------------------
+// Git helpers
+// ---------------------------------------------------------------------------
 
-// Update packages/cli/package.json
-cliPkg.version = newVersion;
-writeJson(CLI_PKG_PATH, cliPkg);
-console.log(`   ✓ packages/cli/package.json`);
-
-// Update CLI_VERSION in cli.ts
-const cliTs = readFileSync(CLI_TS_PATH, "utf-8");
-const updatedCliTs = cliTs.replace(
-  /const CLI_VERSION = "[^"]+";/,
-  `const CLI_VERSION = "${newVersion}";`,
-);
-if (updatedCliTs === cliTs) {
-  console.error("   ✗ Failed to update CLI_VERSION in cli.ts");
-  process.exit(1);
+async function getLastTag(): Promise<string | undefined> {
+  const result = await run("git", ["describe", "--tags", "--abbrev=0"]);
+  if (result.code !== 0) return undefined;
+  return result.stdout.trim();
 }
-writeFileSync(CLI_TS_PATH, updatedCliTs);
-console.log(`   ✓ packages/cli/src/cli.ts`);
 
-// Update root package.json
-rootPkg.version = newVersion;
-writeJson(ROOT_PKG_PATH, rootPkg);
-console.log(`   ✓ package.json (root)`);
+async function getCommitsSinceTag(tag: string | undefined): Promise<Commit[]> {
+  const range = tag ? `${tag}..HEAD` : "HEAD";
+  const args = ["log", range, "--format=%H|||%s"];
+  const stdout = await runOrDie("git", args, "Failed to read git log");
 
-// Run bun install to update lockfile
-console.log(`   ⏳ Updating bun.lock...`);
-execSync("bun install", { cwd: ROOT, stdio: "inherit" });
-console.log(`   ✓ bun.lock`);
+  if (!stdout) return [];
 
-// Rebuild CLI
-console.log(`   ⏳ Building CLI...`);
-execSync("bun run --cwd packages/cli build", { cwd: ROOT, stdio: "inherit" });
-console.log(`   ✓ packages/cli/dist/`);
-
-// Verify version in built artifact
-const cliJs = readFileSync(join(ROOT, "packages/cli/dist/cli.js"), "utf-8");
-const versionMatch = cliJs.match(/CLI_VERSION\s*=\s*"(\d+\.\d+\.\d+)"/);
-if (!versionMatch || versionMatch[1] !== newVersion) {
-  console.error(`\n❌ Version mismatch in dist/cli.js!`);
-  console.error(`   Expected: ${newVersion}`);
-  console.error(`   Found: ${versionMatch?.[1] ?? "none"}`);
-  console.error(`   The build did not pick up the new version.`);
-  process.exit(1);
+  return stdout
+    .split("\n")
+    .filter((line) => line.includes("|||"))
+    .map((line) => {
+      const sepIdx = line.indexOf("|||");
+      return {
+        hash: line.slice(0, sepIdx),
+        subject: line.slice(sepIdx + 3),
+      };
+    })
+    .filter((c) => !c.subject.startsWith("chore: release v"));
 }
-console.log(`   ✓ Version verified in dist/cli.js`);
 
-console.log(`
-✅ Version bumped to ${newVersion}
+// ---------------------------------------------------------------------------
+// CHANGELOG helpers (exported for testing)
+// ---------------------------------------------------------------------------
 
+export function classifyCommits(commits: Commit[]): ChangelogSections {
+  const sections: ChangelogSections = {
+    breaking: [],
+    added: [],
+    changed: [],
+    fixed: [],
+    removed: [],
+  };
+
+  for (const commit of commits) {
+    const { subject } = commit;
+
+    if (subject.startsWith("Merge ")) continue;
+
+    let description: string;
+    let section: keyof ChangelogSections;
+
+    const match = CONVENTIONAL_RE.exec(subject);
+    if (match) {
+      const type = (match[1] as string).toLowerCase();
+      const isBreaking = match[2] === "!";
+      description = capitalizeFirst((match[3] as string).trim());
+
+      if (isBreaking) {
+        section = "breaking";
+      } else {
+        section = COMMIT_TYPE_MAP[type] ?? "changed";
+      }
+    } else {
+      description = capitalizeFirst(subject.trim());
+      section = "changed";
+    }
+
+    if (REMOVED_KEYWORDS.test(subject) && section === "changed") {
+      section = "removed";
+    }
+
+    if (!sections[section].includes(description)) {
+      sections[section].push(description);
+    }
+  }
+
+  return sections;
+}
+
+function capitalizeFirst(s: string): string {
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+export function formatChangelogSection(version: string, sections: ChangelogSections): string {
+  const date = new Date().toISOString().split("T")[0];
+  const lines: string[] = [`## [${version}] - ${date}`];
+
+  const sectionOrder: [keyof ChangelogSections, string][] = [
+    ["breaking", "Breaking"],
+    ["added", "Features"],
+    ["changed", "Changed"],
+    ["fixed", "Fixes"],
+    ["removed", "Removed"],
+  ];
+
+  for (const [key, heading] of sectionOrder) {
+    const items = sections[key];
+    if (items.length > 0) {
+      lines.push("");
+      lines.push(`### ${heading}`);
+      for (const item of items) {
+        lines.push(`- ${item}`);
+      }
+    }
+  }
+
+  return lines.join("\n");
+}
+
+function updateChangelog(newSection: string): void {
+  const content = readFileSync(CHANGELOG_MD, "utf-8");
+  const marker = "## [";
+  const idx = content.indexOf(marker);
+
+  let updated: string;
+  if (idx === -1) {
+    updated = `${content.trimEnd()}\n\n${newSection}\n`;
+  } else {
+    updated = `${content.slice(0, idx)}${newSection}\n\n${content.slice(idx)}`;
+  }
+
+  writeFileSync(CHANGELOG_MD, updated);
+}
+
+// ---------------------------------------------------------------------------
+// Main
+// ---------------------------------------------------------------------------
+
+async function main(): Promise<void> {
+  const rawArgs = process.argv.slice(2).filter((a) => a !== "--");
+  const isDryRun = rawArgs.includes("--dry-run");
+  const bumpArg = rawArgs.find((a) => a !== "--dry-run") ?? "patch";
+
+  if (isDryRun) {
+    console.log("🏜️  Dry-run mode — no changes will be made\n");
+  }
+
+  // --- Phase 0: Preflight ---
+  console.log("📋 Preflight checks...\n");
+
+  const status = await runOrDie("git", ["status", "--porcelain"], "Failed to check git status");
+  if (status) {
+    console.error("❌ Working tree is not clean. Commit or stash changes first.");
+    console.error(status);
+    process.exit(1);
+  }
+
+  const branch = await runOrDie(
+    "git",
+    ["symbolic-ref", "--short", "HEAD"],
+    "Detached HEAD — checkout a branch first",
+  );
+
+  const ghResult = await run("gh", ["auth", "status"]);
+  const ghAuthed = ghResult.code === 0;
+  if (!ghAuthed) {
+    console.log("⚠️  gh CLI not authenticated — will skip GitHub release");
+  }
+
+  const currentVersion = readCurrentVersion();
+  const newVersion = bumpVersion(currentVersion, bumpArg);
+  const lastTag = await getLastTag();
+
+  console.log("📦 otter release");
+  console.log(`   Current version: ${currentVersion}`);
+  console.log(`   New version:     ${newVersion}`);
+  console.log(`   Bump type:       ${bumpArg}`);
+  console.log(`   Branch:          ${branch}`);
+  console.log(`   Last tag:        ${lastTag ?? "(none)"}`);
+  console.log(`   Targets:         ${VERSION_TARGETS.length} file(s)`);
+  console.log("");
+
+  // --- Phase 1: Version bump ---
+  console.log(`📝 Phase 1: Updating version in ${VERSION_TARGETS.length} file(s)...\n`);
+
+  if (isDryRun) {
+    console.log(
+      `   [dry-run] Would update ${VERSION_TARGETS.length} file(s): ${currentVersion} → ${newVersion}`,
+    );
+    for (const t of VERSION_TARGETS) {
+      console.log(`     • ${t.path} (${t.pattern})`);
+    }
+    console.log("   [dry-run] Would run bun install to sync lockfile");
+    console.log("   [dry-run] Would run bun run build to verify");
+  } else {
+    let failures = 0;
+    for (const target of VERSION_TARGETS) {
+      const ok = updateVersionInFile(target, currentVersion, newVersion);
+      if (!ok) failures++;
+    }
+
+    if (failures > 0) {
+      console.error(
+        `\n❌ Failed to update ${failures}/${VERSION_TARGETS.length} file(s). Aborting.`,
+      );
+      console.error("   Run `git checkout .` to revert partial changes.");
+      process.exit(1);
+    }
+
+    console.log(
+      `\n   ✅ All ${VERSION_TARGETS.length} file(s) updated: ${currentVersion} → ${newVersion}`,
+    );
+
+    console.log("   🔄 Running bun install to sync lockfile...");
+    const installResult = await run("bun", ["install"], { inherit: true });
+    if (installResult.code !== 0) {
+      console.error("❌ bun install failed");
+      process.exit(1);
+    }
+    console.log("   ✅ Lockfile synced");
+
+    console.log("   🔄 Running bun run build to verify...");
+    const buildResult = await run("bun", ["run", "build"], { inherit: true });
+    if (buildResult.code !== 0) {
+      console.error("❌ Build failed");
+      process.exit(1);
+    }
+    console.log("   ✅ Build verified");
+  }
+  console.log("");
+
+  // --- Phase 2: CHANGELOG ---
+  console.log("📝 Phase 2: Generating CHANGELOG...\n");
+
+  const commits = await getCommitsSinceTag(lastTag);
+  if (commits.length === 0) {
+    console.log("   ⚠️  No commits since last tag — CHANGELOG section will be empty");
+  }
+
+  const sections = classifyCommits(commits);
+  const changelogSection = formatChangelogSection(newVersion, sections);
+
+  console.log("   --- Generated CHANGELOG section ---");
+  console.log(changelogSection);
+  console.log("   --- End ---\n");
+
+  if (isDryRun) {
+    console.log("   [dry-run] Would prepend above section to CHANGELOG.md");
+  } else {
+    updateChangelog(changelogSection);
+    console.log("   ✅ CHANGELOG.md updated");
+  }
+  console.log("");
+
+  // --- Phase 3: Stale version verification ---
+  console.log("🔍 Phase 3: Checking for stale version strings...\n");
+
+  const escapedVersion = currentVersion.replace(/\./g, "\\.");
+  const rgResult = await run("rg", [
+    "--pcre2",
+    `(?<![\\d.])${escapedVersion}(?![\\d.])`,
+    "--glob",
+    "*.ts",
+    "--glob",
+    "*.tsx",
+    "--glob",
+    "!node_modules/**",
+    "--glob",
+    "!scripts/release.ts",
+    "--glob",
+    "!CHANGELOG.md",
+    "--glob",
+    "!**/dist/**",
+    "--glob",
+    "!**/__tests__/**",
+  ]);
+
+  if (rgResult.code === 0 && rgResult.stdout.trim()) {
+    console.error(`❌ Found stale version "${currentVersion}" in source files:`);
+    console.error(rgResult.stdout.trim());
+    if (!isDryRun) {
+      console.error("   Aborting. Update these files before releasing.");
+      process.exit(1);
+    } else {
+      console.log("   [dry-run] Would abort here in a real run");
+    }
+  } else {
+    console.log("   ✅ No stale version strings found");
+  }
+  console.log("");
+
+  // --- Phase 4: Commit ---
+  console.log("💾 Phase 4: Committing...\n");
+
+  const filesToStage = [...VERSION_TARGETS.map((t) => t.path), "bun.lock", "CHANGELOG.md"];
+
+  if (isDryRun) {
+    console.log(`   [dry-run] Would commit: chore: release v${newVersion}`);
+    console.log(`   [dry-run] Files: ${filesToStage.join(", ")}`);
+  } else {
+    await runOrDie("git", ["add", ...filesToStage], "Failed to stage files");
+    const commitResult = await run("git", ["commit", "-m", `chore: release v${newVersion}`]);
+    if (commitResult.code !== 0) {
+      console.error("❌ Commit failed (pre-commit hooks?)");
+      if (commitResult.stderr.trim()) {
+        console.error(commitResult.stderr.trim());
+      }
+      console.error("   Fix the issues and retry.");
+      process.exit(1);
+    }
+    console.log(`   ✅ Committed: chore: release v${newVersion}`);
+  }
+  console.log("");
+
+  // --- Phase 5: Push + Tag + Release ---
+  console.log("🚀 Phase 5: Push, tag & release\n");
+
+  console.log("   The following actions will be performed:");
+  console.log("     • git push");
+  console.log(`     • git tag -a v${newVersion} -m "v${newVersion}"`);
+  console.log("     • git push --tags");
+  if (ghAuthed) {
+    console.log(`     • gh release create v${newVersion} --title "v${newVersion}"`);
+  }
+  console.log("");
+
+  if (isDryRun) {
+    console.log("   [dry-run] Would perform the above actions");
+    console.log(`\n✅ Dry run complete for v${newVersion}`);
+    process.exit(0);
+  }
+
+  console.log("\n   🔄 Pushing...");
+  const pushResult = await run("git", ["push"], { inherit: true });
+  if (pushResult.code !== 0) {
+    console.error("❌ git push failed");
+    console.error("   Recovery commands:");
+    console.error("     git push");
+    console.error(`     git tag -a v${newVersion} -m "v${newVersion}"`);
+    console.error("     git push --tags");
+    console.error(`     gh release create v${newVersion} --title "v${newVersion}" --notes "..."`);
+    process.exit(1);
+  }
+  console.log("   ✅ Pushed");
+
+  console.log(`   🔄 Creating tag v${newVersion}...`);
+  const tagResult = await run("git", ["tag", "-a", `v${newVersion}`, "-m", `v${newVersion}`]);
+  if (tagResult.code !== 0) {
+    console.error(`❌ Failed to create tag v${newVersion}`);
+    if (tagResult.stderr.includes("already exists")) {
+      console.error(`   Tag already exists. Delete with: git tag -d v${newVersion}`);
+    }
+    process.exit(1);
+  }
+
+  console.log("   🔄 Pushing tags...");
+  const pushTagResult = await run("git", ["push", "--tags"], {
+    inherit: true,
+  });
+  if (pushTagResult.code !== 0) {
+    console.error("❌ git push --tags failed");
+    console.error("   Recovery: git push --tags");
+    process.exit(1);
+  }
+  console.log(`   ✅ Tag v${newVersion} pushed`);
+
+  if (ghAuthed) {
+    console.log(`   🔄 Creating GitHub release v${newVersion}...`);
+    const releaseResult = await run("gh", [
+      "release",
+      "create",
+      `v${newVersion}`,
+      "--title",
+      `v${newVersion}`,
+      "--notes",
+      changelogSection,
+    ]);
+
+    if (releaseResult.code !== 0) {
+      console.error("⚠️  GitHub release creation failed (tag is pushed)");
+      console.error(
+        `   Create manually: gh release create v${newVersion} --title "v${newVersion}"`,
+      );
+    } else {
+      const releaseUrl = releaseResult.stdout.trim();
+      console.log("   ✅ GitHub release created");
+      if (releaseUrl) {
+        console.log(`   🔗 ${releaseUrl}`);
+      }
+    }
+  }
+
+  // Summary
+  console.log(`\n${"=".repeat(50)}`);
+  console.log(`✅ Released v${newVersion}`);
+  console.log(`   📋 Commit:  chore: release v${newVersion}`);
+  console.log(`   🏷️  Tag:     v${newVersion}`);
+  console.log(`   📦 Files:   ${VERSION_TARGETS.length} updated`);
+  if (ghAuthed) {
+    const repoUrl = await run("gh", ["repo", "view", "--json", "url", "-q", ".url"]);
+    const repo = repoUrl.stdout.trim();
+    if (repo) {
+      console.log(`   🔗 Release: ${repo}/releases/tag/v${newVersion}`);
+    }
+  }
+  console.log("=".repeat(50));
+  console.log(`
 Next steps:
-  1. cd packages/cli && npm publish
-  2. git add -A && git commit -m "chore: release v${newVersion}"
-  3. git push
+  1. CD will auto-deploy worker on CI green
+  2. To publish CLI to npm:
+     cd packages/cli && npm publish
 `);
+}
+
+main().catch((err: unknown) => {
+  console.error("❌ Unexpected error:", err);
+  process.exit(1);
+});

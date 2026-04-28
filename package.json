@@ -20,6 +20,7 @@
     "lint:biome": "bunx biome check .",
     "lint:biome:fix": "bunx biome check --write .",
     "test:e2e": "bun run --cwd packages/web playwright test --config e2e/playwright.config.ts",
+    "release": "bun run scripts/release.ts",
     "prepare": "husky"
   },
   "lint-staged": {
