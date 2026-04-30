@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../app";
 import type { DbDriver } from "../../lib/db/driver";
 import type { R2BucketLike } from "../../lib/r2";
+import { APP_VERSION } from "../../lib/version";
 import { createMockDriver } from "./_mock-driver";
 
 beforeEach(() => {
@@ -78,7 +79,7 @@ describe("createApp({ driver }) — new /api/* mode", () => {
     expect(r.status).toBe(200);
     const body = (await r.json()) as { status: string; system: { version: string } };
     expect(body.status).toBe("ok");
-    expect(body.system.version).toBe("2.0.0");
+    expect(body.system.version).toBe(APP_VERSION);
   });
 
   it("/api/me returns unauthenticated when no accessEmail set", async () => {

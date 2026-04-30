@@ -630,7 +630,11 @@ Next steps:
 `);
 }
 
-main().catch((err: unknown) => {
-  console.error("❌ Unexpected error:", err);
-  process.exit(1);
-});
+const isDirectRun = typeof Bun !== "undefined" && import.meta.url === `file://${Bun.main}`;
+
+if (isDirectRun) {
+  main().catch((err: unknown) => {
+    console.error("❌ Unexpected error:", err);
+    process.exit(1);
+  });
+}
