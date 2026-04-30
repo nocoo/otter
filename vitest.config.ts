@@ -32,26 +32,41 @@ export default defineConfig({
     ],
     coverage: {
       provider: "v8",
+      // experimentalAstAwareRemapping intentionally omitted — enabling it on vitest 3.x
+      // causes coverage variance that drops functions below the 95% threshold.
+      // Re-evaluate when upgrading to vitest v4 (where AST remapping is the default).
       reporter: ["text", "json", "html"],
       include: ["packages/*/src/**/*.ts"],
       exclude: [
+        // Test files themselves
         "**/*.test.ts",
+        // Type declarations — no runtime code
         "**/*.d.ts",
+        // React components — covered via E2E
         "**/*.tsx",
+        // Module entry points — mostly barrel re-exports; files with
+        // significant logic (e.g. Worker app wiring, collector registry) are
+        // covered via integration tests.
         "**/index.ts",
+        // CLI entry points — exercised manually / via integration scripts
         "**/bin.ts",
         "**/cli.ts",
+        // Pure type modules
         "**/types.ts",
+        // Environment / infra glue — exercised by integration tests
         "**/lib/app-env.ts",
         "**/lib/db/driver.ts",
         "**/lib/r2.ts",
         // createApp() wiring factory — exercised by create-app.test.ts integration
         // suite, but v8 source-map mapping reports 0 functions on this file.
         "packages/api/src/app.ts",
+        // React hooks — covered via E2E with the SPA
         "**/hooks/**",
+        // Trivial helpers / constants
         "**/lib/palette.ts",
         "**/lib/utils.ts",
         "**/lib/version.ts",
+        // Auth surface — covered by integration / E2E flows
         "**/auth.ts",
         "**/proxy.ts",
         "**/api/auth/**",
