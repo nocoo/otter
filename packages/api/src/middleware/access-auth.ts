@@ -19,6 +19,24 @@ function getJwks(teamDomain: string) {
   return jwksCache;
 }
 
+function hasBearer(c: Context<AppEnv>): boolean {
+  return (c.req.header("Authorization") ?? "").startsWith("Bearer ");
+}
+
+/**
+ * E2E bypass: explicit flag + non-production guard (pika pattern).
+ * wrangler dev --local may rewrite the Host header, making isLocalhost()
+ * unreliable. Returns true if the request was handled (caller should return).
+ */
+function tryE2eBypass(c: Context<AppEnv>, env: AppBindings): boolean {
+  if (env.E2E_SKIP_AUTH !== "true" || env.ENVIRONMENT === "production") return false;
+  if (!hasBearer(c)) {
+    c.set("accessAuthenticated", true);
+    c.set("accessEmail", env.DEV_USER_EMAIL ?? "dev@localhost");
+  }
+  return true;
+}
+
 const PUBLIC_PATHS = ["/api/live", "/v1/live"];
 
 export async function accessAuth(c: Context<AppEnv>, next: Next) {
@@ -26,19 +44,10 @@ export async function accessAuth(c: Context<AppEnv>, next: Next) {
 
   const env = (c.env ?? {}) as AppBindings;
 
-  // E2E bypass: explicit flag + non-production guard (pika pattern).
-  // wrangler dev --local may rewrite the Host header, making isLocalhost()
-  // unreliable. This is the only way to authenticate E2E requests.
-  if (env.E2E_SKIP_AUTH === "true" && env.ENVIRONMENT !== "production") {
-    c.set("accessAuthenticated", true);
-    const devEmail = env.DEV_USER_EMAIL ?? "dev@localhost";
-    c.set("accessEmail", devEmail);
-    return next();
-  }
+  if (tryE2eBypass(c, env)) return next();
 
   if (isLocalhost(c)) {
-    const hasBearer = (c.req.header("Authorization") ?? "").startsWith("Bearer ");
-    if (!hasBearer) {
+    if (!hasBearer(c)) {
       c.set("accessAuthenticated", true);
       c.set("accessEmail", "dev@localhost");
     }

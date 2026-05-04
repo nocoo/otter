@@ -194,4 +194,20 @@ describe("accessAuth", () => {
     const json = (await r.json()) as { auth: boolean };
     expect(json.auth).toBe(false);
   });
+
+  it("E2E_SKIP_AUTH with Bearer header does not auto-stamp (lets apiKeyAuth verify)", async () => {
+    const app = makeApp({
+      ENVIRONMENT: "test",
+      E2E_SKIP_AUTH: "true",
+      DEV_USER_EMAIL: "e2e@test.local",
+    });
+    const r = await app.fetch(
+      new Request("https://otter-test.workers.dev/api/me", {
+        headers: { host: "otter-test.workers.dev", Authorization: "Bearer otk_something" },
+      }),
+    );
+    const json = (await r.json()) as { auth: boolean };
+    // accessAuth does NOT set accessAuthenticated — apiKeyAuth will handle the token
+    expect(json.auth).toBe(false);
+  });
 });
