@@ -47,7 +47,7 @@ describe("isLocalhost", () => {
     expect(await probe("https://example.com/x", { host: "example.com" })).toBe(false);
   });
 
-  it("true on cf edge when ENVIRONMENT=test (L2 e2e via wrangler --remote)", async () => {
+  it("false on cf edge regardless of ENVIRONMENT value", async () => {
     expect(
       await probe(
         "https://otter-test.workers.dev/x",
@@ -55,7 +55,7 @@ describe("isLocalhost", () => {
         { country: "US" },
         { ENVIRONMENT: "test" },
       ),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("false on cf edge when ENVIRONMENT=production", async () => {
