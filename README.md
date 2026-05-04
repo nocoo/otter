@@ -111,7 +111,7 @@ otter/
 │   └── worker/                      # @otter/worker — 单一 Cloudflare Worker，托管 /api/* + SPA 静态资源
 ├── docs/                            # 项目文档
 │   └── archive/                     # 已完成迁移计划（08 / 09）
-├── scripts/                         # release.ts / run-e2e-spa.ts / verify-test-resources.ts
+├── scripts/                         # release.ts / run-api-e2e.ts / run-e2e-spa.ts
 └── vitest.config.ts                 # 测试配置
 ```
 

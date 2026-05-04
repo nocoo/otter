@@ -106,7 +106,6 @@ vite 已在 `server.allowedHosts` 里放行 `*.dev.hexly.ai`。
 
 ```bash
 bun run deploy        # 生产 worker（custom domain otter.hexly.ai + workers.dev fallback）
-bun run deploy:test   # test 环境
 ```
 
 `wrangler deploy` 一次性把 SPA（来自 `packages/web/dist`）和 worker 代码都推上去——`[assets]` binding 直接托管 dist 目录。
