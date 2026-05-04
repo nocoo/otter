@@ -34,11 +34,10 @@ bun run test
 | `bun run dev:worker` | （可选）`wrangler dev --local`（`:8787`），本地 D1 / R2 模拟，挂 `/api/*` + 老 `/v1/*` |
 | `bun run build` | 构建 web SPA（vite，输出到 `packages/web/dist`） |
 | `bun run deploy` | build + `wrangler deploy`（推到生产 worker） |
-| `bun run deploy:test` | build + `wrangler deploy --env test`（推到 test 环境） |
 | `bun run test` | 运行全部单元测试（Vitest，502+ tests） |
 | `bun run test:watch` | 监听模式 |
 | `bun run test:coverage` | 覆盖率报告 |
-| `bun run test:e2e` | Playwright BDD E2E（`scripts/run-e2e-spa.ts` 启 vite + wrangler dev `--env test --local`） |
+| `bun run test:e2e` | Playwright BDD E2E（`scripts/run-e2e-spa.ts` 启 wrangler dev `--local`） |
 | `bun run lint` | TypeScript 类型检查（4 个 tsconfig：core → cli → web → api） |
 | `bun run lint:biome` / `lint:biome:fix` | Biome 检查 / 自动修 |
 

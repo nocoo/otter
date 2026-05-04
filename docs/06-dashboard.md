@@ -119,9 +119,6 @@ token 仅在 mint 时返回明文（`/api/auth/cli` 302 redirect）；DB 只存 
 otter-snapshots                # 生产
   {user_email}/{snapshot_id}.json    # 原始快照（解压后）
 
-otter-snapshots-test           # E2E
-  ...
-
 zhe                            # 共享 icons bucket
   apps/otter/{hash}.png        # 应用图标
 ```
@@ -239,10 +236,8 @@ Worker:
 | `OTTER_DEV_API_TOKEN` | vite proxy 注入的 Bearer token | 本地 dev |
 | `CF_ACCESS_TEAM_DOMAIN` | CF Access 验签 issuer | worker（wrangler.toml） |
 | `CF_ACCESS_AUD` | CF Access JWT audience | worker |
-| `CF_ACCOUNT_ID` | Cloudflare 账号（部分 d1-http 路径需要） | worker / scripts |
+| `CF_ACCOUNT_ID` | Cloudflare 账号（部署用） | worker / scripts |
 | `CF_D1_DATABASE_ID` | D1 database UUID | worker（wrangler.toml） |
-| `CF_D1_TEST_DATABASE_ID` | E2E 隔离守门 | E2E runner |
-| `E2E_SKIP_AUTH` | E2E 测试跳过登录 | E2E runner |
 
 ## 鉴权流程图
 

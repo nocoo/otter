@@ -57,6 +57,6 @@ After release completes:
 | G1 | Biome strict check (lint + format, 0 errors, 0 warnings) + lint-staged | pre-commit |
 | L1 | 559+ vitest tests, 95%/94%/95%/95% (stmt/branch/func/line) coverage | pre-commit |
 | tsc | TypeScript strict type check (core → cli → web → api) | pre-commit |
-| L2 | Real-HTTP API + CLI E2E vs `wrangler dev --env test --remote` (otter-db-test). Boots on `:17020`, hard-fails on missing CF env. `OTTER_SKIP_L2=1` opts out (offline-only). | pre-push |
+| L2 | Real-HTTP API + CLI E2E vs `wrangler dev --local --persist-to` (miniflare). Boots on `:17020`, fully local — no CF credentials needed. | pre-push |
 | G2 | osv-scanner (lockfile, 0 vulns) + gitleaks (full history, 0 leaks) | pre-push |
 | CI  | `nocoo/base-ci/.github/workflows/bun-quality.yml@v2026.1` (L1+G1+tsc+G2) | GitHub Actions |

@@ -186,7 +186,6 @@ worker 的 `accessAuth` 看到 `host` 是 localhost 时会自动 stamp 成 `dev@
 
 ```bash
 bun run deploy       # build SPA → wrangler deploy（生产）
-bun run deploy:test  # build SPA → wrangler deploy --env test
 ```
 
 `packages/web/dist` 通过 `[assets]` binding 由 worker 直接托管，所以一次 `wrangler deploy` 把 SPA 和 API 一起推上去。
@@ -199,7 +198,6 @@ bun run deploy:test  # build SPA → wrangler deploy --env test
 | `bun run dev:worker` | （可选）`wrangler dev --local`，本地 D1/R2 模拟 |
 | `bun run build` | 构建 SPA 到 `packages/web/dist` |
 | `bun run deploy` | build + `wrangler deploy`（生产 worker） |
-| `bun run deploy:test` | build + `wrangler deploy --env test`（test 环境） |
 | `bun run test` | 502+ 单元测试（Vitest） |
 | `bun run test:watch` | 监听模式 |
 | `bun run test:coverage` | 覆盖率报告 |
@@ -217,9 +215,8 @@ bun run deploy:test  # build SPA → wrangler deploy --env test
 | L1 | Vitest 502+，覆盖率 ≥90% / 89% | pre-commit |
 | tsc | TypeScript strict（4 个 tsconfig） | pre-commit |
 | G2 | osv-scanner + gitleaks | pre-push |
-| L2 | API E2E（real HTTP，web :17019 → api :17020） | pre-push |
-| L3 | Playwright（web :27019 → api :27020） | pre-push |
-| D1 | `otter-db-test` D1 + `otter-snapshots-test` R2（env override + guard + marker） | E2E runner |
+| L2 | API E2E（real HTTP via `wrangler dev --local`，:17020） | pre-push |
+| L3 | Playwright（web :27019, `wrangler dev --local`） | manual |
 
 ## 安全机制
 
