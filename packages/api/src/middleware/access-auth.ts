@@ -6,7 +6,7 @@
 // second chance with Bearer tokens.
 import type { Context, Next } from "hono";
 import { createRemoteJWKSet, jwtVerify } from "jose";
-import type { AppEnv } from "../lib/app-env";
+import type { AppBindings, AppEnv } from "../lib/app-env";
 import { isLocalhost } from "./is-localhost";
 
 let jwksCache: ReturnType<typeof createRemoteJWKSet> | null = null;
@@ -19,17 +19,22 @@ function getJwks(teamDomain: string) {
   return jwksCache;
 }
 
-export interface AccessAuthEnv {
-  // biome-ignore lint/style/useNamingConvention: env var name
-  CF_ACCESS_TEAM_DOMAIN?: string;
-  // biome-ignore lint/style/useNamingConvention: env var name
-  CF_ACCESS_AUD?: string;
-}
-
 const PUBLIC_PATHS = ["/api/live", "/v1/live"];
 
 export async function accessAuth(c: Context<AppEnv>, next: Next) {
   if (PUBLIC_PATHS.includes(c.req.path)) return next();
+
+  const env = (c.env ?? {}) as AppBindings;
+
+  // E2E bypass: explicit flag + non-production guard (pika pattern).
+  // wrangler dev --local may rewrite the Host header, making isLocalhost()
+  // unreliable. This is the only way to authenticate E2E requests.
+  if (env.E2E_SKIP_AUTH === "true" && env.ENVIRONMENT !== "production") {
+    c.set("accessAuthenticated", true);
+    const devEmail = env.DEV_USER_EMAIL ?? "dev@localhost";
+    c.set("accessEmail", devEmail);
+    return next();
+  }
 
   if (isLocalhost(c)) {
     const hasBearer = (c.req.header("Authorization") ?? "").startsWith("Bearer ");
@@ -40,7 +45,6 @@ export async function accessAuth(c: Context<AppEnv>, next: Next) {
     return next();
   }
 
-  const env = (c.env ?? {}) as AccessAuthEnv;
   const teamDomain = env.CF_ACCESS_TEAM_DOMAIN;
   const aud = env.CF_ACCESS_AUD;
   if (!(teamDomain && aud)) return next();

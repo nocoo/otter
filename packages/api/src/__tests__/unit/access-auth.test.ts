@@ -151,4 +151,47 @@ describe("accessAuth", () => {
     const json = (await r.json()) as { auth: boolean };
     expect(json.auth).toBe(false);
   });
+
+  it("E2E_SKIP_AUTH bypasses auth outside production", async () => {
+    const app = makeApp({
+      ENVIRONMENT: "test",
+      E2E_SKIP_AUTH: "true",
+      DEV_USER_EMAIL: "e2e@test.local",
+    });
+    const r = await app.fetch(
+      new Request("https://otter-test.workers.dev/api/me", {
+        headers: { host: "otter-test.workers.dev" },
+      }),
+    );
+    const json = (await r.json()) as { auth: boolean; email: string };
+    expect(json.auth).toBe(true);
+    expect(json.email).toBe("e2e@test.local");
+  });
+
+  it("E2E_SKIP_AUTH uses dev@localhost when DEV_USER_EMAIL not set", async () => {
+    const app = makeApp({ ENVIRONMENT: "test", E2E_SKIP_AUTH: "true" });
+    const r = await app.fetch(
+      new Request("https://otter-test.workers.dev/api/me", {
+        headers: { host: "otter-test.workers.dev" },
+      }),
+    );
+    const json = (await r.json()) as { auth: boolean; email: string };
+    expect(json.auth).toBe(true);
+    expect(json.email).toBe("dev@localhost");
+  });
+
+  it("E2E_SKIP_AUTH does NOT bypass in production", async () => {
+    const app = makeApp({
+      ENVIRONMENT: "production",
+      E2E_SKIP_AUTH: "true",
+      DEV_USER_EMAIL: "e2e@test.local",
+    });
+    const r = await app.fetch(
+      new Request("https://otter.hexly.ai/api/me", {
+        headers: { host: "otter.hexly.ai" },
+      }),
+    );
+    const json = (await r.json()) as { auth: boolean };
+    expect(json.auth).toBe(false);
+  });
 });

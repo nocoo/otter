@@ -111,6 +111,9 @@ function startWrangler(): void {
       "--ip",
       "127.0.0.1",
       `--persist-to=${PERSIST_DIR}`,
+      "--var=ENVIRONMENT:test",
+      "--var=E2E_SKIP_AUTH:true",
+      "--var=DEV_USER_EMAIL:dev@localhost",
     ],
     {
       cwd: WORKER_DIR,
