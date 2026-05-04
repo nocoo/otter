@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * L3 Vite SPA + worker runner — builds packages/web into packages/web/dist/
- * and starts `wrangler dev --env test --local` so a single port serves both
+ * and starts `wrangler dev --local --persist-to` so a single port serves both
  * the SPA shell (via [assets]) and the new /api/* routes (D1 + R2 emulator).
  *
  * accessAuth auto-stamps localhost requests as `dev@localhost`, so the SPA
@@ -9,7 +9,7 @@
  * via `webServer.command`.
  */
 
-import { rmSync } from "node:fs";
+import { readdirSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { type Subprocess, spawn, spawnSync } from "bun";
 
@@ -17,12 +17,10 @@ const PORT = Number(process.env.E2E_SPA_PORT ?? 27019);
 const REPO_ROOT = resolve(import.meta.dir, "..");
 const WEB_DIR = resolve(REPO_ROOT, "packages/web");
 const WORKER_DIR = resolve(REPO_ROOT, "packages/worker");
+const MIGRATIONS_DIR = resolve(WORKER_DIR, "migrations");
 const PERSIST_DIR = ".wrangler/state-e2e-spa";
-const SCHEMA_FILES = [
-  resolve(WORKER_DIR, "migrations/0001_init.sql"),
-  resolve(WORKER_DIR, "migrations/0002_api_tokens.sql"),
-];
 const HEALTH_TIMEOUT_MS = 60_000;
+const MIGRATION_FILE_RE = /^\d{4}.*\.sql$/;
 
 let wrangler: Subprocess | null = null;
 
@@ -52,21 +50,29 @@ function applySchema(): void {
   } catch {
     // ignore
   }
-  for (const file of SCHEMA_FILES) {
-    log(`applying ${file.replace(`${REPO_ROOT}/`, "")}`);
+
+  const files = readdirSync(MIGRATIONS_DIR)
+    .filter((f) => MIGRATION_FILE_RE.test(f))
+    .sort();
+
+  if (files.length === 0) {
+    throw new Error(`No migration files found in ${MIGRATIONS_DIR}`);
+  }
+
+  for (const file of files) {
+    const filePath = resolve(MIGRATIONS_DIR, file);
+    log(`applying ${file}`);
     const r = spawnSync(
       [
         "bunx",
         "wrangler",
         "d1",
         "execute",
-        "otter-db-test",
+        "otter-db",
         "--local",
-        "--env",
-        "test",
         "--persist-to",
         PERSIST_DIR,
-        `--file=${file}`,
+        `--file=${filePath}`,
       ],
       { cwd: WORKER_DIR, stdout: "pipe", stderr: "pipe" },
     );
@@ -76,6 +82,7 @@ function applySchema(): void {
       throw new Error(`schema apply failed for ${file}`);
     }
   }
+  log(`applied ${files.length} migrations`);
 }
 
 async function waitForHealth(): Promise<void> {
@@ -96,14 +103,12 @@ async function waitForHealth(): Promise<void> {
 }
 
 function startWrangler(): void {
-  log(`starting wrangler dev on :${PORT}`);
+  log(`starting wrangler dev --local on :${PORT}`);
   wrangler = spawn(
     [
       "bunx",
       "wrangler",
       "dev",
-      "--env",
-      "test",
       "--local",
       "--persist-to",
       PERSIST_DIR,
