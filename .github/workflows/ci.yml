@@ -17,10 +17,10 @@ jobs:
     secrets: inherit
 
   l2:
-    name: L2 API E2E (real HTTP vs otter-db-test)
+    name: L2 API E2E (local wrangler dev)
     needs: quality
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -33,10 +33,5 @@ jobs:
           bun run --cwd packages/cli build
           bun run --cwd packages/api build
           bun run build
-      - name: L2 API + CLI E2E
-        env:
-          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CF_D1_TEST_DATABASE_ID: ${{ secrets.CF_D1_TEST_DATABASE_ID }}
-          CF_D1_API_TOKEN: ${{ secrets.CF_D1_API_TOKEN }}
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      - name: L2 API + CLI E2E (local)
         run: bun run test:l2

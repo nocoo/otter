@@ -3,8 +3,7 @@
 # osv-scanner (lockfile vulnerabilities) + gitleaks (full git history secret scan)
 # + vitest coverage thresholds (95/94/95/95) — moved here from pre-commit so
 # commits stay snappy; coverage is still enforced before the code leaves the
-# dev machine. L2 boots wrangler dev --remote against otter-db-test and runs
-# real-HTTP API + CLI tests; set OTTER_SKIP_L2=1 to opt out (e.g. offline).
+# dev machine. L2 boots wrangler dev --local and runs real-HTTP API + CLI tests.
 # gitleaks runs at pre-commit too (staged-only); this is the deeper full-history scan.
 set -o pipefail
 
@@ -17,20 +16,13 @@ OSV_PID=$!
 GITLEAKS_PID=$!
 ( bun run test:coverage >"$TMPDIR_HOOK/coverage.log" 2>&1; echo $? >"$TMPDIR_HOOK/coverage.exit" ) &
 COVERAGE_PID=$!
-
-if [ "${OTTER_SKIP_L2:-}" = "1" ]; then
-  echo "skip" >"$TMPDIR_HOOK/l2.log"
-  echo 0 >"$TMPDIR_HOOK/l2.exit"
-  L2_PID=""
-else
-  ( bun run test:l2 >"$TMPDIR_HOOK/l2.log" 2>&1; echo $? >"$TMPDIR_HOOK/l2.exit" ) &
-  L2_PID=$!
-fi
+( bun run test:l2 >"$TMPDIR_HOOK/l2.log" 2>&1; echo $? >"$TMPDIR_HOOK/l2.exit" ) &
+L2_PID=$!
 
 wait "$OSV_PID" 2>/dev/null || true
 wait "$GITLEAKS_PID" 2>/dev/null || true
 wait "$COVERAGE_PID" 2>/dev/null || true
-[ -n "$L2_PID" ] && wait "$L2_PID" 2>/dev/null || true
+wait "$L2_PID" 2>/dev/null || true
 
 OSV_STATUS=$(cat "$TMPDIR_HOOK/osv.exit" 2>/dev/null || echo 1)
 GITLEAKS_STATUS=$(cat "$TMPDIR_HOOK/gitleaks.exit" 2>/dev/null || echo 1)
@@ -49,6 +41,6 @@ tail -80 "$TMPDIR_HOOK/l2.log"
 [ "$OSV_STATUS" -eq 0 ] || { echo "❌ pre-push: osv-scanner failed" >&2; exit "$OSV_STATUS"; }
 [ "$GITLEAKS_STATUS" -eq 0 ] || { echo "❌ pre-push: gitleaks failed" >&2; exit "$GITLEAKS_STATUS"; }
 [ "$COVERAGE_STATUS" -eq 0 ] || { echo "❌ pre-push: vitest coverage failed" >&2; exit "$COVERAGE_STATUS"; }
-[ "$L2_STATUS" -eq 0 ] || { echo "❌ pre-push: L2 api e2e failed (set OTTER_SKIP_L2=1 to skip)" >&2; exit "$L2_STATUS"; }
+[ "$L2_STATUS" -eq 0 ] || { echo "❌ pre-push: L2 api e2e failed" >&2; exit "$L2_STATUS"; }
 
 echo "✅ pre-push: G2 (osv + gitleaks) + L1 coverage + L2 api e2e passed."
