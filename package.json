@@ -36,11 +36,14 @@
     "vitest": "^3.0.0"
   },
   "overrides": {
-    "hono": ">=4.12.14",
+    "hono": ">=4.12.18",
     "vite": ">=7.3.2",
     "path-to-regexp": ">=8.4.0",
     "picomatch": ">=4.0.4",
     "postcss": ">=8.5.10",
     "wrangler": ">=4.59.1"
+  },
+  "dependencies": {
+    "hono": "4.12.18"
   }
 }
