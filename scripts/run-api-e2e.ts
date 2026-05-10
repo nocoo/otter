@@ -58,7 +58,7 @@ function applyMigrations(): void {
     const filePath = resolve(MIGRATIONS_DIR, file);
     log(`applying migration: ${file}`);
     execSync(
-      `npx wrangler d1 execute otter-db --local --persist-to=${PERSIST_DIR} --file=${filePath}`,
+      `bunx wrangler d1 execute otter-db --local --persist-to=${PERSIST_DIR} --file=${filePath}`,
       { cwd: WORKER_DIR, stdio: "pipe" },
     );
   }
@@ -72,7 +72,7 @@ function seedTestData(): void {
     "INSERT OR REPLACE INTO _test_marker (key, value) VALUES ('env', 'test');",
   ].join(" ");
   execSync(
-    `npx wrangler d1 execute otter-db --local --persist-to=${PERSIST_DIR} --command="${seedSql}"`,
+    `bunx wrangler d1 execute otter-db --local --persist-to=${PERSIST_DIR} --command="${seedSql}"`,
     { cwd: WORKER_DIR, stdio: "pipe" },
   );
   log("seeded test marker");
