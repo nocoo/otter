@@ -1,4 +1,1 @@
 # OSV-Scanner configuration
-[[IgnoredVulns]]
-id = "GHSA-77vg-94rm-hx3p"
-reason = "Dev-only: devalue@5.8.0 is @cloudflare/vitest-pool-workers' internal dependency (test runner), not used in production."
