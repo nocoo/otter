@@ -44,6 +44,7 @@ jobs:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
           workingDirectory: packages/worker
+          packageManager: bun
           command: deploy
 
       - name: Verify deployment
