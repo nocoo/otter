@@ -2,6 +2,133 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.1] - 2026-06-06
+
+### Features
+- Add E2E_SKIP_AUTH bypass for local wrangler dev
+- Add automated release script with CHANGELOG generation
+- Include version in /api/live response (per release convention)
+
+### Changed
+- Upgrade lucide-react 0.577 → 1.17.0 (major)
+- Upgrade lint-staged 16.4.0 → 17.0.7 (major)
+- Upgrade @cloudflare/vitest-pool-workers 0.8.71 → 0.16.13 (major)
+- Upgrade vitest 3.x → 4.1.8, @vitest/coverage-v8 → 4.1.8 (major)
+- Upgrade TypeScript 5.9 → 6.0.3 (major)
+- Bump shiki 4.0.1 → 4.2.0 (minor)
+- Bump radix-ui 1.4.3 → 1.5.0 (minor)
+- Bump react-router 7.6.3 → 7.17.0 (minor)
+- Bump @cloudflare/workers-types 20250327 → 20260606 (minor)
+- Bump wrangler 4.80.0 → 4.98.0 (minor, update override)
+- Bump vitest 3.0.0/3.2.4 → 3.2.6, @vitest/coverage-v8 → 3.2.6 (minor)
+- Bump vite 7.3.2 → 8.0.16 (patch, update override)
+- Bump react 19.2.4 → 19.2.7, @types/react 19.2.14 → 19.2.17 (patch)
+- Bump @types/node 25.3.4 → 25.9.2 (api, cli)
+- Bump @biomejs/biome 2.4.8 → 2.4.16 (patch)
+- Bump hono 4.12.18/21 → 4.12.23 (patch)
+- Add packageManager bun to wrangler-action
+- Bump wrangler-action v3 → v4 for Node 22+
+- Ignore devalue dev-only OSV (vitest-pool-workers transitive)
+- Pass --ignore-scripts to bun install (Shai-Hulud defense)
+- Add typecheck script alias
+- Rewrite run-api-e2e.ts to use --local --persist-to
+- Align coverage config with pew best practices
+- Standardize release workflow to dove template
+- Rotate CF_ACCESS_AUD for prod and test envs
+- Split CD into separate workflow, trigger via workflow_run
+- Build packages individually instead of tsc -b
+- Build cli/dist before L2 so CLI binary tests can spawn it
+- Expect 403 for bogus Bearer (apiKeyAuth runs before /api/me)
+- Wrap long pre-commit success line per biome formatter
+- Add CD jobs (deploy worker to test → prod after L2)
+- Add L2 API E2E job (real HTTP vs otter-db-test)
+- Wire test:l2 into pre-push and document the gate
+- Add CLI binary E2E (--help, config CRUD, real token round-trip)
+- Add CRUD round-trip + ingest tests
+- Add API smoke tests over real HTTP
+- Scaffold real-HTTP API E2E runner against CF remote
+- Final session log (55 experiments, -91% pre-commit)
+- Stability sample + ideas pruned
+- 5x stability sample
+- Stability sample (post-discard) + idea pruning
+- Doc updates (autoresearch.md, ideas) + stability sample
+- Restore sh wrapper for husky pre-commit hook (husky sources hooks via sh, ignoring shebang)
+- Spawn binaries directly from node_modules/.bin (skip bun run indirection)
+- Stability sample (Bun.spawn hook)
+- Replace bash-orchestrated pre-commit hook with Bun.spawn TS script
+- Stability sample (lower end)
+- 5x stability sample post-maxThreads bump
+- Bump vmThreads maxThreads to 12 (was default 8)
+- Stability sample; capture remaining ideas
+- Update autoresearch.md summary with 89.5% reduction final state
+- Move coverage from pre-commit to pre-push (gate still enforced before push)
+- Update autoresearch.md summary doc
+- Stability sample — sub-1s confirmed
+- Replace 4 parallel tsc --noEmit with single tsc -b incremental build
+- Switch vitest pool: threads -> vmThreads for ~15% faster test runs
+- Vitest pool=threads with isolate=true (correctness-safe; ~30% faster than forks)
+- Re-measure to confirm sub-1s
+- Parallelize core+api+web typecheck (cli still serialized after core)
+- Raise branch coverage threshold 88 → 94 (now 95.04% global)
+- Cover NODE_ENV fallback and undefined c.env branches
+- Cover login timeout branch + icons whitespace/no-callback branches
+- Tsc incremental cache (re-applied without breaking pool config)
+- Cover vscode parseExtensionDirName fallback branches
+- Stub setTimeout in create-app.test.ts to skip d1 retry backoffs from /v1/live
+- Parallelize tsc --noEmit for cli/web/api after core emit
+- Stub setTimeout in d1.test.ts beforeEach to skip 200/400ms retry backoffs
+- Bring 4 collector branches to 100% (cloud-cli, homebrew, launch-agents, macos-defaults)
+- Parallel pre-commit hook timing. Bottleneck=unit_cov (vitest+coverage v8).
+- Bump dev-toolchain branch coverage 61.53%→92.85%
+- Prune unused @otter/api exports subpaths
+- Archive next.js retrospective entries, frame vite as first-class
+- Add hermes collector to rich-snapshot fixture (sync with cli/src/collectors)
+- Move ui.test.ts under src/__tests__/utils/ to match layout
+- Sync quality gate tables with actual L1+G1+G2 layout (no L2/L3/D1)
+- Restore base-ci v2026.1 quality workflow (G1+L1+G2+tsc)
+- Parallelize pre-commit (G1+L1+tsc+gitleaks) and pre-push (osv+gitleaks)
+- Bump schema URL to 2.4.10 to match CLI
+- Raise coverage thresholds to 95/89/95/95
+- Add branch tests for routes + middleware
+- Add branch tests for update/builder/docker/fonts/icons-server
+
+### Fixes
+- Upgrade wrangler-action v3 to v4 and fix OSV vulnerabilities
+- Pin Node 22 for L2 job (wrangler 4.x requirement)
+- Resolve hono override conflict + use bunx for wrangler
+- Upgrade hono to fix CVEs + add osv-scanner.toml
+- Env-guard production safety + stale doc references
+- Handle env-guard + Bearer passthrough in E2E_SKIP_AUTH
+- Remove hardcoded version assertion and guard release main()
+- Correct logo path in README
+- Correct collapsed logo padding to pl-6 per B02-2c
+- Emit plain Configuration header before consola box in config show
+- Assert camelCase fileCount from /api/snapshots
+- Upsert users row before INSERT INTO webhooks
+- Mount real /api/live with driver-aware D1 probe
+- Treat ENVIRONMENT=test as localhost for L2 e2e
+- Override top-level routes in [env.test] to empty
+- Switch L2 runner + CLI E2E from bun.spawn to node:child_process
+- Pin postcss>=8.5.10 (GHSA-qx2v-qp2m-jg93 via vite transitive dep)
+- Lower branches threshold to 88% (CI v8 reports 88.9 vs local 89.04)
+
+### Removed
+- Remove orphaned vitest sub-configs superseded by root config
+- Delete verify-test-resources.ts (no longer needed)
+- Remove references to remote test resources and deploy:test
+- Remove CF secrets from L2 job, simplify pre-push
+- Remove [env.test] from wrangler.toml and deploy:test scripts
+- Remove --env test, use --local with dynamic migrations
+- Remove ENVIRONMENT=test bypass from isLocalhost()
+- Drop stale osv-config reference (file removed in 8c31ffc)
+- Cover 401 branches for webhooks POST/GET/PATCH/DELETE :id
+- Cover 401 branches for snapshots/:id and webhooks POST/PATCH/DELETE/:id
+- Drop obsolete osv-scanner ignore (next.js PPR vuln no longer in tree)
+- Drop obsolete fast-xml-parser/flatted overrides (no longer in dep tree)
+- Drop next.js historical references, bump vite 6→7 in active docs
+- Drop next.js residue from biome domains + vitest exclude
+- Drop stale L2 e2e suite (BASE_URL pointed at deleted web_legacy :17019)
+
 ## [2.0.0] - 2026-04-24
 
 Major release: web stack rewrite + single Cloudflare Worker + auth overhaul.
