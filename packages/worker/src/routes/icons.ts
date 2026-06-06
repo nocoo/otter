@@ -39,13 +39,13 @@ interface IconsRequestBody {
 function isValidBody(data: unknown): data is IconsRequestBody {
   if (typeof data !== "object" || data === null) return false;
   const obj = data as Record<string, unknown>;
-  if (!Array.isArray(obj.icons)) return false;
+  if (!Array.isArray(obj["icons"])) return false;
 
-  for (const icon of obj.icons) {
+  for (const icon of obj["icons"]) {
     if (typeof icon !== "object" || icon === null) return false;
     const i = icon as Record<string, unknown>;
-    if (typeof i.hash !== "string" || !ICON_HASH_PATTERN.test(i.hash)) return false;
-    if (typeof i.data !== "string" || i.data.length === 0) return false;
+    if (typeof i["hash"] !== "string" || !ICON_HASH_PATTERN.test(i["hash"])) return false;
+    if (typeof i["data"] !== "string" || i["data"].length === 0) return false;
   }
 
   return true;

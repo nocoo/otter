@@ -75,11 +75,11 @@ describe("Ingest API", () => {
       .bind(mockSnapshot.id)
       .first();
     expect(dbRow).toBeTruthy();
-    expect(dbRow?.hostname).toBe("Test Machine");
-    expect(dbRow?.platform).toBe("darwin");
-    expect(dbRow?.collector_count).toBe(2);
-    expect(dbRow?.file_count).toBe(1);
-    expect(dbRow?.list_count).toBe(3);
+    expect(dbRow?.["hostname"]).toBe("Test Machine");
+    expect(dbRow?.["platform"]).toBe("darwin");
+    expect(dbRow?.["collector_count"]).toBe(2);
+    expect(dbRow?.["file_count"]).toBe(1);
+    expect(dbRow?.["list_count"]).toBe(3);
 
     // Verify R2 object
     const r2Object = await env.SNAPSHOTS.get(`test-user-id/${mockSnapshot.id}.json`);

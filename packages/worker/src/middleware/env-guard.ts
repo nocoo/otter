@@ -21,7 +21,8 @@ export async function envGuardMiddleware(
 
   // Local E2E: all bindings are miniflare SQLite — resource naming is irrelevant.
   // Only skip in non-production to preserve production safety net.
-  const e2eLocal = (c.env as Record<string, string | undefined>).E2E_SKIP_AUTH === "true";
+  const e2eLocal =
+    (c.env as unknown as Record<string, string | undefined>)["E2E_SKIP_AUTH"] === "true";
   if (e2eLocal && env !== "production") {
     await next();
     return;

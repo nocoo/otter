@@ -5,6 +5,7 @@
     "moduleResolution": "Node16",
     "lib": ["ES2022"],
     "strict": true,
+    "types": ["node"],
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
     "noUnusedLocals": true,

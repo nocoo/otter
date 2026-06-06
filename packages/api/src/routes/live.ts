@@ -26,7 +26,7 @@ app.get("/", async (c) => {
     version: APP_VERSION,
     node: process.versions.node,
     uptime: Math.floor(process.uptime()),
-    env: wEnv.ENVIRONMENT ?? process.env.NODE_ENV ?? "development",
+    env: wEnv.ENVIRONMENT ?? process.env["NODE_ENV"] ?? "development",
   };
 
   let d1Latency: number | null = null;

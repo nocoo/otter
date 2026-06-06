@@ -20,8 +20,8 @@ function getConfig() {
   }
 
   // D1 test isolation guard: when running E2E, verify we're on the test database
-  if (process.env.E2E_SKIP_AUTH === "true") {
-    const testDbId = process.env.CF_D1_TEST_DATABASE_ID;
+  if (process.env["E2E_SKIP_AUTH"] === "true") {
+    const testDbId = process.env["CF_D1_TEST_DATABASE_ID"];
     if (!testDbId) {
       throw new Error("D1 safety: E2E mode active but CF_D1_TEST_DATABASE_ID not set.");
     }

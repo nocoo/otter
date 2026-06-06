@@ -40,12 +40,12 @@ function isValidSnapshot(data: unknown): data is Snapshot {
   if (typeof data !== "object" || data === null) return false;
   const obj = data as Record<string, unknown>;
   return (
-    obj.version === 1 &&
-    typeof obj.id === "string" &&
-    typeof obj.createdAt === "string" &&
-    typeof obj.machine === "object" &&
-    obj.machine !== null &&
-    Array.isArray(obj.collectors)
+    obj["version"] === 1 &&
+    typeof obj["id"] === "string" &&
+    typeof obj["createdAt"] === "string" &&
+    typeof obj["machine"] === "object" &&
+    obj["machine"] !== null &&
+    Array.isArray(obj["collectors"])
   );
 }
 
