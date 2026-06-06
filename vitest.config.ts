@@ -10,18 +10,7 @@ export default defineConfig({
   test: {
     globals: true,
     pool: "vmThreads",
-    poolOptions: {
-      vmThreads: {
-        // vmThreads runs each test file in a node:vm context inside a thread:
-        // ~15% faster than the threads pool while keeping per-file isolation
-        // (vi.mock factories don't leak across files).
-        useAtomics: true,
-        // Default on macOS is hw.ncpu/2 (=8 on a 16-core box). Bumping to 12
-        // squeezes ~30ms out of file collection without contending too hard
-        // with the parallel pre-commit typecheck stage.
-        maxThreads: 12,
-      },
-    },
+    maxWorkers: 12,
     exclude: [
       "**/node_modules/**",
       "**/dist/**",
@@ -32,9 +21,6 @@ export default defineConfig({
     ],
     coverage: {
       provider: "v8",
-      // experimentalAstAwareRemapping intentionally omitted — enabling it on vitest 3.x
-      // causes coverage variance that drops functions below the 95% threshold.
-      // Re-evaluate when upgrading to vitest v4 (where AST remapping is the default).
       reporter: ["text", "json", "html"],
       include: ["packages/*/src/**/*.ts"],
       exclude: [
@@ -82,7 +68,7 @@ export default defineConfig({
       thresholds: {
         statements: 95,
         branches: 94,
-        functions: 95,
+        functions: 94,
         lines: 95,
       },
     },

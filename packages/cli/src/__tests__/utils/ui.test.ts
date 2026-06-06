@@ -155,6 +155,7 @@ describe("ui", () => {
     let logSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
+      vi.restoreAllMocks();
       logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
     });
 
