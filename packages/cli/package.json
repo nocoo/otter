@@ -37,6 +37,6 @@
   },
   "devDependencies": {
     "@otter/core": "workspace:*",
-    "@types/node": "^25.3.4"
+    "@types/node": "^25.9.2"
   }
 }
