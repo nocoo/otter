@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.2] - 2026-06-08
+
+### Changed
+- Untrack .wrangler/tmp build artifacts
+- Upgrade @cloudflare/workers-types 4.20260606.1 → 4.20260608.1
+
 ## [2.0.1] - 2026-06-06
 
 ### Features
