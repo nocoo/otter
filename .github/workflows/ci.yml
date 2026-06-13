@@ -9,11 +9,14 @@ on:
 
 jobs:
   quality:
-    uses: nocoo/base-ci/.github/workflows/bun-quality.yml@v2026.1
+    uses: nocoo/base-ci/.github/workflows/bun-quality.yml@v2026.4
     with:
       test-command: "bun run test:coverage"
       typecheck-command: "bun run lint"
       lint-command: "bun run lint:biome"
+      enable-l3: "true"
+      l3-command: "bun run test:e2e:bdd"
+      l3-browser: "chromium"
     secrets: inherit
 
   l2:
