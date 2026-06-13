@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("App — BDD Smoke", () => {
-  test("Given the app is running, When I visit the home page, Then I see the page title", async ({ page }) => {
+  test("Given the app is running, When I visit the home page, Then I see the page title", async ({
+    page,
+  }) => {
     // Given: the dev server is running (started by playwright webServer)
 
     // When: I visit the home page

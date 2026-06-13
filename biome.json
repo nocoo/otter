@@ -11,6 +11,8 @@
       "!**/*.css",
       "packages/web/e2e/**",
       "packages/*/e2e/**",
+      "e2e/**",
+      "playwright.config.ts",
       "scripts/**",
       "vitest.config.ts",
       "vitest.l2.config.ts",
@@ -164,7 +166,7 @@
       }
     },
     {
-      "includes": ["packages/web/e2e/**"],
+      "includes": ["packages/web/e2e/**", "e2e/**", "playwright.config.ts"],
       "linter": {
         "rules": {
           "performance": {
