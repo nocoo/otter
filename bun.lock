@@ -9,6 +9,7 @@
       },
       "devDependencies": {
         "@biomejs/biome": "^2.4.16",
+        "@playwright/test": "^1.60.0",
         "@vitest/coverage-v8": "^4.1.8",
         "husky": "^9.1.7",
         "lint-staged": "^17.0.7",
@@ -18,7 +19,7 @@
     },
     "packages/api": {
       "name": "@otter/api",
-      "version": "2.0.1",
+      "version": "2.0.2",
       "dependencies": {
         "hono": "^4.12.23",
         "jose": "^6.0.11",
@@ -31,7 +32,7 @@
     },
     "packages/cli": {
       "name": "@nocoo/otter",
-      "version": "2.0.1",
+      "version": "2.0.2",
       "bin": {
         "otter": "dist/bin.js",
       },
@@ -45,14 +46,14 @@
     },
     "packages/core": {
       "name": "@otter/core",
-      "version": "2.0.1",
+      "version": "2.0.2",
       "devDependencies": {
         "@types/node": "^25.3.4",
       },
     },
     "packages/web": {
       "name": "@otter/web",
-      "version": "2.0.1",
+      "version": "2.0.2",
       "dependencies": {
         "@otter/api": "workspace:*",
         "class-variance-authority": "^0.7.1",
@@ -81,7 +82,7 @@
     },
     "packages/worker": {
       "name": "@otter/worker",
-      "version": "2.0.1",
+      "version": "2.0.2",
       "dependencies": {
         "@otter/api": "workspace:*",
         "hono": "^4.12.23",

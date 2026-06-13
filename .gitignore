@@ -11,6 +11,8 @@ bun.lock
 .next-e2e-ui/
 packages/web/playwright-report/
 packages/web/test-results/
+playwright-report/
+test-results/
 
 # Wrangler local state (D1/R2 emulator persistence)
 .wrangler/
