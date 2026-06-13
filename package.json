@@ -36,6 +36,7 @@
     "vitest": "^4.1.8"
   },
   "overrides": {
+    "esbuild": ">=0.28.1",
     "hono": "$hono",
     "vite": ">=8.0.16",
     "path-to-regexp": ">=8.4.0",
