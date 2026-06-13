@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.10/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -66,7 +66,8 @@
         "noAwaitInLoops": "error",
         "noDelete": "error",
         "noBarrelFile": "off",
-        "noReExportAll": "off"
+        "noReExportAll": "off",
+        "noJsxPropsBind": "off"
       },
       "security": {
         "recommended": true,
@@ -81,7 +82,8 @@
         "noExplicitAny": "error",
         "noConfusingVoidType": "error",
         "noAssignInExpressions": "error",
-        "noDoubleEquals": "error"
+        "noDoubleEquals": "error",
+        "noLeakedRender": "off"
       },
       "style": {
         "recommended": true,

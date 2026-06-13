@@ -28,7 +28,7 @@
     ]
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.16",
+    "@biomejs/biome": "2.5.0",
     "@vitest/coverage-v8": "^4.1.8",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.7",
@@ -36,6 +36,7 @@
     "vitest": "^4.1.8"
   },
   "overrides": {
+    "esbuild": ">=0.28.1",
     "hono": "$hono",
     "vite": ">=8.0.16",
     "path-to-regexp": ">=8.4.0",
