@@ -1,6 +1,6 @@
 // access-auth — Cloudflare Access JWT verification (fail-closed).
 //
-// Verifies `Cf-Access-Jwt-Assertion` against CF Access JWGS. On success,
+// Verifies `Cf-Access-Jwt-Assertion` against CF Access JWKS. On success,
 // sets `accessAuthenticated`/`accessEmail` on the Hono context and falls
 // through to the next middleware (typically apiKeyAuth, which sees the
 // authenticated flag and passes through).
