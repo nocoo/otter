@@ -60,14 +60,73 @@ describe("accessAuth", () => {
     expect(json.auth).toBe(false);
   });
 
-  it("falls through when env vars missing", async () => {
+  it("returns 500 when env vars missing (fail-closed)", async () => {
     const app = makeApp();
     const r = await app.fetch(
       new Request("https://prod.example.com/api/me", {
         headers: { host: "prod.example.com" },
       }),
     );
+    expect(r.status).toBe(500);
+    const json = (await r.json()) as { error: string };
+    expect(json.error).toMatch(/not configured/i);
+  });
+
+  it("returns 500 when only CF_ACCESS_TEAM_DOMAIN set (missing AUD)", async () => {
+    const app = makeApp({ CF_ACCESS_TEAM_DOMAIN: "team.cloudflareaccess.com" });
+    const r = await app.fetch(
+      new Request("https://prod.example.com/api/me", {
+        headers: { host: "prod.example.com", "Cf-Access-Jwt-Assertion": "jwt" },
+      }),
+    );
+    expect(r.status).toBe(500);
+  });
+
+  it("returns 500 when c.env is undefined (fail-closed)", async () => {
+    const app = new Hono<AppEnv>();
+    app.use("*", accessAuth);
+    app.get("/api/me", (c) =>
+      c.json({
+        auth: c.get("accessAuthenticated") ?? false,
+      }),
+    );
+    // Call fetch with no env argument so c.env is undefined
+    const r = await app.fetch(
+      new Request("https://prod.example.com/api/me", {
+        headers: { host: "prod.example.com", "Cf-Access-Jwt-Assertion": "jwt" },
+      }),
+    );
+    expect(r.status).toBe(500);
+  });
+
+  it("returns 401 when no Cf-Access-Jwt-Assertion header on edge (fail-closed)", async () => {
+    const app = makeApp({
+      CF_ACCESS_TEAM_DOMAIN: "team.cloudflareaccess.com",
+      CF_ACCESS_AUD: "aud-123",
+    });
+    const r = await app.fetch(
+      new Request("https://prod.example.com/api/me", {
+        headers: { host: "prod.example.com" },
+      }),
+    );
+    expect(r.status).toBe(401);
+    const json = (await r.json()) as { error: string };
+    expect(json.error).toMatch(/missing access jwt/i);
+  });
+
+  it("falls through to apiKeyAuth when no JWT but Bearer header present (CLI/surety)", async () => {
+    const app = makeApp({
+      CF_ACCESS_TEAM_DOMAIN: "team.cloudflareaccess.com",
+      CF_ACCESS_AUD: "aud-123",
+    });
+    const r = await app.fetch(
+      new Request("https://otter.workers.dev/api/me", {
+        headers: { host: "otter.workers.dev", Authorization: "Bearer otk_xx" },
+      }),
+    );
     const json = (await r.json()) as { auth: boolean };
+    // accessAuth must NOT stamp accessAuthenticated; apiKeyAuth (not mounted here)
+    // is responsible for verifying the Bearer token.
     expect(json.auth).toBe(false);
   });
 
@@ -94,7 +153,7 @@ describe("accessAuth", () => {
     });
   });
 
-  it("falls through when JWT verification throws", async () => {
+  it("returns 403 when JWT verification throws (fail-closed)", async () => {
     verifyMock.mockRejectedValueOnce(new Error("bad sig"));
     const app = makeApp({
       CF_ACCESS_TEAM_DOMAIN: "team.cloudflareaccess.com",
@@ -105,51 +164,9 @@ describe("accessAuth", () => {
         headers: { host: "prod.example.com", "Cf-Access-Jwt-Assertion": "bad" },
       }),
     );
-    const json = (await r.json()) as { auth: boolean };
-    expect(json.auth).toBe(false);
-  });
-
-  it("falls through when only CF_ACCESS_TEAM_DOMAIN set (missing AUD)", async () => {
-    const app = makeApp({ CF_ACCESS_TEAM_DOMAIN: "team.cloudflareaccess.com" });
-    const r = await app.fetch(
-      new Request("https://prod.example.com/api/me", {
-        headers: { host: "prod.example.com", "Cf-Access-Jwt-Assertion": "jwt" },
-      }),
-    );
-    const json = (await r.json()) as { auth: boolean };
-    expect(json.auth).toBe(false);
-  });
-
-  it("falls through when no Cf-Access-Jwt-Assertion header on edge", async () => {
-    const app = makeApp({
-      CF_ACCESS_TEAM_DOMAIN: "team.cloudflareaccess.com",
-      CF_ACCESS_AUD: "aud-123",
-    });
-    const r = await app.fetch(
-      new Request("https://prod.example.com/api/me", {
-        headers: { host: "prod.example.com" },
-      }),
-    );
-    const json = (await r.json()) as { auth: boolean };
-    expect(json.auth).toBe(false);
-  });
-
-  it("falls through when c.env is undefined (Hono fetch without env arg)", async () => {
-    const app = new Hono<AppEnv>();
-    app.use("*", accessAuth);
-    app.get("/api/me", (c) =>
-      c.json({
-        auth: c.get("accessAuthenticated") ?? false,
-      }),
-    );
-    // Call fetch with no env argument so c.env is undefined
-    const r = await app.fetch(
-      new Request("https://prod.example.com/api/me", {
-        headers: { host: "prod.example.com", "Cf-Access-Jwt-Assertion": "jwt" },
-      }),
-    );
-    const json = (await r.json()) as { auth: boolean };
-    expect(json.auth).toBe(false);
+    expect(r.status).toBe(403);
+    const json = (await r.json()) as { error: string };
+    expect(json.error).toMatch(/invalid access jwt/i);
   });
 
   it("E2E_SKIP_AUTH bypasses auth outside production", async () => {
@@ -185,14 +202,16 @@ describe("accessAuth", () => {
       ENVIRONMENT: "production",
       E2E_SKIP_AUTH: "true",
       DEV_USER_EMAIL: "e2e@test.local",
+      CF_ACCESS_TEAM_DOMAIN: "team.cloudflareaccess.com",
+      CF_ACCESS_AUD: "aud-123",
     });
     const r = await app.fetch(
       new Request("https://otter.hexly.ai/api/me", {
         headers: { host: "otter.hexly.ai" },
       }),
     );
-    const json = (await r.json()) as { auth: boolean };
-    expect(json.auth).toBe(false);
+    // No JWT header → fail-closed 401
+    expect(r.status).toBe(401);
   });
 
   it("E2E_SKIP_AUTH with Bearer header does not auto-stamp (lets apiKeyAuth verify)", async () => {
