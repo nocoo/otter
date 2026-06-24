@@ -29,8 +29,8 @@
     ]
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.0",
-    "@playwright/test": "^1.61.0",
+    "@biomejs/biome": "2.5.1",
+    "@playwright/test": "^1.61.1",
     "@vitest/coverage-v8": "^4.1.9",
     "husky": "^9.1.7",
     "lint-staged": "17.0.8",
@@ -40,15 +40,15 @@
   "overrides": {
     "esbuild": ">=0.28.1",
     "hono": "$hono",
-    "vite": ">=8.0.16",
+    "vite": ">=8.1.0",
     "path-to-regexp": ">=8.4.0",
     "picomatch": ">=4.0.4",
     "postcss": ">=8.5.10",
     "undici": "^7.28.0",
-    "wrangler": ">=4.103.0",
+    "wrangler": ">=4.104.0",
     "ws": ">=8.21.0"
   },
   "dependencies": {
-    "hono": "^4.12.26"
+    "hono": "^4.12.27"
   }
 }
