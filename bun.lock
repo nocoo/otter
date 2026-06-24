@@ -5,7 +5,7 @@
     "": {
       "name": "otter-monorepo",
       "dependencies": {
-        "hono": "^4.12.26",
+        "hono": "^4.12.27",
       },
       "devDependencies": {
         "@biomejs/biome": "2.5.1",
@@ -21,7 +21,7 @@
       "name": "@otter/api",
       "version": "2.0.2",
       "dependencies": {
-        "hono": "^4.12.26",
+        "hono": "^4.12.27",
         "jose": "^6.0.11",
         "zod": "^4.3.6",
       },
@@ -85,7 +85,7 @@
       "version": "2.0.2",
       "dependencies": {
         "@otter/api": "workspace:*",
-        "hono": "^4.12.26",
+        "hono": "^4.12.27",
         "jose": "^6.0.11",
       },
       "devDependencies": {
@@ -99,7 +99,7 @@
   },
   "overrides": {
     "esbuild": ">=0.28.1",
-    "hono": "^4.12.26",
+    "hono": "^4.12.27",
     "path-to-regexp": ">=8.4.0",
     "picomatch": ">=4.0.4",
     "postcss": ">=8.5.10",
@@ -689,7 +689,7 @@
 
     "hast-util-whitespace": ["hast-util-whitespace@3.0.0", "", { "dependencies": { "@types/hast": "^3.0.0" } }, "sha512-88JUN06ipLwsnv+dVn+OIYOvAuvBMy/Qoi6O7mQHxdPXpjy+Cd6xRkWwux7DKO+4sYILtLBRIKgsdpS2gQc7qw=="],
 
-    "hono": ["hono@4.12.26", "", {}, "sha512-uyZtpnYxM9CmQ7QsQknM4zN8EftNqhON1qYeIKM0Se67CCEe2c44xyGURwB0axX2fBDu1dqHrHAc1hmNT8ITkw=="],
+    "hono": ["hono@4.12.27", "", {}, "sha512-1yrb/+w6HWQJrUCLkJ2IF5jNIPvvFkblV5RNOYl6bV+OA6p9GLcMpHFFGTosSvHvcAUibuUukRqhlYI4z32C7Q=="],
 
     "html-escaper": ["html-escaper@2.0.2", "", {}, "sha512-H2iMtd0I4Mt5eYiapRdIDjp+XzelXQ0tFE4JS7YFwFevXXMmOp9myNrUvCg0D6ws8iqkRPBfKHgbwig1SmlLfg=="],
 
