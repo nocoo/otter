@@ -2,8 +2,9 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { defineCommand, yoctoSpinner } from "@nocoo/cli-base";
 import { createDefaultCollectors } from "./collectors/index.js";
+import { resolveBackupTargets } from "./commands/backup.js";
 import { executeConfig } from "./commands/config.js";
-import { buildApiBaseUrl, executeLogin } from "./commands/login.js";
+import { executeLogin } from "./commands/login.js";
 import { executeScan } from "./commands/scan.js";
 import {
   diffSnapshots,
@@ -153,9 +154,7 @@ const backupCommand = defineCommand({
       return;
     }
 
-    const apiBase = buildApiBaseUrl();
-    const snapshotUrl = `${apiBase}/api/snapshots`;
-    const iconsUrl = `${apiBase}/api/icons`;
+    const { snapshotUrl, iconsUrl, token } = resolveBackupTargets({ token: config.token });
 
     ui.banner(CLI_VERSION);
 
@@ -196,7 +195,7 @@ const backupCommand = defineCommand({
     const spinner = yoctoSpinner({ text: " Uploading..." }).start();
     const uploadResult = await uploadSnapshot(snapshot, {
       url: snapshotUrl,
-      token: config.token,
+      token,
     });
 
     if (!uploadResult.success) {
@@ -233,7 +232,7 @@ const backupCommand = defineCommand({
       const iconSpinner = yoctoSpinner({ text: " Uploading icons..." }).start();
       const iconUpload = await uploadIconsToServer(icons, {
         url: iconsUrl,
-        token: config.token,
+        token,
       });
 
       if (iconUpload.success) {
