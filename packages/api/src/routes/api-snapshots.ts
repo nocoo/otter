@@ -23,6 +23,7 @@ import {
   type SnapshotRow,
   snapshotR2Key,
 } from "../lib/snapshot-repo";
+import { ensureUser } from "../lib/user-repo";
 
 interface SnapshotResponse {
   id: string;
@@ -105,6 +106,7 @@ export function createApiSnapshotsRoute(opts: SnapshotsRouteOptions) {
     const meta = extractSnapshotMetadata(snapshot);
     const sizeBytes = new TextEncoder().encode(jsonString).length;
     const r2Key = snapshotR2Key(auth.email, snapshot.id);
+    const driver = opts.getDriver(c);
 
     try {
       await opts.getBucket(c).put(r2Key, jsonString, {
@@ -129,7 +131,11 @@ export function createApiSnapshotsRoute(opts: SnapshotsRouteOptions) {
     });
 
     try {
-      await opts.getDriver(c).execute(insert.sql, insert.params);
+      // Defensive: /api/auth/cli already runs ensureUser at mint time, but a
+      // FK violation here would surface as a 500 that's hard to diagnose.
+      // Idempotent — costs one INSERT ... ON CONFLICT DO NOTHING per upload.
+      await ensureUser(driver, auth.email);
+      await driver.execute(insert.sql, insert.params);
     } catch (error) {
       console.error("[api/snapshots] Failed to write snapshot metadata to D1:", error);
       return c.json({ error: "Failed to index snapshot" }, 500);

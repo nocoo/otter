@@ -13,6 +13,7 @@ import { type Context, Hono } from "hono";
 import { createApiToken } from "../lib/api-token-repo";
 import type { AppEnv } from "../lib/app-env";
 import type { DbDriver } from "../lib/db/driver";
+import { ensureUser } from "../lib/user-repo";
 
 export function isLocalhostUrl(value: string): boolean {
   let parsed: URL;
@@ -44,6 +45,10 @@ export function createAuthCliRoute(opts: AuthCliRouteOptions) {
     if (!email) return c.json({ error: "CF Access session required to mint a CLI token" }, 400);
 
     const driver = opts.getDriver(c);
+    // Guarantee the users row exists before any snapshot upload FKs against it —
+    // otherwise `otter login` succeeds but the first `otter backup` 500s on
+    // snapshots.user_id → users.id FK violation.
+    await ensureUser(driver, email);
     const { token } = await createApiToken(driver, { email });
 
     const redirect = new URL(callback);

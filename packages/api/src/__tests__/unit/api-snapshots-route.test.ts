@@ -408,6 +408,30 @@ describe("createApiSnapshotsRoute", () => {
       expect(insert?.params[2]).toBeNull();
     });
 
+    it("upserts the users row before inserting the snapshot (FK safety)", async () => {
+      const executed: Array<{ sql: string; params: unknown[] }> = [];
+      const driver = memoryDriver(state);
+      const wrapped: DbDriver = {
+        ...driver,
+        async execute(sql, params = []) {
+          executed.push({ sql, params });
+          return driver.execute(sql, params);
+        },
+      };
+      const app = buildApp({ driver: wrapped, bucket: bucketPair.bucket, email: "alice@x" });
+      const res = await app.request("/snapshots", {
+        method: "POST",
+        body: JSON.stringify(validPayload("s5")),
+      });
+      expect(res.status).toBe(201);
+      const userIdx = executed.findIndex((e) => e.sql.startsWith("INSERT INTO users"));
+      const snapIdx = executed.findIndex((e) => e.sql.startsWith("INSERT INTO snapshots"));
+      expect(userIdx).toBeGreaterThanOrEqual(0);
+      expect(snapIdx).toBeGreaterThanOrEqual(0);
+      expect(userIdx).toBeLessThan(snapIdx);
+      expect(executed[userIdx]?.params[0]).toBe("alice@x");
+    });
+
     it("returns 400 on invalid JSON body", async () => {
       const app = buildApp({
         driver: memoryDriver(state),

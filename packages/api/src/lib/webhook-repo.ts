@@ -1,5 +1,6 @@
 // WebhookRepo — SQL access for the `webhooks` D1 table.
 import type { DbDriver } from "./db/driver";
+import { ensureUser } from "./user-repo";
 
 export interface WebhookRow {
   id: string;
@@ -68,14 +69,9 @@ export async function createWebhook(
   driver: DbDriver,
   input: CreateWebhookInput,
 ): Promise<WebhookRow> {
-  // Ensure the FK target exists. Post-0003 migration, users.id == users.email,
-  // so the auth email IS the user_id. New callers (CF Access, /auth/cli, the
-  // dev@localhost auto-stamp on test/local) may not have a row yet.
-  await driver.execute(
-    `INSERT INTO users (id, email) VALUES (?1, ?1)
-     ON CONFLICT(id) DO NOTHING`,
-    [input.userId],
-  );
+  // Ensure the FK target exists — callers may be first-time users whose
+  // users row has not been created yet (see ensureUser docs).
+  await ensureUser(driver, input.userId);
   await driver.execute(
     `INSERT INTO webhooks (id, user_id, token, label, is_active, created_at, last_used_at)
      VALUES (?1, ?2, ?3, ?4, 1, ?5, NULL)`,
