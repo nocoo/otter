@@ -1,4 +1,5 @@
-// /api/snapshots — D1-binding-backed snapshot routes for the Vite SPA.
+// /api/snapshots — D1-binding-backed snapshot routes for the Vite SPA
+// (list/get/delete) and the CLI (upload via POST + Bearer token).
 //
 // Authenticated via `accessEmail` populated by accessAuth (CF Access JWT) or
 // apiKeyAuth (Bearer token). R2 bucket is injected via opts so the same factory
@@ -7,12 +8,20 @@
 import { type Context, Hono } from "hono";
 import type { AppEnv } from "../lib/app-env";
 import type { DbDriver } from "../lib/db/driver";
+import { readMaybeGzip } from "../lib/gzip";
 import type { R2BucketLike } from "../lib/r2";
+import {
+  extractSnapshotMetadata,
+  isValidSnapshotPayload,
+  type SnapshotPayload,
+} from "../lib/snapshot-payload";
 import {
   deleteSnapshotMeta,
   getSnapshotMeta,
+  insertSnapshotStatement,
   listSnapshots,
   type SnapshotRow,
+  snapshotR2Key,
 } from "../lib/snapshot-repo";
 
 interface SnapshotResponse {
@@ -73,6 +82,60 @@ export function createApiSnapshotsRoute(opts: SnapshotsRouteOptions) {
       total: result.total,
       nextBefore: result.nextBefore,
     });
+  });
+
+  app.post("/", async (c) => {
+    const auth = requireUser(c);
+    if (auth instanceof Response) return auth;
+
+    const { json: jsonString, error: decompressError } = await readMaybeGzip(c.req.raw);
+    if (decompressError) return c.json({ error: decompressError }, 400);
+
+    let snapshot: SnapshotPayload;
+    try {
+      const parsed: unknown = JSON.parse(jsonString);
+      if (!isValidSnapshotPayload(parsed)) {
+        return c.json({ error: "Invalid snapshot format" }, 400);
+      }
+      snapshot = parsed;
+    } catch {
+      return c.json({ error: "Invalid JSON body" }, 400);
+    }
+
+    const meta = extractSnapshotMetadata(snapshot);
+    const sizeBytes = new TextEncoder().encode(jsonString).length;
+    const r2Key = snapshotR2Key(auth.email, snapshot.id);
+
+    try {
+      await opts.getBucket(c).put(r2Key, jsonString, {
+        httpMetadata: { contentType: "application/json" },
+      });
+    } catch (error) {
+      console.error("[api/snapshots] Failed to store snapshot in R2:", error);
+      return c.json({ error: "Failed to store snapshot" }, 500);
+    }
+
+    const now = Date.now();
+    const snapshotAt = new Date(snapshot.createdAt).getTime();
+    const insert = insertSnapshotStatement({
+      id: snapshot.id,
+      userId: auth.email,
+      webhookId: null,
+      meta,
+      sizeBytes,
+      r2Key,
+      snapshotAt,
+      uploadedAt: now,
+    });
+
+    try {
+      await opts.getDriver(c).execute(insert.sql, insert.params);
+    } catch (error) {
+      console.error("[api/snapshots] Failed to write snapshot metadata to D1:", error);
+      return c.json({ error: "Failed to index snapshot" }, 500);
+    }
+
+    return c.json({ success: true, snapshotId: snapshot.id }, 201);
   });
 
   app.get("/:id", async (c) => {

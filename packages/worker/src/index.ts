@@ -38,6 +38,8 @@ app.all("/api/*", (c) => {
     basePath: "/api",
     driver,
     bucket: c.env.SNAPSHOTS,
+    iconBucket: c.env.ICONS,
+    iconPrefix: c.env.ICON_PREFIX,
     auth: { access: true, bearer: true },
   });
   return apiApp.fetch(c.req.raw, c.env, c.executionCtx);

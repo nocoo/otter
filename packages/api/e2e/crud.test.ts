@@ -174,3 +174,55 @@ describe("L2 ingest + snapshots round-trip", () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe("L2 /api/snapshots Bearer round-trip", () => {
+  const snapshotId = `snap-bearer-${RUN_TAG}`;
+
+  beforeAll(() => {
+    createdSnapshotIds.push(snapshotId);
+  });
+
+  it("POST /api/snapshots writes a snapshot row visible via /api/snapshots", async () => {
+    const snapshot = {
+      version: 1 as const,
+      id: snapshotId,
+      createdAt: new Date().toISOString(),
+      machine: {
+        hostname: "bearer-host",
+        platform: "darwin",
+        arch: "arm64",
+        username: "l2",
+      },
+      collectors: [{ files: [{ path: "/tmp/y" }], lists: [] }],
+    };
+
+    const postRes = await fetch(`${baseUrl}/api/snapshots`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(snapshot),
+    });
+    expect(postRes.status).toBe(201);
+    const postBody = (await postRes.json()) as { success: boolean; snapshotId: string };
+    expect(postBody.success).toBe(true);
+    expect(postBody.snapshotId).toBe(snapshotId);
+
+    const listRes = await fetch(`${baseUrl}/api/snapshots`);
+    expect(listRes.status).toBe(200);
+    const listBody = (await listRes.json()) as {
+      snapshots: Array<{ id: string; fileCount: number; hostname: string }>;
+    };
+    const row = listBody.snapshots.find((s) => s.id === snapshotId);
+    expect(row).toBeDefined();
+    expect(row?.fileCount).toBe(1);
+    expect(row?.hostname).toBe("bearer-host");
+
+    const detailRes = await fetch(`${baseUrl}/api/snapshots/${snapshotId}`);
+    expect(detailRes.status).toBe(200);
+    const detail = (await detailRes.json()) as {
+      snapshot: { id: string };
+      data: { id: string; machine: { hostname: string } };
+    };
+    expect(detail.data.id).toBe(snapshotId);
+    expect(detail.data.machine.hostname).toBe("bearer-host");
+  });
+});

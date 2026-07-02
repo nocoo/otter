@@ -104,6 +104,55 @@ function memoryDriver(state: { snaps: SnapRow[]; webhooks: WebhookRow[] }): DbDr
         state.webhooks = state.webhooks.filter((w) => w.id !== id);
         return { changes: before - state.webhooks.length, lastRowId: null };
       }
+      if (sql.startsWith("INSERT INTO snapshots")) {
+        const [
+          id,
+          user_id,
+          _webhook_id,
+          hostname,
+          platform,
+          arch,
+          username,
+          collector_count,
+          file_count,
+          list_count,
+          size_bytes,
+          r2_key,
+          snapshot_at,
+          uploaded_at,
+        ] = params as [
+          string,
+          string,
+          string | null,
+          string,
+          string,
+          string,
+          string,
+          number,
+          number,
+          number,
+          number,
+          string,
+          number,
+          number,
+        ];
+        state.snaps.push({
+          id,
+          user_id,
+          hostname,
+          platform,
+          arch,
+          username,
+          collector_count,
+          file_count,
+          list_count,
+          size_bytes,
+          r2_key,
+          snapshot_at,
+          uploaded_at,
+        });
+        return { changes: 1, lastRowId: null };
+      }
       if (sql.startsWith("INSERT INTO webhooks")) {
         const [id, user_id, token, label, is_active, created_at] = params as [
           string,
@@ -127,8 +176,13 @@ function memoryDriver(state: { snaps: SnapRow[]; webhooks: WebhookRow[] }): DbDr
   };
 }
 
-function fakeBucket(): { bucket: R2BucketLike; store: Map<string, string> } {
+function fakeBucket(): {
+  bucket: R2BucketLike;
+  store: Map<string, string>;
+  putCalls: Array<{ key: string; value: unknown; options?: unknown }>;
+} {
   const store = new Map<string, string>();
+  const putCalls: Array<{ key: string; value: unknown; options?: unknown }> = [];
   const bucket = {
     async get(key: string) {
       const v = store.get(key);
@@ -139,15 +193,16 @@ function fakeBucket(): { bucket: R2BucketLike; store: Map<string, string> } {
         },
       };
     },
-    async put(key: string, value: string) {
-      store.set(key, value);
+    async put(key: string, value: string, options?: unknown) {
+      putCalls.push({ key, value, options });
+      store.set(key, typeof value === "string" ? value : "");
       return {};
     },
     async delete(key: string) {
       store.delete(key);
     },
   } as unknown as R2BucketLike;
-  return { bucket, store };
+  return { bucket, store, putCalls };
 }
 
 function buildApp(opts: {
@@ -273,6 +328,111 @@ describe("createApiSnapshotsRoute", () => {
     const app = buildApp({ driver, bucket: bucketPair.bucket, email: "alice@x" });
     const res = await app.request("/snapshots?limit=5&before=12345");
     expect(res.status).toBe(200);
+  });
+
+  describe("POST /snapshots", () => {
+    function validPayload(id = "s3") {
+      return {
+        version: 1,
+        id,
+        createdAt: "2026-07-03T00:00:00.000Z",
+        machine: {
+          hostname: "test-host",
+          computerName: "Test Mac",
+          platform: "darwin",
+          arch: "arm64",
+          username: "tester",
+        },
+        collectors: [{ files: [1, 2], lists: [1] }],
+      };
+    }
+
+    it("returns 401 without auth", async () => {
+      const app = buildApp({
+        driver: memoryDriver(state),
+        bucket: bucketPair.bucket,
+        email: null,
+      });
+      const res = await app.request("/snapshots", {
+        method: "POST",
+        body: JSON.stringify(validPayload()),
+      });
+      expect(res.status).toBe(401);
+    });
+
+    it("stores the snapshot in R2 and inserts the metadata row", async () => {
+      const app = buildApp({
+        driver: memoryDriver(state),
+        bucket: bucketPair.bucket,
+        email: "alice@x",
+      });
+      const payload = validPayload();
+      const res = await app.request("/snapshots", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      expect(res.status).toBe(201);
+      const body = (await res.json()) as { success: boolean; snapshotId: string };
+      expect(body).toEqual({ success: true, snapshotId: "s3" });
+
+      expect(bucketPair.putCalls).toHaveLength(1);
+      expect(bucketPair.putCalls[0]?.key).toBe("alice@x/s3.json");
+
+      const inserted = state.snaps.find((s) => s.id === "s3");
+      expect(inserted).toBeDefined();
+      expect(inserted?.user_id).toBe("alice@x");
+      expect(inserted?.hostname).toBe("Test Mac");
+      expect(inserted?.collector_count).toBe(1);
+      expect(inserted?.file_count).toBe(2);
+      expect(inserted?.list_count).toBe(1);
+    });
+
+    it("passes webhookId=null when inserting via Bearer path", async () => {
+      const executed: Array<{ sql: string; params: unknown[] }> = [];
+      const driver = memoryDriver(state);
+      const wrapped: DbDriver = {
+        ...driver,
+        async execute(sql, params = []) {
+          executed.push({ sql, params });
+          return driver.execute(sql, params);
+        },
+      };
+      const app = buildApp({ driver: wrapped, bucket: bucketPair.bucket, email: "alice@x" });
+      const res = await app.request("/snapshots", {
+        method: "POST",
+        body: JSON.stringify(validPayload("s4")),
+      });
+      expect(res.status).toBe(201);
+      const insert = executed.find((e) => e.sql.startsWith("INSERT INTO snapshots"));
+      expect(insert).toBeDefined();
+      expect(insert?.params[2]).toBeNull();
+    });
+
+    it("returns 400 on invalid JSON body", async () => {
+      const app = buildApp({
+        driver: memoryDriver(state),
+        bucket: bucketPair.bucket,
+        email: "alice@x",
+      });
+      const res = await app.request("/snapshots", {
+        method: "POST",
+        body: "not json",
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it("returns 400 on invalid snapshot shape", async () => {
+      const app = buildApp({
+        driver: memoryDriver(state),
+        bucket: bucketPair.bucket,
+        email: "alice@x",
+      });
+      const res = await app.request("/snapshots", {
+        method: "POST",
+        body: JSON.stringify({ version: 2 }),
+      });
+      expect(res.status).toBe(400);
+    });
   });
 });
 

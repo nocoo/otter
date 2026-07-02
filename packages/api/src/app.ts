@@ -14,6 +14,7 @@ import type { DbDriver } from "./lib/db/driver";
 import type { R2BucketLike } from "./lib/r2";
 import { accessAuth } from "./middleware/access-auth";
 import { createApiKeyAuth } from "./middleware/api-key-auth";
+import { createApiIconsRoute } from "./routes/api-icons";
 import { createApiSnapshotsRoute } from "./routes/api-snapshots";
 import { createApiWebhooksRoute } from "./routes/api-webhooks";
 import { createAuthCliRoute } from "./routes/auth-cli";
@@ -27,6 +28,10 @@ export interface CreateAppOptions {
   driver?: DbDriver;
   /** R2 bucket for snapshot bodies. Required when mounting /api/snapshots. */
   bucket?: R2BucketLike;
+  /** R2 bucket for app icons. Required when mounting /api/icons. */
+  iconBucket?: R2BucketLike;
+  /** Key prefix under `iconBucket` for icons. Defaults to "apps/otter". */
+  iconPrefix?: string;
   /** Auth toggles. */
   auth?: {
     /** Enable Cloudflare Access JWT verification. Default false. */
@@ -73,6 +78,18 @@ export function createApp(opts: CreateAppOptions = {}) {
         createApiSnapshotsRoute({
           getDriver: () => driver,
           getBucket: () => bucket,
+        }),
+      );
+    }
+
+    if (opts.iconBucket) {
+      const iconBucket = opts.iconBucket;
+      const iconPrefix = opts.iconPrefix;
+      apiApp.route(
+        "/icons",
+        createApiIconsRoute({
+          getBucket: () => iconBucket,
+          ...(iconPrefix ? { getPrefix: () => iconPrefix } : {}),
         }),
       );
     }
