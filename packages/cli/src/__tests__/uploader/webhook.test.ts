@@ -33,7 +33,7 @@ describe("uploadSnapshot", () => {
     globalThis.fetch = originalFetch;
   });
 
-  it("should POST gzip-compressed snapshot to webhook URL", async () => {
+  it("should POST gzip-compressed snapshot to configured URL with Bearer auth", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -41,14 +41,18 @@ describe("uploadSnapshot", () => {
     globalThis.fetch = mockFetch;
 
     const snapshot = createTestSnapshot();
-    await uploadSnapshot(snapshot, { webhookUrl: "https://example.com/hook" });
+    await uploadSnapshot(snapshot, {
+      url: "https://example.com/api/snapshots",
+      token: "otk_test",
+    });
 
     expect(mockFetch).toHaveBeenCalledOnce();
     const [url, options] = mockFetch.mock.calls[0];
-    expect(url).toBe("https://example.com/hook");
+    expect(url).toBe("https://example.com/api/snapshots");
     expect(options.method).toBe("POST");
     expect(options.headers["Content-Type"]).toBe("application/json");
     expect(options.headers["Content-Encoding"]).toBe("gzip");
+    expect(options.headers.Authorization).toBe("Bearer otk_test");
 
     // Body should be gzip-compressed; decompress to verify JSON content
     const decompressed = gunzipSync(Buffer.from(options.body));
@@ -63,7 +67,8 @@ describe("uploadSnapshot", () => {
     });
 
     const result = await uploadSnapshot(createTestSnapshot(), {
-      webhookUrl: "https://example.com/hook",
+      url: "https://example.com/api/snapshots",
+      token: "otk_test",
     });
 
     expect(result.success).toBe(true);
@@ -80,7 +85,8 @@ describe("uploadSnapshot", () => {
     });
 
     const result = await uploadSnapshot(createTestSnapshot(), {
-      webhookUrl: "https://example.com/hook",
+      url: "https://example.com/api/snapshots",
+      token: "otk_test",
     });
 
     expect(result.success).toBe(false);
@@ -92,7 +98,8 @@ describe("uploadSnapshot", () => {
     globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network unreachable"));
 
     const result = await uploadSnapshot(createTestSnapshot(), {
-      webhookUrl: "https://example.com/hook",
+      url: "https://example.com/api/snapshots",
+      token: "otk_test",
     });
 
     expect(result.success).toBe(false);
@@ -109,7 +116,8 @@ describe("uploadSnapshot", () => {
     });
 
     await uploadSnapshot(createTestSnapshot(), {
-      webhookUrl: "https://example.com/hook",
+      url: "https://example.com/api/snapshots",
+      token: "otk_test",
       timeoutMs: 5000,
     });
   });
@@ -121,7 +129,8 @@ describe("uploadSnapshot", () => {
     });
 
     await uploadSnapshot(createTestSnapshot(), {
-      webhookUrl: "https://example.com/hook",
+      url: "https://example.com/api/snapshots",
+      token: "otk_test",
     });
 
     // Verify fetch was called with a signal
@@ -134,7 +143,8 @@ describe("uploadSnapshot", () => {
     globalThis.fetch = vi.fn().mockRejectedValue(abortError);
 
     const result = await uploadSnapshot(createTestSnapshot(), {
-      webhookUrl: "https://example.com/hook",
+      url: "https://example.com/api/snapshots",
+      token: "otk_test",
       timeoutMs: 5000,
     });
 

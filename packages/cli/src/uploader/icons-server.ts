@@ -3,8 +3,10 @@ import { readFile } from "node:fs/promises";
 
 /** Configuration for server-side icon upload */
 export interface IconUploadConfig {
-  /** Full URL to the icon upload endpoint, e.g. https://otter.hexly.ai/api/webhook/{token}/icons */
-  iconsUrl: string;
+  /** Full URL to the icon upload endpoint, e.g. https://otter.hexly.ai/api/icons */
+  url: string;
+  /** Bearer token sent as `Authorization: Bearer <token>` */
+  token: string;
   /** Optional timeout in milliseconds (default: 60000) */
   timeoutMs?: number;
 }
@@ -71,9 +73,13 @@ export async function uploadIconsToServer(
       }),
     );
 
-    const response = await fetch(config.iconsUrl, {
+    const response = await fetch(config.url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        // biome-ignore lint/style/useNamingConvention: HTTP header
+        Authorization: `Bearer ${config.token}`,
+      },
       body: JSON.stringify({ icons: payload }),
       signal: controller.signal,
     });

@@ -4,8 +4,9 @@ import type { Snapshot, UploaderConfig, UploadResult } from "@otter/core";
 const DEFAULT_TIMEOUT_MS = 30_000;
 
 /**
- * Upload a snapshot to the configured webhook URL via HTTP POST.
- * The payload is gzip-compressed to reduce transfer size.
+ * Upload a snapshot to the configured URL via HTTP POST.
+ * The payload is gzip-compressed to reduce transfer size and
+ * authenticated with a Bearer token.
  */
 export async function uploadSnapshot(
   snapshot: Snapshot,
@@ -21,11 +22,13 @@ export async function uploadSnapshot(
     const jsonBody = JSON.stringify(snapshot);
     const compressed = gzipSync(jsonBody);
 
-    const response = await fetch(config.webhookUrl, {
+    const response = await fetch(config.url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Content-Encoding": "gzip",
+        // biome-ignore lint/style/useNamingConvention: HTTP header
+        Authorization: `Bearer ${config.token}`,
       },
       body: compressed,
       signal: controller.signal,

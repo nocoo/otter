@@ -45,14 +45,12 @@ export function resolveHost(options: LoginOptions): string {
 }
 
 /**
- * Build a webhook URL from host and token.
- * Uses Worker URL format by default (/ingest/{token}).
- * The host parameter is now only used for login flow, not for uploads.
+ * Get the base URL of the Worker that serves /api/*.
+ * Reads `OTTER_API_URL` if set, otherwise falls back to the default.
+ * The CLI uses this base to build /api/snapshots and /api/icons URLs.
  */
-export function buildWebhookUrl(_host: string, token: string): string {
-  const workerUrl = getWorkerApiUrl();
-  // Worker URL format: https://otter-api.nocoo.workers.dev/ingest/{token}
-  return `${workerUrl}/ingest/${token}`;
+export function buildApiBaseUrl(): string {
+  return getWorkerApiUrl();
 }
 
 /**

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { defineCommand, yoctoSpinner } from "@nocoo/cli-base";
 import { createDefaultCollectors } from "./collectors/index.js";
 import { executeConfig } from "./commands/config.js";
-import { buildWebhookUrl, executeLogin, resolveHost } from "./commands/login.js";
+import { buildApiBaseUrl, executeLogin } from "./commands/login.js";
 import { executeScan } from "./commands/scan.js";
 import {
   diffSnapshots,
@@ -153,8 +153,9 @@ const backupCommand = defineCommand({
       return;
     }
 
-    const host = resolveHost({ dev: args.dev });
-    const webhookUrl = buildWebhookUrl(host, config.token);
+    const apiBase = buildApiBaseUrl();
+    const snapshotUrl = `${apiBase}/api/snapshots`;
+    const iconsUrl = `${apiBase}/api/icons`;
 
     ui.banner(CLI_VERSION);
 
@@ -193,7 +194,10 @@ const backupCommand = defineCommand({
     ui.step("Uploading snapshot", 2, 3);
 
     const spinner = yoctoSpinner({ text: " Uploading..." }).start();
-    const uploadResult = await uploadSnapshot(snapshot, { webhookUrl });
+    const uploadResult = await uploadSnapshot(snapshot, {
+      url: snapshotUrl,
+      token: config.token,
+    });
 
     if (!uploadResult.success) {
       spinner.error(` Upload failed: ${uploadResult.error}`);
@@ -221,14 +225,16 @@ const backupCommand = defineCommand({
     if (exported.length > 0) {
       ui.statusLine(ui.S.success, `${exported.length} icons exported`);
 
-      const iconsUrl = `${webhookUrl}/icons`;
       const icons = exported.map((r) => ({
         appName: r.appName,
         pngPath: r.outputPath,
       }));
 
       const iconSpinner = yoctoSpinner({ text: " Uploading icons..." }).start();
-      const iconUpload = await uploadIconsToServer(icons, { iconsUrl });
+      const iconUpload = await uploadIconsToServer(icons, {
+        url: iconsUrl,
+        token: config.token,
+      });
 
       if (iconUpload.success) {
         iconSpinner.success(` ${iconUpload.stored} icons uploaded`);

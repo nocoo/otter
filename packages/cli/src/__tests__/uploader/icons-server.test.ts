@@ -62,7 +62,8 @@ describe("uploadIconsToServer", () => {
     globalThis.fetch = mockFetch;
 
     const result = await uploadIconsToServer([], {
-      iconsUrl: "https://example.com/api/webhook/tok/icons",
+      url: "https://example.com/api/icons",
+      token: "otk_test",
     });
 
     expect(result.success).toBe(true);
@@ -82,7 +83,8 @@ describe("uploadIconsToServer", () => {
     globalThis.fetch = mockFetch;
 
     const result = await uploadIconsToServer(icons, {
-      iconsUrl: "https://example.com/api/webhook/tok/icons",
+      url: "https://example.com/api/icons",
+      token: "otk_test",
     });
 
     expect(result.success).toBe(true);
@@ -92,8 +94,9 @@ describe("uploadIconsToServer", () => {
     // Verify fetch call
     expect(mockFetch).toHaveBeenCalledOnce();
     const [url, options] = mockFetch.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("https://example.com/api/webhook/tok/icons");
+    expect(url).toBe("https://example.com/api/icons");
     expect(options.method).toBe("POST");
+    expect((options.headers as Record<string, string>).Authorization).toBe("Bearer otk_test");
 
     // Verify payload
     const body = JSON.parse(options.body as string);
@@ -114,7 +117,8 @@ describe("uploadIconsToServer", () => {
     });
 
     const result = await uploadIconsToServer(icons, {
-      iconsUrl: "https://example.com/api/webhook/bad/icons",
+      url: "https://example.com/api/icons",
+      token: "otk_bad",
     });
 
     expect(result.success).toBe(false);
@@ -131,7 +135,8 @@ describe("uploadIconsToServer", () => {
     });
 
     const result = await uploadIconsToServer(icons, {
-      iconsUrl: "https://example.com/api/webhook/tok/icons",
+      url: "https://example.com/api/icons",
+      token: "otk_test",
     });
 
     expect(result.success).toBe(false);
@@ -144,7 +149,8 @@ describe("uploadIconsToServer", () => {
     globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network down"));
 
     const result = await uploadIconsToServer(icons, {
-      iconsUrl: "https://example.com/api/webhook/tok/icons",
+      url: "https://example.com/api/icons",
+      token: "otk_test",
     });
 
     expect(result.success).toBe(false);
@@ -158,7 +164,8 @@ describe("uploadIconsToServer", () => {
     globalThis.fetch = vi.fn().mockRejectedValue(abortError);
 
     const result = await uploadIconsToServer(icons, {
-      iconsUrl: "https://example.com/api/webhook/tok/icons",
+      url: "https://example.com/api/icons",
+      token: "otk_test",
       timeoutMs: 5000,
     });
 
@@ -175,7 +182,8 @@ describe("uploadIconsToServer", () => {
     });
 
     const result = await uploadIconsToServer(icons, {
-      iconsUrl: "https://example.com/api/webhook/tok/icons",
+      url: "https://example.com/api/icons",
+      token: "otk_test",
     });
 
     expect(result.success).toBe(false);
@@ -191,7 +199,8 @@ describe("uploadIconsToServer", () => {
     });
 
     const result = await uploadIconsToServer(icons, {
-      iconsUrl: "https://example.com/api/webhook/tok/icons",
+      url: "https://example.com/api/icons",
+      token: "otk_test",
     });
     expect(result.success).toBe(true);
     expect(result.stored).toBe(0);
@@ -207,7 +216,8 @@ describe("uploadIconsToServer", () => {
     globalThis.fetch = mockFetch;
 
     await uploadIconsToServer(icons, {
-      iconsUrl: "https://example.com/api/webhook/tok/icons",
+      url: "https://example.com/api/icons",
+      token: "otk_test",
     });
 
     const options = mockFetch.mock.calls[0][1] as RequestInit;

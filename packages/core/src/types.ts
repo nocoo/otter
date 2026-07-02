@@ -108,10 +108,12 @@ export interface Snapshot {
 // Layer 2: Uploader types
 // ---------------------------------------------------------------------------
 
-/** Configuration for the webhook uploader */
+/** Configuration for the snapshot uploader */
 export interface UploaderConfig {
-  /** Webhook URL to POST the snapshot to */
-  webhookUrl: string;
+  /** Full URL to POST the snapshot to */
+  url: string;
+  /** Bearer token sent as `Authorization: Bearer <token>` */
+  token: string;
   /** Optional timeout in milliseconds (default: 30000) */
   timeoutMs?: number;
 }

@@ -2,7 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { buildWebhookUrl, executeLogin, resolveHost } from "../../commands/login.js";
+import { buildApiBaseUrl, executeLogin, resolveHost } from "../../commands/login.js";
 import { ConfigManager } from "../../config/manager.js";
 
 // ---------------------------------------------------------------------------
@@ -22,14 +22,13 @@ describe("resolveHost", () => {
 });
 
 // ---------------------------------------------------------------------------
-// buildWebhookUrl
+// buildApiBaseUrl
 // ---------------------------------------------------------------------------
 
-describe("buildWebhookUrl", () => {
+describe("buildApiBaseUrl", () => {
   const originalEnv = process.env.OTTER_API_URL;
 
   afterEach(() => {
-    // Restore original env
     if (originalEnv === undefined) {
       delete process.env.OTTER_API_URL;
     } else {
@@ -37,24 +36,14 @@ describe("buildWebhookUrl", () => {
     }
   });
 
-  it("should use default Worker URL when OTTER_API_URL is not set", () => {
+  it("returns the default Worker URL when OTTER_API_URL is not set", () => {
     delete process.env.OTTER_API_URL;
-    const url = buildWebhookUrl("https://otter.hexly.ai", "abc-123");
-    // Default is now Worker URL
-    expect(url).toBe("https://otter.worker.hexly.ai/ingest/abc-123");
+    expect(buildApiBaseUrl()).toBe("https://otter.worker.hexly.ai");
   });
 
-  it("should use OTTER_API_URL when set", () => {
+  it("returns OTTER_API_URL when set", () => {
     process.env.OTTER_API_URL = "https://custom.worker.dev";
-    const url = buildWebhookUrl("https://otter.hexly.ai", "abc-123");
-    expect(url).toBe("https://custom.worker.dev/ingest/abc-123");
-  });
-
-  it("should ignore host parameter (legacy compatibility)", () => {
-    delete process.env.OTTER_API_URL;
-    // Host is ignored, Worker URL is used
-    const url = buildWebhookUrl("https://otter.dev.hexly.ai", "dev-token");
-    expect(url).toBe("https://otter.worker.hexly.ai/ingest/dev-token");
+    expect(buildApiBaseUrl()).toBe("https://custom.worker.dev");
   });
 });
 
