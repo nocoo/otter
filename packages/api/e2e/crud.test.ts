@@ -177,9 +177,26 @@ describe("L2 ingest + snapshots round-trip", () => {
 
 describe("L2 /api/snapshots Bearer round-trip", () => {
   const snapshotId = `snap-bearer-${RUN_TAG}`;
+  let bearerToken: string;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     createdSnapshotIds.push(snapshotId);
+
+    // Mint a real otk_ token via /api/auth/cli — localhost bypass auto-stamps
+    // dev@localhost, so the route can mint a token bound to that email.
+    const callback = "http://127.0.0.1:65535/cb";
+    const state = "l2-mint";
+    const mintRes = await fetch(
+      `${baseUrl}/api/auth/cli?callback=${encodeURIComponent(callback)}&state=${state}`,
+      { redirect: "manual" },
+    );
+    expect(mintRes.status).toBe(302);
+    const location = mintRes.headers.get("location");
+    expect(location).toBeTruthy();
+    const url = new URL(location as string);
+    const token = url.searchParams.get("token");
+    expect(token).toMatch(/^otk_[A-Za-z0-9_-]+/);
+    bearerToken = token as string;
   });
 
   it("POST /api/snapshots writes a snapshot row visible via /api/snapshots", async () => {
@@ -198,7 +215,10 @@ describe("L2 /api/snapshots Bearer round-trip", () => {
 
     const postRes = await fetch(`${baseUrl}/api/snapshots`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${bearerToken}`,
+      },
       body: JSON.stringify(snapshot),
     });
     expect(postRes.status).toBe(201);
@@ -206,7 +226,9 @@ describe("L2 /api/snapshots Bearer round-trip", () => {
     expect(postBody.success).toBe(true);
     expect(postBody.snapshotId).toBe(snapshotId);
 
-    const listRes = await fetch(`${baseUrl}/api/snapshots`);
+    const listRes = await fetch(`${baseUrl}/api/snapshots`, {
+      headers: { Authorization: `Bearer ${bearerToken}` },
+    });
     expect(listRes.status).toBe(200);
     const listBody = (await listRes.json()) as {
       snapshots: Array<{ id: string; fileCount: number; hostname: string }>;
@@ -216,7 +238,9 @@ describe("L2 /api/snapshots Bearer round-trip", () => {
     expect(row?.fileCount).toBe(1);
     expect(row?.hostname).toBe("bearer-host");
 
-    const detailRes = await fetch(`${baseUrl}/api/snapshots/${snapshotId}`);
+    const detailRes = await fetch(`${baseUrl}/api/snapshots/${snapshotId}`, {
+      headers: { Authorization: `Bearer ${bearerToken}` },
+    });
     expect(detailRes.status).toBe(200);
     const detail = (await detailRes.json()) as {
       snapshot: { id: string };
