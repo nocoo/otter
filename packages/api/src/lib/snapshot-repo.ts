@@ -117,7 +117,8 @@ export async function deleteSnapshotMeta(driver: DbDriver, snapshotId: string): 
 export interface InsertSnapshotInput {
   id: string;
   userId: string;
-  webhookId: string;
+  /** Webhook row id when uploaded via /ingest/:token, or null for Bearer uploads. */
+  webhookId: string | null;
   meta: SnapshotMetadata;
   sizeBytes: number;
   r2Key: string;

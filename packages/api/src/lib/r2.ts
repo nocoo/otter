@@ -6,8 +6,19 @@ export interface R2ObjectBodyLike {
   text(): Promise<string>;
 }
 
+export interface R2PutOptions {
+  httpMetadata?: {
+    contentType?: string;
+    cacheControl?: string;
+  };
+}
+
 export interface R2BucketLike {
   get(key: string): Promise<R2ObjectBodyLike | null>;
-  put(key: string, value: string | ArrayBuffer | ReadableStream): Promise<unknown>;
+  put(
+    key: string,
+    value: string | ArrayBuffer | ArrayBufferView | ReadableStream,
+    options?: R2PutOptions,
+  ): Promise<unknown>;
   delete(key: string): Promise<void>;
 }
