@@ -2,6 +2,90 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.3] - 2026-07-03
+
+### Features
+- Route uploads through /api/* with Bearer auth so `otter login` unblocks `otter backup`
+- Add POST /api/snapshots and POST /api/icons for Bearer uploads
+- Make snapshots.webhook_id nullable
+
+### Changed
+- Extract resolveBackupTargets and cover it with a unit test
+- Make L2 /api/snapshots round-trip actually exercise Bearer auth
+- Add shared helpers for gzip, snapshot payload, and icon storage
+- Upgrade lucide-react to 1.23.0
+- Upgrade @types/node to 26.1.0
+- Upgrade @cloudflare/workers-types to 4.20260701.1
+- Upgrade @biomejs/biome to 2.5.2
+- Upgrade dependencies (batch 2026-07-01)
+- Upgrade dependencies (batch 2026-06-30) (#136)
+- Bump lucide-react from 1.21.0 to 1.22.0
+- Bump @cloudflare/workers-types from 4.20260626.1 to 4.20260628.1
+- Bump @cloudflare/workers-types from 4.20260625.1 to 4.20260626.1 (#127)
+- Bump wrangler from 4.104.0 to 4.105.0
+- Bump @cloudflare/vitest-pool-workers from 0.16.19 to 0.16.20
+- Bump @cloudflare/workers-types from 4.20260624.1 to 4.20260625.1
+- Bump shiki from 4.2.0 to 4.3.0
+- Bump @types/node from 26.0.0 to 26.0.1
+- Bump @cloudflare/workers-types from 4.20260623.1 to 4.20260624.1
+- Bump wrangler from 4.103.0 to 4.104.0
+- Bump vite from 8.0.16 to 8.1.0
+- Bump recharts from 3.8.1 to 3.9.0
+- Bump hono from 4.12.26 to 4.12.27
+- Bump @vitejs/plugin-react from 6.0.1 to 6.0.3
+- Bump @playwright/test from 1.61.0 to 1.61.1
+- Bump @cloudflare/workers-types from 4.20260621.1 to 4.20260623.1
+- Bump @cloudflare/vitest-pool-workers from 0.16.18 to 0.16.19
+- Bump @biomejs/biome from 2.5.0 to 2.5.1
+- Bump swr from 2.3.3 to 2.4.2
+- Bump @cloudflare/workers-types from 4.20260620.1 to 4.20260621.1
+- Bump lint-staged from 17.0.7 to 17.0.8
+- Bump @cloudflare/workers-types from 4.20260619.1 to 4.20260620.1
+- Bump wrangler from 4.101.0 to 4.103.0
+- Bump @types/node from 25.9.3 to 26.0.0
+- Bump @cloudflare/workers-types from 4.20260617.1 to 4.20260619.1
+- Bump @cloudflare/vitest-pool-workers from 0.16.16 to 0.16.18
+- Bump react-router from 8.0.0 to 8.0.1
+- Bump lucide-react from 1.20.0 to 1.21.0
+- Bump hono from 4.12.25 to 4.12.26
+- Override undici to ^7.28.0 to clear GHSA-pr7r-676h-xcf6 / GHSA-vmh5-mc38-953g
+- Pin base-ci reusable workflow to v2026.5 SHA
+- Fix JWGS → JWKS typo in access-auth header comment
+- Batch upgrade @cloudflare/workers-types + react-router (#87)
+- Bump wrangler to 4.101.0
+- Bump react-router to 7.18.0
+- Bump lucide-react to 1.20.0
+- Bump @cloudflare/workers-types to 4.20260616.1
+- Bump @cloudflare/vitest-pool-workers to 0.16.16
+- Bump ws override to >=8.21.0
+- Bump @cloudflare/workers-types to 4.20260615.1
+- Bump radix-ui to 1.6.0
+- Bump @playwright/test to 1.61.0
+- Bump @vitest/coverage-v8 to 4.1.9
+- Bump vitest to 4.1.9
+- Bump @cloudflare/workers-types to 4.20260613.1
+- Upgrade base-ci to v2026.4, enable L3 BDD
+- Add Playwright BDD scaffold with smoke test
+- Bump schema to 2.5.0 and silence new react/all warnings
+- Override esbuild >=0.28.1 for GHSA-gv7w-rqvm-qjhr
+- Upgrade lucide-react 1.17.0 → 1.18.0
+- Upgrade tailwindcss + @tailwindcss/vite 4.2.1 → 4.3.1
+- Upgrade @cloudflare/workers-types 4.20260608.1 → 4.20260612.1
+- Upgrade @biomejs/biome 2.4.16 → 2.5.0
+- Upgrade @cloudflare/vitest-pool-workers 0.16.14 → 0.16.15
+- Upgrade @cloudflare/workers-types 4.20260610.1 → 4.20260611.1
+- Upgrade wrangler 4.99.0 → 4.100.0
+- Upgrade @types/node 25.3.4/25.9.2 → 25.9.3
+- Upgrade @cloudflare/workers-types 4.20260609.1 → 4.20260610.1
+- Upgrade wrangler 4.98.0 → 4.99.0
+- Upgrade hono 4.12.23 → 4.12.25
+- Upgrade @cloudflare/workers-types 4.20260608.1 → 4.20260609.1
+- Upgrade @cloudflare/vitest-pool-workers 0.16.13 → 0.16.14
+
+### Fixes
+- Ensure users row exists before FK-referencing inserts
+- Make CF Access JWT middleware fail-closed (otter#86)
+
 ## [2.0.2] - 2026-06-08
 
 ### Changed
