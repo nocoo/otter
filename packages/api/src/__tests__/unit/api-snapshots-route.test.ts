@@ -457,6 +457,51 @@ describe("createApiSnapshotsRoute", () => {
       });
       expect(res.status).toBe(400);
     });
+
+    it("returns 500 when R2 put throws", async () => {
+      const brokenBucket = {
+        async get() {
+          return null;
+        },
+        async put() {
+          throw new Error("R2 down");
+        },
+        async delete() {
+          /* no-op */
+        },
+      } as unknown as R2BucketLike;
+      const app = buildApp({
+        driver: memoryDriver(state),
+        bucket: brokenBucket,
+        email: "alice@x",
+      });
+      const res = await app.request("/snapshots", {
+        method: "POST",
+        body: JSON.stringify(validPayload("s6")),
+      });
+      expect(res.status).toBe(500);
+      const body = (await res.json()) as { error: string };
+      expect(body.error).toBe("Failed to store snapshot");
+    });
+
+    it("returns 500 when D1 insert throws", async () => {
+      const driver = memoryDriver(state);
+      const wrapped: DbDriver = {
+        ...driver,
+        async execute(sql, params = []) {
+          if (sql.startsWith("INSERT INTO snapshots")) throw new Error("D1 down");
+          return driver.execute(sql, params);
+        },
+      };
+      const app = buildApp({ driver: wrapped, bucket: bucketPair.bucket, email: "alice@x" });
+      const res = await app.request("/snapshots", {
+        method: "POST",
+        body: JSON.stringify(validPayload("s7")),
+      });
+      expect(res.status).toBe(500);
+      const body = (await res.json()) as { error: string };
+      expect(body.error).toBe("Failed to index snapshot");
+    });
   });
 });
 

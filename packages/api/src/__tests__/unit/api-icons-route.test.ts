@@ -138,4 +138,35 @@ describe("createApiIconsRoute", () => {
     });
     expect(res.status).toBe(400);
   });
+
+  it("returns 207 when some icons fail to store", async () => {
+    let call = 0;
+    const brokenBucket = {
+      async get() {
+        return null;
+      },
+      async put() {
+        call++;
+        if (call === 2) throw new Error("R2 down for hash #2");
+      },
+      async delete() {
+        /* no-op */
+      },
+    } as unknown as R2BucketLike;
+    const app = buildApp({ bucket: brokenBucket, email: "alice@x" });
+    const res = await app.request("/icons", {
+      method: "POST",
+      body: JSON.stringify({
+        icons: [
+          { hash: HASH, data: TINY_PNG_BASE64 },
+          { hash: "0123456789ab", data: TINY_PNG_BASE64 },
+          { hash: "fedcba987654", data: TINY_PNG_BASE64 },
+        ],
+      }),
+    });
+    expect(res.status).toBe(207);
+    const body = (await res.json()) as { stored: number; errors: string[] };
+    expect(body.stored).toBe(2);
+    expect(body.errors).toEqual(["0123456789ab"]);
+  });
 });
