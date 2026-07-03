@@ -9,3 +9,4 @@
 | 编号 | 标题 | 状态 |
 |------|------|------|
 | 01 | [Hermes Collector — Hermes Agent Profile 备份](./01-hermes-collector.md) | 已完成 |
+| 02 | [Snapshot Detail 页面重设计 — 类型化 Tab + 规范化控件](./02-snapshot-detail-redesign.md) | 设计中 |
