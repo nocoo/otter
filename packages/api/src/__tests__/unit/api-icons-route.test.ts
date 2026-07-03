@@ -114,6 +114,29 @@ describe("createApiIconsRoute", () => {
     expect(res.status).toBe(400);
   });
 
+  it.each([
+    { name: "non-object body", body: JSON.stringify([]) },
+    { name: "null body", body: JSON.stringify(null) },
+    { name: "icons not an array", body: JSON.stringify({ icons: "nope" }) },
+    { name: "icon is null", body: JSON.stringify({ icons: [null] }) },
+    {
+      name: "icon.hash missing",
+      body: JSON.stringify({ icons: [{ data: TINY_PNG_BASE64 }] }),
+    },
+    {
+      name: "icon.data missing",
+      body: JSON.stringify({ icons: [{ hash: HASH }] }),
+    },
+    {
+      name: "icon.data empty string",
+      body: JSON.stringify({ icons: [{ hash: HASH, data: "" }] }),
+    },
+  ])("returns 400 when body shape invalid: $name", async ({ body }) => {
+    const app = buildApp({ bucket: pair.bucket, email: "alice@x" });
+    const res = await app.request("/icons", { method: "POST", body });
+    expect(res.status).toBe(400);
+  });
+
   it("returns 400 when an icon exceeds the size limit", async () => {
     const app = buildApp({ bucket: pair.bucket, email: "alice@x" });
     const huge = "A".repeat(150_001);
