@@ -4,9 +4,9 @@
 
 ## 状态
 
-- 阶段：设计（v1，已合并 Reviewer 意见）
+- 阶段：设计（v1.1，已合并 Reviewer 二轮意见）
 - 作者：MBP-SDE-A
-- 审查：MBP-Reviewer-A（v0 审查完成，见"审查记录"）
+- 审查：MBP-Reviewer-A（v0、v1 均已审查，见"审查记录"）
 - 决策人：@zheng-li
 - 关联文件：
   - `packages/web/src/pages/SnapshotDetailPage.tsx`
@@ -75,7 +75,7 @@
 ```tsx
 // Snapshot 详情页专用 TabsList 容器
 <div className="relative -mx-4 md:mx-0">
-  <div className="overflow-x-auto scrollbar-none px-4 md:px-0
+  <div className="overflow-x-auto snapshot-scroll-x px-4 md:px-0
                   [mask-image:linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)]">
     <TabsList className="w-max">
       {/* ... 8 个 TabsTrigger ... */}
@@ -84,9 +84,21 @@
 </div>
 ```
 
+**新增 utility**（`packages/web/src/globals.css`）：
+
+```css
+@utility snapshot-scroll-x {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+```
+
+（Tailwind v4 使用 `@utility` 语法；命名避免占用通用 `scrollbar-none` 全局名，仅本页复用。）
+
 要点：
 - 外层 `-mx-4 md:mx-0` 让滚动区域延伸到容器边缘，视觉上暗示"可横滑"。
 - `mask-image` 左右两侧 16px 渐隐，提示还有内容。
+- `snapshot-scroll-x` 隐藏系统滚动条，跨浏览器一致（Firefox / WebKit / Chromium 都覆盖到）。
 - `TabsList` 保留原生 `inline-flex w-fit`（Radix 依赖），但用 `w-max` 强制展开自然宽度。
 - 二级 Tabs（Coding Agents 内部、Toolchain & Packages 内部）沿用同一模式包一层。
 - 移动端不使用 Select/Combobox 替代方案 —— 会打散 Tab 语义，且 Radix Tabs 里换成 Select 需要额外维护 active state。横滑 + 渐隐已足够。
@@ -161,8 +173,14 @@
 
 #### 6. Infrastructure
 
-- Section 1：Docker（`docker` collector 的 files 摘要 + items）
-- Section 2：Cloud CLI（`cloud-cli` 的 items 按 `meta.provider` 分组：gcloud / aws / azure）
+- **Docker section**（来自 `docker` collector 的 files + items）：Files（`~/.docker/config.json` 等）+ items 直接列。
+- **Cloud CLI section**（v1.1 修订，来自 Reviewer 反馈 #2）：`cloud-cli` collector 只对 AWS 生成 list items（`meta.type=aws-profile`），其余 provider（Azure / gcloud / railway）主要以 files 形式出现。因此改按**文件路径前缀**分组，不依赖 `meta.provider`（该字段实际不存在）：
+  - **AWS**：files 中 `path.startsWith("~/.aws/")` 的（当前只有 `.aws/config`） + `lists` 中 `meta.type === "aws-profile"` 的 profile 名（作为 sub-list 显示）
+  - **Azure**：files 中 `path.startsWith("~/.azure/")` 的（`config`、`azureProfile.json`、`clouds.config`）
+  - **Google Cloud**：files 中 `path.startsWith("~/.config/gcloud/")` 的（`properties` + `configurations/*`）
+  - **Railway**：files 中 `path.startsWith("~/.config/railway/")` 的（`config.json`）
+  - 前缀无匹配 provider 时 fallback 到 `Other` sub-section，防止数据消失。
+- 保持"不改数据结构"：分组规则在前端完成，collector 零改动。
 
 #### 7. Fonts
 
@@ -283,6 +301,13 @@ export const snapshotBadge = {
 | `ui/tabs.tsx` 基础组件 | 不改（其他页面共用），只在 SnapshotDetailPage 侧包滚动容器 | — |
 
 ## 审查记录
+
+### v1 → v1.1 修订项
+
+来自 @MBP-Reviewer-A 2026-07-04 二轮审查（本 features/02 线程 msg=dbd00d83），全部合并：
+
+1. **`scrollbar-none` 未定义** — 在 `packages/web/src/globals.css` 定义 `@utility snapshot-scroll-x`（Tailwind v4 语法），跨浏览器隐藏系统滚动条；避免占用通用名，仅本页复用。响应式 Tab 章节示例代码同步更新为 `snapshot-scroll-x`。
+2. **Cloud CLI 分组规则与 collector 实际不符** — v1 写"按 `meta.provider` 分组"是对 collector 数据形态的误读；`cloud-cli` 实际只对 AWS 生成 `meta.type=aws-profile` 的 list items，其余 provider 主要是 files。v1.1 改为按**文件路径前缀**分组（`~/.aws/`、`~/.azure/`、`~/.config/gcloud/`、`~/.config/railway/`），AWS profile list 作为 AWS sub-section 内的附加列表；未知前缀 fallback 到 `Other`。分组规则前端完成，collector 零改动。
 
 ### v0 → v1 修订项
 
