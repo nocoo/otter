@@ -4,9 +4,9 @@
 
 ## 状态
 
-- 阶段：设计（v1.1，已合并 Reviewer 二轮意见）
+- 阶段：设计（v1.2，已合并 Reviewer 三轮意见）
 - 作者：MBP-SDE-A
-- 审查：MBP-Reviewer-A（v0、v1 均已审查，见"审查记录"）
+- 审查：MBP-Reviewer-A（v0、v1、v1.1 均已审查，见"审查记录"）
 - 决策人：@zheng-li
 - 关联文件：
   - `packages/web/src/pages/SnapshotDetailPage.tsx`
@@ -174,11 +174,11 @@
 #### 6. Infrastructure
 
 - **Docker section**（来自 `docker` collector 的 files + items）：Files（`~/.docker/config.json` 等）+ items 直接列。
-- **Cloud CLI section**（v1.1 修订，来自 Reviewer 反馈 #2）：`cloud-cli` collector 只对 AWS 生成 list items（`meta.type=aws-profile`），其余 provider（Azure / gcloud / railway）主要以 files 形式出现。因此改按**文件路径前缀**分组，不依赖 `meta.provider`（该字段实际不存在）：
-  - **AWS**：files 中 `path.startsWith("~/.aws/")` 的（当前只有 `.aws/config`） + `lists` 中 `meta.type === "aws-profile"` 的 profile 名（作为 sub-list 显示）
-  - **Azure**：files 中 `path.startsWith("~/.azure/")` 的（`config`、`azureProfile.json`、`clouds.config`）
-  - **Google Cloud**：files 中 `path.startsWith("~/.config/gcloud/")` 的（`properties` + `configurations/*`）
-  - **Railway**：files 中 `path.startsWith("~/.config/railway/")` 的（`config.json`）
+- **Cloud CLI section**（v1.2 修订，来自 Reviewer 反馈 v1.1 → v1.2）：`cloud-cli` collector 只对 AWS 生成 list items（`meta.type=aws-profile`），其余 provider（Azure / gcloud / railway）主要以 files 形式出现，且**文件路径是绝对路径**（`safeReadFile` 存的是传入的 absolute path，只有 `hermes` collector 手动改成了虚拟 `~/.hermes/...` 路径；见 `packages/cli/src/collectors/base.ts:164`）。因此按**文件路径的目录段包含**分组，不依赖 `meta.provider`（该字段实际不存在），不依赖 `~` 前缀（cloud-cli 不改路径），也不依赖 `machine.homeDir`（`SnapshotData.machine` 里没有该字段，见 `packages/web/src/components/snapshot/types.ts:25-30`）：
+  - **AWS**：files 中 `path.includes("/.aws/")` 的（当前只有 `/…/.aws/config`） + `lists` 中 `meta.type === "aws-profile"` 的 profile 名（作为 AWS 内的附加 sub-list）
+  - **Azure**：files 中 `path.includes("/.azure/")` 的（`config`、`azureProfile.json`、`clouds.config`）
+  - **Google Cloud**：files 中 `path.includes("/.config/gcloud/")` 的（`properties` + `configurations/*`）
+  - **Railway**：files 中 `path.includes("/.config/railway/")` 的（`config.json`）
   - 前缀无匹配 provider 时 fallback 到 `Other` sub-section，防止数据消失。
 - 保持"不改数据结构"：分组规则在前端完成，collector 零改动。
 
@@ -301,6 +301,12 @@ export const snapshotBadge = {
 | `ui/tabs.tsx` 基础组件 | 不改（其他页面共用），只在 SnapshotDetailPage 侧包滚动容器 | — |
 
 ## 审查记录
+
+### v1.1 → v1.2 修订项
+
+来自 @MBP-Reviewer-A 2026-07-04 三轮审查（本 features/02 线程 msg=4e0c0bec），已合并：
+
+1. **Cloud CLI 路径匹配** — v1.1 用 `path.startsWith("~/.aws/")` 等虚拟路径规则是错的：`BaseCollector.safeReadFile()` 存的是**传入的绝对路径**（`packages/cli/src/collectors/base.ts:164`），只有 `hermes` collector 手动改成了 `~/.hermes/...`；cloud-cli 实际输出类似 `/Users/<user>/.aws/config`。同时 `SnapshotData.machine`（`packages/web/src/components/snapshot/types.ts:25-30`）没有 `homeDir` 字段，无法做归一化。v1.2 改为 `path.includes("/.aws/")` / `path.includes("/.azure/")` / `path.includes("/.config/gcloud/")` / `path.includes("/.config/railway/")`，跨任意 homeDir 都能匹配。
 
 ### v1 → v1.1 修订项
 
