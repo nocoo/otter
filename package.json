@@ -31,11 +31,11 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.2",
     "@playwright/test": "^1.61.1",
-    "@vitest/coverage-v8": "^4.1.9",
+    "@vitest/coverage-v8": "^4.1.10",
     "husky": "^9.1.7",
     "lint-staged": "17.0.8",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.10"
   },
   "overrides": {
     "esbuild": ">=0.28.1",
@@ -49,6 +49,6 @@
     "ws": ">=8.21.0"
   },
   "dependencies": {
-    "hono": "^4.12.27"
+    "hono": "^4.12.28"
   }
 }
