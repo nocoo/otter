@@ -29,12 +29,12 @@
     ]
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.2",
+    "@biomejs/biome": "2.5.3",
     "@playwright/test": "^1.61.1",
     "@vitest/coverage-v8": "^4.1.10",
     "husky": "^9.1.7",
     "lint-staged": "17.0.8",
-    "typescript": "^6.0.3",
+    "typescript": "7.0.2",
     "vitest": "^4.1.10"
   },
   "overrides": {
@@ -45,7 +45,7 @@
     "picomatch": ">=4.0.4",
     "postcss": ">=8.5.10",
     "undici": "^7.28.0",
-    "wrangler": ">=4.107.0",
+    "wrangler": ">=4.107.1",
     "ws": ">=8.21.0"
   },
   "dependencies": {
