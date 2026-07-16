@@ -1,6 +1,6 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { defineCommand, yoctoSpinner } from "@nocoo/cli-base";
+import { defineCommand, yoctoSpinner } from "@nocoo/base-cli";
 import { createDefaultCollectors } from "./collectors/index.js";
 import { resolveBackupTargets } from "./commands/backup.js";
 import { executeConfig } from "./commands/config.js";

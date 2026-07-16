@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createUpdateCommand } from "@nocoo/cli-base";
+import { createUpdateCommand } from "@nocoo/base-cli";
 
 function getVersion(): string {
   try {

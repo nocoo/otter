@@ -265,7 +265,7 @@ describe("ui", () => {
   describe("box functions", () => {
     it("box calls consola.box", async () => {
       // Import consola from cli-base (same module as ui.ts uses)
-      const { consola } = await import("@nocoo/cli-base");
+      const { consola } = await import("@nocoo/base-cli");
       const boxSpy = vi.spyOn(consola, "box").mockImplementation(() => undefined);
 
       box({ title: "Summary", lines: ["Line 1", "Line 2"] });
@@ -275,7 +275,7 @@ describe("ui", () => {
 
     it("errorBox calls consola.box with red style", async () => {
       // Import consola from cli-base (same module as ui.ts uses)
-      const { consola } = await import("@nocoo/cli-base");
+      const { consola } = await import("@nocoo/base-cli");
       const boxSpy = vi.spyOn(consola, "box").mockImplementation(() => undefined);
 
       errorBox("Error", ["Something failed"]);

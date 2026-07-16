@@ -3,8 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@nocoo/cli-base", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@nocoo/cli-base")>();
+vi.mock("@nocoo/base-cli", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@nocoo/base-cli")>();
   return {
     ...actual,
     performLogin: vi.fn(),
@@ -12,7 +12,7 @@ vi.mock("@nocoo/cli-base", async (importOriginal) => {
   };
 });
 
-const { performLogin } = await import("@nocoo/cli-base");
+const { performLogin } = await import("@nocoo/base-cli");
 const { executeLogin } = await import("../../commands/login.js");
 const { ConfigManager } = await import("../../config/manager.js");
 

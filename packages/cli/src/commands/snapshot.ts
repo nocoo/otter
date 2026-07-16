@@ -1,4 +1,4 @@
-import { pc } from "@nocoo/cli-base";
+import { pc } from "@nocoo/base-cli";
 import type { Snapshot } from "@otter/core";
 import type { SnapshotMeta } from "../storage/local.js";
 import { type Column, formatDate, formatSize, S, type TreeChild, table, tree } from "../ui.js";

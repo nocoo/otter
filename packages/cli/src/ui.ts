@@ -6,7 +6,7 @@
  * so cli.ts and snapshot.ts stay focused on logic.
  */
 
-import { consola, pc } from "@nocoo/cli-base";
+import { consola, pc } from "@nocoo/base-cli";
 
 // ── Symbols ─────────────────────────────────────────────────────────
 

@@ -1,4 +1,4 @@
-import { ConfigManager as BaseConfigManager } from "@nocoo/cli-base";
+import { ConfigManager as BaseConfigManager } from "@nocoo/base-cli";
 
 const PROD_CONFIG = "config.json";
 const DEV_CONFIG = "config.dev.json";

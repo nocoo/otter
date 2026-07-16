@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 const createUpdateCommandMock = vi.fn(() => ({ name: "update" }));
 
-vi.mock("@nocoo/cli-base", () => ({
+vi.mock("@nocoo/base-cli", () => ({
   createUpdateCommand: (opts: unknown) => createUpdateCommandMock(opts),
 }));
 

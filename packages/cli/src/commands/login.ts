@@ -1,4 +1,4 @@
-import { openBrowser, performLogin } from "@nocoo/cli-base";
+import { openBrowser, performLogin } from "@nocoo/base-cli";
 import type { ConfigManager } from "../config/manager.js";
 
 export const DEFAULT_HOST = "https://otter.hexly.ai";
