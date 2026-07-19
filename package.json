@@ -33,7 +33,7 @@
     "@playwright/test": "^1.61.1",
     "@vitest/coverage-v8": "^4.1.10",
     "husky": "^9.1.7",
-    "lint-staged": "17.0.8",
+    "lint-staged": "17.1.0",
     "typescript": "7.0.2",
     "vitest": "^4.1.10"
   },
@@ -49,6 +49,6 @@
     "ws": ">=8.21.0"
   },
   "dependencies": {
-    "hono": "^4.12.30"
+    "hono": "^4.12.31"
   }
 }
