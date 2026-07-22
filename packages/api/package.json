@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "hono": "^4.12.31",
-    "jose": "^6.0.11",
+    "jose": "^6.2.4",
     "zod": "^4.3.6"
   },
   "devDependencies": {
