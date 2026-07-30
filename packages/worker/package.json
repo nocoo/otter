@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@otter/api": "workspace:*",
-    "hono": "^4.12.31",
+    "hono": "^4.12.32",
     "jose": "^6.2.5"
   },
   "devDependencies": {
