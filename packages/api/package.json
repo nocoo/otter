@@ -15,12 +15,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "hono": "^4.12.31",
-    "jose": "^6.2.4",
+    "hono": "^4.12.32",
+    "jose": "^6.2.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/node": "26.1.1",
+    "@types/node": "26.1.2",
     "typescript": "7.0.2"
   }
 }
