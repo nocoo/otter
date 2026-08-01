@@ -79,7 +79,7 @@ describe("L2 CLI binary", () => {
   });
 
   it("config set then config get round-trips a value through ~/.config/otter", () => {
-    const setRes = runCli(["config", "set", "token", "otk_e2e_dummy"]);
+    const setRes = runCli(["config", "set", "token", "--", "otk_e2e_dummy"]);
     expect(setRes.exitCode).toBe(0);
 
     const getRes = runCli(["config", "get", "token"]);
@@ -98,7 +98,10 @@ describe("L2 CLI binary", () => {
     createdWebhookId = body.webhook.id;
     const realToken = body.webhook.token;
 
-    const setRes = runCli(["config", "set", "token", realToken]);
+    // Webhook tokens are base64url — they can legitimately start with `-`,
+    // which citty would otherwise parse as an unknown flag. Use `--` to
+    // force the value into the positional slot.
+    const setRes = runCli(["config", "set", "token", "--", realToken]);
     expect(setRes.exitCode).toBe(0);
 
     const getRes = runCli(["config", "get", "token"]);
