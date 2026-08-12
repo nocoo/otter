@@ -29,7 +29,7 @@
     ]
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.7",
+    "@biomejs/biome": "2.5.8",
     "@playwright/test": "^1.62.1",
     "@vitest/coverage-v8": "^4.1.10",
     "husky": "^9.1.7",
@@ -46,7 +46,7 @@
     "postcss": ">=8.5.25",
     "sharp": ">=0.35.0",
     "undici": "^7.29.0",
-    "wrangler": "4.120.1",
+    "wrangler": "4.121.0",
     "ws": ">=8.21.0"
   },
   "dependencies": {
