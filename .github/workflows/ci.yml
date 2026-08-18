@@ -14,10 +14,54 @@ jobs:
       test-command: "bun run test:coverage"
       typecheck-command: "bun run lint"
       lint-command: "bun run lint:biome"
-      enable-l3: "true"
-      l3-command: "bun run test:e2e:bdd"
-      l3-browser: "chromium"
+      # L3 runs in a dedicated job below with browser cache + install retries.
+      # base-ci's browser-e2e has no cache and can hang ~25m on CDN stalls.
+      enable-l3: "false"
     secrets: inherit
+
+  l3:
+    name: L3 Browser E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('bun.lock') }}-chromium
+      - name: Install Playwright OS deps (cache hit)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: bunx playwright install-deps chromium
+      - name: Install Playwright browsers (cache miss, with retries)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          attempt=1
+          max=3
+          while [ "$attempt" -le "$max" ]; do
+            echo "::group::playwright install attempt ${attempt}/${max}"
+            if timeout 180 bunx playwright install --with-deps chromium; then
+              echo "::endgroup::"
+              exit 0
+            fi
+            echo "::endgroup::"
+            echo "playwright install failed (attempt ${attempt}/${max})"
+            if [ "$attempt" -eq "$max" ]; then
+              exit 1
+            fi
+            sleep $((attempt * 15))
+            attempt=$((attempt + 1))
+          done
+      - name: L3 Playwright E2E
+        run: bun run test:e2e:bdd
+        env:
+          CI: "true"
 
   l2:
     name: L2 API E2E (local wrangler dev)
