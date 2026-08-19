@@ -5,7 +5,7 @@
     "": {
       "name": "otter-monorepo",
       "dependencies": {
-        "hono": "^4.13.2",
+        "hono": "^4.13.3",
       },
       "devDependencies": {
         "@biomejs/biome": "2.5.9",
@@ -21,7 +21,7 @@
       "name": "@otter/api",
       "version": "2.0.3",
       "dependencies": {
-        "hono": "^4.13.2",
+        "hono": "^4.13.3",
         "jose": "^6.2.9",
         "zod": "^4.3.6",
       },
@@ -85,7 +85,7 @@
       "version": "2.0.3",
       "dependencies": {
         "@otter/api": "workspace:*",
-        "hono": "^4.13.2",
+        "hono": "^4.13.3",
         "jose": "^6.2.9",
       },
       "devDependencies": {
@@ -99,7 +99,7 @@
   },
   "overrides": {
     "esbuild": ">=0.28.1",
-    "hono": "^4.13.2",
+    "hono": "^4.13.3",
     "nanoid": "^3.3.18",
     "path-to-regexp": ">=8.4.0",
     "picomatch": ">=4.0.4",
@@ -719,7 +719,7 @@
 
     "hast-util-whitespace": ["hast-util-whitespace@3.0.0", "", { "dependencies": { "@types/hast": "^3.0.0" } }, "sha512-88JUN06ipLwsnv+dVn+OIYOvAuvBMy/Qoi6O7mQHxdPXpjy+Cd6xRkWwux7DKO+4sYILtLBRIKgsdpS2gQc7qw=="],
 
-    "hono": ["hono@4.13.2", "", {}, "sha512-JydRilDRkYBQMt9qR9U92mXxmbGqsqSn/IKOrh4e7/gEbn+0zSr8igTu0obwJoNGN4sez28DIql7FBHWydoJpA=="],
+    "hono": ["hono@4.13.3", "", {}, "sha512-r8AO2mYHoLxSHkgafNeC/BXyb2vWRxD3jem4Ts+ptav8oTG5FIRifAjuJEmZI4bSvvc2ns0GxmIYiZnHqN3mMw=="],
 
     "html-escaper": ["html-escaper@2.0.2", "", {}, "sha512-H2iMtd0I4Mt5eYiapRdIDjp+XzelXQ0tFE4JS7YFwFevXXMmOp9myNrUvCg0D6ws8iqkRPBfKHgbwig1SmlLfg=="],
 
