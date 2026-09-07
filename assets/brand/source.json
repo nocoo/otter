@@ -1,0 +1,54 @@
+{
+	"study": "otter/2026-09-07-01",
+	"finishing": "02",
+	"method": "generated",
+	"generationCalls": 1,
+	"nativeDimensions": [
+		2048,
+		2048
+	],
+	"sourceRevisionBefore": "59a342896a8bd337d77c94fc66388bebb47289bf",
+	"previous": {
+		"kind": "original",
+		"original": "/logos/originals/otter.png",
+		"sourcePath": "logo.png",
+		"sourceUrl": "https://github.com/nocoo/otter/blob/10f4b2d4d137a9afa79c61622afd68fa03fff80e/logo.png",
+		"modified": false,
+		"width": 2048,
+		"height": 2048,
+		"bytes": 3534582,
+		"sha256": "c811a8f167c11b250bd19b5cd569477e109ece11777cbf6d04c80de4be8eed78",
+		"thumbnail": "/logos/display/otter-160.webp",
+		"display": "/logos/display/otter-1024.webp"
+	},
+	"masters": {
+		"logo.png": {
+			"sha256": "8902636945ce93cd1a6f39a8e545d6462f0b5dd09c3d4d16d66f037d8bf10933",
+			"width": 2048,
+			"height": 2048
+		},
+		"assets/brand/icon.png": {
+			"sha256": "aa95f02a68e9546d95e5097d3f41dd9da292f02f700027f1cafd6dcf4e362787",
+			"width": 2048,
+			"height": 2048
+		},
+		"assets/brand/icon-rounded.png": {
+			"sha256": "4a6cd289cd8721668d3b2e19636002b385745849551613b744097f47348f9caa",
+			"width": 2048,
+			"height": 2048
+		}
+	},
+	"roundedClearancePx": 224.5,
+	"acceptance": {
+		"decisionSource": "owner-delegated batch acceptance",
+		"ownerReviewedExactBytes": false,
+		"scope": "Named ten-project batch"
+	},
+	"review": "https://hexly.ai/logos/otter",
+	"archive": "https://github.com/nocoo/hexly.ai/tree/main/artwork/logo-family/otter/2026-09-07-01",
+	"model": "gpt-image-2",
+	"generation": {
+		"path": "raw/generated.png",
+		"sha256": "eeca4aa68c5ff5ee36a6a58d377796412acb1aeeba29225693d315c6b3f64b36"
+	}
+}
