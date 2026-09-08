@@ -138,7 +138,7 @@ otter/
 ### 环境要求
 
 - **Bun** >= 1.0
-- **Node.js** >= 20
+- **Node.js** 22.12.x、24.x 或 >= 26.0.0
 - **macOS**（采集器依赖 macOS 原生命令）
 - **Cloudflare Wrangler**（已 `wrangler login`，账号需挂载 `otter` worker / D1 / R2 资源）
 - **本地 caddy**（可选，用 `*.dev.hexly.ai` 调试时需要本地 TLS 反代）

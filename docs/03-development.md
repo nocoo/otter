@@ -6,7 +6,7 @@
 
 | 依赖 | 最低版本 |
 |------|----------|
-| Node.js | 20+ |
+| Node.js | 22.12.x、24.x 或 >=26.0.0 |
 | Bun | 1.0+ |
 | Wrangler | 4.x（已 `wrangler login`，账号能访问 `otter` worker / D1 / R2） |
 | Caddy | 任意（可选，仅本地 TLS 调试 `*.dev.hexly.ai` 时） |
