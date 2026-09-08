@@ -17,7 +17,7 @@
   "dependencies": {
     "hono": "4.13.5",
     "jose": "^6.2.10",
-    "zod": "^4.3.6"
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@types/node": "26.4.0",
