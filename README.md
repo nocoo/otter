@@ -4,245 +4,132 @@
 
 <h1 align="center">Otter</h1>
 
-<p align="center">
-  <strong>macOS 开发环境备份工具</strong><br>
-  扫描 · 快照 · 云端同步 · Web 仪表盘
-</p>
+<p align="center">保存 macOS 开发环境的配置与清单，查看不同时间的快照。</p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/macOS-only-2d8553?logo=apple&logoColor=white" alt="macOS" />
-  <img src="https://img.shields.io/badge/TypeScript-5-blue?logo=typescript&logoColor=white" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Vite-6-646cff?logo=vite&logoColor=white" alt="Vite" />
-  <img src="https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white" alt="React" />
-  <img src="https://img.shields.io/badge/Cloudflare-Worker-f38020?logo=cloudflare&logoColor=white" alt="Cloudflare Worker" />
-  <img src="https://img.shields.io/badge/tests-502%20passing-brightgreen" alt="Tests" />
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" />
+  <a href="https://otter.hexly.ai">站点</a> ·
+  <a href="docs/README.en.md">English</a>
 </p>
-
----
 
 ## 这是什么
 
-Otter 是一个 macOS 开发环境的快照备份工具。它扫描你的 dotfiles、Shell 配置、Homebrew 包列表、已安装应用、AI Agent 配置等信息，生成一份 JSON 快照，通过 Webhook 上传到云端。配套的 Web 仪表盘提供快照浏览、文件对比和历史管理。
+Otter 在 macOS 上采集开发工具配置、应用与环境清单，保存为本地或云端 JSON 快照，方便迁移电脑和核对环境变化。Web 界面提供快照总览、文件查看和 JSON 导出；恢复文件与重新安装软件需要手动完成。
 
-**核心思路**：你不需要备份整个硬盘 — 只需记住"开发环境长什么样"，就能随时重建。
-
-```
-CLI (macOS)                   Cloudflare (single Worker)
-┌──────────────────┐          ┌──────────────────────────────┐
-│  12 个采集器      │          │  Hono on Workers             │
-│  Shell · Brew ·  │  Webhook │  ┌────────────────────────┐  │
-│  Apps · Claude · │─────────►│  │ /api/*  → D1 binding   │  │
-│  OpenCode ...    │  (gzip)  │  │ /v1/*   → 兼容老 ingest │  │
-│                  │          │  │ SPA fallback (assets)  │  │
-│  图标导出 · 上传  │─────────►│  └────────────────────────┘  │
-└──────────────────┘          │  D1 (snapshots) + R2 (blobs) │
-                              └──────────────────────────────┘
-                                            ▲
-                              Vite SPA (浏览器) ┤ React 19 + react-router 7
-```
+云端由一个 Cloudflare Worker 同时提供 API 和 Web 页面。D1 保存用户、Token 与快照索引，R2 保存快照正文和应用图标。快照列表与详情按登录邮箱区分。
 
 ## 功能
 
-### CLI
+- 采集 Claude Code、OpenCode、Shell 配置，以及 Homebrew、应用、VS Code 扩展、Docker、字体、开发工具、Cloud CLI、macOS 偏好和 LaunchAgents 清单。
+- 采集 Hermes 主配置与命名 Profile 的配置、记忆、用户资料、定时任务和技能名称。
+- 在本地保存快照，或登录后压缩上传；成功上传快照后保存本地副本，再尝试导出和上传应用图标。
+- 在 CLI 中列出、查看和比较本地快照。比较依据是文件增删与大小、清单名称变化，无法识别同大小文件的内容变化。
+- 在 Web 中分页查看快照、检查采集器结果与文件内容、导出 JSON，并管理兼容旧接入方式的 Webhook。
 
-- **Shell 配置采集** — `.zshrc`、`.bashrc`、`.gitconfig`、`.npmrc` 等 dotfiles，敏感凭据自动脱敏
-- **SSH 密钥检测** — 扫描 `~/.ssh/`，报告密钥存在性（类型 + 修改时间），不采集密钥内容
-- **Claude 配置采集** — `~/.claude/` 核心配置，会话仅保留摘要（标题/token/模型），不含完整对话
-- **OpenCode 配置采集** — `~/.config/opencode/` 配置和技能文件，内置凭据脱敏
-- **Homebrew 采集** — formulae、casks、taps、pinned 包与版本信息
-- **应用采集** — `/Applications` + `~/Applications` 应用列表、版本与图标提取
-- **编辑器采集** — VS Code / Cursor 扩展、settings、keybindings、snippets
-- **开发工具链采集** — Node/Bun/Rust/Python/Ruby/Go 版本与全局工具
-- **Docker / Cloud CLI 采集** — Docker config + contexts，Azure/AWS/GCloud/Railway 安全配置子集
-- **macOS 系统偏好采集** — Dock、Finder、快捷键、登录项、LaunchAgents、用户字体
-- **图标服务端上传** — 自动提取应用图标为 PNG，通过服务端 API 存储到 R2，零配置
-- **快照对比** — `otter snapshot diff` 对比两次快照的文件增删改和列表变化
-- **多层安全机制** — 采集过滤 → Shell/JSON/JSONL 脱敏 → 值级凭据扫描 → gzip 压缩传输
+`--slim` 只排除 Claude 的提示历史和会话摘要。其他配置、Hermes 记忆和用户资料仍会采集。凭据遮盖按文件类型和匹配规则处理；首次使用可先保存本地 JSON 并检查内容，再决定是否上传。具体范围见[采集与运行说明](docs/10-development.md#采集与快照边界)。
 
-### Web 仪表盘
+## 使用
 
-- **快照浏览** — 时间线式快照列表，点击查看详情（机器信息、采集器数据、文件树）
-- **文件查看器** — Shiki 语法高亮，行号、自动换行、明暗主题切换
-- **统计概览** — 快照总数、活跃 Webhook 数、配置文件数、最近备份时间
-- **应用图标展示** — 快照详情页展示 App 图标，含客户端哈希回退兼容
-- **Webhook 管理** — 创建、编辑、删除 Webhook
-- **Cloudflare Access SSO** — 浏览器 SSO；CLI 走 `apiKeyAuth` Bearer token
-- **暗色模式** — 跟随系统主题
+### 安装与本地快照
 
-## 安装
+需要 macOS 和 Node.js；仓库声明的 Node.js 范围为 `^22.12.0 || ^24.0.0 || >=26.0.0`。
 
 ```bash
-# 从 npm 全局安装
 npm install -g @nocoo/otter
+otter --help
+otter scan --slim --save
+otter snapshot list
+```
 
-# 登录（浏览器 SSO 授权拿 Bearer token）
+本地快照位于 `~/.config/otter/snapshots/`。用列表中的完整 ID 或前八位 ID 查看、比较快照，将示例中的 ID 替换为实际值：
+
+```bash
+otter snapshot show SNAPSHOT_ID
+otter snapshot diff OLD_ID NEW_ID
+```
+
+### 云端备份
+
+[站点](https://otter.hexly.ai) 使用 Cloudflare Access，需要获准的身份。登录命令打开浏览器连接页，通过本机回调保存 Token：
+
+```bash
 otter login
-
-# 执行备份
-otter backup
+otter backup --slim
 ```
 
-## 命令一览
+`backup` 会重新扫描，通过 Bearer Token 上传到 `https://otter.worker.hexly.ai/api/snapshots`，随后上传图标；当前流程无需先创建 Webhook。登录配置位于 `~/.config/otter/config.json`。
 
-| 命令 | 说明 |
-|------|------|
-| `otter login` | 浏览器 SSO 登录，铸 Bearer token |
-| `otter scan` | 扫描环境，预览快照内容 |
-| `otter scan --slim` | 精简模式（排除 history 和会话摘要，~130 KB） |
-| `otter scan --save` | 扫描并本地保存快照 |
-| `otter scan --json` | 输出 JSON 到 stdout（进度转 stderr） |
-| `otter backup` | 扫描 + 上传 + 保存 + 图标同步 |
-| `otter snapshot list` | 查看本地快照列表 |
-| `otter snapshot show <id>` | 查看快照详情 |
-| `otter snapshot diff <a> <b>` | 对比两个快照差异 |
-| `otter export-icons` | 导出应用图标为 PNG |
-| `otter config show` | 查看当前配置 |
-
-## 项目结构
-
-```
-otter/
-├── packages/
-│   ├── core/                        # @otter/core — 共享类型定义（零运行时依赖）
-│   ├── cli/                         # @nocoo/otter — CLI 工具（npm 发布）
-│   ├── api/                         # @otter/api — Hono createApp 工厂 + middleware/lib
-│   ├── web/                         # @otter/web — Vite 6 SPA（React 19 + react-router 7 + SWR）
-│   └── worker/                      # @otter/worker — 单一 Cloudflare Worker，托管 /api/* + SPA 静态资源
-├── docs/                            # 项目文档
-│   └── archive/                     # 已完成迁移计划（08 / 09）
-├── scripts/                         # release.ts / run-api-e2e.ts / run-e2e-spa.ts
-└── vitest.config.ts                 # 测试配置
-```
-
-## 技术栈
-
-| 层 | 技术 |
-|---|---|
-| 运行时 | [Bun](https://bun.sh) + Node.js (ESM) |
-| 语言 | TypeScript 5.7+ (strict) |
-| CLI 框架 | [citty](https://github.com/unjs/citty) (UnJS) |
-| Web 框架 | [Vite 6](https://vite.dev) + [React 19](https://react.dev) + [react-router 7](https://reactrouter.com) + [SWR](https://swr.vercel.app) |
-| API 框架 | [Hono](https://hono.dev) on Cloudflare Workers |
-| UI | [shadcn/ui](https://ui.shadcn.com) + [Tailwind v4](https://tailwindcss.com) |
-| 认证 | Cloudflare Access SSO（浏览器） + Bearer api_tokens（CLI） |
-| 数据库 | [Cloudflare D1](https://developers.cloudflare.com/d1/) (binding) |
-| 对象存储 | [Cloudflare R2](https://developers.cloudflare.com/r2/) (binding) |
-| 语法高亮 | [Shiki](https://shiki.style) |
-| 测试 | [Vitest](https://vitest.dev) + [Playwright](https://playwright.dev) + @vitest/coverage-v8 |
-| 部署 | [Cloudflare Workers](https://workers.cloudflare.com)（`wrangler deploy`） |
-| Git Hooks | [Husky](https://typicode.github.io/husky/) (pre-commit + pre-push) |
+`login --dev` 与 `backup --dev` 使用开发配置 `config.dev.json`；登录页切换到 `otter.dev.hexly.ai`，上传目标仍由 `OTTER_API_URL` 决定，未设置时仍是生产 Worker。本地快照和图标目录在两种模式下共用。连接其他部署的说明见[开发指南](docs/10-development.md#地址与登录配置)。
 
 ## 开发
 
-### 环境要求
-
-- **Bun** >= 1.0
-- **Node.js** 22.12.x、24.x 或 >= 26.0.0
-- **macOS**（采集器依赖 macOS 原生命令）
-- **Cloudflare Wrangler**（已 `wrangler login`，账号需挂载 `otter` worker / D1 / R2 资源）
-- **本地 caddy**（可选，用 `*.dev.hexly.ai` 调试时需要本地 TLS 反代）
-
-### 快速开始
+使用 Bun 安装依赖，Node.js 版本遵循上述范围。完整构建包含 CLI、API 库和 Web：
 
 ```bash
-git clone https://github.com/nocoo/otter.git && cd otter
-bun install
-
-# （可选）一键跑全部测试
-bun run test
-bun run lint        # tsc 全包类型检查
-bun run lint:biome  # biome 格式 + lint
+git clone https://github.com/nocoo/otter.git
+cd otter
+bun install --frozen-lockfile
+bun run --cwd packages/core build
+bun run --cwd packages/cli build
+bun run --cwd packages/api build
+bun run build
 ```
 
-### 本地调试 Web SPA（surety 模式：vite 本地 + 线上 worker）
+根目录的 `build` 只构建 Web SPA。编译后的 CLI 可用 `node packages/cli/dist/bin.js --help` 查看帮助。
 
-1. 复制 env 模板（注意：vite 从 `packages/web/` 读 .env，所以必须放这里）：
-   ```bash
-   cp .env.example packages/web/.env
-   ```
-2. 通过浏览器铸 Bearer token（先过 Cloudflare Access SSO）：
-   ```
-   https://otter.hexly.ai/api/auth/cli?callback=http://127.0.0.1:65535/cb&state=mint
-   ```
-   redirect URL 里的 `?token=otk_...` 就是 token，写到 `packages/web/.env` 的 `OTTER_DEV_API_TOKEN`。
-3. 启 vite：
-   ```bash
-   bun run dev   # http://localhost:7019
-   ```
-4. （可选）配 caddy 把 `https://otter.dev.hexly.ai` 反代到 `localhost:7019`，享受 TLS 调试体验。Vite 已在 `allowedHosts` 里放行 `*.dev.hexly.ai`。
+`bun run dev` 在端口 7019 启动 Vite，默认把 `/api` 代理到生产服务 `https://otter.nocoo.workers.dev`。启动前在 `packages/web/.env` 中设置目标 `OTTER_API_URL` 和所需的 `OTTER_DEV_API_TOKEN`；接口操作作用于该目标。根目录 `.env` 不作为这份 Vite 配置的环境文件。使用本地 D1/R2 联调的步骤见[本地联调](docs/10-development.md#本地联调)。
 
-### 本地调试 Worker（bat 模式：完全本地 D1 + miniflare）
-
-如果想完全脱离生产数据，把 `packages/web/.env` 的 `OTTER_API_URL` 改成 `http://localhost:8787`，然后另开一个终端：
-
-```bash
-bun run dev:worker   # wrangler dev --local，端口 8787，本地 D1 / R2 模拟
+```text
+packages/cli/       macOS 采集器、CLI 与本地快照
+packages/core/      共享类型
+packages/api/       Hono 应用工厂、鉴权与数据访问库
+packages/web/       Vite / React 页面
+packages/worker/    单 Worker 入口、D1 迁移与 R2 绑定
 ```
 
-worker 的 `accessAuth` 看到 `host` 是 localhost 时会自动 stamp 成 `dev@localhost`，所以本地 dev 不需要 Bearer token。
-
-### 部署
-
-```bash
-bun run deploy       # build SPA → wrangler deploy（生产）
-```
-
-`packages/web/dist` 通过 `[assets]` binding 由 worker 直接托管，所以一次 `wrangler deploy` 把 SPA 和 API 一起推上去。
-
-### 常用命令
-
-| 命令 | 说明 |
-|------|------|
-| `bun run dev` | 启动 Vite SPA dev server（`:7019`，`/api/*` 反代到 prod worker） |
-| `bun run dev:worker` | （可选）`wrangler dev --local`，本地 D1/R2 模拟 |
-| `bun run build` | 构建 SPA 到 `packages/web/dist` |
-| `bun run deploy` | build + `wrangler deploy`（生产 worker） |
-| `bun run test` | 502+ 单元测试（Vitest） |
-| `bun run test:watch` | 监听模式 |
-| `bun run test:coverage` | 覆盖率报告 |
-| `bun run lint` | tsc 全包类型检查（core → cli → web → api） |
-| `bun run lint:biome` / `lint:biome:fix` | Biome 检查 / 自动修 |
-| `bun run test:e2e` | Playwright BDD E2E |
+`bun run typecheck` 检查类型，`bun run lint:biome` 检查代码风格。生产 Worker 在 main 的 CI 成功后由 Release 部署；该流程不执行 D1 迁移，也不发布 npm CLI，详见[部署说明](docs/10-development.md#部署)。
 
 ## 测试
 
-502+ 单元测试 + 6 个 Playwright spec / 28 用例。质量门槛：
+从仓库根目录运行：
 
-| 维度 | Gate | 触发 |
-|------|------|------|
-| G1 | Biome strict + lint-staged | pre-commit |
-| L1 | Vitest 502+，覆盖率 ≥90% / 89% | pre-commit |
-| tsc | TypeScript strict（4 个 tsconfig） | pre-commit |
-| G2 | osv-scanner + gitleaks | pre-push |
-| L2 | API E2E（real HTTP via `wrangler dev --local`，:17020） | pre-push |
-| L3 | Playwright（web :27019, `wrangler dev --local`） | manual |
+| 范围 | 命令 |
+| --- | --- |
+| 单元测试 | `bun run test` |
+| 单元测试与覆盖率报告 | `bun run test:coverage` |
+| 本地 HTTP API 与 CLI 集成 | `bun run test:l2` |
+| 本地 Worker 的浏览器测试 | `bun run test:e2e` |
+| Vite 首页标题 smoke | `bun run test:e2e:bdd` |
 
-## 安全机制
+HTTP 与 CLI 集成需要先完成上面的 core、cli、api 和 Web 构建。runner 在端口 17020 启动本地 Wrangler，清空独立的 `.wrangler/e2e` 状态并应用迁移。
 
-- **采集过滤** — 排除二进制文件、`.git`、构建产物、缓存、debug 日志
-- **Shell 脱敏** — `export KEY=value` 模式自动替换为 `***REDACTED***`
-- **JSON/JSONL 脱敏** — 深层遍历 JSON 结构，命中敏感 key 即脱敏
-- **凭据扫描** — 值级别正则匹配（AWS key、GitHub token、npm token 等）
-- **SSH 保护** — 仅记录密钥存在性，绝不采集密钥内容
-- **AI 会话** — 仅保留摘要（标题、token 用量、时间戳），不含完整对话
-- **传输安全** — gzip 压缩 + HTTPS Webhook
-- **鉴权** — Cloudflare Access SSO（浏览器） + Bearer token（CLI）双栈，公开路由仅 `/api/live` + `/v1/live`
+浏览器测试需要 Chromium，可先运行 `bunx playwright install chromium`。`test:e2e` 构建 SPA，使用端口 27019 与独立的 `.wrangler/state-e2e-spa`；`test:e2e:bdd` 启动 Vite，后端仍受 Vite 代理配置影响。两套浏览器命令共用端口，非 CI 模式可能复用已有服务，运行前需释放端口；本地后端配置见[测试说明](docs/10-development.md#测试入口)。
+
+## 技术栈
+
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white)
+![Bun](https://img.shields.io/badge/Bun-14151A?logo=bun&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)
+![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)
+![Cloudflare Workers](https://img.shields.io/badge/Cloudflare_Workers-F38020?logo=cloudflareworkers&logoColor=white)
+
+| 部分 | 实现 |
+| --- | --- |
+| CLI 与采集 | TypeScript、Node.js、@nocoo/base-cli |
+| 依赖与构建 | Bun workspaces、TypeScript、Vite |
+| Web | React、React Router、SWR、Tailwind CSS、Radix UI、Shiki |
+| API 与存储 | Hono、Cloudflare Workers、D1、R2 |
+| 认证 | Cloudflare Access、jose、D1 中的 Bearer Token 校验 |
+| 验证 | Vitest、Playwright、Biome |
 
 ## 文档
 
-| 文档 | 内容 |
-|------|------|
-| [架构概览](docs/01-architecture.md) | Monorepo 结构、数据流、核心类型、Web ↔ API 通信 |
-| [采集器详解](docs/02-collectors.md) | BaseCollector API、12 个采集器、新增指南 |
-| [开发指南](docs/03-development.md) | 环境搭建、surety/bat 两种本地模式、命令速查、Commit 规范 |
-| [测试规范](docs/04-testing.md) | 覆盖率目标、测试结构、编写规范 |
-| [安全机制](docs/05-security.md) | 四层安全体系、脱敏模式、审计清单 |
-| [Dashboard](docs/06-dashboard.md) | Vite SPA 路由、API 端点、D1 schema |
-| [采集器增强计划](docs/07-collector-enhancement-plan.md) | P0/P1/P2 采集器增强进度 |
-| [archive/08-worker-migration](docs/archive/08-worker-migration.md) | （已完成）旧 worker 回迁 + dual-stack 路由设计 |
-| [archive/09-vite-spa-migration](docs/archive/09-vite-spa-migration.md) | （已完成）Vite SPA + 单 Worker 迁移 16 步执行进度 |
+- [文档索引](docs/README.md)
+- [当前开发、采集范围与部署说明](docs/10-development.md)
+- [采集器设计](docs/02-collectors.md)
+- [Hermes 采集器](docs/features/01-hermes-collector.md)
+- [快照详情页设计](docs/features/02-snapshot-detail-redesign.md)
 
-## License
+## 许可证
 
-[MIT](LICENSE) © 2026
+[MIT](LICENSE) © 2026 Zheng Li

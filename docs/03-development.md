@@ -41,7 +41,7 @@ bun run test
 | `bun run lint` | TypeScript 类型检查（4 个 tsconfig：core → cli → web → api） |
 | `bun run lint:biome` / `lint:biome:fix` | Biome 检查 / 自动修 |
 
-CLI 命令请直接看 `node packages/cli/dist/bin.js --help` 或 [README 命令一览](../README.md#命令一览)。
+CLI 命令请直接看 `node packages/cli/dist/bin.js --help` 或 [README 使用说明](../README.md#使用)。
 
 ## 项目结构
 
