@@ -29,6 +29,7 @@ describe("GET /v1/live", () => {
 
     expect(res.status).toBe(200);
     expect(body.status).toBe("ok");
+    expect(body.version).toBe("2.0.0");
     expect(body.checks.d1.reachable).toBe(true);
     expect(body.checks.d1.snapshots).toBe(42);
     expect(typeof body.checks.d1.latencyMs).toBe("number");
@@ -74,6 +75,7 @@ describe("GET /v1/live", () => {
 
     expect(res.status).toBe(503);
     expect(body.status).toBe("error");
+    expect(body.version).toBe("2.0.0");
     expect(body.checks.d1.reachable).toBe(false);
     expect(body.checks.d1.error).toBe("D1 API error (500): timeout");
     expect(typeof body.checks.d1.latencyMs).toBe("number");

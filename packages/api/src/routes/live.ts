@@ -51,6 +51,7 @@ app.get("/", async (c) => {
     return c.json(
       {
         status: "error",
+        version: APP_VERSION,
         checks: {
           d1: { reachable: false, latencyMs: d1Latency, error: d1Error },
         },
@@ -63,6 +64,7 @@ app.get("/", async (c) => {
 
   return c.json({
     status: "ok",
+    version: APP_VERSION,
     checks: {
       d1: { reachable: true, latencyMs: d1Latency, snapshots: snapshotCount },
     },
