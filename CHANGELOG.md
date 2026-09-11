@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.4] - 2026-09-11
+
+### Features
+- Adopt otter family identity
+
+### Changed
+- Bump lucide-react to 1.43.0
+- Bump wrangler to 4.130.0
+- Refresh bilingual project documentation
+- Bump wrangler to 4.129.1
+- Bump Playwright to 1.63.0
+- Declare Vitest 5 Node support
+- Bump @types/node to 26.5.0 (#453)
+- Bump jose to 6.2.12
+- Bump Cloudflare Workers types
+- Upgrade lucide-react to 1.42.0
+- Bump lint-staged to 17.5.0
+- Upgrade hono to 4.13.7
+- Upgrade vitest to 5.0.0
+- Upgrade @types/react-dom to 19.2.7
+- Bump zod to 4.5.4
+- Bump biome to 2.5.12
+- Upgrade react-router to 8.3.1
+- Upgrade vite react plugin to 6.1.1
+- Bump lint-staged to 17.4.1
+- Bump biome to 2.5.11
+- Bump wrangler 4.125.0 → 4.127.1
+- Bump workers types to 5.20260831.1
+- Upgrade @types/node 26.3.0 → 26.4.0
+- Upgrade hono to 4.13.5
+
+### Fixes
+- Expose top-level version in /api/live health response
+- Upgrade sharp security override
+
+### Removed
+- [CO] Remove unused BarChart and DonutChart web components
+
 ## [2.0.3] - 2026-07-03
 
 ### Features

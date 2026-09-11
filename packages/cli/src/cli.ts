@@ -20,7 +20,7 @@ import { uploadIconsToServer } from "./uploader/icons-server.js";
 import { uploadSnapshot } from "./uploader/webhook.js";
 import { exportIcons } from "./utils/icons.js";
 
-const CLI_VERSION = "2.0.3";
+const CLI_VERSION = "2.0.4";
 
 const otterConfigDir = join(homedir(), ".config", "otter");
 const snapshotStore = new SnapshotStore(join(otterConfigDir, "snapshots"));
