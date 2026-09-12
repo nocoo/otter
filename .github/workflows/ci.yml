@@ -9,7 +9,7 @@ on:
 
 jobs:
   quality:
-    uses: nocoo/base-ci/.github/workflows/quality.yml@3d2e9e55fdd60aa756df454ded53ef6d06d6653f
+    uses: nocoo/base-ci/.github/workflows/quality.yml@2857469cc5206e7a4988171a1282209617996a67
     with:
       runtime-version: "1.4.2"
       install-policy: "project"
@@ -21,19 +21,22 @@ jobs:
 
   l3:
     name: L3 Browser E2E
-    uses: nocoo/base-ci/.github/workflows/test-job.yml@3d2e9e55fdd60aa756df454ded53ef6d06d6653f
+    uses: nocoo/base-ci/.github/workflows/test-job.yml@2857469cc5206e7a4988171a1282209617996a67
     with:
       runtime-version: "1.4.2"
       install-policy: "blocked"
       browser: "chromium"
       timeout-minutes: 20
       command: "bun run test:e2e:bdd"
-      env-json: '{"CI":"true"}'
+      env-json: |-
+        {
+          "CI": "true"
+        }
 
   l2:
     name: L2 API E2E (local wrangler dev)
     needs: quality
-    uses: nocoo/base-ci/.github/workflows/test-job.yml@3d2e9e55fdd60aa756df454ded53ef6d06d6653f
+    uses: nocoo/base-ci/.github/workflows/test-job.yml@2857469cc5206e7a4988171a1282209617996a67
     with:
       runtime-version: "1.4.2"
       node-version: "22.12.0"
