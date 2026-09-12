@@ -17,7 +17,6 @@ jobs:
       test-command: "bun run test:coverage"
       typecheck-command: "bun run lint"
       lint-command: "bun run lint:biome"
-    secrets: inherit
 
   l3:
     name: L3 Browser E2E
