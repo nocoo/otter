@@ -8,6 +8,9 @@
 - [功能设计索引](features/README.md)
 - [Hermes 采集器](features/01-hermes-collector.md)
 - [快照详情页](features/02-snapshot-detail-redesign.md)
+- [macOS Agent 配置工作台设计](features/03-macos-agent-workspace.md)：本机来源关系、skills 编辑器、CLI 控制与原生体验验收。
+- [macOS 实现与自动化验证](features/03-macos-agent-workspace-implementation.md)：实际 App、文件事务、打包 CLI、测试入口及发行边界。
+- [macOS 原生设计预览](design/macos-agent-workspace/index.html)：参考 Lyre / Showtime 的实际控件、窗口布局与深浅色场景。
 
 ## 设计与历史说明
 

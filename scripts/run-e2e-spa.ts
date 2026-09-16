@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * L3 Vite SPA + worker runner — builds packages/web into packages/web/dist/
+ * L3 Vite SPA + worker runner — builds apps/web into apps/web/dist/
  * and starts `wrangler dev --local --persist-to` so a single port serves both
  * the SPA shell (via [assets]) and the new /api/* routes (D1 + R2 emulator).
  *
@@ -12,11 +12,12 @@
 import { readdirSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { type Subprocess, spawn, spawnSync } from "bun";
+import { verifyWeb } from "./verify-web";
 
 const PORT = Number(process.env.E2E_SPA_PORT ?? 27019);
 const REPO_ROOT = resolve(import.meta.dir, "..");
-const WEB_DIR = resolve(REPO_ROOT, "packages/web");
-const WORKER_DIR = resolve(REPO_ROOT, "packages/worker");
+const WEB_DIR = resolve(REPO_ROOT, "apps/web");
+const WORKER_DIR = resolve(REPO_ROOT, "apps/api");
 const MIGRATIONS_DIR = resolve(WORKER_DIR, "migrations");
 const PERSIST_DIR = ".wrangler/state-e2e-spa";
 const HEALTH_TIMEOUT_MS = 60_000;
@@ -30,10 +31,10 @@ function log(msg: string): void {
 
 function buildSpa(): void {
   if (process.env.E2E_SKIP_BUILD === "true") {
-    log("E2E_SKIP_BUILD=true — reusing existing packages/web/dist");
+    log("E2E_SKIP_BUILD=true — reusing existing apps/web/dist");
     return;
   }
-  log("building Vite SPA → packages/web/dist/");
+  log("building Vite SPA → apps/web/dist/");
   const r = spawnSync(["bun", "run", "build"], {
     cwd: WEB_DIR,
     stdout: "inherit",
@@ -160,6 +161,7 @@ async function main(): Promise<void> {
   applySchema();
   startWrangler();
   await waitForHealth();
+  await verifyWeb(`http://127.0.0.1:${PORT}`);
   log(`ready on http://127.0.0.1:${PORT}`);
   // Stay foreground so Playwright can manage lifetime.
   if (wrangler) await wrangler.exited;

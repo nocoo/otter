@@ -1,6 +1,6 @@
 /**
  * Vitest globalSetup for L2 — boots the wrangler dev server once
- * (CF remote, env=test) and exposes the base URL via OTTER_L2_BASE_URL
+ * (--local, env=test) and exposes the base URL via OTTER_L2_BASE_URL
  * for individual e2e tests.
  */
 

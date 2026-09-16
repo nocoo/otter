@@ -4,7 +4,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     alias: {
-      "@": resolve(__dirname, "packages/web/src"),
+      "@": resolve(__dirname, "apps/web/src"),
     },
   },
   test: {
@@ -17,12 +17,12 @@ export default defineConfig({
       "**/__tests__/e2e/**",
       "**/e2e/**",
       // Worker tests require @cloudflare/vitest-pool-workers, run separately
-      "packages/worker/**",
+      "apps/api/**",
     ],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
-      include: ["packages/*/src/**/*.ts"],
+      include: ["apps/*/src/**/*.ts", "packages/*/src/**/*.ts"],
       exclude: [
         // Test files themselves
         "**/*.test.ts",
@@ -57,13 +57,13 @@ export default defineConfig({
         "**/proxy.ts",
         "**/api/auth/**",
         // Worker has its own vitest config with cloudflare pool
-        "packages/worker/**",
+        "apps/api/**",
         // New Vite SPA UI components — covered via E2E later (plan §12)
-        "packages/web/src/components/**",
-        "packages/web/src/pages/**",
-        "packages/web/src/AppShell.tsx",
-        "packages/web/src/main.tsx",
-        "packages/web/src/api.ts",
+        "apps/web/src/components/**",
+        "apps/web/src/pages/**",
+        "apps/web/src/AppShell.tsx",
+        "apps/web/src/main.tsx",
+        "apps/web/src/api.ts",
       ],
       thresholds: {
         statements: 95,

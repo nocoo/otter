@@ -1,0 +1,460 @@
+{
+  "bundleID" : "ai.hexly.otter.design.c4d1163d-0662-401b-884d-0532ee59d204",
+  "captures" : [
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "overview-light.png",
+      "inspectorVisible" : true,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "agents-light.png",
+      "inspectorVisible" : true,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "instructions-light.png",
+      "inspectorVisible" : true,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "skills-light.png",
+      "inspectorVisible" : true,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "editor-light.png",
+      "inspectorVisible" : true,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "workflow-light.png",
+      "inspectorVisible" : true,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "backups-light.png",
+      "inspectorVisible" : true,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "settings-light.png",
+      "inspectorVisible" : false,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "changes-light.png",
+      "inspectorVisible" : true,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1000,
+        680
+      ],
+      "file" : "compact-light.png",
+      "inspectorVisible" : false,
+      "pixels" : [
+        2000,
+        1464
+      ],
+      "windowPoints" : [
+        1000,
+        732
+      ],
+      "workspaceWidth" : 780
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "conflict-light.png",
+      "inspectorVisible" : true,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "empty-light.png",
+      "inspectorVisible" : true,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "overview-dark.png",
+      "inspectorVisible" : true,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "agents-dark.png",
+      "inspectorVisible" : true,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "instructions-dark.png",
+      "inspectorVisible" : true,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "skills-dark.png",
+      "inspectorVisible" : true,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "editor-dark.png",
+      "inspectorVisible" : true,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "workflow-dark.png",
+      "inspectorVisible" : true,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "backups-dark.png",
+      "inspectorVisible" : true,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "settings-dark.png",
+      "inspectorVisible" : false,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "changes-dark.png",
+      "inspectorVisible" : true,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1000,
+        680
+      ],
+      "file" : "compact-dark.png",
+      "inspectorVisible" : false,
+      "pixels" : [
+        2000,
+        1464
+      ],
+      "windowPoints" : [
+        1000,
+        732
+      ],
+      "workspaceWidth" : 780
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "conflict-dark.png",
+      "inspectorVisible" : true,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    },
+    {
+      "contentLayoutPoints" : [
+        1280,
+        800
+      ],
+      "file" : "empty-dark.png",
+      "inspectorVisible" : true,
+      "pixels" : [
+        2560,
+        1704
+      ],
+      "windowPoints" : [
+        1280,
+        852
+      ],
+      "workspaceWidth" : 1060
+    }
+  ],
+  "checks" : [
+    "Native window button 0 visible",
+    "Native window button 1 visible",
+    "Native window button 2 visible",
+    "Context menu occupies a visible toolbar position (frame (663.5, 810.0, 174.0, 32.0), window 30126 \/ 30126)",
+    "Native sidebar opens Skills",
+    "Native button opens editor",
+    "Mouse focuses NSTextView",
+    "Cmd-A selects source",
+    "Native typing updates buffer",
+    "Cmd-Z restores source",
+    "Native file selection changes document",
+    "Native navigation opens Settings",
+    "Editor session survives navigation",
+    "Quick Fix opens native sheet",
+    "Review action updates only example metadata",
+    "Save is explicitly an in-memory example",
+    "Resize collapses inline inspector",
+    "Resize preserves draft",
+    "Compact inspector remains accessible",
+    "Cancel keeps partial example results",
+    "Snapshot review preserves selected object identity",
+    "Clear search restores library",
+    "editor-light.png: editor preserves readable width",
+    "editor-light.png: editor mode control stays compact",
+    "compact-light.png: editor preserves readable width",
+    "compact-light.png: editor mode control stays compact",
+    "compact-light.png: compact inspector collapsed",
+    "conflict-light.png: editor preserves readable width",
+    "conflict-light.png: editor mode control stays compact",
+    "editor-dark.png: editor preserves readable width",
+    "editor-dark.png: editor mode control stays compact",
+    "compact-dark.png: editor preserves readable width",
+    "compact-dark.png: editor mode control stays compact",
+    "compact-dark.png: compact inspector collapsed",
+    "conflict-dark.png: editor preserves readable width",
+    "conflict-dark.png: editor mode control stays compact"
+  ],
+  "kind" : "isolated-native-design-preview",
+  "limits" : [
+    "Synthetic data only",
+    "No scanner, YAML parser, real save, CLI or uploads",
+    "No full VoiceOver, IME, macOS 15 runtime or release validation"
+  ],
+  "os" : "Version 26.6.2 (Build 25G83)",
+  "processID" : 3788,
+  "status" : "passed"
+}

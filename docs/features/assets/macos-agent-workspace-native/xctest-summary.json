@@ -1,0 +1,42 @@
+{
+  "devicesAndConfigurations": [
+    {
+      "device": {
+        "architecture": "arm64",
+        "deviceName": "My Mac",
+        "modelName": "MacBook Pro",
+        "osBuildNumber": "25G83",
+        "osVersion": "26.6.2",
+        "platform": "macOS"
+      },
+      "expectedFailures": 0,
+      "failedTests": 0,
+      "passedTests": 29,
+      "skippedTests": 0,
+      "testPlanConfiguration": {
+        "configurationId": "1",
+        "configurationName": "Test Scheme Action"
+      }
+    }
+  ],
+  "environmentDescription": "Otter · Built with macOS 26.6.2",
+  "expectedFailures": 0,
+  "failedTests": 0,
+  "finishTime": 1789449537.147,
+  "passedTests": 29,
+  "result": "Passed",
+  "skippedTests": 0,
+  "startTime": 1789449519.348,
+  "statistics": [],
+  "testFailures": [],
+  "title": "Test - Otter",
+  "topInsights": [
+    {
+      "category": "Longest Test Runs",
+      "impact": "68% of duration",
+      "text": "1 longest test run with outlier durations exceeding 3.80s (three standard deviations)"
+    }
+  ],
+  "totalTestCount": 29,
+  "source": "build/macos/Logs/Test/Test-Otter-2026.09.15_13-18-39-+0800.xcresult"
+}

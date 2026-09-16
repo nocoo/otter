@@ -23,7 +23,7 @@ Otter 当前内置 12 个采集器，均继承自 `BaseCollector` 抽象类。�
 
 ## BaseCollector 基类
 
-**文件**: `packages/cli/src/collectors/base.ts`
+**文件**: `apps/cli/src/collectors/base.ts`
 
 提供三个核心方法：
 
@@ -71,7 +71,7 @@ interface CollectDirOptions {
 
 ### 1. ClaudeConfigCollector
 
-**文件**: `packages/cli/src/collectors/claude-config.ts`
+**文件**: `apps/cli/src/collectors/claude-config.ts`
 **ID**: `claude-config`
 **分类**: `config`
 
@@ -105,7 +105,7 @@ interface CollectDirOptions {
 
 ### 2. OpenCodeConfigCollector
 
-**文件**: `packages/cli/src/collectors/opencode-config.ts`
+**文件**: `apps/cli/src/collectors/opencode-config.ts`
 **ID**: `opencode-config`
 **分类**: `config`
 
@@ -131,7 +131,7 @@ interface CollectDirOptions {
 
 ### 3. ShellConfigCollector
 
-**文件**: `packages/cli/src/collectors/shell-config.ts`
+**文件**: `apps/cli/src/collectors/shell-config.ts`
 **ID**: `shell-config`
 **分类**: `environment`
 
@@ -170,7 +170,7 @@ interface CollectDirOptions {
 
 ### 4. HomebrewCollector
 
-**文件**: `packages/cli/src/collectors/homebrew.ts`
+**文件**: `apps/cli/src/collectors/homebrew.ts`
 **ID**: `homebrew`
 **分类**: `environment`
 
@@ -183,7 +183,7 @@ interface CollectDirOptions {
 
 ### 5. ApplicationsCollector
 
-**文件**: `packages/cli/src/collectors/applications.ts`
+**文件**: `apps/cli/src/collectors/applications.ts`
 **ID**: `applications`
 **分类**: `environment`
 
@@ -196,7 +196,7 @@ interface CollectDirOptions {
 
 ### 6. VSCodeCollector
 
-**文件**: `packages/cli/src/collectors/vscode.ts`
+**文件**: `apps/cli/src/collectors/vscode.ts`
 **ID**: `vscode`
 **分类**: `config`
 
@@ -209,7 +209,7 @@ interface CollectDirOptions {
 
 ### 7. DockerCollector
 
-**文件**: `packages/cli/src/collectors/docker.ts`
+**文件**: `apps/cli/src/collectors/docker.ts`
 **ID**: `docker`
 **分类**: `environment`
 
@@ -220,7 +220,7 @@ interface CollectDirOptions {
 
 ### 8. FontsCollector
 
-**文件**: `packages/cli/src/collectors/fonts.ts`
+**文件**: `apps/cli/src/collectors/fonts.ts`
 **ID**: `fonts`
 **分类**: `environment`
 
@@ -231,7 +231,7 @@ interface CollectDirOptions {
 
 ### 9. DevToolchainCollector
 
-**文件**: `packages/cli/src/collectors/dev-toolchain.ts`
+**文件**: `apps/cli/src/collectors/dev-toolchain.ts`
 **ID**: `dev-toolchain`
 **分类**: `environment`
 
@@ -245,7 +245,7 @@ interface CollectDirOptions {
 
 ### 10. CloudCLICollector
 
-**文件**: `packages/cli/src/collectors/cloud-cli.ts`
+**文件**: `apps/cli/src/collectors/cloud-cli.ts`
 **ID**: `cloud-cli`
 **分类**: `config`
 
@@ -259,7 +259,7 @@ interface CollectDirOptions {
 
 ### 11. MacOSDefaultsCollector
 
-**文件**: `packages/cli/src/collectors/macos-defaults.ts`
+**文件**: `apps/cli/src/collectors/macos-defaults.ts`
 **ID**: `macos-defaults`
 **分类**: `environment`
 
@@ -270,7 +270,7 @@ interface CollectDirOptions {
 
 ### 12. LaunchAgentsCollector
 
-**文件**: `packages/cli/src/collectors/launch-agents.ts`
+**文件**: `apps/cli/src/collectors/launch-agents.ts`
 **ID**: `launch-agents`
 **分类**: `environment`
 
@@ -284,7 +284,7 @@ interface CollectDirOptions {
 
 ## 新增采集器指南
 
-1. 在 `packages/cli/src/collectors/` 创建新文件
+1. 在 `apps/cli/src/collectors/` 创建新文件
 2. 继承 `BaseCollector`，实现 `id`, `label`, `category`, `collect()` 方法
 3. 在 `collectors/index.ts` 的 `createDefaultCollectors()` 中注册
 4. 编写对应单元测试（`__tests__/collectors/xxx.test.ts`）

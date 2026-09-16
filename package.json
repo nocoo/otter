@@ -6,6 +6,7 @@
     "node": "^22.12.0 || ^24.0.0 || >=26.0.0"
   },
   "workspaces": [
+    "apps/*",
     "packages/*"
   ],
   "scripts": {
@@ -13,15 +14,23 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:l2": "vitest run --config vitest.l2.config.ts",
-    "dev": "bun run --cwd packages/web dev",
-    "dev:worker": "bun run --cwd packages/worker dev",
-    "build": "bun run --cwd packages/web build",
-    "deploy": "bun run build && bun run --cwd packages/worker deploy",
+    "test:worker": "bun run --cwd apps/api test",
+    "dev": "bun run --cwd apps/web dev",
+    "dev:worker": "bun run --cwd apps/api dev",
+    "build": "bun run --cwd apps/web build",
+    "deploy": "bun run build && bun run --cwd apps/api deploy",
+    "deploy:check": "bun run build && bun run --cwd apps/api deploy:check",
+    "verify:web": "bun run scripts/verify-web.ts",
+    "macos:generate": "bash scripts/build-macos.sh generate",
+    "macos:build": "bash scripts/build-macos.sh",
+    "macos:test": "bash scripts/test-macos.sh",
+    "macos:test:ui": "python3 scripts/test-macos-ui.py",
+    "macos:package": "bun run macos:build && python3 scripts/verify-macos-package.py",
     "lint": "bash scripts/typecheck-parallel.sh",
     "typecheck": "bash scripts/typecheck-parallel.sh",
     "lint:biome": "bunx biome check .",
     "lint:biome:fix": "bunx biome check --write .",
-    "test:e2e": "bun run --cwd packages/web playwright test --config e2e/playwright.config.ts",
+    "test:e2e": "bun run --cwd apps/web playwright test --config e2e/playwright.config.ts",
     "test:e2e:bdd": "bunx playwright test",
     "release": "bun run scripts/release.ts",
     "prepare": "husky"

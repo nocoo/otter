@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "checks": 232,
+  "captures": 25,
+  "uploads": 2,
+  "protocol": "real packaged CLI; gzip HTTP; fixed snapshot; digest refusal; cancellation",
+  "app": "build/macos/Build/Products/Debug/Otter.app",
+  "fixture": "build/macos-native/20260915-133009-393ef460",
+  "sourceRun": "build/macos-native/20260915-133009-393ef460/results",
+  "archivedCaptures": [
+    "overview-light.png",
+    "editor-light.png",
+    "detached-editor-light.png",
+    "instruction-comparison-light.png",
+    "upload-complete-light.png",
+    "compact-dark.png",
+    "recovered-draft-light.png"
+  ],
+  "checkBreakdown": {
+    "workspace": 216,
+    "restartRecovery": 9,
+    "httpProtocol": 7
+  }
+}

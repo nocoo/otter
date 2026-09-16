@@ -1,0 +1,42 @@
+{
+  "name": "@nocoo/otter",
+  "version": "2.0.4",
+  "description": "Backup and restore your Mac development environment configuration",
+  "type": "module",
+  "bin": {
+    "otter": "dist/bin.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nocoo/otter.git",
+    "directory": "apps/cli"
+  },
+  "keywords": [
+    "macos",
+    "backup",
+    "dotfiles",
+    "developer-tools",
+    "cli"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@nocoo/base-cli": "^0.3.0"
+  },
+  "devDependencies": {
+    "@otter/core": "workspace:*",
+    "@types/node": "26.5.1"
+  }
+}

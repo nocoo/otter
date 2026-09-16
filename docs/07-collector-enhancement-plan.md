@@ -44,7 +44,7 @@
 
 ### P0-1. Homebrew Collector 补全
 
-**文件**: `packages/cli/src/collectors/homebrew.ts`
+**文件**: `apps/cli/src/collectors/homebrew.ts`
 
 **现状**:
 - 只跑 `brew list --formula` 和 `brew list --cask`，输出裸包名
@@ -90,7 +90,7 @@ bats-core/bats-core
 
 ### P0-2. Applications Collector 补全
 
-**文件**: `packages/cli/src/collectors/applications.ts`
+**文件**: `apps/cli/src/collectors/applications.ts`
 
 **现状**:
 - 只扫描 `/Applications/`
@@ -130,7 +130,7 @@ const version = execSync(
 
 ### P1-1. DevToolchainCollector（开发工具链采集器）
 
-**新文件**: `packages/cli/src/collectors/dev-toolchain.ts`
+**新文件**: `apps/cli/src/collectors/dev-toolchain.ts`
 **ID**: `"dev-toolchain"`
 **Label**: `"Development Toolchain"`
 **Category**: `"environment"`
@@ -196,7 +196,7 @@ const version = execSync(
 
 ### P1-2. VSCodeCollector（编辑器配置采集器）
 
-**新文件**: `packages/cli/src/collectors/vscode.ts`
+**新文件**: `apps/cli/src/collectors/vscode.ts`
 **ID**: `"vscode"`
 **Label**: `"VS Code / Cursor Configuration"`
 **Category**: `"config"`
@@ -261,7 +261,7 @@ github.copilot-chat@0.38.1
 
 ### P1-3. DockerCollector（Docker 配置采集器）
 
-**新文件**: `packages/cli/src/collectors/docker.ts`
+**新文件**: `apps/cli/src/collectors/docker.ts`
 **ID**: `"docker"`
 **Label**: `"Docker Configuration"`
 **Category**: `"environment"`
@@ -293,7 +293,7 @@ github.copilot-chat@0.38.1
 
 ### P1-4. CloudCLICollector（云服务 CLI 配置采集器）
 
-**新文件**: `packages/cli/src/collectors/cloud-cli.ts`
+**新文件**: `apps/cli/src/collectors/cloud-cli.ts`
 **ID**: `"cloud-cli"`
 **Label**: `"Cloud CLI Configuration"`
 **Category**: `"config"`
@@ -349,7 +349,7 @@ github.copilot-chat@0.38.1
 
 ### P2-1. MacOSDefaultsCollector（系统偏好采集器）
 
-**新文件**: `packages/cli/src/collectors/macos-defaults.ts`
+**新文件**: `apps/cli/src/collectors/macos-defaults.ts`
 **ID**: `"macos-defaults"`
 **Label**: `"macOS System Preferences"`
 **Category**: `"environment"`
@@ -397,7 +397,7 @@ osascript -e 'tell application "System Events" to get the name of every login it
 
 ### P2-2. LaunchAgentsCollector（启动项采集器）
 
-**新文件**: `packages/cli/src/collectors/launch-agents.ts`
+**新文件**: `apps/cli/src/collectors/launch-agents.ts`
 **ID**: `"launch-agents"`
 **Label**: `"Launch Agents & Daemons"`
 **Category**: `"environment"`
@@ -429,7 +429,7 @@ homebrew.mxcl.caddy.plist
 
 ### P2-3. FontsCollector（字体采集器）
 
-**新文件**: `packages/cli/src/collectors/fonts.ts`
+**新文件**: `apps/cli/src/collectors/fonts.ts`
 **ID**: `"fonts"`
 **Label**: `"Installed Fonts"`
 **Category**: `"environment"`

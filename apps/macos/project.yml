@@ -1,0 +1,88 @@
+name: Otter
+options:
+  bundleIdPrefix: ai.hexly
+  deploymentTarget:
+    macOS: "15.0"
+  minimumXcodeGenVersion: "2.40"
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    GENERATE_INFOPLIST_FILE: true
+
+packages:
+  Yams:
+    url: https://github.com/jpsim/Yams.git
+    exactVersion: 6.2.2
+  swift-markdown:
+    url: https://github.com/swiftlang/swift-markdown.git
+    exactVersion: 0.6.0
+  TOMLKit:
+    url: https://github.com/LebJe/TOMLKit.git
+    exactVersion: 0.6.0
+
+targets:
+  OtterCore:
+    type: framework
+    platform: macOS
+    sources: [OtterCore]
+    dependencies:
+      - package: Yams
+      - package: swift-markdown
+        product: Markdown
+      - package: TOMLKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.hexly.otter.core
+  OtterCoreTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources: [OtterCoreTests]
+    dependencies:
+      - target: OtterCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.hexly.otter.core.tests
+  Otter:
+    type: application
+    platform: macOS
+    info:
+      path: Otter/Info.plist
+      properties:
+        CFBundleIconFile: Otter
+        LSApplicationCategoryType: public.app-category.utilities
+        NSHighResolutionCapable: true
+    sources:
+      - path: Otter
+    dependencies:
+      - target: OtterCore
+    postBuildScripts:
+      - name: Bundle standalone Otter CLI
+        script: 'bash "$SRCROOT/../../scripts/build-macos-cli.sh" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/CLI"'
+        basedOnDependencyAnalysis: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.hexly.otter
+        PRODUCT_NAME: Otter
+        MARKETING_VERSION: "2.0.4"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: true
+        ENABLE_HARDENED_RUNTIME: true
+        ENABLE_USER_SCRIPT_SANDBOXING: false
+
+schemes:
+  Otter:
+    build:
+      targets:
+        Otter: all
+    test:
+      targets: [OtterCoreTests]
+      gatherCoverageData: true
+  OtterCoreTests:
+    build:
+      targets:
+        OtterCoreTests: all
+    test:
+      targets: [OtterCoreTests]
+      gatherCoverageData: true

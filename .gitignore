@@ -4,15 +4,23 @@ coverage/
 *.tsbuildinfo
 .DS_Store
 
-# Next.js
-.next/
-.next-e2e/
-.next-e2e-ui/
-packages/web/playwright-report/
-packages/web/test-results/
+# Playwright
+playwright-report/
+test-results/
+
+# macOS app (XcodeGen owns the generated project)
+build/
+DerivedData/
+apps/macos/*.xcodeproj/
+*.xcuserstate
+xcuserdata/
+default.profraw
+.*.bun-build
+__pycache__/
 
 # Wrangler local state (D1/R2 emulator persistence)
 .wrangler/
+.dev.vars
 
 # Environment
 .env

@@ -190,8 +190,12 @@ describe("formatChangelogSection", () => {
 });
 
 describe("VERSION_TARGETS", () => {
-  it("has 8 targets for monorepo", () => {
-    expect(VERSION_TARGETS).toHaveLength(8);
+  it("includes the TypeScript workspaces and macOS app", () => {
+    expect(VERSION_TARGETS).toHaveLength(9);
+    expect(VERSION_TARGETS).toContainEqual({
+      path: "apps/macos/project.yml",
+      pattern: "yaml-version",
+    });
   });
 
   it("includes all package.json files", () => {
@@ -200,11 +204,11 @@ describe("VERSION_TARGETS", () => {
     expect(jsonTargets.map((t) => t.path)).toEqual(
       expect.arrayContaining([
         "package.json",
-        "packages/cli/package.json",
+        "apps/cli/package.json",
         "packages/core/package.json",
-        "packages/web/package.json",
+        "apps/web/package.json",
         "packages/api/package.json",
-        "packages/worker/package.json",
+        "apps/api/package.json",
       ]),
     );
   });
@@ -213,7 +217,7 @@ describe("VERSION_TARGETS", () => {
     const constTargets = VERSION_TARGETS.filter((t) => t.pattern === "const-version");
     expect(constTargets).toHaveLength(2);
     expect(constTargets.map((t) => t.path)).toEqual(
-      expect.arrayContaining(["packages/cli/src/cli.ts", "packages/api/src/lib/version.ts"]),
+      expect.arrayContaining(["apps/cli/src/cli.ts", "packages/api/src/lib/version.ts"]),
     );
   });
 });

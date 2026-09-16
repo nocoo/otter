@@ -29,16 +29,15 @@ jobs:
       expected-workflow-name: "CI"
       source-run-id: ${{ github.event_name == 'workflow_run' && format('{0}', github.event.workflow_run.id) || inputs.source-run-id }}
       runtime-version: "1.4.2"
+      node-version: "22.12.0"
       install-policy: "blocked"
       build-command: "bun run build"
       wrangler-version: "4.131.2"
-      wrangler-working-directory: "packages/worker"
+      wrangler-working-directory: "apps/api"
       environment: production
       concurrency-group: deploy-otter-production
       timeout-minutes: 15
-      verify-command: |
-        STATUS=$(curl -fsS -o /dev/null -w "%{http_code}" https://otter.hexly.ai/api/live || true)
-        test "$STATUS" = "200" || test "$STATUS" = "401"
+      verify-command: "bun run verify:web https://otter.nocoo.workers.dev"
       verify-retries: 6
       verify-retry-seconds: 5
     secrets:

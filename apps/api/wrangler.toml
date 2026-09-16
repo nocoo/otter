@@ -1,0 +1,42 @@
+name = "otter"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+routes = [
+  { pattern = "otter.hexly.ai", custom_domain = true },
+  { pattern = "otter.worker.hexly.ai", custom_domain = true }
+]
+workers_dev = true
+
+# --- 生产环境 (默认) ---
+[vars]
+ENVIRONMENT = "production"
+D1_DATABASE_NAME = "otter-db"
+R2_BUCKET_NAME = "otter-snapshots"
+ICON_PREFIX = "apps/otter"
+CF_ACCESS_TEAM_DOMAIN = "nocoo.cloudflareaccess.com"
+CF_ACCESS_AUD = "1b4e139af84ad55bc8cfe8b6045f69bcf452fef999f019ec3c543d8d170aa3ff"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "otter-db"
+database_id = "4004e775-8d54-4528-b3f2-3dd198ceeb51"
+
+[[r2_buckets]]
+binding = "SNAPSHOTS"
+bucket_name = "otter-snapshots"
+
+[[r2_buckets]]
+binding = "ICONS"
+bucket_name = "zhe"
+
+# SPA assets — fall through to the Vite build output for non-/api/* paths.
+# The directory is populated by `bun run --cwd apps/web build` (new Vite SPA).
+[assets]
+directory = "../web/dist"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*", "/v1/*", "/health", "/ingest/*"]
+
+# 生产环境 secrets (通过 wrangler secret put 设置):
+# - (无；CF Access JWT + Bearer api_token 都在 D1 中验证)

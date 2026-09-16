@@ -4,7 +4,7 @@
 
 ## 概述
 
-Otter Dashboard 是 Otter 备份系统的 Web 端，提供快照浏览、文件查看器、Webhook 管理等功能。当前架构为 **Vite 7 SPA**（`packages/web`）+ 单一 **Cloudflare Worker**（`packages/worker`）部署，业务逻辑沉淀在 `@otter/api` 的 `createApp()` 工厂里。
+Otter Dashboard 是 Otter 备份系统的 Web 端，提供快照浏览、文件查看器、Webhook 管理等功能。当前架构为 **Vite 7 SPA**（`apps/web`）+ 单一 **Cloudflare Worker**（`apps/api`）部署，业务逻辑沉淀在 `@otter/api` 的 `createApp()` 工厂里。
 
 > 历史迁移记录归档于 [archive/09-vite-spa-migration](./archive/09-vite-spa-migration.md) 与 [archive/08-worker-migration](./archive/08-worker-migration.md)。
 
@@ -12,7 +12,7 @@ Otter Dashboard 是 Otter 备份系统的 Web 端，提供快照浏览、文件�
 
 | 决策项 | 选择 | 理由 |
 |--------|------|------|
-| 项目位置 | `packages/web` (monorepo) | 与 `@otter/api` / `@otter/core` 共享类型 |
+| 项目位置 | `apps/web` (monorepo) | 与 `@otter/api` / `@otter/core` 共享类型 |
 | 前端框架 | Vite 7 + React 19 + react-router 7 | 轻量构建，SSR 不是需求 |
 | 数据获取 | SWR | 简洁、内置缓存与重新验证 |
 | API 框架 | Hono on Cloudflare Workers | 无服务器 + binding 原生集成 D1/R2 |
@@ -58,7 +58,7 @@ Otter Dashboard 是 Otter 备份系统的 Web 端，提供快照浏览、文件�
 
 ## D1 Schema
 
-定义在 `packages/worker/migrations/`，由 `wrangler d1 migrations apply otter-db` 推送。
+定义在 `apps/api/migrations/`，由 `wrangler d1 migrations apply otter-db` 推送。
 
 ### users（CF Access 自动 upsert）
 

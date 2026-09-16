@@ -15,6 +15,8 @@
 
 Otter 在 macOS 上采集开发工具配置、应用与环境清单，保存为本地或云端 JSON 快照，方便迁移电脑和核对环境变化。Web 界面提供快照总览、文件查看和 JSON 导出；恢复文件与重新安装软件需要手动完成。
 
+原生 macOS Agent Workspace 可扫描本机 harness、查看它们与 Workflow 的链接及副本关系，编辑指令、commands 和完整 Skill 包，并调用内置 CLI 执行备份任务。
+
 云端由一个 Cloudflare Worker 同时提供 API 和 Web 页面。D1 保存用户、Token 与快照索引，R2 保存快照正文和应用图标。快照列表与详情按登录邮箱区分。
 
 ## 功能
@@ -69,24 +71,29 @@ git clone https://github.com/nocoo/otter.git
 cd otter
 bun install --frozen-lockfile
 bun run --cwd packages/core build
-bun run --cwd packages/cli build
+bun run --cwd apps/cli build
 bun run --cwd packages/api build
 bun run build
 ```
 
-根目录的 `build` 只构建 Web SPA。编译后的 CLI 可用 `node packages/cli/dist/bin.js --help` 查看帮助。
+根目录的 `build` 只构建 Web SPA。编译后的 CLI 可用 `node apps/cli/dist/bin.js --help` 查看帮助。
 
-`bun run dev` 在端口 7019 启动 Vite，默认把 `/api` 代理到生产服务 `https://otter.nocoo.workers.dev`。启动前在 `packages/web/.env` 中设置目标 `OTTER_API_URL` 和所需的 `OTTER_DEV_API_TOKEN`；接口操作作用于该目标。根目录 `.env` 不作为这份 Vite 配置的环境文件。使用本地 D1/R2 联调的步骤见[本地联调](docs/10-development.md#本地联调)。
+`bun run dev` 在端口 7019 启动 Vite，默认把 `/api` 代理到生产服务 `https://otter.nocoo.workers.dev`。启动前在 `apps/web/.env` 中设置目标 `OTTER_API_URL` 和所需的 `OTTER_DEV_API_TOKEN`；接口操作作用于该目标。根目录 `.env` 不作为这份 Vite 配置的环境文件。使用本地 D1/R2 联调的步骤见[本地联调](docs/10-development.md#本地联调)。
 
 ```text
-packages/cli/       macOS 采集器、CLI 与本地快照
-packages/core/      共享类型
-packages/api/       Hono 应用工厂、鉴权与数据访问库
-packages/web/       Vite / React 页面
-packages/worker/    单 Worker 入口、D1 迁移与 R2 绑定
+apps/web/          Vite / React 页面
+apps/api/          单 Worker 入口、D1 迁移与 R2 绑定
+apps/cli/          macOS 采集器、CLI 与本地快照
+apps/macos/        SwiftUI / AppKit Agent Workspace（XcodeGen）
+packages/core/     共享类型
+packages/api/      Hono 应用工厂、鉴权与数据访问库
 ```
 
 `bun run typecheck` 检查类型，`bun run lint:biome` 检查代码风格。生产 Worker 在 main 的 CI 成功后由 Release 部署；该流程不执行 D1 迁移，也不发布 npm CLI，详见[部署说明](docs/10-development.md#部署)。
+
+`bun run deploy:check` 构建 Web 并执行 Wrangler 部署预演。构建产物位于 `apps/web/dist`，由 `apps/api/wrangler.toml` 的 `../web/dist` 托管；页面和 API 仍随一个 Worker 发布。
+
+安装完整 Xcode、XcodeGen 和 Bun 后，运行 `bun run macos:build`，再打开 `build/macos/Build/Products/Release/Otter.app`。App 内置 CLI，使用时无需 Node / Bun；当前构建未做发行签名与公证。开发、自动化、打包及已知边界见 [macOS 开发说明](apps/macos/README.md)与[实现记录](docs/features/03-macos-agent-workspace-implementation.md)。
 
 ## 测试
 
@@ -96,9 +103,15 @@ packages/worker/    单 Worker 入口、D1 迁移与 R2 绑定
 | --- | --- |
 | 单元测试 | `bun run test` |
 | 单元测试与覆盖率报告 | `bun run test:coverage` |
+| Worker 单元测试（Cloudflare runtime） | `bun run test:worker` |
 | 本地 HTTP API 与 CLI 集成 | `bun run test:l2` |
 | 本地 Worker 的浏览器测试 | `bun run test:e2e` |
 | Vite 首页标题 smoke | `bun run test:e2e:bdd` |
+| Web 构建与 Worker 部署预演 | `bun run deploy:check` |
+| 已运行站点的版本、静态资源与 SPA 路由 | `bun run verify:web <URL>` |
+| macOS 应用构建 | `bun run macos:build` |
+| macOS 核心与实际 App 集成 | `bun run macos:test` |
+| macOS Universal 包与搬移校验 | `bun run macos:package` |
 
 HTTP 与 CLI 集成需要先完成上面的 core、cli、api 和 Web 构建。runner 在端口 17020 启动本地 Wrangler，清空独立的 `.wrangler/e2e` 状态并应用迁移。
 
@@ -119,8 +132,9 @@ HTTP 与 CLI 集成需要先完成上面的 core、cli、api 和 Web 构建。ru
 | 依赖与构建 | Bun workspaces、TypeScript、Vite |
 | Web | React、React Router、SWR、Tailwind CSS、Radix UI、Shiki |
 | API 与存储 | Hono、Cloudflare Workers、D1、R2 |
+| macOS Agent Workspace | SwiftUI、AppKit、TextKit、OtterCore、XcodeGen |
 | 认证 | Cloudflare Access、jose、D1 中的 Bearer Token 校验 |
-| 验证 | Vitest、Playwright、Biome |
+| 验证 | XCTest、AppKit 原生输入、Vitest、Playwright、Biome |
 
 ## 文档
 

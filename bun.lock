@@ -17,20 +17,23 @@
         "vitest": "^5.0.0",
       },
     },
-    "packages/api": {
-      "name": "@otter/api",
+    "apps/api": {
+      "name": "@otter/worker",
       "version": "2.0.4",
       "dependencies": {
+        "@otter/api": "workspace:*",
         "hono": "4.13.7",
         "jose": "^6.2.12",
-        "zod": "4.6.5",
       },
       "devDependencies": {
-        "@types/node": "26.5.1",
+        "@cloudflare/vitest-pool-workers": "0.22.0",
+        "@cloudflare/workers-types": "5.20260914.1",
         "typescript": "7.0.2",
+        "vitest": "^4.1.11",
+        "wrangler": "4.131.2",
       },
     },
-    "packages/cli": {
+    "apps/cli": {
       "name": "@nocoo/otter",
       "version": "2.0.4",
       "bin": {
@@ -44,14 +47,7 @@
         "@types/node": "26.5.1",
       },
     },
-    "packages/core": {
-      "name": "@otter/core",
-      "version": "2.0.4",
-      "devDependencies": {
-        "@types/node": "26.5.1",
-      },
-    },
-    "packages/web": {
+    "apps/web": {
       "name": "@otter/web",
       "version": "2.0.4",
       "dependencies": {
@@ -70,6 +66,7 @@
         "tw-animate-css": "^1.4.0",
       },
       "devDependencies": {
+        "@otter/core": "workspace:*",
         "@playwright/test": "^1.63.0",
         "@tailwindcss/vite": "4.3.3",
         "@types/react": "^19.3.0",
@@ -80,20 +77,24 @@
         "vite": "8.3.0",
       },
     },
-    "packages/worker": {
-      "name": "@otter/worker",
+    "packages/api": {
+      "name": "@otter/api",
       "version": "2.0.4",
       "dependencies": {
-        "@otter/api": "workspace:*",
         "hono": "4.13.7",
         "jose": "^6.2.12",
+        "zod": "4.6.5",
       },
       "devDependencies": {
-        "@cloudflare/vitest-pool-workers": "0.22.0",
-        "@cloudflare/workers-types": "5.20260914.1",
+        "@types/node": "26.5.1",
         "typescript": "7.0.2",
-        "vitest": "^4.1.11",
-        "wrangler": "4.131.2",
+      },
+    },
+    "packages/core": {
+      "name": "@otter/core",
+      "version": "2.0.4",
+      "devDependencies": {
+        "@types/node": "26.5.1",
       },
     },
   },
@@ -287,15 +288,15 @@
 
     "@nocoo/base-cli": ["@nocoo/base-cli@0.3.0", "", { "dependencies": { "citty": "^0.2.2", "consola": "^3.4.2", "picocolors": "^1.1.1", "yocto-spinner": "^1.1.0" } }, "sha512-7YOwAJjOvVT+1Ek5bszLRnAhHx0pUCBSUR3TUYO/4+D67XNee5jw7gmtDesIB2k4u/Lv0jXmgdYqq6tuIx3FVQ=="],
 
-    "@nocoo/otter": ["@nocoo/otter@workspace:packages/cli"],
+    "@nocoo/otter": ["@nocoo/otter@workspace:apps/cli"],
 
     "@otter/api": ["@otter/api@workspace:packages/api"],
 
     "@otter/core": ["@otter/core@workspace:packages/core"],
 
-    "@otter/web": ["@otter/web@workspace:packages/web"],
+    "@otter/web": ["@otter/web@workspace:apps/web"],
 
-    "@otter/worker": ["@otter/worker@workspace:packages/worker"],
+    "@otter/worker": ["@otter/worker@workspace:apps/api"],
 
     "@oxc-project/types": ["@oxc-project/types@0.149.0", "", {}, "sha512-Efcc+iF0j3Bf67YjEqIqWXbX5XddXoK/Mw4K1/JuXwRCZ8N16VR7iT23nlCc9XrveFVh/E5Rqs2StT0V8v9LdA=="],
 

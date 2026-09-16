@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>Otter · macOS 原生设计预览</title>
+    <style>
+      :root { --bg:#f2f5f4; --surface:#fff; --ink:#243438; --muted:#596d71; --line:#dbe4e2; --accent:#216c76; --tint:#e1eeee; color-scheme:light; }
+      :root[data-theme="dark"] { --bg:#171d20; --surface:#222a2d; --ink:#e1ebeb; --muted:#a6bbbe; --line:#394649; --accent:#91ccd1; --tint:#293f44; color-scheme:dark; }
+      * { box-sizing:border-box; }
+      body { margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif; font-size:14px; }
+      a { color:var(--accent); text-decoration:none; }
+      a:hover { text-decoration:underline; }
+      button, select { font:inherit; color:inherit; }
+      button { cursor:pointer; }
+      :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+      header { max-width:1600px; margin:auto; padding:30px 32px 24px; display:flex; align-items:center; gap:12px; }
+      .brand { width:42px; height:42px; border-radius:10px; }
+      h1 { margin:0; font-size:20px; font-weight:650; letter-spacing:-.5px; }
+      header p { margin:6px 0 0; font-size:12px; color:var(--muted); }
+      .date { margin-left:auto; font-size:11px; color:var(--muted); letter-spacing:.05em; }
+      main { max-width:1600px; margin:auto; padding:0 32px 32px; display:grid; grid-template-columns:216px minmax(0,1fr); gap:28px; align-items:start; }
+      aside { position:sticky; top:24px; }
+      .eyebrow { margin:4px 10px 14px; font-size:11px; color:var(--muted); }
+      nav { display:flex; flex-direction:column; gap:4px; }
+      nav button { background:none; border:0; border-radius:8px; text-align:left; padding:11px 12px; display:flex; align-items:center; gap:10px; font-size:13px; }
+      nav button span { color:var(--muted); width:20px; font-size:10px; font-variant-numeric:tabular-nums; }
+      nav button:hover { background:var(--surface); }
+      nav button[aria-current="page"] { background:var(--tint); color:var(--accent); font-weight:600; }
+      .links { border-top:1px solid var(--line); margin-top:22px; padding:18px 10px 0; display:flex; flex-direction:column; gap:12px; font-size:12px; }
+      .toolbar { display:flex; align-items:center; gap:12px; margin-bottom:18px; min-height:34px; }
+      h2 { margin:0; font-size:18px; font-weight:600; }
+      .theme { margin-left:auto; display:flex; padding:3px; gap:3px; background:var(--surface); border:1px solid var(--line); border-radius:9px; }
+      .theme button { border:0; border-radius:6px; padding:5px 13px; font-size:12px; background:none; color:var(--muted); }
+      .theme button[aria-pressed="true"] { background:var(--tint); color:var(--accent); font-weight:600; }
+      .original { font-size:12px; white-space:nowrap; }
+      figure { margin:0; }
+      .image-surface { border:1px solid var(--line); border-radius:15px; overflow:hidden; background:var(--surface); box-shadow:0 12px 40px #0d292710; }
+      #preview { display:block; width:100%; height:auto; }
+      figcaption { padding:19px 2px 0; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:20px; }
+      #caption { margin:0; max-width:780px; line-height:1.8; color:var(--muted); font-size:13px; }
+      .pager { display:flex; align-items:flex-start; gap:8px; }
+      .pager button { background:var(--surface); border:1px solid var(--line); border-radius:8px; width:32px; height:32px; }
+      .notes { display:flex; flex-wrap:wrap; gap:10px 18px; margin-top:24px; padding-top:17px; border-top:1px solid var(--line); color:var(--muted); font-size:11px; line-height:1.7; }
+      #scene-select { display:none; }
+      #error { color:var(--accent); padding:24px; line-height:1.8; }
+      [hidden] { display:none!important; }
+      @media (max-width:850px) {
+        header { padding:24px 20px; }.date { display:none; }
+        main { display:block; padding:0 20px 24px; }aside { position:static; }
+        .eyebrow, nav { display:none; }#scene-select { display:block; width:100%; padding:10px; background:var(--surface); border:1px solid var(--line); border-radius:8px; margin-bottom:18px; }
+        .links { margin:0 0 24px; border:0; padding:0; flex-direction:row; flex-wrap:wrap; font-size:11px; }
+        figcaption { display:block; }.pager { margin-top:15px; }h2 { font-size:16px; }
+      }
+      @media (max-width:480px) { .toolbar { flex-wrap:wrap; }.original { width:100%; }header p { max-width:250px; line-height:1.6; }.image-surface { border-radius:9px; } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <img class="brand" src="../../../assets/brand/icon-rounded.png" alt="">
+      <div><h1>Otter for macOS</h1><p>原生设计预览 · Lyre 的资料库布局与 Showtime 的控件</p></div>
+      <span class="date">DESIGN STUDY · 2026.09.15</span>
+    </header>
+    <main>
+      <aside>
+        <p class="eyebrow">窗口与关键状态</p>
+        <nav id="scenes" aria-label="预览场景"></nav>
+        <select id="scene-select" aria-label="预览场景"></select>
+        <div class="links">
+          <a href="../../features/03-macos-agent-workspace.md">产品设计 ↗</a>
+          <a href="../../features/03-macos-agent-workspace-ui.md">控件与交互规格 ↗</a>
+          <a href="README.md">运行原生预览 ↗</a>
+          <a href="SOURCES.md">代码来源与许可 ↗</a>
+          <a href="../../features/assets/03-macos-agent-workspace.html">HTML 流程草图 ↗</a>
+        </div>
+      </aside>
+      <section aria-label="原生窗口截图">
+        <div class="toolbar">
+          <h2 id="title">本机概览</h2>
+          <div class="theme" role="group" aria-label="窗口外观">
+            <button type="button" data-theme="light" aria-pressed="true">浅色</button>
+            <button type="button" data-theme="dark" aria-pressed="false">深色</button>
+          </div>
+          <a id="original" class="original" href="screenshots/overview-light.png" target="_blank" rel="noopener">查看原图 ↗</a>
+        </div>
+        <figure>
+          <div class="image-surface">
+            <img id="preview" src="screenshots/overview-light.png" alt="Otter 原生本机概览，浅色外观">
+            <p id="error" hidden>截图暂未生成。请按运行说明执行 render.sh，然后刷新页面。</p>
+          </div>
+          <figcaption>
+            <p id="caption" aria-live="polite"></p>
+            <div class="pager">
+              <button id="previous" type="button" aria-label="上一个场景" title="上一个场景 · ←">←</button>
+              <button id="next" type="button" aria-label="下一个场景" title="下一个场景 · →">→</button>
+            </div>
+          </figcaption>
+        </figure>
+        <div class="notes">
+          <span>SwiftUI + AppKit 实际渲染 · 系统标题栏与窗口控件</span>
+          <span>12 个场景 × 浅色 / 深色</span>
+          <span>合成数据 · 保存与任务仅在预览内存中演示</span>
+          <span>← → 切换场景 · D 切换外观</span>
+        </div>
+      </section>
+    </main>
+    <script>
+      const scenes = [
+        ["overview", "本机概览", "需要处理的问题位于主要视线内，右侧 Inspector 展示来源、文件关系和运行时发现。按实际影响组织，不用健康评分代替证据。"],
+        ["agents", "Agent 与上下文", "原生列表保留系统选择行为。CLI 是否定位、配置是否存在、当前 profile 和发现结果分别呈现。"],
+        ["instructions", "指令与命令", "正文和加载入口同时可查。Codex 副本的内容变化与 AGENTS 入口作为独立变更审阅；此页正文为示例只读内容。"],
+        ["skills", "Skills 资料库", "使用真正的 macOS Table、搜索和选择，而非一屏独立卡片。来源关系与可发现性分别成列，进入包后切换到文件树。"],
+        ["editor", "技能包编辑", "包文件树、文件标签、NSTextView 和 Problems 形成连续工作区。底部始终显示写入位置与共享影响；元数据表单和示例源码使用同一 buffer。"],
+        ["workflow", "来源与绑定", "从一个源展开到各个入口和消费者。实时链接与独立副本使用图标、线型和文字区分，图中的内容也能按列表阅读。"],
+        ["backups", "备份与任务", "任务显示已收到的采集器计数，保存和上传分别记录。侧栏保留活动任务入口，快照详情提供固定对象的上传预览。此处计数来自 fixture。"],
+        ["settings", "统一设置", "借用 Lyre 的同窗设置、系统分段控件和成组表单。预览中的偏好只保存在内存；产品设计还包括跟随系统外观。"],
+        ["changes", "变更审阅 Sheet", "真正的 macOS sheet 展示源、目标、逐项选择和文本差异。应用前说明会修改哪些入口；示例操作不写磁盘，也不宣称旧会话已重新加载。"],
+        ["compact", "紧凑编辑窗口", "在 1000 × 680 内容尺寸下自动收起 Inspector，保留文件树与可读的正文宽度。工具栏仍能用 popover 打开检查器，草稿不随布局丢失。"],
+        ["conflict", "外部编辑冲突", "源文件在外部变化时，冲突提示持续留在编辑区，自己的草稿保持可见。保存被阻止，返回编辑不会把冲突伪装成已经解决。"],
+        ["empty", "搜索无结果", "区分空资料库和筛选无结果。此处保留搜索词、明确清除入口，并沿用系统 ContentUnavailableView。"]
+      ];
+      let current = "overview";
+      let theme = "light";
+      const navigation = document.getElementById("scenes");
+      const select = document.getElementById("scene-select");
+      for (const [index, [id, title]] of scenes.entries()) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.scene = id;
+        const number = document.createElement("span");
+        number.textContent = String(index + 1).padStart(2, "0");
+        button.append(number, document.createTextNode(title));
+        button.addEventListener("click", () => navigate(id, theme));
+        navigation.append(button);
+        const option = new Option(title, id);
+        select.add(option);
+      }
+      function navigate(id, appearance) { location.hash = id + "-" + appearance; }
+      function render() {
+        const match = location.hash.slice(1).match(/^([a-z]+)-(light|dark)$/);
+        if (match && scenes.some(([id]) => id === match[1])) { current = match[1]; theme = match[2]; }
+        const [, title, caption] = scenes.find(([id]) => id === current);
+        const path = `screenshots/${current}-${theme}.png`;
+        document.documentElement.dataset.theme = theme;
+        document.getElementById("title").textContent = title;
+        document.getElementById("caption").textContent = caption;
+        document.getElementById("original").href = path;
+        const preview = document.getElementById("preview");
+        preview.src = path;
+        preview.alt = `Otter 原生${title}，${theme === "dark" ? "深色" : "浅色"}外观`;
+        for (const button of navigation.children) {
+          if (button.dataset.scene === current) button.setAttribute("aria-current", "page");
+          else button.removeAttribute("aria-current");
+        }
+        for (const button of document.querySelectorAll("button[data-theme]")) button.setAttribute("aria-pressed", String(button.dataset.theme === theme));
+        select.value = current;
+      }
+      function advance(offset) {
+        const index = scenes.findIndex(([id]) => id === current);
+        navigate(scenes[(index + offset + scenes.length) % scenes.length][0], theme);
+      }
+      document.getElementById("previous").addEventListener("click", () => advance(-1));
+      document.getElementById("next").addEventListener("click", () => advance(1));
+      select.addEventListener("change", () => navigate(select.value, theme));
+      for (const button of document.querySelectorAll("button[data-theme]")) button.addEventListener("click", () => navigate(current, button.dataset.theme));
+      document.getElementById("preview").addEventListener("error", () => { document.getElementById("error").hidden = false; });
+      document.getElementById("preview").addEventListener("load", () => { document.getElementById("error").hidden = true; });
+      addEventListener("hashchange", render);
+      addEventListener("keydown", (event) => {
+        if (event.target instanceof HTMLSelectElement || event.metaKey || event.ctrlKey || event.altKey) return;
+        if (event.key === "ArrowLeft") { event.preventDefault(); advance(-1); }
+        if (event.key === "ArrowRight") { event.preventDefault(); advance(1); }
+        if (event.key.toLowerCase() === "d") navigate(current, theme === "light" ? "dark" : "light");
+      });
+      render();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,36 @@
+{
+  "bundleID": "ai.hexly.otter.native.393ef460d8c24b85a2eb2e60256b2b48",
+  "captures": [
+    {
+      "file": "recovered-draft-light.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    }
+  ],
+  "checks": [
+    "Scanner and packaged CLI become ready",
+    "Packaged CLI accepts the versioned JSON protocol",
+    "Own native window accepts input",
+    "Sidebar opens skills",
+    "Own native window accepts input",
+    "Own native window accepts input",
+    "Restart restores the saved dirty draft",
+    "Recovered draft keeps its original disk baseline",
+    "Restart leaves source bytes unchanged"
+  ],
+  "kind": "production-native-fixture",
+  "limits": [
+    "Isolated fixture files and loopback uploads",
+    "Own-process AppKit input; no system-wide Accessibility or recording permission",
+    "No signed distribution, full VoiceOver or macOS 15 runtime validation"
+  ],
+  "os": "Version 26.6.2 (Build 25G83)",
+  "status": "passed"
+}

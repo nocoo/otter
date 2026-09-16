@@ -7,9 +7,10 @@
   },
   "files": {
     "includes": [
+      "apps/*/src/**",
       "packages/*/src/**",
       "!**/*.css",
-      "packages/web/e2e/**",
+      "apps/*/e2e/**",
       "packages/*/e2e/**",
       "scripts/**",
       "vitest.config.ts",
@@ -117,7 +118,7 @@
   },
   "overrides": [
     {
-      "includes": ["packages/web/src/**"],
+      "includes": ["apps/web/src/**"],
       "linter": {
         "rules": {
           "performance": {
@@ -130,7 +131,7 @@
       }
     },
     {
-      "includes": ["packages/web/src/components/ui/**"],
+      "includes": ["apps/web/src/components/ui/**"],
       "linter": {
         "rules": {
           "a11y": "off",
@@ -166,7 +167,7 @@
       }
     },
     {
-      "includes": ["packages/web/e2e/**"],
+      "includes": ["apps/web/e2e/**"],
       "linter": {
         "rules": {
           "performance": {

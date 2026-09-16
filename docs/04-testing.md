@@ -38,7 +38,7 @@ coverage: {
 
 ## 测试目录结构
 
-测试文件镜像源码结构，CLI 单元 / 集成测试统一放在 `packages/cli/src/__tests__/` 下：
+测试文件镜像源码结构，CLI 单元 / 集成测试统一放在 `apps/cli/src/__tests__/` 下：
 
 ```
 __tests__/
@@ -88,7 +88,7 @@ bun run test:watch
 bun run test:coverage
 
 # 运行单个测试文件
-npx vitest run packages/cli/src/__tests__/collectors/claude-config.test.ts
+npx vitest run apps/cli/src/__tests__/collectors/claude-config.test.ts
 ```
 
 ## 测试编写规范
@@ -137,11 +137,15 @@ collector._execCommand = async (cmd: string) => "package1\npackage2\n";
 
 | 维度 | 命令 | 目标 |
 |---|---|---|
-| L1 | `bun run test:coverage` | Vitest 单元/集成测试 + v8 覆盖率门槛（statements/lines/functions ≥95%，branches ≥88%） |
+| L1 | `bun run test:coverage` | Vitest 单元/集成测试 + v8 覆盖率门槛（statements / branches / functions / lines 为 95 / 94 / 94 / 95） |
 | G1 | `bun run lint` + `bun run lint:biome` | TypeScript 严格类型检查 + Biome 0 error/0 warning |
 | G2 | `osv-scanner` + `gitleaks` | lockfile 漏洞 + 全历史 secret 扫描（pre-push） |
+| L2 | `bun run test:l2` | :17020 的本地 Worker、D1 / R2、真实 HTTP 与 CLI 二进制 |
+| L3 | `bun run test:e2e` | 构建后 SPA、浏览器导航与快照页面 |
+| macOS | `bun run macos:test` | XCTest、实际 AppKit 输入、真实磁盘与内置 CLI 回环上传 |
+| macOS 包 | `bun run macos:package` | Universal App、独立 helper、带空格搬移路径与最小 PATH |
 
-> L2/L3 端到端测试随 `web_legacy` 一并下线；当前依赖 vitest + Playwright(可选) 覆盖核心路径。
+原生测试通过明确的 fixture 根隔离，不修改 HOME / CODEX_HOME 或真实 harness 配置。运行方式和可复查证据见 [macOS 实现记录](features/03-macos-agent-workspace-implementation.md)。Web 与原生 CI 分开运行。
 
 ### 4. 脱敏测试
 
@@ -155,14 +159,15 @@ collector._execCommand = async (cmd: string) => "package1\npackage2\n";
 - 非 JSON 格式的行级脱敏正确工作
 - 无效 JSON 返回原文
 
-## 当前测试统计
+## 当前 Vitest L1 统计（2026-09-15）
 
 | 指标 | 数值 |
 |------|------|
-| 测试文件 | 53 |
-| 测试用例 | 559 |
+| 测试文件 | 54 |
+| 测试用例 | 651 |
 | 通过率 | 100% |
-| 覆盖率门槛 | statements 95% / branches 88% / functions 95% / lines 95% |
+| 覆盖率门槛 | statements 95% / branches 94% / functions 94% / lines 95% |
+| 实测覆盖率 | statements 97.06% / branches 94.90% / functions 94.38% / lines 97.41% |
 
 ## 相关文档
 

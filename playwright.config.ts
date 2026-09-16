@@ -13,7 +13,7 @@ export default defineConfig({
     headless: true,
   },
   webServer: {
-    command: "bun run --cwd packages/web dev -- --port 27019",
+    command: "bun run --cwd apps/web dev -- --port 27019",
     port: 27019,
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,

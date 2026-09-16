@@ -9,6 +9,7 @@
  * Usage:
  *   bun run release              # patch bump (default)
  *   bun run release -- minor     # minor bump
+ *   bun run release -- minor --macos # include verified macOS DMG and ZIP
  *   bun run release -- major     # major bump
  *   bun run release -- 2.1.0     # explicit version
  *   bun run release -- --dry-run # preview without side effects
@@ -19,11 +20,12 @@
  *
  * NOTE: This script does NOT npm publish or deploy. After release:
  *   - CD auto-deploys worker on CI green (workflow_run)
- *   - npm publish is manual: cd packages/cli && npm publish
+ *   - npm publish is manual: cd apps/cli && npm publish
  */
 
 import { spawn } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { resolve as pathResolve } from "node:path";
 
 // ---------------------------------------------------------------------------
@@ -34,25 +36,26 @@ const PROJECT_ROOT = pathResolve(import.meta.dirname as string, "..");
 const CHANGELOG_MD = pathResolve(PROJECT_ROOT, "CHANGELOG.md");
 
 // ---------------------------------------------------------------------------
-// Version targets (monorepo — 8 files)
+// Version targets (TypeScript workspaces and the macOS app)
 // ---------------------------------------------------------------------------
 
 export interface VersionTarget {
   /** Relative path from project root */
   path: string;
   /** How to find and replace the version string */
-  pattern: "json-version" | "const-version";
+  pattern: "json-version" | "const-version" | "yaml-version";
 }
 
 export const VERSION_TARGETS: VersionTarget[] = [
   { path: "package.json", pattern: "json-version" },
-  { path: "packages/cli/package.json", pattern: "json-version" },
+  { path: "apps/cli/package.json", pattern: "json-version" },
   { path: "packages/core/package.json", pattern: "json-version" },
-  { path: "packages/web/package.json", pattern: "json-version" },
+  { path: "apps/web/package.json", pattern: "json-version" },
   { path: "packages/api/package.json", pattern: "json-version" },
-  { path: "packages/worker/package.json", pattern: "json-version" },
-  { path: "packages/cli/src/cli.ts", pattern: "const-version" },
+  { path: "apps/api/package.json", pattern: "json-version" },
+  { path: "apps/cli/src/cli.ts", pattern: "const-version" },
   { path: "packages/api/src/lib/version.ts", pattern: "const-version" },
+  { path: "apps/macos/project.yml", pattern: "yaml-version" },
 ];
 
 export const BUMP_TYPES = ["patch", "minor", "major"] as const;
@@ -357,7 +360,8 @@ function updateChangelog(newSection: string): void {
 async function main(): Promise<void> {
   const rawArgs = process.argv.slice(2).filter((a) => a !== "--");
   const isDryRun = rawArgs.includes("--dry-run");
-  const bumpArg = rawArgs.find((a) => a !== "--dry-run") ?? "patch";
+  const includeMacOS = rawArgs.includes("--macos");
+  const bumpArg = rawArgs.find((a) => a !== "--dry-run" && a !== "--macos") ?? "patch";
 
   if (isDryRun) {
     console.log("🏜️  Dry-run mode — no changes will be made\n");
@@ -381,6 +385,9 @@ async function main(): Promise<void> {
 
   const ghResult = await run("gh", ["auth", "status"]);
   const ghAuthed = ghResult.code === 0;
+  if (includeMacOS && (process.platform !== "darwin" || !ghAuthed)) {
+    throw new Error("--macos requires macOS and authenticated gh for DMG publication");
+  }
   if (!ghAuthed) {
     console.log("⚠️  gh CLI not authenticated — will skip GitHub release");
   }
@@ -410,6 +417,9 @@ async function main(): Promise<void> {
     }
     console.log("   [dry-run] Would run bun install to sync lockfile");
     console.log("   [dry-run] Would run bun run build to verify");
+    if (includeMacOS) {
+      console.log("   [dry-run] Would build and verify macOS DMG and ZIP before publishing");
+    }
   } else {
     let failures = 0;
     for (const target of VERSION_TARGETS) {
@@ -444,6 +454,13 @@ async function main(): Promise<void> {
       process.exit(1);
     }
     console.log("   ✅ Build verified");
+    if (includeMacOS) {
+      console.log("   🔄 Building and verifying macOS packages...");
+      const packageResult = await run("bun", ["run", "macos:package"], { inherit: true });
+      if (packageResult.code !== 0) {
+        throw new Error("macOS packaging failed; nothing has been published");
+      }
+    }
   }
   console.log("");
 
@@ -536,7 +553,7 @@ async function main(): Promise<void> {
   console.log("   The following actions will be performed:");
   console.log("     • git push");
   console.log(`     • git tag -a v${newVersion} -m "v${newVersion}"`);
-  console.log("     • git push --tags");
+  console.log(`     • git push origin v${newVersion}`);
   if (ghAuthed) {
     console.log(`     • gh release create v${newVersion} --title "v${newVersion}"`);
   }
@@ -555,7 +572,7 @@ async function main(): Promise<void> {
     console.error("   Recovery commands:");
     console.error("     git push");
     console.error(`     git tag -a v${newVersion} -m "v${newVersion}"`);
-    console.error("     git push --tags");
+    console.error(`     git push origin v${newVersion}`);
     console.error(`     gh release create v${newVersion} --title "v${newVersion}" --notes "..."`);
     process.exit(1);
   }
@@ -572,33 +589,52 @@ async function main(): Promise<void> {
   }
 
   console.log("   🔄 Pushing tags...");
-  const pushTagResult = await run("git", ["push", "--tags"], {
+  const pushTagResult = await run("git", ["push", "origin", `v${newVersion}`], {
     inherit: true,
   });
   if (pushTagResult.code !== 0) {
-    console.error("❌ git push --tags failed");
-    console.error("   Recovery: git push --tags");
+    console.error("❌ git push tag failed");
+    console.error(`   Recovery: git push origin v${newVersion}`);
     process.exit(1);
   }
   console.log(`   ✅ Tag v${newVersion} pushed`);
 
   if (ghAuthed) {
     console.log(`   🔄 Creating GitHub release v${newVersion}...`);
+    const assets = includeMacOS
+      ? [
+          `Otter-${newVersion}-macOS-unsigned.dmg`,
+          `Otter-${newVersion}-macOS-unsigned.zip`,
+          "SHA256SUMS.txt",
+          "verification.json",
+        ].map((name) => pathResolve(PROJECT_ROOT, "build/macos-release", name))
+      : [];
+    const notesDirectory = mkdtempSync(pathResolve(tmpdir(), "otter-release-"));
+    const notesPath = pathResolve(notesDirectory, "notes.md");
+    const installationNotes = includeMacOS
+      ? "\n\n### macOS download\n\nOpen the DMG and drag Otter into Applications. Requires macOS 15 or later; includes Apple Silicon and Intel binaries and a standalone CLI.\n\nThis build is not signed with an Apple Developer ID or notarized. macOS may require approval in System Settings → Privacy & Security. SHA-256 checksums are included in SHA256SUMS.txt.\n"
+      : "";
+    writeFileSync(notesPath, changelogSection + installationNotes);
     const releaseResult = await run("gh", [
       "release",
       "create",
       `v${newVersion}`,
+      ...assets,
+      "--verify-tag",
       "--title",
       `v${newVersion}`,
-      "--notes",
-      changelogSection,
+      "--notes-file",
+      notesPath,
     ]);
+    rmSync(notesDirectory, { recursive: true });
 
     if (releaseResult.code !== 0) {
-      console.error("⚠️  GitHub release creation failed (tag is pushed)");
+      console.error("❌ GitHub release creation failed (tag is pushed)");
+      console.error(releaseResult.stderr.trim());
       console.error(
         `   Create manually: gh release create v${newVersion} --title "v${newVersion}"`,
       );
+      process.exit(1);
     } else {
       const releaseUrl = releaseResult.stdout.trim();
       console.log("   ✅ GitHub release created");
@@ -626,7 +662,7 @@ async function main(): Promise<void> {
 Next steps:
   1. CD will auto-deploy worker on CI green
   2. To publish CLI to npm:
-     cd packages/cli && npm publish
+     cd apps/cli && npm publish
 `);
 }
 

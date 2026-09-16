@@ -14,39 +14,21 @@ Otter 采用**采集-快照-存储/上传**三层流水线架构，将 macOS 开
 
 ## Monorepo 结构
 
-```
+```text
 otter/
+├── apps/
+│   ├── web/           # @otter/web — Vite / React SPA（端口 7019）
+│   ├── api/           # @otter/worker — Worker 入口、D1 迁移、R2 与 SPA 资源
+│   ├── cli/           # @nocoo/otter — macOS 采集器、快照与 npm CLI
+│   └── macos/         # SwiftUI 应用壳；project.yml 生成 Xcode 项目
 ├── packages/
-│   ├── core/          # @otter/core — 类型定义（零运行时依赖）
-│   │   └── src/
-│   │       ├── types.ts      # 全部接口定义
-│   │       └── index.ts      # 统一导出
-│   ├── cli/           # @otter/cli — CLI 实现
-│   │   └── src/
-│   │       ├── bin.ts         # 入口（#!/usr/bin/env node）
-│   │       ├── cli.ts         # 命令注册（citty 框架）
-│   │       ├── collectors/    # 5 个采集器
-│   │       ├── commands/      # scan / config / backup / snapshot 命令逻辑
-│   │       ├── config/        # ConfigManager（~/.config/otter/）
-│   │       ├── storage/       # SnapshotStore（~/.config/otter/snapshots/）
-│   │       ├── snapshot/      # 快照构建器
-│   │       ├── uploader/      # Webhook 上传
-│   │       └── utils/         # 工具函数（凭据脱敏等）
-│   ├── api/           # @otter/api — 纯逻辑包（无独立进程）
-│   │   └── src/
-│   │       ├── index.ts            # 入口（导出 createApp / 中间件 / lib）
-│   │       ├── app.ts              # Hono app 装配（vitest 直测）
-│   │       ├── routes/             # live, me, auth-cli, api-snapshots, api-webhooks
-│   │       ├── middleware/         # access-auth (CF Access JWT) + api-key-auth (Bearer)
-│   │       └── lib/                # db/{driver,d1-binding,d1-http} + snapshot-repo + webhook-repo + api-token-repo
-│   ├── web/           # @otter/web — Vite 7 SPA (端口 7019)
-│   │   └── src/                    # React 19 + react-router 7 + SWR + Tailwind v4
-│   └── worker/        # @otter/worker — 单一 Cloudflare Worker（custom domain otter.hexly.ai + workers.dev fallback）
-│       └── src/                    # Hono: /api/* 走 D1 binding + CF Access JWT/Bearer; /v1/live 公共探针
+│   ├── core/          # @otter/core — 共享 TypeScript 类型
+│   └── api/           # @otter/api — createApp()、鉴权与数据访问库
+├── scripts/           # 构建、测试、部署探测与版本发布
 ├── docs/              # 项目文档
-├── vitest.config.ts   # 统一测试配置
+├── vitest.config.ts   # 应用与共享包的单元测试
 ├── tsconfig.json      # 基础 TypeScript 配置
-└── package.json       # Monorepo 根（Bun workspaces）
+└── package.json       # Bun workspaces：apps/* + packages/*
 ```
 
 ## 三层数据流
@@ -91,7 +73,7 @@ otter/
 | `UploadResult` | 上传结果 |
 | `OtterConfig` | CLI 持久化配置 |
 
-CLI 包内还定义了以下类型（`packages/cli/src/storage/local.ts`）：
+CLI 包内还定义了以下类型（`apps/cli/src/storage/local.ts`）：
 
 | 类型 | 用途 |
 |------|------|
@@ -113,12 +95,12 @@ CLI 包内还定义了以下类型（`packages/cli/src/storage/local.ts`）：
 
 ## Web ↔ API 通信
 
-`packages/web`（Vite SPA）和 `packages/worker`（Cloudflare Worker）部署到**同一个 Worker**：`web/dist` 通过 wrangler 的 `[assets]` binding 由 Worker 直接托管，`/api/*` 由同一 Worker 处理。生产环境绑了两个域名：
+`apps/web`（Vite SPA）和 `apps/api`（Cloudflare Worker）部署到**同一个 Worker**：`web/dist` 通过 wrangler 的 `[assets]` binding 由 Worker 直接托管，`/api/*` 由同一 Worker 处理。生产环境绑了两个域名：
 
 - `otter.hexly.ai`（custom domain，CF Access SSO 守门）
 - `otter.nocoo.workers.dev`（workers.dev fallback，无 CF Access，纯 Bearer）
 
-业务逻辑全部封装在 `@otter/api` 的 `createApp({ basePath, driver, bucket, auth })` 工厂里。Worker 入口（`packages/worker/src/index.ts`）只做 binding 适配：把 `c.env.DB`（D1 binding）包成 `DbDriver`，把 `c.env.SNAPSHOTS`（R2 binding）传进去，然后 `apiApp.fetch(c.req.raw, c.env, c.executionCtx)`。
+业务逻辑全部封装在 `@otter/api` 的 `createApp({ basePath, driver, bucket, auth })` 工厂里。Worker 入口（`apps/api/src/index.ts`）只做 binding 适配：把 `c.env.DB`（D1 binding）包成 `DbDriver`，把 `c.env.SNAPSHOTS`（R2 binding）传进去，然后 `apiApp.fetch(c.req.raw, c.env, c.executionCtx)`。
 
 本地开发是 surety 模式：vite dev server（`:7019`）把 `/api/*` 反代到生产 worker（默认 `https://otter.nocoo.workers.dev`，可通过 `OTTER_API_URL` 覆写），并自动注入 `Authorization: Bearer <OTTER_DEV_API_TOKEN>`。如果想完全脱离生产数据，把 `OTTER_API_URL` 指向 `http://localhost:8787` 并 `bun run dev:worker`（wrangler dev 本地 D1/R2 模拟，accessAuth 看到 localhost 自动 stamp `dev@localhost`，不需要 Bearer）。
 

@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "version": "2.0.4",
+  "archive": "Otter-2.0.4-macOS-unsigned.zip",
+  "appArchitectures": [
+    "arm64",
+    "x86_64"
+  ],
+  "helperArchitectures": [
+    "arm64",
+    "x64"
+  ],
+  "executedHelper": "arm64",
+  "relocationWithSpaces": true,
+  "minimalPath": true,
+  "releaseExcludesAutomation": true,
+  "signedForDistribution": false,
+  "limits": [
+    "Only the current host architecture was executed",
+    "Apple signing and notarization are not configured"
+  ]
+}

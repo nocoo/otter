@@ -1,0 +1,519 @@
+{
+  "bundleID": "ai.hexly.otter.native.393ef460d8c24b85a2eb2e60256b2b48",
+  "captures": [
+    {
+      "file": "overview-light.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    },
+    {
+      "file": "editor-light.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    },
+    {
+      "file": "reader-light.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    },
+    {
+      "file": "conflict-light.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    },
+    {
+      "file": "detached-editor-light.png",
+      "inspectorVisible": true,
+      "pixels": [
+        1680,
+        1360
+      ],
+      "windowPoints": [
+        840,
+        680
+      ]
+    },
+    {
+      "file": "instruction-comparison-light.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    },
+    {
+      "file": "changes-light.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    },
+    {
+      "file": "snapshot-light.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    },
+    {
+      "file": "upload-complete-light.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    },
+    {
+      "file": "agents-light.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    },
+    {
+      "file": "instructions-light.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    },
+    {
+      "file": "skills-light.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    },
+    {
+      "file": "workflow-light.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    },
+    {
+      "file": "backups-light.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    },
+    {
+      "file": "settings-light.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    },
+    {
+      "file": "agents-dark.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    },
+    {
+      "file": "instructions-dark.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    },
+    {
+      "file": "skills-dark.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    },
+    {
+      "file": "workflow-dark.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    },
+    {
+      "file": "backups-dark.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    },
+    {
+      "file": "settings-dark.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    },
+    {
+      "file": "compact-dark.png",
+      "inspectorVisible": false,
+      "pixels": [
+        2000,
+        1464
+      ],
+      "windowPoints": [
+        1000,
+        732
+      ]
+    },
+    {
+      "file": "compact-inspector-dark.png",
+      "inspectorVisible": false,
+      "pixels": [
+        2000,
+        1464
+      ],
+      "windowPoints": [
+        1000,
+        732
+      ]
+    },
+    {
+      "file": "draft-light.png",
+      "inspectorVisible": true,
+      "pixels": [
+        2560,
+        1600
+      ],
+      "windowPoints": [
+        1280,
+        800
+      ]
+    }
+  ],
+  "checks": [
+    "Scanner and packaged CLI become ready",
+    "Packaged CLI accepts the versioned JSON protocol",
+    "Native window control 0 is visible",
+    "Native window control 1 is visible",
+    "Native window control 2 is visible",
+    "Own native window accepts input",
+    "Sidebar opens skills",
+    "Own native window accepts input",
+    "Native table selects the Claude entry",
+    "Own native window accepts input",
+    "Open button mounts the real source editor",
+    "Inspector connects the same package to Hermes and Codex",
+    "Inspector retains the actual relative link chain",
+    "Line ruler never clips the first source character",
+    "Parsed Markdown headings are available for navigation",
+    "Own native window accepts input",
+    "Segmented control opens Markdown reading mode",
+    "Own native window accepts input",
+    "Source mode returns to the same document",
+    "Own native window accepts input",
+    "File tree opens the auxiliary script",
+    "Editor is mounted",
+    "Own native window accepts input",
+    "Mouse focuses NSTextView",
+    "Cmd-A selects the full source buffer",
+    "NSTextInputClient commits text into the document",
+    "Indentation starts with both complete lines selected",
+    "Tab indents selected lines without deleting them",
+    "Shift-Tab restores selected line indentation",
+    "Editor is mounted",
+    "Own native window accepts input",
+    "Mouse focuses NSTextView",
+    "Cmd-A selects the full source buffer",
+    "NSTextInputClient commits text into the document",
+    "Native bracket insertion pairs and positions the caret",
+    "Typing the paired closing bracket advances the caret",
+    "Composition begins with the document selected",
+    "NSTextInputClient accepts an IME composition",
+    "View updates and validation preserve marked text",
+    "Chinese IME commit updates the shared document buffer",
+    "Editor is mounted",
+    "Own native window accepts input",
+    "Mouse focuses NSTextView",
+    "Cmd-A selects the full source buffer",
+    "NSTextInputClient commits text into the document",
+    "Input verification leaves the disk baseline unchanged",
+    "Editor is mounted",
+    "Own native window accepts input",
+    "Mouse focuses NSTextView",
+    "Cmd-A selects the full source buffer",
+    "NSTextInputClient commits text into the document",
+    "Native Cmd-Z restores the original script",
+    "Editor is mounted",
+    "Own native window accepts input",
+    "Mouse focuses NSTextView",
+    "Cmd-A selects the full source buffer",
+    "NSTextInputClient commits text into the document",
+    "Cmd-S writes through the link to the real source",
+    "Saving preserves the consumer's link",
+    "Saving preserves the script's executable mode",
+    "Cmd-F displays the native find bar",
+    "Editor is mounted",
+    "Own native window accepts input",
+    "Mouse focuses NSTextView",
+    "Cmd-A selects the full source buffer",
+    "NSTextInputClient commits text into the document",
+    "Own native window accepts input",
+    "Sidebar opens settings",
+    "Own native window accepts input",
+    "Sidebar opens skills",
+    "Navigation preserves the dirty editor and buffer",
+    "FSEvents diagnoses an external write without dropping the draft",
+    "Own native window accepts input",
+    "Save opens the real conflict sheet",
+    "Conflict review retains both disk and draft",
+    "Conflict detection does not overwrite the external file",
+    "Own native window accepts input",
+    "Accepting the merge keeps an editable draft",
+    "Editor is mounted",
+    "Own native window accepts input",
+    "Mouse focuses NSTextView",
+    "Merged draft saves only after an explicit Cmd-S",
+    "Own native window accepts input",
+    "Sidebar opens workflow",
+    "Own native window accepts input",
+    "Native Undo restores the external version from the checkpoint",
+    "Own native window accepts input",
+    "Sidebar opens skills",
+    "Undo reloads the clean editor",
+    "Own native window accepts input",
+    "Document opens in a second native window",
+    "Editor is mounted",
+    "Own native window accepts input",
+    "Mouse focuses NSTextView",
+    "Cmd-A selects the full source buffer",
+    "NSTextInputClient commits text into the document",
+    "Cmd-S in a separate window saves its own document",
+    "Both native editors share the committed source buffer",
+    "Closing a document window leaves the workspace running",
+    "Editor is mounted",
+    "Own native window accepts input",
+    "Mouse focuses NSTextView",
+    "Own native window accepts input",
+    "Sidebar opens instructions",
+    "Instruction navigation shows its own resource library",
+    "Own native window accepts input",
+    "Own native window accepts input",
+    "Legacy instructions can be compared with their explicit Workflow source",
+    "Instruction review uses the current bytes of both files",
+    "Own native window accepts input",
+    "Own native window accepts input",
+    "AGENTS entry creation is reviewed before changing disk",
+    "Instruction preview preserves the existing entry",
+    "AGENTS review specifies the real source and target",
+    "Own native window accepts input",
+    "Reviewed AGENTS link resolves to Workflow",
+    "AGENTS repair preserves legacy content for comparison",
+    "Scanner indexes the repaired Codex instruction entry",
+    "Cmd-N opens the native skill creation form",
+    "Own native window accepts input",
+    "Own native window accepts input",
+    "Own native window accepts input",
+    "Create shows a concrete change review",
+    "Creation preview has no disk side effects",
+    "Own native window accepts input",
+    "Reviewed creation writes and opens SKILL.md",
+    "Created skill passes the real YAML and Agent Skills validator",
+    "Own native window accepts input",
+    "File tree opens the new-file sheet",
+    "Own native window accepts input",
+    "Own native window accepts input",
+    "New auxiliary file is reviewable",
+    "Own native window accepts input",
+    "New file opens from disk",
+    "New shell resources retain executable mode",
+    "Own native window accepts input",
+    "Distribute opens the target picker",
+    "Own native window accepts input",
+    "Own native window accepts input",
+    "Distribution reviews complete package links",
+    "Named Hermes profile receives a package-directory link",
+    "Distribution waits for review before changing entries",
+    "Own native window accepts input",
+    "Review applies shared and profile links",
+    "Scanner reports the new shared consumers",
+    "Own native window accepts input",
+    "Sidebar opens workflow",
+    "Own native window accepts input",
+    "Undo removes only the distributed links",
+    "Distribution undo preserves the source package",
+    "Cmd-K opens global resource search",
+    "Own native window accepts input",
+    "Own native window accepts input",
+    "Search opens the matching real skill",
+    "Own native window accepts input",
+    "Sidebar opens backups",
+    "Own native window accepts input",
+    "Packaged CLI scans and persists the isolated snapshot",
+    "Progress reports all four isolated file collectors",
+    "Own native window accepts input",
+    "Snapshot review loads the actual saved object",
+    "Own native window accepts input",
+    "Real gzip upload completes against the loopback fixture server",
+    "Upload preserves the reviewed snapshot ID and SHA-256",
+    "Own native window accepts input",
+    "The same snapshot can be reviewed again",
+    "Own native window accepts input",
+    "Changed snapshot is rejected before a second upload",
+    "Own native window accepts input",
+    "Restored snapshot can be reviewed for cancellation test",
+    "Own native window accepts input",
+    "A second real upload reaches the loopback server",
+    "Own native window accepts input",
+    "Native Cancel terminates the owned CLI task",
+    "Cancelled uploads explicitly preserve uncertain server acceptance",
+    "Failure and cancellation leave the local snapshot intact",
+    "Own native window accepts input",
+    "Sidebar opens agents",
+    "Own native window accepts input",
+    "Sidebar opens instructions",
+    "Own native window accepts input",
+    "Sidebar opens skills",
+    "Own native window accepts input",
+    "Sidebar opens workflow",
+    "Own native window accepts input",
+    "Sidebar opens backups",
+    "Own native window accepts input",
+    "Sidebar opens settings",
+    "Own native window accepts input",
+    "Sidebar opens agents",
+    "Own native window accepts input",
+    "Sidebar opens instructions",
+    "Own native window accepts input",
+    "Sidebar opens skills",
+    "Own native window accepts input",
+    "Sidebar opens workflow",
+    "Own native window accepts input",
+    "Sidebar opens backups",
+    "Own native window accepts input",
+    "Sidebar opens settings",
+    "Own native window accepts input",
+    "Sidebar opens skills",
+    "Own native window accepts input",
+    "Own native window accepts input",
+    "Editor reopens for compact-window verification",
+    "Minimum window width collapses the inline inspector",
+    "Minimum-size editor preserves readable working width",
+    "Own native window accepts input",
+    "Inspector remains reachable in the compact window",
+    "Editor is mounted",
+    "Own native window accepts input",
+    "Mouse focuses NSTextView",
+    "Cmd-A selects the full source buffer",
+    "NSTextInputClient commits text into the document",
+    "Draft is persisted privately before quitting",
+    "Draft persistence never implicitly saves the source"
+  ],
+  "kind": "production-native-fixture",
+  "limits": [
+    "Isolated fixture files and loopback uploads",
+    "Own-process AppKit input; no system-wide Accessibility or recording permission",
+    "No signed distribution, full VoiceOver or macOS 15 runtime validation"
+  ],
+  "os": "Version 26.6.2 (Build 25G83)",
+  "status": "passed"
+}

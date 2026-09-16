@@ -69,24 +69,29 @@ git clone https://github.com/nocoo/otter.git
 cd otter
 bun install --frozen-lockfile
 bun run --cwd packages/core build
-bun run --cwd packages/cli build
+bun run --cwd apps/cli build
 bun run --cwd packages/api build
 bun run build
 ```
 
-The root `build` command builds only the web SPA. Inspect the compiled CLI with `node packages/cli/dist/bin.js --help`.
+The root `build` command builds only the web SPA. Inspect the compiled CLI with `node apps/cli/dist/bin.js --help`.
 
-`bun run dev` starts Vite on port 7019. Its default `/api` proxy points to the production service at `https://otter.nocoo.workers.dev`. Set `OTTER_API_URL` and the required `OTTER_DEV_API_TOKEN` in `packages/web/.env` before starting; API operations affect that target. This Vite configuration does not use the root `.env` as its environment file. See [local development](10-development.md#本地联调) for a local D1/R2 backend.
+`bun run dev` starts Vite on port 7019. Its default `/api` proxy points to the production service at `https://otter.nocoo.workers.dev`. Set `OTTER_API_URL` and the required `OTTER_DEV_API_TOKEN` in `apps/web/.env` before starting; API operations affect that target. This Vite configuration does not use the root `.env` as its environment file. See [local development](10-development.md#本地联调) for a local D1/R2 backend.
 
 ```text
-packages/cli/       macOS collectors, CLI and local snapshots
-packages/core/      Shared types
-packages/api/       Hono app factory, authentication and data access library
-packages/web/       Vite / React pages
-packages/worker/    Single Worker entry, D1 migrations and R2 bindings
+apps/web/          Vite / React pages
+apps/api/          Single Worker entry, D1 migrations and R2 bindings
+apps/cli/          macOS collectors, CLI and local snapshots
+apps/macos/        Native SwiftUI / AppKit Agent Workspace (XcodeGen)
+packages/core/     Shared types
+packages/api/      Hono app factory, authentication and data access library
 ```
 
 `bun run typecheck` checks types; `bun run lint:biome` checks code style. Release deploys the production Worker after successful CI on main. It neither applies D1 migrations nor publishes the npm CLI; see [deployment](10-development.md#部署).
+
+`bun run deploy:check` builds the Web SPA and runs a Wrangler deployment dry run. `apps/api/wrangler.toml` serves the output from `../web/dist`, so the Web UI and API continue to ship as one Worker. The release check verifies the API version, JavaScript, CSS and SPA deep links.
+
+The native Agent Workspace scans harness configuration and Workflow relationships, edits complete Skill packages with reviewable changes and recovery, and runs backup tasks through its bundled CLI. With full Xcode, XcodeGen and Bun installed, run `bun run macos:build` and open `build/macos/Build/Products/Release/Otter.app`. The built app runs without Node or Bun. Its independent `macOS` workflow tests real native input and the packaged CLI, then verifies an unsigned universal app archive. See [macOS development](../apps/macos/README.md) and the [implementation record](features/03-macos-agent-workspace-implementation.md) for verified scope and remaining release checks.
 
 ## Tests
 
@@ -96,9 +101,15 @@ Run from the repository root:
 | --- | --- |
 | Unit tests | `bun run test` |
 | Unit tests with coverage reports | `bun run test:coverage` |
+| Worker unit tests (Cloudflare runtime) | `bun run test:worker` |
 | Local HTTP API and CLI integration | `bun run test:l2` |
 | Browser tests with a local Worker | `bun run test:e2e` |
 | Vite home-page title smoke | `bun run test:e2e:bdd` |
+| Web build and Worker deployment dry run | `bun run deploy:check` |
+| Running site's version, assets and SPA routing | `bun run verify:web <URL>` |
+| Native macOS app build | `bun run macos:build` |
+| Native core and actual app integration | `bun run macos:test` |
+| Universal macOS package and relocation checks | `bun run macos:package` |
 
 HTTP and CLI integration require the core, cli, api and web builds above. The runner starts local Wrangler on port 17020, resets its separate `.wrangler/e2e` state and applies migrations.
 

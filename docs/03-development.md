@@ -19,7 +19,7 @@ cd otter
 # 安装依赖
 bun install
 
-# 构建 SPA（生成 packages/web/dist）
+# 构建 SPA（生成 apps/web/dist）
 bun run build
 
 # 跑全部测试
@@ -32,32 +32,35 @@ bun run test
 |------|------|
 | `bun run dev` | 启动 Vite SPA dev server（`:7019`，`/api/*` 反代到生产 worker） |
 | `bun run dev:worker` | （可选）`wrangler dev --local`（`:8787`），本地 D1 / R2 模拟，挂 `/api/*` + 老 `/v1/*` |
-| `bun run build` | 构建 web SPA（vite，输出到 `packages/web/dist`） |
+| `bun run build` | 构建 web SPA（vite，输出到 `apps/web/dist`） |
 | `bun run deploy` | build + `wrangler deploy`（推到生产 worker） |
 | `bun run test` | 运行全部单元测试（Vitest，502+ tests） |
 | `bun run test:watch` | 监听模式 |
 | `bun run test:coverage` | 覆盖率报告 |
 | `bun run test:e2e` | Playwright BDD E2E（`scripts/run-e2e-spa.ts` 启 wrangler dev `--local`） |
-| `bun run lint` | TypeScript 类型检查（4 个 tsconfig：core → cli → web → api） |
+| `bun run lint` | TypeScript 类型检查（所有 TypeScript workspace，含 Worker） |
 | `bun run lint:biome` / `lint:biome:fix` | Biome 检查 / 自动修 |
 
-CLI 命令请直接看 `node packages/cli/dist/bin.js --help` 或 [README 使用说明](../README.md#使用)。
+CLI 命令请直接看 `node apps/cli/dist/bin.js --help` 或 [README 使用说明](../README.md#使用)。
 
 ## 项目结构
 
-```
-packages/
-├── core/                          # @otter/core — 共享类型定义（零运行时）
+```text
+apps/
+├── web/                           # @otter/web — Vite / React SPA
+│   ├── src/                       # 页面、组件和客户端 API
+│   ├── e2e/                       # Playwright specs
+│   ├── vite.config.ts             # 端口 7019，proxy /api → OTTER_API_URL
+│   └── .env                       # 本地开发配置（gitignore）
+├── api/                           # @otter/worker — 单一 Cloudflare Worker
+│   ├── src/index.ts               # /api/* → createApp；其余 → legacy
+│   ├── migrations/                # D1 schema
+│   └── wrangler.toml              # 域名、D1/R2 绑定、../web/dist 静态资源
 ├── cli/                           # @nocoo/otter — npm 发布的 CLI
-├── api/                           # @otter/api — Hono createApp 工厂 + middleware/lib
-├── web/                           # @otter/web — Vite 7 SPA
-│   ├── src/                       #   React 19 + react-router 7 + SWR + Tailwind v4
-│   ├── e2e/                       #   Playwright specs
-│   ├── vite.config.ts             #   端口 7019，proxy /api → OTTER_API_URL
-│   └── .env                       #   本地 dev 用（gitignore，复制 .env.example）
-└── worker/                        # @otter/worker — 单一 Cloudflare Worker
-    ├── src/index.ts               #   Hono dispatcher: /api/* → createApp; 其余 → legacy
-    └── wrangler.toml              #   routes = otter.hexly.ai；workers_dev = true；D1/R2 binding
+└── macos/                         # 原生 Agent Workspace、OtterCore 与 XCTest
+packages/
+├── core/                          # @otter/core — 共享类型
+└── api/                           # @otter/api — createApp 工厂、鉴权和数据访问
 ```
 
 ## 启动 Web SPA — 两种模式
@@ -66,15 +69,15 @@ packages/
 
 适合调 UI、复用生产数据。
 
-1. 复制 env 模板（vite 从 `packages/web/` 读 .env）：
+1. 复制 env 模板（vite 从 `apps/web/` 读 .env）：
    ```bash
-   cp .env.example packages/web/.env
+   cp .env.example apps/web/.env
    ```
 2. 浏览器打开下面这条 URL（先过 Cloudflare Access SSO，redirect URL 里会带回 `?token=otk_...`）：
    ```
    https://otter.hexly.ai/api/auth/cli?callback=http://127.0.0.1:65535/cb&state=mint
    ```
-3. 把 token 粘进 `packages/web/.env` 的 `OTTER_DEV_API_TOKEN`。
+3. 把 token 粘进 `apps/web/.env` 的 `OTTER_DEV_API_TOKEN`。
 4. `bun run dev` 启 vite，然后访问 `http://localhost:7019` 或 `https://otter.dev.hexly.ai`（caddy 反代到 7019）。
 
 vite proxy 行为：每个 `/api/*` 请求自动注入 `Authorization: Bearer <OTTER_DEV_API_TOKEN>`，命中 `apiKeyAuth`，绕开 CF Access SSO。
@@ -83,7 +86,7 @@ vite proxy 行为：每个 `/api/*` 请求自动注入 `Authorization: Bearer <O
 
 适合调后端逻辑、改 D1 schema、避免触碰生产数据。
 
-1. 把 `packages/web/.env` 的 `OTTER_API_URL` 改成 `http://localhost:8787`，把 `OTTER_DEV_API_TOKEN` 留空。
+1. 把 `apps/web/.env` 的 `OTTER_API_URL` 改成 `http://localhost:8787`，把 `OTTER_DEV_API_TOKEN` 留空。
 2. 终端 A：`bun run dev:worker`（启动 `wrangler dev --local`，端口 8787，本地 D1 / R2 模拟）
 3. 终端 B：`bun run dev`（启动 vite，端口 7019）
 
@@ -108,7 +111,7 @@ vite 已在 `server.allowedHosts` 里放行 `*.dev.hexly.ai`。
 bun run deploy        # 生产 worker（custom domain otter.hexly.ai + workers.dev fallback）
 ```
 
-`wrangler deploy` 一次性把 SPA（来自 `packages/web/dist`）和 worker 代码都推上去——`[assets]` binding 直接托管 dist 目录。
+`wrangler deploy` 一次性把 SPA（来自 `apps/web/dist`）和 worker 代码都推上去——`[assets]` binding 直接托管 dist 目录。
 
 ## Git Hooks
 

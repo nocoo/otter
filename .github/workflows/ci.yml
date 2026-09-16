@@ -19,14 +19,15 @@ jobs:
       lint-command: "bun run lint:biome"
 
   l3:
-    name: L3 Browser E2E
+    name: L3 Browser E2E (built SPA and local Worker)
     uses: nocoo/base-ci/.github/workflows/test-job.yml@ad43150de3a2be2fa464b5cd2f921dc4fa9f8f0f
     with:
       runtime-version: "1.4.2"
+      node-version: "22.12.0"
       install-policy: "blocked"
       browser: "chromium"
       timeout-minutes: 20
-      command: "bun run test:e2e:bdd"
+      command: "bun run test:e2e && bun run test:e2e:bdd"
       env-json: |-
         {
           "CI": "true"
@@ -43,7 +44,17 @@ jobs:
       timeout-minutes: 10
       pre-command: |
         bun run --cwd packages/core build
-        bun run --cwd packages/cli build
+        bun run --cwd apps/cli build
         bun run --cwd packages/api build
         bun run build
       command: "bun run test:l2"
+
+  web-build:
+    name: Web production build and Worker tests
+    uses: nocoo/base-ci/.github/workflows/test-job.yml@ad43150de3a2be2fa464b5cd2f921dc4fa9f8f0f
+    with:
+      runtime-version: "1.4.2"
+      node-version: "22.12.0"
+      install-policy: "blocked"
+      timeout-minutes: 10
+      command: "bun run deploy:check && bun run test:worker"

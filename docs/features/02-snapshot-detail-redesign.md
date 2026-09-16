@@ -9,14 +9,14 @@
 - 审查：MBP-Reviewer-A（v0、v1、v1.1 均已审查，见"审查记录"）
 - 决策人：@zheng-li
 - 关联文件：
-  - `packages/web/src/pages/SnapshotDetailPage.tsx`
-  - `packages/web/src/components/snapshot/collectors-tab.tsx`
-  - `packages/web/src/components/snapshot/collector-card.tsx`
-  - `packages/web/src/components/snapshot/list-item-row.tsx`
-  - `packages/web/src/components/snapshot/file-row.tsx`
-  - `packages/web/src/components/snapshot/overview-tab.tsx`
-  - `packages/web/src/components/ui/tabs.tsx`（响应式改造点）
-  - `packages/cli/src/collectors/*.ts`（数据来源，不改）
+  - `apps/web/src/pages/SnapshotDetailPage.tsx`
+  - `apps/web/src/components/snapshot/collectors-tab.tsx`
+  - `apps/web/src/components/snapshot/collector-card.tsx`
+  - `apps/web/src/components/snapshot/list-item-row.tsx`
+  - `apps/web/src/components/snapshot/file-row.tsx`
+  - `apps/web/src/components/snapshot/overview-tab.tsx`
+  - `apps/web/src/components/ui/tabs.tsx`（响应式改造点）
+  - `apps/cli/src/collectors/*.ts`（数据来源，不改）
 
 ## 背景与问题
 
@@ -25,7 +25,7 @@
 ### 主要问题（对照代码定位）
 
 1. **单 tab 内密度过高，滚动成本大**
-   - `Config` 目前会同时展示 5 个采集器（`claude-config`、`opencode-config`、`vscode`、`cloud-cli`、`hermes`），`Environment` 会展示 8 个（`shell-config`、`homebrew`、`applications`、`docker`、`fonts`、`dev-toolchain`、`macos-defaults`、`launch-agents`）——见 `packages/cli/src/collectors/index.ts:53`。用户诉求的「细分 tab，每个 tab 一个类型的东西，不要很长」就是要求把这 13 个混在两个 tab 里的采集器拆开。
+   - `Config` 目前会同时展示 5 个采集器（`claude-config`、`opencode-config`、`vscode`、`cloud-cli`、`hermes`），`Environment` 会展示 8 个（`shell-config`、`homebrew`、`applications`、`docker`、`fonts`、`dev-toolchain`、`macos-defaults`、`launch-agents`）——见 `apps/cli/src/collectors/index.ts:53`。用户诉求的「细分 tab，每个 tab 一个类型的东西，不要很长」就是要求把这 13 个混在两个 tab 里的采集器拆开。
 2. **CSS 大小节奏混乱**（哥举例：`SKIPPED` 上面）
    - `CollectorCard` 内部对 Files / Items / Errors / Skipped 用一个 `divide-y` 容器承载（`collector-card.tsx:76-155`），四个 section 的排版看似统一，但：
      - Files 的每一行走 `file-row.tsx`，字号 `text-xs` + `text-2xs`；
@@ -33,12 +33,12 @@
      - Errors / Skipped 用手写 `<ul>` + `border-l-2` 分隔（`collector-card.tsx:129-153`），行高、左内边距、`py-1.5` 都是重新拍的。
    - 结果就是同一张卡内，Files 行、Items 行、Skipped 段落的行高与字号互不对齐——用户看到的「有的大有的小」正是这里。
 3. **信息类型被"物理位置"而非"语义类型"分组**
-   - dev-toolchain 里同时装了 `node-version` / `python-version` / `ruby-version` / `go-version` / `rust-toolchain` / `npm-global` / `bun-global` / `cargo-global` / **`tool-version`（Volta 管的 node/npm/yarn/pnpm）**（`packages/cli/src/collectors/dev-toolchain.ts`），全部塞在 Environment tab 的一张卡里。语言运行时、包管理器与全局包混成一列，用户没法快速定位某类信息。
+   - dev-toolchain 里同时装了 `node-version` / `python-version` / `ruby-version` / `go-version` / `rust-toolchain` / `npm-global` / `bun-global` / `cargo-global` / **`tool-version`（Volta 管的 node/npm/yarn/pnpm）**（`apps/cli/src/collectors/dev-toolchain.ts`），全部塞在 Environment tab 的一张卡里。语言运行时、包管理器与全局包混成一列，用户没法快速定位某类信息。
    - `claude-config` / `opencode-config` / `hermes` 都属于「AI/Assistant Agent 配置」，但当前被分到 Config tab 与其他配置混排，缺少一个聚合入口。
 4. **无外链能力**（哥追加的第 1 条需求）
    - Items 只展示 name + version + 少量 badge。Homebrew formula、npm 全局包、cargo crate 等条目本可映射到官方或注册中心 URL，但 `ListItemRow` 内没有链接组件。
 5. **Installed Applications 缺少突出**（哥追加的第 2 条需求）
-   - Applications 采集器已经带 R2 图标 URL（`packages/cli/src/collectors/applications.ts:80-82`），但目前只作为 Environment tab 中 8 个采集器之一，被同页面稀释；这块是本产品最直观的亮点，应独立 Tab、专属排版。
+   - Applications 采集器已经带 R2 图标 URL（`apps/cli/src/collectors/applications.ts:80-82`），但目前只作为 Environment tab 中 8 个采集器之一，被同页面稀释；这块是本产品最直观的亮点，应独立 Tab、专属排版。
 
 ## 设计目标
 
@@ -51,7 +51,7 @@
 
 ## 新 Tab 结构
 
-以采集器 `id`（`packages/cli/src/collectors/index.ts`）为一次映射对象，划为 8 个 tab。每个 tab 只挂 1 个采集器数据，或按明确规则聚合多个同语义采集器的数据。
+以采集器 `id`（`apps/cli/src/collectors/index.ts`）为一次映射对象，划为 8 个 tab。每个 tab 只挂 1 个采集器数据，或按明确规则聚合多个同语义采集器的数据。
 
 | # | Tab | 图标 | 采集器来源 | 承载数据 |
 |---|-----|------|-----------|----------|
@@ -68,7 +68,7 @@
 
 ### 响应式 Tab 导航（v1 新增，来自 Reviewer 反馈 #2）
 
-**问题**：`packages/web/src/components/ui/tabs.tsx:26` 的 `TabsList` 是 `inline-flex w-fit`，`TabsTrigger:60` 是 `whitespace-nowrap`；8 个一级 Tab（每个包含图标 + 中文/英文名 + 可能的计数 Badge）在窄屏（< 640px，例如 iPhone 14 竖屏）会横向撑破整个内容区。
+**问题**：`apps/web/src/components/ui/tabs.tsx:26` 的 `TabsList` 是 `inline-flex w-fit`，`TabsTrigger:60` 是 `whitespace-nowrap`；8 个一级 Tab（每个包含图标 + 中文/英文名 + 可能的计数 Badge）在窄屏（< 640px，例如 iPhone 14 竖屏）会横向撑破整个内容区。
 
 **方案**：不改动 `ui/tabs.tsx` 基础组件（其他页面共用），改在 SnapshotDetailPage 侧包一层滚动容器：
 
@@ -84,7 +84,7 @@
 </div>
 ```
 
-**新增 utility**（`packages/web/src/globals.css`）：
+**新增 utility**（`apps/web/src/globals.css`）：
 
 ```css
 @utility snapshot-scroll-x {
@@ -133,7 +133,7 @@
 
 #### 3. Assistant Agents（v1 修订，来自 Reviewer 反馈 #3）
 
-**数据形态明确**（对照 `packages/cli/src/collectors/hermes.ts:131-158`）：
+**数据形态明确**（对照 `apps/cli/src/collectors/hermes.ts:131-158`）：
 
 - Profile 通过 `lists[]` 内 `name === "profile:<slug>"` 且 `meta.type ∈ {"main","named"}` 识别。`meta.skillsCount` 用于头部显示。
 - Skill 通过 `lists[]` 内 `meta.type === "skill"` 识别，`meta.profile` 是所属 profile 名；显示名可用 `name.split("/")[1]`（即去掉 profile 前缀）。
@@ -174,7 +174,7 @@
 #### 6. Infrastructure
 
 - **Docker section**（来自 `docker` collector 的 files + items）：Files（`~/.docker/config.json` 等）+ items 直接列。
-- **Cloud CLI section**（v1.2 修订，来自 Reviewer 反馈 v1.1 → v1.2）：`cloud-cli` collector 只对 AWS 生成 list items（`meta.type=aws-profile`），其余 provider（Azure / gcloud / railway）主要以 files 形式出现，且**文件路径是绝对路径**（`safeReadFile` 存的是传入的 absolute path，只有 `hermes` collector 手动改成了虚拟 `~/.hermes/...` 路径；见 `packages/cli/src/collectors/base.ts:164`）。因此按**文件路径的目录段包含**分组，不依赖 `meta.provider`（该字段实际不存在），不依赖 `~` 前缀（cloud-cli 不改路径），也不依赖 `machine.homeDir`（`SnapshotData.machine` 里没有该字段，见 `packages/web/src/components/snapshot/types.ts:25-30`）：
+- **Cloud CLI section**（v1.2 修订，来自 Reviewer 反馈 v1.1 → v1.2）：`cloud-cli` collector 只对 AWS 生成 list items（`meta.type=aws-profile`），其余 provider（Azure / gcloud / railway）主要以 files 形式出现，且**文件路径是绝对路径**（`safeReadFile` 存的是传入的 absolute path，只有 `hermes` collector 手动改成了虚拟 `~/.hermes/...` 路径；见 `apps/cli/src/collectors/base.ts:164`）。因此按**文件路径的目录段包含**分组，不依赖 `meta.provider`（该字段实际不存在），不依赖 `~` 前缀（cloud-cli 不改路径），也不依赖 `machine.homeDir`（`SnapshotData.machine` 里没有该字段，见 `apps/web/src/components/snapshot/types.ts:25-30`）：
   - **AWS**：files 中 `path.includes("/.aws/")` 的（当前只有 `/…/.aws/config`） + `lists` 中 `meta.type === "aws-profile"` 的 profile 名（作为 AWS 内的附加 sub-list）
   - **Azure**：files 中 `path.includes("/.azure/")` 的（`config`、`azureProfile.json`、`clouds.config`）
   - **Google Cloud**：files 中 `path.includes("/.config/gcloud/")` 的（`properties` + `configurations/*`）
@@ -184,14 +184,14 @@
 
 #### 7. Fonts
 
-- 顶部 chip 组：按扩展名分组（`otf` / `ttf` / `woff2` / `unknown`），依赖 collector 已经填进去的 `meta.format`（`packages/cli/src/collectors/fonts.ts:26`）
+- 顶部 chip 组：按扩展名分组（`otf` / `ttf` / `woff2` / `unknown`），依赖 collector 已经填进去的 `meta.format`（`apps/cli/src/collectors/fonts.ts:26`）
 - 单列 List（比 grid 更适合字体名），行 = 字体名 + 格式徽标 + 预览占位（后续可注册 CSS `@font-face`）
 
 ## 规范化的行/头组件（v1 修订，来自 Reviewer 反馈 #5）
 
 原 v0 把 padding/字号写成 CSS custom property（`--otter-row-border: border border-border/50 bg-secondary`），语义上 CSS var 承载不了 Tailwind class。v1 改为 **class map + 组件 variant**，可直接被组件消费：
 
-**新增文件**：`packages/web/src/components/snapshot/primitives/styles.ts`
+**新增文件**：`apps/web/src/components/snapshot/primitives/styles.ts`
 
 ```ts
 export const snapshotRow = {
@@ -212,10 +212,10 @@ export const snapshotBadge = {
 ```
 
 **新增组件**：
-- `packages/web/src/components/snapshot/primitives/SectionHeader.tsx`
+- `apps/web/src/components/snapshot/primitives/SectionHeader.tsx`
   - Props: `icon?: LucideIcon`, `tone?: "default" | "destructive"`, `children`
   - class 固定为 `text-xs font-medium uppercase tracking-wider flex items-center gap-1.5`，`tone` 决定 `text-muted-foreground` vs `text-destructive`
-- `packages/web/src/components/snapshot/primitives/SnapshotRow.tsx`
+- `apps/web/src/components/snapshot/primitives/SnapshotRow.tsx`
   - Props: `variant?: "default" | "error" | "skipped"`, `icon?: LucideIcon`, `title`, `meta?`, `right?`
   - 用 `cn(snapshotRow.base, variant === "error" && snapshotRow.destructive, variant === "skipped" && snapshotRow.muted)` 组合
 - 现有 `FileRow` / `ListItemRow` 内部改成套 `SnapshotRow` 的具体实例，字段字号自然对齐。
@@ -229,7 +229,7 @@ export const snapshotBadge = {
 
 ## 外链规范
 
-在 `packages/web/src/components/snapshot/helpers.ts` 新增 `resolveExternalUrl(item)`：根据 `meta.type` 生成对应包管理器/注册中心的规范链接，只有确定能生成正确链接时才返回，否则 `undefined`。行组件按存在性渲染右侧 `<a target="_blank" rel="noopener noreferrer">` 外链按钮（`lucide-react` 的 `ExternalLink` 图标）。
+在 `apps/web/src/components/snapshot/helpers.ts` 新增 `resolveExternalUrl(item)`：根据 `meta.type` 生成对应包管理器/注册中心的规范链接，只有确定能生成正确链接时才返回，否则 `undefined`。行组件按存在性渲染右侧 `<a target="_blank" rel="noopener noreferrer">` 外链按钮（`lucide-react` 的 `ExternalLink` 图标）。
 
 | `meta.type` | 生成规则 | 例子 |
 |-------------|---------|------|
@@ -306,13 +306,13 @@ export const snapshotBadge = {
 
 来自 @MBP-Reviewer-A 2026-07-04 三轮审查（本 features/02 线程 msg=4e0c0bec），已合并：
 
-1. **Cloud CLI 路径匹配** — v1.1 用 `path.startsWith("~/.aws/")` 等虚拟路径规则是错的：`BaseCollector.safeReadFile()` 存的是**传入的绝对路径**（`packages/cli/src/collectors/base.ts:164`），只有 `hermes` collector 手动改成了 `~/.hermes/...`；cloud-cli 实际输出类似 `/Users/<user>/.aws/config`。同时 `SnapshotData.machine`（`packages/web/src/components/snapshot/types.ts:25-30`）没有 `homeDir` 字段，无法做归一化。v1.2 改为 `path.includes("/.aws/")` / `path.includes("/.azure/")` / `path.includes("/.config/gcloud/")` / `path.includes("/.config/railway/")`，跨任意 homeDir 都能匹配。
+1. **Cloud CLI 路径匹配** — v1.1 用 `path.startsWith("~/.aws/")` 等虚拟路径规则是错的：`BaseCollector.safeReadFile()` 存的是**传入的绝对路径**（`apps/cli/src/collectors/base.ts:164`），只有 `hermes` collector 手动改成了 `~/.hermes/...`；cloud-cli 实际输出类似 `/Users/<user>/.aws/config`。同时 `SnapshotData.machine`（`apps/web/src/components/snapshot/types.ts:25-30`）没有 `homeDir` 字段，无法做归一化。v1.2 改为 `path.includes("/.aws/")` / `path.includes("/.azure/")` / `path.includes("/.config/gcloud/")` / `path.includes("/.config/railway/")`，跨任意 homeDir 都能匹配。
 
 ### v1 → v1.1 修订项
 
 来自 @MBP-Reviewer-A 2026-07-04 二轮审查（本 features/02 线程 msg=dbd00d83），全部合并：
 
-1. **`scrollbar-none` 未定义** — 在 `packages/web/src/globals.css` 定义 `@utility snapshot-scroll-x`（Tailwind v4 语法），跨浏览器隐藏系统滚动条；避免占用通用名，仅本页复用。响应式 Tab 章节示例代码同步更新为 `snapshot-scroll-x`。
+1. **`scrollbar-none` 未定义** — 在 `apps/web/src/globals.css` 定义 `@utility snapshot-scroll-x`（Tailwind v4 语法），跨浏览器隐藏系统滚动条；避免占用通用名，仅本页复用。响应式 Tab 章节示例代码同步更新为 `snapshot-scroll-x`。
 2. **Cloud CLI 分组规则与 collector 实际不符** — v1 写"按 `meta.provider` 分组"是对 collector 数据形态的误读；`cloud-cli` 实际只对 AWS 生成 `meta.type=aws-profile` 的 list items，其余 provider 主要是 files。v1.1 改为按**文件路径前缀**分组（`~/.aws/`、`~/.azure/`、`~/.config/gcloud/`、`~/.config/railway/`），AWS profile list 作为 AWS sub-section 内的附加列表；未知前缀 fallback 到 `Other`。分组规则前端完成，collector 零改动。
 
 ### v0 → v1 修订项

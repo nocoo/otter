@@ -4,16 +4,18 @@
 
 ## 当前架构
 
-`packages/worker/src/index.ts` 是唯一 Worker 入口：`/api/*` 交给 `packages/api` 的 `createApp()`，注入原生 D1 / R2 绑定；`/health` 和 `/ingest/*` 保留旧接入处理。`packages/api` 是库，不需要另起 Node 服务。Vite 构建结果由同一 Worker 的静态资源绑定提供。
+`apps/api/src/index.ts` 是唯一 Worker 入口：`/api/*` 交给 `packages/api` 的 `createApp()`，注入原生 D1 / R2 绑定；`/health` 和 `/ingest/*` 保留旧接入处理。`packages/api` 是库，不需要另起 Node 服务。Vite 构建结果由同一 Worker 的静态资源绑定提供。
 
 | 资源 | 用途 |
 | --- | --- |
 | D1 `DB` | 用户、API Token、Webhook 与快照索引 |
 | R2 `SNAPSHOTS` | 完整 JSON 快照 |
 | R2 `ICONS` | 应用图标，默认前缀 `apps/otter` |
-| `packages/web/dist` | React SPA 静态资源 |
+| `apps/web/dist` | React SPA 静态资源 |
 
-Wrangler 的 `run_worker_first` 虽然列出 `/v1/*`，实际顶层 dispatcher 没有把它转交给 `createApp()`。当前客户端使用 `/api/*`；不要依赖旧文档中的 `/v1/*` 兼容接口。当前健康检查入口为 `/api/live`，它会查询 D1；Release 只以 HTTP 200 或 401 判断站点可达。
+Wrangler 的 `run_worker_first` 虽然列出 `/v1/*`，实际顶层 dispatcher 没有把它转交给 `createApp()`。当前客户端使用 `/api/*`；不要依赖旧文档中的 `/v1/*` 兼容接口。当前健康检查入口为 `/api/live`，它会查询 D1。Release 校验其版本号，并检查 Web 首页、JS/CSS 资源及 `/settings` 的 SPA 回退。
+
+应用放在 `apps/`：Web、Worker、CLI 和 macOS 原生应用。`packages/core` 与 `packages/api` 分别保存共享类型和运行时无关的 API 逻辑。Bun workspace 名称、CLI npm 包名、Worker 名称、域名与 D1/R2 绑定沿用原配置。
 
 ## 采集与快照边界
 
@@ -21,7 +23,7 @@ Wrangler 的 `run_worker_first` 虽然列出 `/v1/*`，实际顶层 dispatcher �
 
 Claude 采集包括配置、插件清单、统计缓存、提示历史，以及会话索引摘要中的首条提示、项目路径等字段。`--slim` 仅跳过提示历史与会话摘要。Hermes 采集主 Profile 和命名 Profile 的 `config.yaml`、`SOUL.md`、记忆、用户资料、`cron/jobs.json` 与技能名称；不读取 Hermes 的会话数据库、`.env` 或 `auth.json`。SSH 私钥只记录存在情况，不收集私钥正文。
 
-凭据遮盖由 `packages/cli/src/utils/redact.ts` 按格式与字段规则执行，并非所有文件都启用遮盖。Markdown 与 Hermes 记忆正文保留原文，Claude 会话索引的首条提示也不会经过该遮盖函数。上传前应检查实际快照内容。
+凭据遮盖由 `apps/cli/src/utils/redact.ts` 按格式与字段规则执行，并非所有文件都启用遮盖。Markdown 与 Hermes 记忆正文保留原文，Claude 会话索引的首条提示也不会经过该遮盖函数。上传前应检查实际快照内容。
 
 `scan --save` 保存本地 JSON。`backup` 则重新扫描、gzip 上传快照，成功后才保存本地副本；随后尝试应用图标导出与上传，图标失败不会撤回已上传的快照。`scan --json` 当前还会向 stdout 写入 `Scanning environment...`，需要纯 JSON 时使用保存的快照文件或 Web 的 JSON 导出。
 
@@ -51,17 +53,17 @@ Bun 用于工作区安装与脚本；Node.js 范围遵循根 `package.json` 的 
 ```bash
 bun install --frozen-lockfile
 bun run --cwd packages/core build
-bun run --cwd packages/cli build
+bun run --cwd apps/cli build
 bun run --cwd packages/api build
 bun run build
-node packages/cli/dist/bin.js --help
+node apps/cli/dist/bin.js --help
 ```
 
 根目录 `build` 只构建 Web。`typecheck` 与 `lint` 都调用类型检查脚本，代码风格使用 `bun run lint:biome`。源代码 CLI 构建后使用 Node 执行，Bun 不是已发布 CLI 的必需运行时。
 
 ## 本地联调
 
-`bun run dev` 启动 Vite，默认端口 7019。其 `loadEnv()` 从 `packages/web` 工作目录读取环境文件，因此首次配置应在 `packages/web/.env` 中设置 `OTTER_API_URL`、`OTTER_DEV_API_TOKEN`，根目录 `.env.example` 可作字段参考。默认代理连接生产 Worker，目标服务的 Token 由代理放进 `Authorization` 请求头。
+`bun run dev` 启动 Vite，默认端口 7019。其 `loadEnv()` 从 `apps/web` 工作目录读取环境文件，因此首次配置应在 `apps/web/.env` 中设置 `OTTER_API_URL`、`OTTER_DEV_API_TOKEN`，根目录 `.env.example` 可作字段参考。默认代理连接生产 Worker，目标服务的 Token 由代理放进 `Authorization` 请求头。
 
 需要本地 D1 / R2 时，可复用仓库的隔离 API runner。在完成构建后，先确认端口 17020 空闲，再于终端一运行：
 
@@ -69,7 +71,7 @@ node packages/cli/dist/bin.js --help
 bun scripts/run-api-e2e.ts
 ```
 
-它每次启动都会清空 `packages/worker/.wrangler/e2e`，按顺序应用迁移，并启动 `--local --persist-to` Worker，使用测试邮箱 `dev@localhost`。该目录只保存可丢弃的联调数据。终端二显式连接它，并清空代理 Token，让本地测试身份生效：
+它每次启动都会清空 `apps/api/.wrangler/e2e`，按顺序应用迁移，并启动 `--local --persist-to` Worker，使用测试邮箱 `dev@localhost`。该目录只保存可丢弃的联调数据。终端二显式连接它，并清空代理 Token，让本地测试身份生效：
 
 ```bash
 OTTER_API_URL=http://127.0.0.1:17020 OTTER_DEV_API_TOKEN= bun run dev
@@ -83,9 +85,13 @@ runner 的鉴权旁路要求显式 `E2E_SKIP_AUTH=true` 且 `ENVIRONMENT` 不是
 | --- | --- |
 | `bun run test` | 依赖已安装；Vitest 单元测试 |
 | `bun run test:coverage` | 单元测试与覆盖率报告 |
+| `bun run test:worker` | Web 已构建；独立 Vitest 配置，在 Cloudflare runtime 中测试 Worker |
 | `bun run test:l2` | core / cli / api / Web 已构建；端口 17020；本地 D1/R2 与临时目录中的 CLI 配置 |
 | `bun run test:e2e` | Chromium；端口 27019；runner 构建 SPA，重建 `.wrangler/state-e2e-spa` 并应用本地迁移 |
 | `bun run test:e2e:bdd` | Chromium；端口 27019；Vite 首页标题 smoke，后端取决于 Vite 代理 |
+| `bun run deploy:check` | 构建 Web 后在 `apps/api` 执行 Wrangler `deploy --dry-run` |
+| `bun run verify:web <URL>` | 对已运行的 Worker 校验 API 版本、Web 资源和 SPA 路由 |
+| `bun run macos:build` | macOS 15+、完整 Xcode、XcodeGen；编译原生应用壳 |
 
 `bunx playwright install chromium` 安装浏览器。L2 的 CLI 测试使用临时用户目录，采集流程集成注入模拟采集器；它们不执行真实 `backup`。L2 runner 不覆盖 `.dev.vars`，测试身份通过命令行变量注入。
 
@@ -99,6 +105,12 @@ OTTER_API_URL=http://127.0.0.1:17020 OTTER_DEV_API_TOKEN= bun run test:e2e:bdd
 
 ## 部署
 
-CI 在 main 推送后检查代码，并运行本地 API / CLI 集成与 Vite BDD smoke。Release 等待 CI 成功，检出对应提交，构建 Web 并部署单个 Worker；它不执行 D1 迁移。自行部署时需配置自己的 D1、两个 R2 绑定、Access team domain / audience、域名与生产环境的 Cloudflare 凭据，并在需要新 schema 的代码部署前完成迁移。
+CI 在 main 推送后检查代码、类型与覆盖率，运行 Worker 单元测试、本地 API / CLI 集成、基于生产构建的浏览器测试、Vite BDD smoke，以及 Worker 部署预演。浏览器 runner 和发布后的检查复用 `scripts/verify-web.ts`，确保缺失 JS 被 SPA 回退成 HTTP 200 时也能发现问题。
 
-版本发布脚本 `bun run release` 更新版本与变更记录、创建 Git 提交和 tag；它不执行 `npm publish`。npm CLI 发布由维护者另外处理。普通文档更新无需版本发布或手动 Worker 部署。
+Release 等待 CI 成功，检出对应提交，在仓库根目录安装依赖和构建 Web，然后从 `apps/api` 部署单个 Worker。`apps/api/wrangler.toml` 的静态目录为 `../web/dist`。发布后通过同一个 Worker 的 `https://otter.nocoo.workers.dev` 地址校验 API 版本、JS/CSS 资源和 SPA 路由，无需给 CI 配置 Cloudflare Access 登录凭据。
+
+生产环境继续使用 `CF_API_TOKEN`、`CF_ACCOUNT_ID` secrets 和 `deploy-otter-production` 并发锁。Release 不执行 D1 迁移。自行部署时需配置自己的 D1、两个 R2 绑定、Access team domain / audience、域名与生产环境的 Cloudflare 凭据，并在需要新 schema 的代码部署前完成迁移。
+
+macOS 使用独立的 `macOS` workflow，原生目录、构建脚本或该 workflow 改动时触发。它编译应用壳，Web 发布继续只依赖 `CI`。构建命令和产物位置见 [macOS 开发说明](../apps/macos/README.md)。
+
+版本发布脚本 `bun run release` 同步各 TypeScript workspace 和 macOS `project.yml` 的版本，更新变更记录、创建 Git 提交和 tag；它不执行 `npm publish`。npm CLI 发布由维护者在 `apps/cli` 另行处理。普通文档更新无需版本发布或手动 Worker 部署。

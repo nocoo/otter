@@ -7,7 +7,7 @@
  *
  * Steps:
  *   1. Clean persist dir (.wrangler/e2e) for full isolation.
- *   2. Apply all migrations from packages/worker/migrations/ (sorted).
+ *   2. Apply all migrations from apps/api/migrations/ (sorted).
  *   3. Seed a test user (dev@localhost auto-stamp handles auth).
  *   4. Start wrangler dev --local.
  *   5. Wait for /api/live to become healthy.
@@ -25,7 +25,7 @@ import { fileURLToPath } from "node:url";
 
 const PORT = Number(process.env.OTTER_L2_PORT ?? 17020);
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const WORKER_DIR = resolve(REPO_ROOT, "packages/worker");
+const WORKER_DIR = resolve(REPO_ROOT, "apps/api");
 const MIGRATIONS_DIR = resolve(WORKER_DIR, "migrations");
 const PERSIST_DIR = ".wrangler/e2e";
 const PERSIST_ABS = resolve(WORKER_DIR, PERSIST_DIR);

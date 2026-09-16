@@ -316,27 +316,27 @@ describe("HermesCollector", () => {
 
 | 文件 | 说明 |
 |------|------|
-| `packages/cli/src/collectors/hermes.ts` | HermesCollector 实现 |
-| `packages/cli/src/__tests__/collectors/hermes.test.ts` | 测试 |
+| `apps/cli/src/collectors/hermes.ts` | HermesCollector 实现 |
+| `apps/cli/src/__tests__/collectors/hermes.test.ts` | 测试 |
 
 ### 修改文件
 
 | 文件 | 改动 |
 |------|------|
-| `packages/cli/src/collectors/index.ts` | 添加 export + 注册到 `createDefaultCollectors()` |
-| `packages/cli/src/__tests__/collectors/index.test.ts` | 在 expected ID 数组中添加 `"hermes"` |
+| `apps/cli/src/collectors/index.ts` | 添加 export + 注册到 `createDefaultCollectors()` |
+| `apps/cli/src/__tests__/collectors/index.test.ts` | 在 expected ID 数组中添加 `"hermes"` |
 | `docs/07-collector-enhancement-plan.md` | 更新 collector 列表 |
 
 ## 原子化提交计划
 
 ```
 1. feat(core): add HermesCollector for Hermes Agent profile backup
-   - 新增 packages/cli/src/collectors/hermes.ts
-   - 注册到 packages/cli/src/collectors/index.ts
+   - 新增 apps/cli/src/collectors/hermes.ts
+   - 注册到 apps/cli/src/collectors/index.ts
 
 2. test(hermes): add comprehensive tests for HermesCollector
-   - 新增 packages/cli/src/__tests__/collectors/hermes.test.ts
-   - 更新 packages/cli/src/__tests__/collectors/index.test.ts
+   - 新增 apps/cli/src/__tests__/collectors/hermes.test.ts
+   - 更新 apps/cli/src/__tests__/collectors/index.test.ts
 
 3. docs: add hermes collector design document and update enhancement plan
    - 新增 docs/features/README.md

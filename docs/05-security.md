@@ -57,7 +57,7 @@ shell-snapshots/, session-env/, statsig/
 
 ## 内容层脱敏
 
-**工具文件**: `packages/cli/src/utils/redact.ts`
+**工具文件**: `apps/cli/src/utils/redact.ts`
 
 ### JSON 脱敏（`redactJsonSecrets`）
 
