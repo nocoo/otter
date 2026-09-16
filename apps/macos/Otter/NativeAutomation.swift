@@ -114,14 +114,34 @@ extension View {
         try expectedPNG.write(to: URL(fileURLWithPath: FileSystem.join(output, "expected-application-icon.png")))
         guard let actualBitmap = NSBitmapImageRep(data: actualPNG), let expectedBitmap = NSBitmapImageRep(data: expectedPNG),
               actualBitmap.bytesPerRow == expectedBitmap.bytesPerRow,
+              actualBitmap.samplesPerPixel == 4, actualBitmap.bitsPerSample == 8,
+              actualBitmap.bitmapFormat == expectedBitmap.bitmapFormat,
               let actualBytes = actualBitmap.bitmapData, let expectedBytes = expectedBitmap.bitmapData else {
             throw WorkspaceError.message("Decoded application icon pixels are unavailable")
         }
-        // AppKit's Dock round trip can round an antialiased RGB component by one level.
-        let matchingPixels = (0..<(actualBitmap.bytesPerRow * actualBitmap.pixelsHigh)).allSatisfy {
-            abs(Int(actualBytes[$0]) - Int(expectedBytes[$0])) <= 1
+        // On a 1x display the Dock returns a downsampled representation. Compare visible
+        // color rather than requiring identical antialiasing or invisible RGB values.
+        let alphaOffset = actualBitmap.bitmapFormat.contains(.alphaFirst) ? 0 : 3
+        let unpremultiplied = actualBitmap.bitmapFormat.contains(.alphaNonpremultiplied)
+        var difference = 0.0, bounds = CGRect.null
+        for y in 0..<actualBitmap.pixelsHigh {
+            for x in 0..<actualBitmap.pixelsWide {
+                let offset = y * actualBitmap.bytesPerRow + x * 4
+                let actualAlpha = Double(actualBytes[offset + alphaOffset]) / 255
+                let expectedAlpha = Double(expectedBytes[offset + alphaOffset]) / 255
+                difference += abs(actualAlpha - expectedAlpha) * 255
+                for component in 0..<4 where component != alphaOffset {
+                    difference += abs(Double(actualBytes[offset + component]) * (unpremultiplied ? actualAlpha : 1)
+                        - Double(expectedBytes[offset + component]) * (unpremultiplied ? expectedAlpha : 1))
+                }
+                if actualAlpha >= 0.5 { bounds = bounds.union(CGRect(x: x, y: y, width: 1, height: 1)) }
+            }
         }
-        try require(matchingPixels, "Running Dock icon uses the inset artwork instead of a cached placeholder")
+        let meanDifference = difference / Double(actualBitmap.pixelsWide * actualBitmap.pixelsHigh * 4)
+        try require(meanDifference <= 1, "Running Dock icon matches the artwork (mean visible channel error: \(meanDifference))")
+        try require(abs(bounds.minX - 100) <= 4 && abs(bounds.minY - 100) <= 4
+            && abs(bounds.maxX - 924) <= 4 && abs(bounds.maxY - 924) <= 4,
+            "Running Dock icon retains the centered 100 px margin: \(bounds)")
 
         try await until("Workspace layout anchors are ready") { self.store.anchors["navigation-label.settings"]?.view?.window === window }
         try await Task.sleep(for: .milliseconds(250))
@@ -589,7 +609,8 @@ extension View {
         let filter = SCContentFilter(desktopIndependentWindow: own), options = SCStreamConfiguration()
         options.includeChildWindows = true; options.showsCursor = false; options.capturesAudio = false
         options.ignoreShadowsSingleWindow = true
-        options.width = Int(filter.contentRect.width * 2); options.height = Int(filter.contentRect.height * 2)
+        let pixelScale = CGFloat(filter.pointPixelScale)
+        options.width = Int(filter.contentRect.width * pixelScale); options.height = Int(filter.contentRect.height * pixelScale)
         let image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: options)
         guard let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) else { throw WorkspaceError.message("PNG encoding failed") }
         let file = name + ".png"
