@@ -1,7 +1,8 @@
 // The runner only operates on an explicit Debug fixture, using real AppKit input in this process.
 import AppKit
 import OtterCore
-import ScreenCaptureKit
+// The macOS 15 SDK predates ScreenCaptureKit's Sendable annotations.
+@preconcurrency import ScreenCaptureKit
 import SwiftUI
 
 @MainActor final class WeakNativeView { weak var view: NSView?; init(_ view: NSView) { self.view = view } }
