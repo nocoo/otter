@@ -21,7 +21,7 @@ import { uploadIconsToServer } from "./uploader/icons-server.js";
 import { uploadSnapshot } from "./uploader/webhook.js";
 import { exportIcons } from "./utils/icons.js";
 
-export const CLI_VERSION = "2.0.4";
+export const CLI_VERSION = "2.1.0";
 
 const workspaceArgs = {
   json: { type: "boolean", description: "Emit one JSON value (config output is always redacted)" },

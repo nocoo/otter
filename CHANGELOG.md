@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - 2026-09-16
+
+### Features
+- Add macOS Agent Workspace, skill editor and universal DMG distribution
+
+### Changed
+- Upgrade wrangler to 4.131.2
+- Bump wrangler to 4.131.2
+- Upgrade lucide-react to 1.46.0
+- Upgrade @cloudflare/workers-types
+- Upgrade zod to 4.6.5
+- Upgrade @types/node to 26.5.1
+- Upgrade tailwind-merge to 3.7.0
+- Upgrade zod to 4.6.4
+- Align React 19.3 version ranges
+- Upgrade React 19.3 dependencies
+- Upgrade lucide-react to 1.45.0
+- Bump vite 8.2.2 → 8.3.0
+- Bump workers types
+- Upgrade wrangler to 4.131.1
+- Upgrade zod to 4.6.2
+- Bump lint-staged to 17.5.1
+- Bump biome to 2.5.13
+- Upgrade zod to 4.6.1
+- Bump @types/react to 19.3.0
+- Pin base-ci to ad43150
+- Pin base-ci to verified sha
+- Migrate workflows to base-ci
+
+### Fixes
+- Add release proof permissions
+
+### Removed
+- Remove autoresearch artifacts
+- Drop unused ci secrets inherit
+
 ## [2.0.4] - 2026-09-11
 
 ### Features
