@@ -13,14 +13,14 @@
   },
   "dependencies": {
     "@otter/api": "workspace:*",
-    "hono": "4.13.7",
+    "hono": "4.13.8",
     "jose": "^6.2.12"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.22.0",
-    "@cloudflare/workers-types": "5.20260914.1",
+    "@cloudflare/workers-types": "5.20260916.1",
     "typescript": "7.0.2",
     "vitest": "^4.1.11",
-    "wrangler": "4.131.2"
+    "wrangler": "4.133.0"
   }
 }

@@ -9,7 +9,31 @@ import { writePrivate } from "./registry.js";
 const exec = promisify(execFile);
 const SCP_USER = /^[^/@\s]+@/;
 const GIT_SUFFIX = /\.git$/;
+const GIT_CONFIG_ENTRY = /^GIT_CONFIG_(KEY|VALUE)_\d+$/;
+const LOCAL_GIT_ENV = new Set([
+  "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+  "GIT_CONFIG",
+  "GIT_CONFIG_PARAMETERS",
+  "GIT_CONFIG_COUNT",
+  "GIT_OBJECT_DIRECTORY",
+  "GIT_DIR",
+  "GIT_WORK_TREE",
+  "GIT_IMPLICIT_WORK_TREE",
+  "GIT_GRAFT_FILE",
+  "GIT_INDEX_FILE",
+  "GIT_NO_REPLACE_OBJECTS",
+  "GIT_REPLACE_REF_BASE",
+  "GIT_PREFIX",
+  "GIT_SHALLOW_FILE",
+  "GIT_COMMON_DIR",
+]);
 export async function git(path: string, args: string[]): Promise<string> {
+  // Hook-local Git variables override -C and can redirect writes to the caller.
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(
+      ([key]) => !LOCAL_GIT_ENV.has(key) && !GIT_CONFIG_ENTRY.test(key),
+    ),
+  );
   const { stdout } = await exec(
     "git",
     ["-c", "core.fsmonitor=false", "-c", "protocol.ext.allow=never", "-C", path, ...args],
@@ -18,7 +42,7 @@ export async function git(path: string, args: string[]): Promise<string> {
       timeout: 30_000,
       maxBuffer: 4 * 1024 * 1024,
       // biome-ignore lint/style/useNamingConvention: Git environment variable names
-      env: { ...process.env, GIT_TERMINAL_PROMPT: "0", GIT_OPTIONAL_LOCKS: "0" },
+      env: { ...env, GIT_TERMINAL_PROMPT: "0", GIT_OPTIONAL_LOCKS: "0" },
     },
   );
   return stdout.trimEnd();

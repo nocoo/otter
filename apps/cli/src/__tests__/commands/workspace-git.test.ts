@@ -1,7 +1,7 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { git, observeGit, sanitizeRemote } from "../../workspace/git.js";
 
 let root: string, repo: string, config: string;
@@ -22,10 +22,39 @@ beforeEach(async () => {
   await mkdir(config);
 });
 afterEach(async () => {
+  vi.unstubAllEnvs();
   await rm(root, { recursive: true, force: true });
 });
 
 describe("source repository observations", () => {
+  it("keeps repository writes isolated from the invoking Git hook environment", async () => {
+    const caller = join(root, "caller");
+    await mkdir(caller);
+    await git(caller, ["init", "-b", "main"]);
+    await author(caller);
+    await commit(caller, "caller");
+    const callerHead = await git(caller, ["rev-parse", "HEAD"]);
+    const callerIndex = await readFile(join(caller, ".git/index"));
+    const callerConfig = await readFile(join(caller, ".git/config"));
+    vi.stubEnv("GIT_DIR", join(caller, ".git"));
+    vi.stubEnv("GIT_COMMON_DIR", join(caller, ".git"));
+    vi.stubEnv("GIT_WORK_TREE", caller);
+    vi.stubEnv("GIT_INDEX_FILE", join(caller, ".git/index"));
+    vi.stubEnv("GIT_OBJECT_DIRECTORY", join(caller, ".git/objects"));
+    vi.stubEnv("GIT_CONFIG_COUNT", "1");
+    vi.stubEnv("GIT_CONFIG_KEY_0", "user.name");
+    vi.stubEnv("GIT_CONFIG_VALUE_0", "Leaked Identity");
+    expect((await observeGit(repo, config, "target")).repository).toBe(false);
+    await git(repo, ["init", "-b", "main"]);
+    await author(repo);
+    await commit(repo, "target");
+    expect(await git(repo, ["config", "user.name"])).toBe("Otter Fixture");
+    expect(await git(repo, ["show", "HEAD:rules.md"])).toBe("target");
+    expect(await git(caller, ["rev-parse", "HEAD"])).toBe(callerHead);
+    expect(await readFile(join(caller, ".git/index"))).toEqual(callerIndex);
+    expect(await readFile(join(caller, ".git/config"))).toEqual(callerConfig);
+    expect(await readFile(join(caller, "rules.md"), "utf8")).toBe("caller");
+  });
   it("distinguishes folders, unborn branches, staged/unstaged/untracked changes, renames and detached HEAD", async () => {
     expect((await observeGit(repo, config, "source")).repository).toBe(false);
     await git(repo, ["init", "-b", "main"]);
