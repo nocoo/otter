@@ -34,7 +34,7 @@ v2 coverage records exclusions, redaction, inventory-only items, read failures a
 
 ### Installation and local snapshots
 
-Version 3.0.0 on this branch has not been published. Use the repository build below or the local Mac App to try the new functionality before release.
+See the [v3.0.0 GitHub Release](https://github.com/nocoo/otter/releases/tag/v3.0.0) for Mac downloads and upgrade notes. For self-hosted installations, upgrade the API before uploading full snapshots with the new clients.
 
 Use macOS and Node.js. The repository declares the Node.js range `^22.12.0 || ^24.0.0 || >=26.0.0`.
 

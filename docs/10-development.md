@@ -151,8 +151,10 @@ Release 等待 CI 成功，检出对应提交，在仓库根目录安装依赖�
 3. 分发 3.0 CLI/Mac。新客户端上传 v2 需要新版 API；旧 v1 客户端仍可对新版 API 使用原接口。Mac 首次启动合并旧来源登记。
 4. 重新执行一次完整本地采集，审阅并上传，核对远端回执和恢复导出，建立新的设备与内容基线。旧快照不回写成 v2。
 
-本轮实现只进行本地验证和打包；`deploy:check` 是部署预演，不执行远程 D1 迁移、Worker 发布或 npm 发布。
+`deploy:check` 仅执行部署预演；正式发行需按上述顺序完成生产迁移、API/Web 部署和客户端分发。
 
 macOS 使用独立的 `macOS` workflow，原生目录、构建脚本或该 workflow 改动时触发。它编译应用壳，Web 发布继续只依赖 `CI`。构建命令和产物位置见 [macOS 开发说明](../apps/macos/README.md)。
 
 版本发布脚本 `bun run release` 同步各 TypeScript workspace 和 macOS `project.yml` 的版本，更新变更记录、创建 Git 提交和 tag；它不执行 `npm publish`。npm CLI 发布由维护者在 `apps/cli` 另行处理。普通文档更新无需版本发布或手动 Worker 部署。
+
+如果开发阶段已同步好版本号并写好 `Unreleased` 变更记录，使用 `bun run release -- 3.0.0 --prepared --macos` 完成发行。该模式要求显式版本与根 `package.json` 一致，保留已有升级说明并填入发行日期；已存在的本地或远端 tag 会阻止发布。

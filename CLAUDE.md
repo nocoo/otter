@@ -10,6 +10,7 @@ bun run release -- minor     # minor bump
 bun run release -- minor --macos # minor bump + verified macOS DMG/ZIP upload
 bun run release -- major     # major bump
 bun run release -- 2.1.0     # explicit version
+bun run release -- 3.0.0 --prepared --macos # finalize an already prepared version
 bun run release -- --dry-run # preview without side effects
 ```
 

@@ -6,6 +6,7 @@ import {
   classifyCommits,
   compareSemver,
   formatChangelogSection,
+  getPreparedChangelog,
   parseSemver,
   VERSION_TARGETS,
 } from "../release";
@@ -74,6 +75,36 @@ describe("bumpVersion", () => {
 
   it("throws on invalid bump type", () => {
     expect(() => bumpVersion("1.0.0", "invalid")).toThrow('Invalid bump type: "invalid"');
+  });
+
+  it("publishes an explicit prepared version without bumping it again", () => {
+    expect(bumpVersion("3.0.0", "3.0.0", true)).toBe("3.0.0");
+    for (const argument of ["patch", "2.1.0", "3.0.1", "invalid"]) {
+      expect(() => bumpVersion("3.0.0", argument, true)).toThrow("explicit current version");
+    }
+  });
+});
+
+describe("getPreparedChangelog", () => {
+  const prepared =
+    "## [3.0.0] - Unreleased\n\n### Upgrade\n\n- Apply the database migration before deploying clients.";
+
+  it("preserves reviewed upgrade notes without including older releases", () => {
+    const content = `# Changelog\n\n${prepared}\n\n## [2.1.0] - 2026-09-16\n\n- Earlier release.\n`;
+    expect(getPreparedChangelog(content, "3.0.0")).toBe(prepared);
+    expect(getPreparedChangelog(content.replaceAll("\n", "\r\n"), "3.0.0")).toBe(
+      prepared.replaceAll("\n", "\r\n"),
+    );
+  });
+
+  it("rejects missing, already dated or duplicate prepared entries", () => {
+    expect(() => getPreparedChangelog(prepared, "3.0.1")).toThrow("Expected one prepared");
+    expect(() =>
+      getPreparedChangelog(prepared.replace("Unreleased", "2026-09-17"), "3.0.0"),
+    ).toThrow("Expected one prepared");
+    expect(() => getPreparedChangelog(`${prepared}\n\n${prepared}`, "3.0.0")).toThrow(
+      "Expected one prepared",
+    );
   });
 });
 

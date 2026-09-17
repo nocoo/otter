@@ -12,6 +12,7 @@
  *   bun run release -- minor --macos # include verified macOS DMG and ZIP
  *   bun run release -- major     # major bump
  *   bun run release -- 2.1.0     # explicit version
+ *   bun run release -- 3.0.0 --prepared --macos # publish an already prepared version
  *   bun run release -- --dry-run # preview without side effects
  *
  * Env:
@@ -90,6 +91,8 @@ const COMMIT_TYPE_MAP: Record<string, keyof ChangelogSections> = {
 const REMOVED_KEYWORDS = /\b(remove|delete|drop)\b/i;
 const SEMVER_RE = /^\d+\.\d+\.\d+$/;
 const CONVENTIONAL_RE = /^(\w+)(?:\(.+?\))?(!)?:\s*(.+)$/;
+const CHANGELOG_SECTION_RE = /(?=^## \[)/m;
+const LINE_ENDING_RE = /\r?\n/;
 
 // ---------------------------------------------------------------------------
 // Shell helpers
@@ -161,7 +164,13 @@ export function compareSemver(a: string, b: string): number {
   return a2 - b2;
 }
 
-export function bumpVersion(current: string, bumpArg: string): string {
+export function bumpVersion(current: string, bumpArg: string, prepared = false): string {
+  if (prepared) {
+    if (!SEMVER_RE.test(bumpArg) || bumpArg !== current) {
+      throw new Error(`--prepared requires the explicit current version ${current}`);
+    }
+    return current;
+  }
   if (SEMVER_RE.test(bumpArg)) {
     if (compareSemver(bumpArg, current) <= 0) {
       throw new Error(`Explicit version ${bumpArg} must be greater than current ${current}`);
@@ -338,13 +347,28 @@ export function formatChangelogSection(version: string, sections: ChangelogSecti
   return lines.join("\n");
 }
 
-function updateChangelog(newSection: string): void {
+export function getPreparedChangelog(content: string, version: string): string {
+  parseSemver(version);
+  const heading = `## [${version}] - Unreleased`;
+  const sections = content
+    .split(CHANGELOG_SECTION_RE)
+    .filter((section) => section.split(LINE_ENDING_RE, 1)[0] === heading);
+  if (sections.length !== 1) {
+    throw new Error(`Expected one prepared CHANGELOG entry: ${heading}`);
+  }
+  return (sections[0] as string).trimEnd();
+}
+
+function updateChangelog(newSection: string, preparedSection?: string): void {
   const content = readFileSync(CHANGELOG_MD, "utf-8");
   const marker = "## [";
   const idx = content.indexOf(marker);
 
   let updated: string;
-  if (idx === -1) {
+  if (preparedSection) {
+    if (!content.includes(preparedSection)) throw new Error("Prepared CHANGELOG entry changed");
+    updated = content.replace(preparedSection, newSection);
+  } else if (idx === -1) {
     updated = `${content.trimEnd()}\n\n${newSection}\n`;
   } else {
     updated = `${content.slice(0, idx)}${newSection}\n\n${content.slice(idx)}`;
@@ -361,7 +385,9 @@ async function main(): Promise<void> {
   const rawArgs = process.argv.slice(2).filter((a) => a !== "--");
   const isDryRun = rawArgs.includes("--dry-run");
   const includeMacOS = rawArgs.includes("--macos");
-  const bumpArg = rawArgs.find((a) => a !== "--dry-run" && a !== "--macos") ?? "patch";
+  const isPrepared = rawArgs.includes("--prepared");
+  const bumpArg =
+    rawArgs.find((a) => !["--dry-run", "--macos", "--prepared"].includes(a)) ?? "patch";
 
   if (isDryRun) {
     console.log("🏜️  Dry-run mode — no changes will be made\n");
@@ -393,8 +419,19 @@ async function main(): Promise<void> {
   }
 
   const currentVersion = readCurrentVersion();
-  const newVersion = bumpVersion(currentVersion, bumpArg);
+  const newVersion = bumpVersion(currentVersion, bumpArg, isPrepared);
   const lastTag = await getLastTag();
+  const tag = `v${newVersion}`;
+  const localTag = await runOrDie("git", ["tag", "--list", tag], "Failed to check local tags");
+  const remoteTag = await runOrDie(
+    "git",
+    ["ls-remote", "--tags", "origin", `refs/tags/${tag}`],
+    "Failed to check remote tags",
+  );
+  if (localTag || remoteTag) throw new Error(`Tag ${tag} already exists; release aborted`);
+  const preparedSection = isPrepared
+    ? getPreparedChangelog(readFileSync(CHANGELOG_MD, "utf-8"), newVersion)
+    : undefined;
 
   console.log("📦 otter release");
   console.log(`   Current version: ${currentVersion}`);
@@ -473,16 +510,20 @@ async function main(): Promise<void> {
   }
 
   const sections = classifyCommits(commits);
-  const changelogSection = formatChangelogSection(newVersion, sections);
+  const changelogSection = preparedSection
+    ? preparedSection.replace(" - Unreleased", ` - ${new Date().toISOString().split("T")[0]}`)
+    : formatChangelogSection(newVersion, sections);
 
   console.log("   --- Generated CHANGELOG section ---");
   console.log(changelogSection);
   console.log("   --- End ---\n");
 
   if (isDryRun) {
-    console.log("   [dry-run] Would prepend above section to CHANGELOG.md");
+    console.log(
+      `   [dry-run] Would ${isPrepared ? "finalize the prepared entry in" : "prepend above section to"} CHANGELOG.md`,
+    );
   } else {
-    updateChangelog(changelogSection);
+    updateChangelog(changelogSection, preparedSection);
     console.log("   ✅ CHANGELOG.md updated");
   }
   console.log("");
@@ -490,28 +531,35 @@ async function main(): Promise<void> {
   // --- Phase 3: Stale version verification ---
   console.log("🔍 Phase 3: Checking for stale version strings...\n");
 
-  const escapedVersion = currentVersion.replace(/\./g, "\\.");
-  const rgResult = await run("rg", [
-    "--pcre2",
-    `(?<![\\d.])${escapedVersion}(?![\\d.])`,
-    "--glob",
-    "*.ts",
-    "--glob",
-    "*.tsx",
-    "--glob",
-    "!node_modules/**",
-    "--glob",
-    "!scripts/release.ts",
-    "--glob",
-    "!CHANGELOG.md",
-    "--glob",
-    "!**/dist/**",
-    "--glob",
-    "!**/__tests__/**",
-  ]);
+  const staleVersion = isPrepared
+    ? lastTag?.startsWith("v")
+      ? lastTag.slice(1)
+      : lastTag
+    : currentVersion;
+  const escapedVersion = staleVersion?.replace(/\./g, "\\.");
+  const rgResult = escapedVersion
+    ? await run("rg", [
+        "--pcre2",
+        `(?<![\\d.])${escapedVersion}(?![\\d.])`,
+        "--glob",
+        "*.ts",
+        "--glob",
+        "*.tsx",
+        "--glob",
+        "!node_modules/**",
+        "--glob",
+        "!scripts/release.ts",
+        "--glob",
+        "!CHANGELOG.md",
+        "--glob",
+        "!**/dist/**",
+        "--glob",
+        "!**/__tests__/**",
+      ])
+    : { code: 1, stdout: "" };
 
   if (rgResult.code === 0 && rgResult.stdout.trim()) {
-    console.error(`❌ Found stale version "${currentVersion}" in source files:`);
+    console.error(`❌ Found stale version "${staleVersion}" in source files:`);
     console.error(rgResult.stdout.trim());
     if (!isDryRun) {
       console.error("   Aborting. Update these files before releasing.");

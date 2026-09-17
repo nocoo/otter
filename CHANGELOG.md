@@ -26,11 +26,13 @@ All notable changes to this project will be documented in this file.
 - Detect same-size content, executable-bit and link changes without treating incomplete scans as deletions.
 - Persist Mac task history and registry deltas, and retain transaction checkpoints across unchanged scans.
 - Sign and verify bundled CLI helpers before atomic installation to prevent stale executable signatures.
+- Keep Agent status badges on one line with full hover details, and align Mac cards at the top across window sizes.
+- Publish already prepared versions without bumping them again or duplicating reviewed upgrade notes; reject existing local and remote release tags.
 
 ### Upgrade
 
 - Apply D1 migration `0005_snapshot_v2.sql` before deploying the compatible API/Web, then distribute CLI/Mac 3.0.0 and create a fresh full snapshot.
-- This version is prepared locally; production deployment, npm publication and signed/notarized Mac distribution remain separate release steps.
+- macOS downloads include a standalone CLI for Apple Silicon and Intel. Apple Developer ID signing and notarization are not included.
 
 ## [2.1.0] - 2026-09-16
 
