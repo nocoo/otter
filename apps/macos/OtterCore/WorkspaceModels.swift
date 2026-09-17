@@ -124,7 +124,7 @@ public struct ResourceEntry: Sendable, Identifiable {
     public var sourcePath: String { resolution.finalPath ?? path }
 }
 
-public struct ManagedBinding: Codable, Sendable, Identifiable {
+public struct ManagedBinding: Codable, Sendable, Identifiable, Equatable {
     public enum Mode: String, Codable, Sendable { case link, copy, fork }
     public var id: String
     public var source: String

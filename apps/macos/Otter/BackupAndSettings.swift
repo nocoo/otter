@@ -31,13 +31,33 @@ struct BackupView: View {
                             Spacer()
                             Toggle("排除 Claude 历史与会话摘要", isOn: $slim).font(OtterTypography.body).toggleStyle(.checkbox)
                         }
-                        Text("13 个既有采集器。Hermes 记忆和用户资料仍在范围内；skills 的备份以清单为主。本机编辑检查点不会加入云端快照。")
+                        Text("保存完整 skills 包、指令、rules、commands 与链接目标，包括独立资源及 Hermes profiles。凭据脱敏与未采集项会列入覆盖报告。")
                             .font(OtterTypography.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 if !store.jobs.isEmpty {
                     OtterSection(title: "任务", subtitle: "进度来自 CLI 事件；取消上传后的服务端接收情况可能需要核对。") {
                         ForEach(store.jobs) { job in JobRow(job: job, store: store) }
+                    }
+                }
+                if let timeline = store.remoteTimeline {
+                    OtterSection(title: "本地与远端版本", subtitle: timeline["remoteCheckedAt"].string.map { "远端核对于 " + $0 } ?? "远端状态尚未确认") {
+                        if let error = timeline["remoteError"].string { Text(error).font(OtterTypography.caption).foregroundStyle(OtterTheme.warning) }
+                        ForEach(Array(timeline["snapshots"].array.enumerated()), id: \.offset) { _, snapshot in
+                            HStack {
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text("\((snapshot["id"].string ?? "").prefix(8)) · \(snapshot["hostname"].string ?? "本机")").font(OtterTypography.label)
+                                    Text("\(locationLabel(snapshot["location"].string)) · \(uploadLabel(snapshot["uploadState"].string)) · \(snapshot["complete"].bool == true ? "范围内覆盖完整" : snapshot["complete"].bool == false ? "部分采集" : "旧格式，覆盖未知")").font(OtterTypography.caption).foregroundStyle(.secondary)
+                                }; Spacer()
+                                if let id = snapshot["id"].string {
+                                    if snapshot["location"].string == "remote" { Button("取回本地") { store.startJob("取回云端快照", arguments: ["snapshot", "download", id]) }.buttonStyle(OtterButtonStyle()) }
+                                    else {
+                                        Button("核对远端") { store.startJob("核对远端内容", arguments: ["snapshot", "verify", id]) }.buttonStyle(OtterButtonStyle(treatment: .plain))
+                                        Button("导出…") { store.exportSnapshot(id: id) }.buttonStyle(OtterButtonStyle())
+                                    }
+                                }
+                            }.padding(.vertical, 8)
+                        }
                     }
                 }
                 OtterSection(title: "本地快照", subtitle: store.shortPath(store.configuration.cliOutputDirectory)) {
@@ -60,12 +80,18 @@ struct BackupView: View {
             }.frame(maxWidth: .infinity, alignment: .leading).padding(OtterTheme.pageInset)
         }
     }
+    private func locationLabel(_ state: String?) -> String {
+        switch state { case "remote": "仅远端"; case "local-and-remote": "本地与远端"; default: "仅本地" }
+    }
+    private func uploadLabel(_ state: String?) -> String {
+        switch state { case "confirmed": "远端内容已核对"; case "not-authenticated": "未连接账号"; case "not-uploaded": "待上传"; case "remote-only": "可取回"; case "missing-remote": "远端已缺失，需重新上传"; default: "远端待核对" }
+    }
 }
 private struct JobRow: View {
     @Bindable var job: CLIJob
     let store: WorkspaceStore
     private var phase: String {
-        switch job.phase { case "complete": "完成"; case "partial": "已保存 · 部分采集器有错误"; case "failed": "失败"; case "cancelled": "已取消"; case "timedOut": "已超时"; case "awaitingBrowser": "等待浏览器登录"; case "uploading": "正在上传"; default: "正在执行" }
+        switch job.phase { case "complete": "完成"; case "partial": "已保存 · 部分采集器有错误"; case "failed": "失败"; case "cancelled": "已取消"; case "interrupted": "上次任务待核对"; case "timedOut": "已超时"; case "awaitingBrowser": "等待浏览器登录"; case "uploading": "正在上传"; default: "正在执行" }
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -79,7 +105,7 @@ private struct JobRow: View {
             if let error = job.error { Text(error).font(OtterTypography.caption).foregroundStyle(OtterTheme.warning).textSelection(.enabled) }
             DisclosureGroup("命令与诊断") {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text(job.client.executable + "\n" + (job.arguments + job.client.commonArguments).joined(separator: " ")).font(OtterTypography.code).textSelection(.enabled)
+                    Text(job.command).font(OtterTypography.code).textSelection(.enabled)
                     Text(job.lines.joined(separator: "\n")).font(OtterTypography.code).foregroundStyle(.secondary).textSelection(.enabled)
                 }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8)
             }.font(OtterTypography.caption).foregroundStyle(.secondary)

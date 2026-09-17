@@ -45,8 +45,8 @@ struct WorkspaceView: View {
         .toolbar {
             ToolbarItem(placement: .navigation) {
                 Menu {
-                    Button("全部 Agents") { store.selectedHarness = nil }
-                    ForEach(Harness.allCases) { harness in Button(harness.title) { store.selectedHarness = harness } }
+                    Button("全部 Agents") { store.selectedHarness = nil; store.selectedProfile = "" }
+                    ForEach(Harness.allCases) { harness in Button(harness.title) { store.selectedHarness = harness; store.selectedProfile = "" } }
                     Divider()
                     Button("所有项目上下文") { store.configuration.selectedProject = nil; store.saveConfiguration() }
                     ForEach(store.configuration.projects, id: \.self) { project in
@@ -85,9 +85,10 @@ struct WorkspaceView: View {
             }.nativeAnchor("sidebar-brand", store: store)
                 .padding(.horizontal, 18).padding(.top, 8).padding(.bottom, 12)
             List(selection: Binding<WorkspacePage?>(get: { store.page }, set: { if let page = $0 { store.page = page } })) {
-                Section { ForEach(WorkspacePage.allCases.filter { $0 != .settings }) { navigation($0) } } header: {
+                Section { ForEach(WorkspacePage.allCases.filter { ![.settings, .skills, .instructions].contains($0) }) { navigation($0) } } header: {
                     Text("工作区").font(OtterTypography.captionLabel)
                 }
+                Section { navigation(.skills); navigation(.instructions) } header: { Text("配置编辑").font(OtterTypography.captionLabel) }
                 Section { navigation(.settings) } header: {
                     Text("应用").font(OtterTypography.captionLabel)
                 }
@@ -129,6 +130,7 @@ struct WorkspaceView: View {
             if store.editorIsOpen { SkillEditorView(store: store) } else { library }
         case .workflow: workflow
         case .backups: BackupView(store: store)
+        case .environment: EnvironmentView(store: store)
         case .settings: WorkspaceSettingsView(store: store)
         }
     }
@@ -146,6 +148,7 @@ struct WorkspaceView: View {
                         metric("\(store.configuration.sources.count)", "配置来源", "folder")
                     }
                 }
+                ProtectionSummary(store: store)
                 OtterSection(title: "需要检查", subtitle: "问题来自当前磁盘证据；运行时发现单独验证。") {
                     if store.index.problems.isEmpty {
                         Label(store.scanning ? "正在检查…" : "已扫描入口没有确定的格式或链接错误", systemImage: "checkmark.circle").foregroundStyle(OtterTheme.accent)
@@ -205,10 +208,18 @@ struct WorkspaceView: View {
                                 Text(agent.executable.map(store.shortPath) ?? "可在设置中检查搜索路径")
                                     .font(OtterTypography.caption).foregroundStyle(.secondary).lineLimit(2, reservesSpace: true).truncationMode(.middle)
                                 HStack(spacing: 8) {
-                                    Button("查看配置") { store.selectedHarness = agent.id; store.closeEditor(); store.page = .instructions }
+                                    Button("查看配置") { store.selectedProfile = ""; store.selectedHarness = agent.id; store.closeEditor(); store.page = .instructions }
                                         .buttonStyle(OtterButtonStyle())
-                                    Button("查看 Skills") { store.selectedHarness = agent.id; store.closeEditor(); store.page = .skills }
+                                    Button("查看 Skills") { store.selectedProfile = ""; store.selectedHarness = agent.id; store.closeEditor(); store.page = .skills }
                                         .buttonStyle(OtterButtonStyle())
+                                }
+                                ForEach(Array((store.workspaceCapture?["agents"].array.filter { $0["kind"].string == agent.id.rawValue } ?? []).enumerated()), id: \.offset) { _, profile in
+                                    HStack {
+                                        Text(profile["profile"].string ?? "default").font(OtterTypography.captionLabel)
+                                        Spacer()
+                                        Button("配置") { store.selectedHarness = agent.id; store.selectedProfile = profile["profile"].string ?? ""; store.closeEditor(); store.page = .instructions }.buttonStyle(OtterButtonStyle(treatment: .plain))
+                                        Button("Skills") { store.selectedHarness = agent.id; store.selectedProfile = profile["profile"].string ?? ""; store.closeEditor(); store.page = .skills }.buttonStyle(OtterButtonStyle(treatment: .plain))
+                                    }
                                 }
                                 Button("验证新进程发现") { store.verifyRuntime(agent) }.buttonStyle(OtterButtonStyle(treatment: .plain)).font(OtterTypography.caption)
                                     .disabled(agent.executable == nil || store.isolated)
@@ -280,13 +291,14 @@ struct WorkspaceView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 HStack(alignment: .top) {
-                    OtterPageHeading(title: "Workflow", subtitle: "源 → 安装入口 → 使用方。每个来源只管理明确登记的条目。")
+                    OtterPageHeading(title: "配置来源", subtitle: "管理多个 repo 或普通目录；检查 Git 状态、配置入口和备份覆盖。")
                         .nativeAnchor("page-heading", store: store)
                     Button("添加来源…") { store.selectSource() }.buttonStyle(OtterButtonStyle(treatment: .accent))
                     if store.hasInspector { WorkspaceInspectorButton(store: store) }
                 }
                 ForEach(store.configuration.sources, id: \.self) { source in
                     OtterSection(title: (source as NSString).lastPathComponent, subtitle: store.shortPath(source)) {
+                        if let observation = store.workspaceCapture?["roots"].array.first(where: { $0["path"].string == source }) { SourceGitStatus(source: observation, store: store) }
                         let canonical = FileSystem.resolve(source).finalPath ?? source
                         let shared = store.index.entries.filter { $0.sourceRoot == canonical && !$0.consumers.isEmpty }
                         HStack { StatusBadge(title: "\(shared.count) 个共享入口", symbol: "link"); Spacer(); Button("在 Finder 查看") { store.reveal(source) }.buttonStyle(OtterButtonStyle(treatment: .plain)) }

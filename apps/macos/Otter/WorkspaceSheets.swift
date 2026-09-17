@@ -246,7 +246,7 @@ struct WorkspaceSheetView: View {
                             ForEach(Array(value["snapshot"]["collectors"].array.enumerated()), id: \.offset) { _, collector in
                                 DisclosureGroup {
                                     ForEach(Array(collector["files"].array.enumerated()), id: \.offset) { _, file in
-                                        DisclosureGroup(file["path"].string ?? "文件") { ReadOnlyText(text: file["content"].string ?? "").frame(height: 160) }.font(OtterTypography.caption)
+                                        DisclosureGroup(file["path"].string ?? "文件") { ReadOnlyText(text: snapshotPreview(file, snapshot: value["snapshot"])).frame(height: 160) }.font(OtterTypography.caption)
                                     }
                                     if !collector["lists"].array.isEmpty { Text(collector["lists"].array.compactMap { $0["name"].string }.joined(separator: "、")).font(OtterTypography.caption).textSelection(.enabled) }
                                     ForEach(collector["errors"].array.compactMap(\.string), id: \.self) { Text($0).font(OtterTypography.caption).foregroundStyle(OtterTheme.warning) }
@@ -257,6 +257,10 @@ struct WorkspaceSheetView: View {
                 }
             }
         }.padding(OtterTheme.pageInset)
+    }
+    private func snapshotPreview(_ file: JSONValue, snapshot: JSONValue) -> String {
+        do { return try SnapshotContent.preview(file, in: snapshot) }
+        catch { return error.localizedDescription }
     }
     private var primaryDisabled: Bool {
         if store.saving { return true }

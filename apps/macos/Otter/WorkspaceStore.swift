@@ -3,13 +3,13 @@ import Observation
 import OtterCore
 
 enum WorkspacePage: String, CaseIterable, Identifiable {
-    case overview, agents, instructions, skills, workflow, backups, settings
+    case overview, workflow, agents, backups, environment, instructions, skills, settings
     var id: String { rawValue }
     var title: String {
-        switch self { case .overview: "概览"; case .agents: "Agents"; case .instructions: "指令与配置"; case .skills: "Skills"; case .workflow: "Workflow"; case .backups: "备份与任务"; case .settings: "设置" }
+        switch self { case .overview: "概览"; case .agents: "Agents"; case .instructions: "指令与配置"; case .skills: "Skills"; case .workflow: "配置来源"; case .backups: "备份"; case .environment: "软件与环境"; case .settings: "设置" }
     }
     var symbol: String {
-        switch self { case .overview: "square.grid.2x2"; case .agents: "terminal"; case .instructions: "text.alignleft"; case .skills: "square.stack.3d.up"; case .workflow: "point.3.connected.trianglepath.dotted"; case .backups: "externaldrive"; case .settings: "gearshape" }
+        switch self { case .overview: "square.grid.2x2"; case .agents: "terminal"; case .instructions: "text.alignleft"; case .skills: "square.stack.3d.up"; case .workflow: "point.3.connected.trianglepath.dotted"; case .backups: "externaldrive"; case .environment: "app.badge"; case .settings: "gearshape" }
     }
 }
 enum WorkspaceSheet: String, Identifiable { case changes, search, create, distribute, rename, newFile, replace, comparison, snapshot; var id: String { rawValue } }
@@ -30,20 +30,30 @@ enum WorkspaceSheet: String, Identifiable { case changes, search, create, distri
 }
 
 @MainActor @Observable final class CLIJob: Identifiable {
-    let id = UUID().uuidString
+    let id: String
     let title: String
     let arguments: [String]
     let client: CLIClient
-    let started = Date()
+    let started: Date
+    let command: String
     var phase = "queued"
     var lines: [String] = []
     var completedCollectors: [String] = []
     var result: JSONValue?
     var error: String?
     var finished: Date?
+    var snapshotID: String?
     var isRunning: Bool { finished == nil }
     var isUpload: Bool { arguments.first == "backup" }
-    init(title: String, arguments: [String], client: CLIClient) { self.title = title; self.arguments = arguments; self.client = client }
+    init(title: String, arguments: [String], client: CLIClient) {
+        id = UUID().uuidString; started = Date(); self.title = title; self.arguments = arguments; self.client = client
+        command = client.executable + "\n" + (arguments + client.commonArguments).joined(separator: " ")
+    }
+    init(record: CLIJobRecord, client: CLIClient) {
+        id = record.id; title = record.title; arguments = record.arguments; command = record.command; started = record.started
+        finished = record.finished; phase = record.phase; error = record.error; snapshotID = record.snapshotID; self.client = client
+    }
+    var record: CLIJobRecord { CLIJobRecord(id: id, title: title, arguments: arguments, command: command, started: started, finished: finished, phase: phase, error: error, snapshotID: snapshotID) }
 }
 
 @MainActor @Observable final class WorkspaceStore {
@@ -81,6 +91,11 @@ enum WorkspaceSheet: String, Identifiable { case changes, search, create, distri
     var cliStatus: JSONValue?
     var cliError: String?
     var snapshots: [JSONValue] = []
+    var workspaceCapture: JSONValue?
+    var backupStatus: JSONValue?
+    var remoteTimeline: JSONValue?
+    var environmentSnapshot: JSONValue?
+    var selectedProfile = ""
     var jobs: [CLIJob] = []
     var selectedSnapshot: JSONValue?
     var reviewedClient: CLIClient?
@@ -99,6 +114,7 @@ enum WorkspaceSheet: String, Identifiable { case changes, search, create, distri
     @ObservationIgnored let drafts: DraftStore
     @ObservationIgnored private var scanTask: Task<Void, Never>?
     @ObservationIgnored private var scanGeneration = 0
+    @ObservationIgnored private var registryTask: Task<Void, Never>?
     @ObservationIgnored private var draftTasks: [String: Task<Void, Never>] = [:]
     @ObservationIgnored private var watchTask: Task<Void, Never>?
     @ObservationIgnored private var watcher: WorkspaceWatcher?
@@ -158,7 +174,7 @@ enum WorkspaceSheet: String, Identifiable { case changes, search, create, distri
     var filteredEntries: [ResourceEntry] {
         index.entries.filter { entry in
             (page != .skills || entry.kind == .skill) && (page != .instructions || entry.kind != .skill)
-            && (selectedHarness == nil || entry.consumers.contains { $0.harness == selectedHarness })
+            && (selectedHarness == nil || entry.consumers.contains { $0.harness == selectedHarness && (selectedProfile.isEmpty || $0.profile == selectedProfile) })
             && (configuration.selectedProject == nil || entry.consumers.isEmpty || entry.consumers.contains { $0.cwd == nil || $0.cwd == configuration.selectedProject })
             && (sourceFilter.isEmpty || entry.sourceRoot == sourceFilter)
             && (!problemFilter || !entry.problems.isEmpty)
@@ -184,31 +200,67 @@ enum WorkspaceSheet: String, Identifiable { case changes, search, create, distri
             let recovery = try await transactions.recoverInterrupted()
             if recovery.contains(where: { $0.states.contains(.conflict) }) { error = "发现未完成变更与外部修改冲突，请在 Workflow 的变更历史中查看。" }
             history = try await transactions.history()
+            if let client = cli, let data = try? FileSystem.read(FileSystem.join(dataDirectory, "jobs.json")) {
+                jobs = try JSONDecoder().decode([CLIJobRecord].self, from: data).map { CLIJob(record: $0.recovered(), client: client) }
+                try persistJobs()
+            }
         } catch { self.error = error.localizedDescription }
-        rescan()
         await refreshCLI()
+        if let client = cli, capabilities != nil {
+            do {
+                if !FileManager.default.fileExists(atPath: FileSystem.join(configuration.cliConfigDirectory, "workspace.macos-import.json")) { _ = try await client.json(["source", "import", "--workspace-file", configPath]) }
+                _ = try await client.json(["source", "apply", "--workspace-file", configPath])
+            } catch { self.error = error.localizedDescription }
+        }
+        rescan()
     }
     var configPath: String { FileSystem.join(dataDirectory, "workspace.json") }
     func saveConfiguration() {
-        do { try FileSystem.writePrivate(configuration, to: configPath) }
+        do {
+            try FileSystem.writePrivate(configuration, to: configPath)
+            synchronizeRegistry()
+        }
         catch { self.error = error.localizedDescription }
+    }
+    private func synchronizeRegistry() {
+        guard let client = cli else { return }
+        let previous = registryTask, path = FileSystem.join(dataDirectory, "workspace-sync-\(UUID().uuidString).json")
+        do { try FileSystem.writePrivate(configuration, to: path) }
+        catch { self.error = error.localizedDescription; return }
+        registryTask = Task {
+            defer { try? FileManager.default.removeItem(atPath: path) }
+            await previous?.value
+            do { _ = try await client.json(["source", "apply", "--workspace-file", path]) }
+            catch { self.error = error.localizedDescription }
+        }
     }
     func rescan() {
         scanTask?.cancel(); scanGeneration += 1
         let generation = scanGeneration, configuration = configuration
         scanning = true
         scanTask = Task {
-            let work = Task.detached(priority: .userInitiated) { try WorkspaceScanner().scan(configuration) }
+            await registryTask?.value
             do {
+                guard let client = cli else { throw WorkspaceError.message("应用包中缺少 CLI") }
+                let value = try await client.json(["workspace", "inspect"])
+                let merged = try CLIWorkspaceIndex.configuration(value["workspace"]["registry"], merging: configuration)
+                let work = Task.detached(priority: .userInitiated) { try CLIWorkspaceIndex.decode(value, configuration: merged) }
                 let newIndex = try await withTaskCancellationHandler { try await work.value } onCancel: { work.cancel() }
                 guard generation == scanGeneration, !Task.isCancelled else { return }
+                workspaceCapture = value["workspace"]; backupStatus = value["backup"]
+                if self.configuration.sources != merged.sources || self.configuration.projects != merged.projects || self.configuration.bindings != merged.bindings {
+                    self.configuration.sources = merged.sources
+                    self.configuration.projects = merged.projects
+                    self.configuration.bindings = merged.bindings
+                    try FileSystem.writePrivate(self.configuration, to: configPath)
+                }
                 index = newIndex; scanning = false
-                status = "\(newIndex.entries.count) 个入口 · \(newIndex.problems.filter { $0.severity != .information }.count) 项待检查 · \(newIndex.scannedAt.formatted(date: .omitted, time: .shortened))"
+                status = "\(newIndex.entries.count) 个入口 · \(newIndex.problems.filter { $0.severity != .information }.count) 项待检查 · CLI 采集于 \(newIndex.scannedAt.formatted(date: .omitted, time: .shortened))"
                 refreshFileList()
                 await refreshOpenDocuments()
                 installWatcher()
             } catch is CancellationError { if generation == scanGeneration { scanning = false } }
-            catch { if generation == scanGeneration { scanning = false; self.error = error.localizedDescription; status = "扫描未完成" } }
+            catch { if generation == scanGeneration { scanning = false; self.error = error.localizedDescription; status = "扫描未完成，保留上次结果" } }
         }
     }
     func cancelScan() { scanTask?.cancel(); scanning = false; status = "扫描已取消，保留上次结果" }
@@ -355,7 +407,7 @@ enum WorkspaceSheet: String, Identifiable { case changes, search, create, distri
                         try await drafts.save(EditorDraft(original: document.original, text: document.text))
                     }
                 }
-                if let data = try? FileSystem.read(configPath), let saved = try? JSONDecoder().decode(WorkspaceConfiguration.self, from: data) { configuration = saved }
+                if let data = try? FileSystem.read(configPath), let saved = try? JSONDecoder().decode(WorkspaceConfiguration.self, from: data) { configuration = saved; synchronizeRegistry() }
                 status = "已应用 \(set.changes.count) 项变更 · 可在 Workflow 撤销"
                 saving = false; sheet = nil; pendingChanges = nil
                 let openPath = pendingOpenPath; pendingOpenPath = nil
@@ -375,7 +427,7 @@ enum WorkspaceSheet: String, Identifiable { case changes, search, create, distri
             do {
                 _ = try await transactions.undo(receipt.id)
                 history = try await transactions.history()
-                if let data = try? FileSystem.read(configPath), let saved = try? JSONDecoder().decode(WorkspaceConfiguration.self, from: data) { configuration = saved }
+                if let data = try? FileSystem.read(configPath), let saved = try? JSONDecoder().decode(WorkspaceConfiguration.self, from: data) { configuration = saved; synchronizeRegistry() }
                 rescan()
             } catch { self.error = error.localizedDescription }
         }
@@ -472,6 +524,8 @@ enum WorkspaceSheet: String, Identifiable { case changes, search, create, distri
             async let list = client.json(["snapshot", "list"])
             let (current, saved) = try await (status, list)
             cliStatus = current; snapshots = saved.array; cliError = nil
+            remoteTimeline = try await client.json(["snapshot", "timeline"])
+            if let id = saved.array.first?["id"].string { environmentSnapshot = try await client.json(["snapshot", "show", id])["snapshot"] }
         } catch is CancellationError { /* Keep the last confirmed CLI status. */ }
         catch { cliError = error.localizedDescription }
     }
@@ -479,7 +533,10 @@ enum WorkspaceSheet: String, Identifiable { case changes, search, create, distri
         guard !jobs.contains(where: \.isRunning), let client = client ?? cli else { return }
         let job = CLIJob(title: title, arguments: arguments, client: client)
         let runner = ProcessRunner(); self.runner = runner; jobs.insert(job, at: 0)
-        jobTask = Task {
+        do { try persistJobs() }
+        catch { job.finished = Date(); job.phase = "failed"; job.error = "无法保存任务记录：" + error.localizedDescription; return }
+        jobTask = Task { [self] in
+            await registryTask?.value
             do {
                 _ = try await client.json(["capabilities"], runner: runner)
                 try Task.checkCancellation()
@@ -495,6 +552,7 @@ enum WorkspaceSheet: String, Identifiable { case changes, search, create, distri
                     guard let last = events.last else { throw WorkspaceError.message("CLI 没有完成事件") }
                     if result.status != 0 || last.type == "error" { throw WorkspaceError.message(last.data["message"].string ?? "CLI 退出：\(result.status)") }
                     job.result = last.data
+                    job.snapshotID = last.data["snapshotId"].string ?? last.data["snapshot"]["id"].string
                     let hasErrors = last.data["snapshot"]["collectors"].array.contains { !$0["errors"].array.isEmpty }
                     job.phase = hasErrors ? "partial" : "complete"
                 }
@@ -502,8 +560,12 @@ enum WorkspaceSheet: String, Identifiable { case changes, search, create, distri
             } catch is CancellationError { job.phase = "cancelled"; job.error = job.isUpload ? "上传状态待确认；请核对快照 ID。" : nil }
             catch { job.phase = "failed"; job.error = error.localizedDescription }
             job.finished = Date(); self.runner = nil
-            if !Task.isCancelled { await refreshCLI() }
+            do { try persistJobs() } catch { self.error = "任务已结束，但记录保存失败：" + error.localizedDescription }
+            if !Task.isCancelled { await refreshCLI(); rescan() }
         }
+    }
+    private func persistJobs() throws {
+        try FileSystem.writePrivate(Array(jobs.prefix(100)).map(\.record), to: FileSystem.join(dataDirectory, "jobs.json"))
     }
     private func record(_ event: CLIEvent, job: CLIJob) {
         guard event.jobId == job.id, event.protocolVersion == 1, job.isRunning else { return }
@@ -515,6 +577,8 @@ enum WorkspaceSheet: String, Identifiable { case changes, search, create, distri
             }
             job.lines = Array(job.lines.suffix(150))
         } else if event.type == "started" { job.phase = "running" }
+        if let id = event.data["snapshotId"].string { job.snapshotID = id }
+        do { try persistJobs() } catch { self.error = "任务进度保存失败：" + error.localizedDescription }
     }
     func cancelJob() { jobTask?.cancel(); Task { await runner?.cancel() } }
     func inspectSnapshot(_ snapshot: JSONValue) {
@@ -534,7 +598,7 @@ enum WorkspaceSheet: String, Identifiable { case changes, search, create, distri
             do {
                 let diff = try await client.json(["snapshot", "diff", old, new])
                 comparisonTitle = "快照内容差异 · \(old.prefix(8)) → \(new.prefix(8))"
-                comparisonBefore = "比较文件实际内容、软件版本与元数据。\n\n新增采集器：\(diff["addedCollectors"].pretty)\n移除采集器：\(diff["removedCollectors"].pretty)"
+                comparisonBefore = "比较文件实际内容、软件版本与元数据。\n\n\(diff["coverageWarning"].string ?? "")\n新增采集器：\(diff["addedCollectors"].pretty)\n移除采集器：\(diff["removedCollectors"].pretty)"
                 comparisonAfter = diff["collectors"].pretty; comparisonBase = nil; conflictDocumentID = nil; sheet = .comparison
             } catch { self.error = error.localizedDescription }
         }

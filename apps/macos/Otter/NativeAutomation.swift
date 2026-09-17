@@ -316,6 +316,7 @@ extension View {
         try await until("Cmd-S in a separate window saves its own document") { !self.store.saving && !document.isDirty && (try? FileSystem.text(script)) == detachedText }
         try await until("Both native editors share the committed source buffer") { self.nativeEditor(in: window)?.string == detachedText }
         try await capture("detached-editor-light", window: detached)
+        try await prepareInput(detached)
         guard let close = detached.standardWindowButton(.closeButton) else { throw WorkspaceError.message("Document close button missing") }
         let button = close.convert(close.bounds, to: nil)
         try mouse(at: NSPoint(x: button.midX, y: button.midY), in: detached)
@@ -425,8 +426,10 @@ extension View {
     private func verifyCLI(_ window: NSWindow) async throws {
         try await page(.backups)
         try await click("cli-scan")
-        try await until("Packaged CLI scans and persists the isolated snapshot", timeout: 40) { self.store.jobs.first?.phase == "complete" && !self.store.snapshots.isEmpty }
-        try require(store.jobs.first?.completedCollectors.count == 4, "Progress reports all four isolated file collectors")
+        try await until("Packaged CLI scans and persists the isolated snapshot", timeout: 40) { self.store.jobs.first?.phase == "partial" && !self.store.snapshots.isEmpty }
+        try require(store.jobs.first?.completedCollectors.count == 5, "Progress reports the workspace and all four isolated file collectors")
+        try require(store.jobs.first?.result?["snapshot"]["workspace"]["coverage"]["issues"].array.contains { $0["path"].string?.hasSuffix("/skills/moved-skill") == true && $0["status"].string == "error" } == true,
+                    "The known broken entry is explicitly reported as a coverage gap")
         try await click("snapshot.0")
         try await until("Snapshot review loads the actual saved object") { self.store.sheet == .snapshot && self.store.selectedSnapshot?["sha256"].string != nil }
         guard let reviewed = store.selectedSnapshot, let id = reviewed["snapshot"]["id"].string else { throw WorkspaceError.message("Missing reviewed snapshot") }
@@ -468,7 +471,7 @@ extension View {
         for dark in [false, true] {
             store.configuration.appearance = dark ? "dark" : "light"
             window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
-            for target in [WorkspacePage.agents, .instructions, .skills, .workflow, .backups, .settings] {
+            for target in [WorkspacePage.overview, .agents, .instructions, .skills, .workflow, .backups, .environment, .settings] {
                 if target == .instructions { store.closeEditor() }
                 try await page(target)
                 try await capture(target.rawValue + (dark ? "-dark" : "-light"))
@@ -500,6 +503,9 @@ extension View {
         try await capture("draft-light")
     }
     private func verifyDraftRecovery(_ window: NSWindow) async throws {
+        try require(store.jobs.contains { $0.phase == "cancelled" && $0.snapshotID != nil }, "Restart preserves the cancelled upload and its snapshot ID")
+        try require(store.jobs.contains { $0.phase == "complete" && $0.isUpload }, "Restart preserves the completed upload record")
+        try require(!store.jobs.contains(where: \.isRunning), "Restart never automatically retries a journaled upload")
         let path = FileSystem.join(root, "workflow/agents/skills/native-check")
         try await page(.skills); try await click("resource." + path); try await click("open-resource")
         try await until("Restart restores the saved dirty draft", timeout: 10) { self.store.activeDocument?.text.contains("Draft restored after application restart.") == true && self.store.activeDocument?.isDirty == true }

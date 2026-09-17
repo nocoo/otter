@@ -2,6 +2,7 @@
 """Run the production Debug app against private fixtures and a real loopback HTTP server."""
 import argparse
 import gzip
+import hashlib
 import html
 import importlib.util
 import json
@@ -13,7 +14,9 @@ import signal
 import subprocess
 import threading
 import time
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import unquote, urlsplit
 from uuid import uuid4
 
 REPOSITORY = Path(__file__).resolve().parent.parent
@@ -30,12 +33,38 @@ def main():
     root = REPOSITORY / "build/macos-native" / (time.strftime("%Y%m%d-%H%M%S") + "-" + identifier[:8])
     root.mkdir(parents=True, mode=0o700)
     uploads = []
+    saved = {}
     server_errors = []
     upload_lock = threading.Lock()
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, _format, *_args):
             pass
+
+        def send_json(self, value, status=200):
+            response = json.dumps(value).encode()
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(response)))
+            self.end_headers()
+            self.wfile.write(response)
+
+        def do_GET(self):
+            try:
+                assert self.headers.get("Authorization") == "Bearer otk_native_fixture_only", "Unexpected fixture credentials"
+                path = unquote(urlsplit(self.path).path).rstrip("/")
+                with upload_lock:
+                    if path == "/api/snapshots":
+                        response = {"snapshots": [value["snapshot"] for value in saved.values()], "nextCursor": None, "total": len(saved)}
+                    else:
+                        assert path.startswith("/api/snapshots/"), "Unexpected API endpoint"
+                        response = saved.get(path.removeprefix("/api/snapshots/"))
+                self.send_json(response or {"error": "not found"}, 200 if response is not None else 404)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+            except Exception as error:
+                server_errors.append(str(error))
+                self.send_error(400, "Fixture request rejected")
 
         def do_POST(self):
             try:
@@ -44,22 +73,38 @@ def main():
                 assert self.headers.get("Content-Encoding") == "gzip", "Upload must use the real gzip protocol"
                 length = int(self.headers["Content-Length"])
                 assert 0 < length < 32 * 1024 * 1024, "Unexpected request size"
-                snapshot = json.loads(gzip.decompress(self.rfile.read(length)))
+                raw = gzip.decompress(self.rfile.read(length))
+                snapshot = json.loads(raw)
+                content_hash = hashlib.sha256(raw).hexdigest()
                 with upload_lock:
                     uploads.append(snapshot)
                     number = len(uploads)
+                    previous = saved.get(snapshot["id"])
+                    if previous and previous["receipt"]["sha256"] != content_hash:
+                        self.send_json({"error": "immutable snapshot ID conflict"}, 409)
+                        return
+                    if previous is None:
+                        received_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+                        receipt = {"snapshotId": snapshot["id"], "sha256": content_hash, "account": "native-fixture", "receivedAt": received_at}
+                        metadata = {
+                            "id": snapshot["id"], "hostname": snapshot["machine"]["hostname"],
+                            "snapshotAt": int(datetime.fromisoformat(snapshot["createdAt"].replace("Z", "+00:00")).timestamp() * 1000),
+                            "uploadedAt": int(time.time() * 1000), "schemaVersion": snapshot["version"],
+                            "deviceId": snapshot["workspace"]["deviceId"], "sha256": content_hash,
+                            "complete": snapshot["workspace"]["coverage"]["complete"],
+                            "collectorCount": len(snapshot["collectors"]),
+                            "fileCount": sum(len(collector["files"]) for collector in snapshot["collectors"]),
+                            "listCount": sum(len(collector["lists"]) for collector in snapshot["collectors"]),
+                        }
+                        saved[snapshot["id"]] = {"data": snapshot, "receipt": receipt, "snapshot": metadata}
+                    receipt = saved[snapshot["id"]]["receipt"]
                 (root / f"upload-{number}.json").write_text(json.dumps(snapshot, ensure_ascii=False, indent=2))
                 if (root / "hold-upload").exists():
                     (root / "upload-held.json").write_text(json.dumps({"id": snapshot["id"], "received": True}))
                     deadline = time.monotonic() + 20
                     while (root / "hold-upload").exists() and time.monotonic() < deadline:
                         time.sleep(0.05)
-                response = b'{"success":true}'
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Content-Length", str(len(response)))
-                self.end_headers()
-                self.wfile.write(response)
+                self.send_json({"success": True, "receipt": receipt})
             except (BrokenPipeError, ConnectionResetError):
                 pass  # The cancellation case intentionally closes this connection.
             except Exception as error:
@@ -113,7 +158,18 @@ def main():
                       "-a", str(application), "--args"] + command + extra
             process = subprocess.Popen(launch, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, env=environment)
             try:
-                _, launch_error = process.communicate(timeout=180)
+                deadline = time.monotonic() + 180
+                # Launch Services may send its first activation before SwiftUI has
+                # presented a scene. Activate the same fixture once it is ready;
+                # native assertions still require a real active/key input window.
+                while process.poll() is None:
+                    if log_path.exists() and "Scanner and packaged CLI become ready" in log_path.read_text(errors="replace"):
+                        subprocess.run(["/usr/bin/open", "-a", str(application)], check=True, timeout=10)
+                        break
+                    if time.monotonic() >= deadline:
+                        raise subprocess.TimeoutExpired(launch, 180)
+                    time.sleep(0.1)
+                _, launch_error = process.communicate(timeout=max(1, deadline - time.monotonic()))
             except subprocess.TimeoutExpired:
                 terminate_fixture(); process.terminate()
                 try:

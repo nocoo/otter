@@ -190,20 +190,22 @@ public struct CLIClient: Sendable {
         return env
     }
     public func json(_ arguments: [String], runner: ProcessRunner = ProcessRunner()) async throws -> JSONValue {
-        let result = try await runner.run(executable: executable, arguments: arguments + ["--json"] + commonArguments, environment: environment, timeout: 40)
+        var args = arguments + ["--json"] + commonArguments
+        if isolated && ["scan", "workspace", "backup"].contains(arguments.first ?? "") { args += ["--scan-root", configuration.home, "--collectors", "agent-workspace,claude-config,opencode-config,shell-config,hermes"] }
+        let result = try await runner.run(executable: executable, arguments: args, environment: environment, timeout: arguments.first == "workspace" ? 300 : 40)
         guard !result.cancelled else { throw CancellationError() }
         let value: JSONValue
         do { value = try JSONDecoder().decode(JSONValue.self, from: result.stdout) }
         catch { throw WorkspaceError.message("CLI 没有返回有效的 JSON；检查版本与协议兼容性") }
         guard result.status == 0 else { throw WorkspaceError.message(value["error"]["message"].string ?? "CLI 退出：\(result.status)") }
         if arguments.first == "capabilities" {
-            guard value["protocolVersion"].number == 1, value["operations"].array.contains(.string("backup.snapshot")) else { throw WorkspaceError.message("CLI 协议不兼容，请使用内置版本或升级外部 CLI") }
+            guard value["protocolVersion"].number == 1, value["workspaceSchemaVersion"].number == 2, value["operations"].array.contains(.string("workspace.inspect")) else { throw WorkspaceError.message("CLI 协议不兼容，需要 Otter 3.0 完整配置采集能力；请使用内置版本或升级外部 CLI") }
         }
         return value
     }
     public func job(_ arguments: [String], id: String, runner: ProcessRunner, onLine: @escaping @Sendable (Data) -> Void) async throws -> ProcessResult {
         var args = arguments + ["--format", "ndjson", "--job-id", id] + commonArguments
-        if isolated && arguments.first == "scan" { args += ["--scan-root", configuration.home, "--collectors", "claude-config,opencode-config,shell-config,hermes"] }
+        if isolated && arguments.first == "scan" { args += ["--scan-root", configuration.home, "--collectors", "agent-workspace,claude-config,opencode-config,shell-config,hermes"] }
         return try await runner.run(executable: executable, arguments: args, environment: environment,
                                     timeout: arguments.first == "scan" ? 300 : 90, onLine: onLine)
     }
