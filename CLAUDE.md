@@ -1,65 +1,88 @@
-README.md
+# Otter
 
-## Release Procedure
+Configuration backup snapshots with a CLI, browser workspace and native macOS app.
+Profile: ts-worker-web + native-tool (Swift/CLI).
+Direction: [configuration backup design](docs/features/04-configuration-backup-redesign.md). Frameworks must preserve this handbook.
 
-CLI package `@nocoo/otter` is published to npm. Use the automated release script:
+## Sources of Truth
+
+This file is the quality contract; hooks, CI and config are enforcement. Close implementation gaps without lowering the contract. Historical test results are not evidence of a current passing run.
+
+| Fact | Where |
+|---|---|
+| Product / setup | [README.md](README.md), [development](docs/10-development.md) |
+| Native / collection | [native workspace](docs/features/03-macos-agent-workspace.md), [collectors](docs/02-collectors.md) |
+| Version / release | root `package.json`, [release procedure](docs/11-agent-release.md) |
+| Test truth | `vitest*.ts`, `scripts/run-api-e2e.ts`, `scripts/run-e2e-spa.ts`, hooks/CI |
+| Accidents | [Retrospective.md](Retrospective.md) |
+| Machine workflow | global `AGENTS.md` and Git rules |
+
+## Project Invariants
+
+- Preserve complete source bytes/symlinks within the collection policy; snapshot locally first, then upload identical immutable content. Collected user configuration may contain secrets.
+- `packages/api` exports a runtime-agnostic Hono factory, embedded by the sole Worker in `apps/api`; `/api/*` serves browsers, `/ingest/*` the CLI. D1 indexes and R2 payloads stay coordinated.
+- Access authentication falls through to Bearer; `requireUser` owns rejection. Keep localhost-only dev identity stamping out of production.
+- Vite dev may proxy a real Worker using `OTTER_API_URL` and `OTTER_DEV_API_TOKEN`; its env file is `apps/web/.env`. Automated tests must explicitly use the local runner.
+- Build core declarations before downstream TypeScript reference checks. Keep `@nocoo/otter` as the CLI package; core type-only code is not separately published.
+
+## Stack / Layout
+
+| Component | Path / choice |
+|---|---|
+| Web / Worker | `apps/web` Vite/React; `apps/api` D1/R2/SPA assets |
+| Shared / CLI | `packages/core`, `packages/api`, `apps/cli` |
+| Native | `apps/macos`, Swift/AppKit; isolated build/test scripts |
+
+## Commands
+
+Run from root with Bun, Node 22.12+ (supported engine range in package.json), gitleaks and OSV. Native checks require macOS, full Xcode and xcodegen. Use local test-owned storage and fake data; no CF credentials are needed for local L2.
 
 ```bash
-bun run release              # patch bump (default)
-bun run release -- minor     # minor bump
-bun run release -- minor --macos # minor bump + verified macOS DMG/ZIP upload
-bun run release -- major     # major bump
-bun run release -- 2.1.0     # explicit version
-bun run release -- 3.0.0 --prepared --macos # finalize an already prepared version
-bun run release -- --dry-run # preview without side effects
+bun install --frozen-lockfile
+bun run typecheck
+bun run lint:biome
+bun run build
+bun run test:coverage
+bun run test:worker
+bun run test:l2
+bun run test:e2e                 # built SPA + local Worker
+bun run macos:test
+bun run deploy:check             # build + local Worker dry run
 ```
 
-The script handles:
-1. Version bump in 9 files (all package.json + cli.ts + version.ts + macOS project.yml)
-2. CHANGELOG generation from conventional commits
-3. Build verification
-4. Commit + tag + push + GitHub release
+## Verification
 
-After release completes:
-- **Worker deploy**: CD auto-triggers on CI green
-- **npm publish** (manual): `cd apps/cli && npm publish` (requires `npm login` as `nocoo`)
-- **Verify**: `npx @nocoo/otter@latest --help` in a temp directory
+6DQ = L1/L2/L3 + G1/G2 + D1 (test isolation). Status: `enforced`, `planned`, `manual`, or `N/A`; partial enforcement below does not certify the full required bar.
+L1 requires statements, branches, functions and lines each ≥95%, with no skipped/focused tests; preserve any stricter package threshold. Native tools must identify unmeasured metrics as gaps.
+G1 requires check-only strict analysis/formatting with zero errors/warnings. G2 requires dependency and secret scans, with missing required scanners failing.
 
-### Key decisions
+| Dimension | Status | Required proof and current evidence/gap |
+|---|---|---|
+| L1 TypeScript | planned | Hooks/CI run coverage with statements/lines 95%, branches/functions 94%; UI/auth/entry and Worker exclusions leave full all-four 95% incomplete. |
+| L1 Swift | planned | Separate macOS CI runs native tests; no all-four 95% native coverage gate. |
+| L2 HTTP / CLI | planned | `test:l2` boots local Wrangler and tests real API/CLI flows; require verified 100% route/auth/error coverage. Unit driver fakes are not real HTTP proof. |
+| L3 web / native | planned | `test:e2e` serves built SPA/local Worker; macOS CI checks real AppKit and packaged CLI. Full page/desktop coverage is not enforced; root BDD uses a Vite proxy and needs explicit local target. |
+| G1 TypeScript / Swift | planned | TS build/typecheck and Biome run in CI; `lint` is only typechecking, Biome lacks errors-on-warnings outside lint-staged, and strict native analysis is incomplete. |
+| G2 | enforced | Hooks/CI require OSV and gitleaks, including full-history pre-push scanning. |
+| D1 | planned | L2 is local with an inserted marker, but fixed `.wrangler/e2e` is recursively deleted without marker/path checks; browser fixed state and server reuse also need guards. |
 
-- **Package name**: `@nocoo/otter` (personal scope, `otter-cli` was taken, `@otter` scope not owned)
-- **`@otter/core` is NOT published**: Pure TypeScript types, all imports are `import type` — erased at compile time
-- **npm publish is user-initiated only**: Never auto-publish. Only publish when explicitly requested
+Pre-commit runs staged Biome, plain unit tests, project-reference typecheck and staged gitleaks in parallel. Pre-push runs coverage, local L2, OSV and full-history gitleaks in parallel. CI adds Worker/build/browser gates and path-filtered macOS test/package jobs. Hooks inspect working files, not every pushed commit.
+
+Target hooks: pre-commit checks G1 + L1 against the index snapshot (`git checkout-index`) in <30s; pre-push checks L2 and G2 in parallel against every stdin push ref/commit in <3min, plus build where applicable. L3 runs in CI or an explicit manual lane.
+Never bypass commit/push hooks, force-push, or use autofix in checks. Documentation changes do not authorize deploying or implementing new gates.
+
+## Resources / Isolation
+
+Dev: Vite 7019 and Worker 7020. L2 defaults to loopback 17020 (`OTTER_L2_PORT`), using `apps/api/.wrangler/e2e`; browser runner uses 27019. Serialize fixed-state runners. Required direction is unique per-run local D1/R2 directories, checked test marker and canonical-path/ownership guards before cleanup. Never copy daily credentials or snapshots into fixtures.
+
+## Operations / Release
+
+Use [release procedures](docs/11-agent-release.md) for the nine-file version sync, changelog, build, commit/tag/push and native artifacts. Worker CD follows CI. npm publication is user-initiated only; do not infer it from a Git release. Keep release/package signing and real restore acceptance explicit.
 
 ## Retrospective
 
-- **`packages/api` is a pure logic library, not a standalone server**: It exports `createApp()` (Hono app factory) plus middleware/lib utilities. The Cloudflare Worker (`apps/api`) embeds it via `app.fetch()`. Single Worker, single deploy unit — `createApp()` stays runtime-agnostic.
-- **Node.js fetch + dev TLS certs**: Dev subdomains (e.g. `otter.dev.hexly.ai`) may have incomplete certificate chains. `curl` tolerates this but Node.js `fetch` throws `UNABLE_TO_VERIFY_LEAF_SIGNATURE`. Workaround: `NODE_TLS_REJECT_UNAUTHORIZED=0 otter backup`. Production certs are fine — this only affects local testing against dev environments.
-- **TypeScript project references + `--noEmit` breaks downstream type-checking**: When `@otter/core` has `composite: true` and CLI uses `references: [{ "path": "../../packages/core" }]`, running `tsc --noEmit -p packages/core` does NOT emit `.d.ts` files. The subsequent `tsc --noEmit -p apps/cli` reads stale `.d.ts` from `core/dist/` and misses new types. Fix: build core with emit first (`tsc -p packages/core`), then `--noEmit` for downstream packages.
-- **Biome v2 `files` key is `includes` not `include`**: Biome v2.4+ renamed the key. Also `ignore` was removed — use `.gitignore` via `vcs.useIgnoreFile: true` instead.
-- **Biome v2 domains only accept `"all"`, `"none"`, `"recommended"`**: Not `"off"`. Use `"none"` to disable a domain (e.g. `"solid": "none"`).
-- **Biome `warn` rules don't fail `biome check`**: Only `error`-level rules cause exit code 1. Use `warn` for advisory rules.
-- **`biome-ignore` in JSX must be on the line directly above the error**: For `noArrayIndexKey`, the error is on the `key=` prop, not the opening tag. Prefer content-based keys over `biome-ignore`.
-- **`bun update <pkg> --filter` still adds to root package.json**: When updating workspace package deps, edit the specific `package.json` directly and run `bun install`, don't use `bun update --filter`.
-- **Transitive dep vulnerabilities via `overrides`**: Use `"overrides"` in root `package.json` to pin transitive deps to patched versions (e.g. `"fast-xml-parser": ">=5.5.7"`).
-- **`apps/web` is a Vite SPA, full stop**: Vite 7 + React 19 + react-router 7 + SWR + Tailwind v4. `bun run dev` runs the SPA dev server on :7019; `bun run dev:worker` runs the cf worker on :7020 in a second terminal. Build pipeline: `bun run build` (root) → `vite build` → `apps/web/dist/` → wrangler `[assets]` directory.
-- **Single Cloudflare Worker hosts both `/api/*` and SPA assets**: `apps/api` mounts the D1-binding routes at `/api/*` (CF Access JWT + Bearer token), keeps `/health` + `/ingest/*` for CLI uploads, and serves SPA fallback via `[assets] directory = "../web/dist"` with `not_found_handling = "single-page-application"` and `run_worker_first = ["/api/*", "/health", "/ingest/*"]`. SPA uses `/api/*`, CLI uses `/ingest/*`.
-- **CF Access JWT verification falls through, never 401s on its own**: `accessAuth` middleware only sets `accessEmail` on success — missing/invalid tokens fall through so `apiKeyAuth` (Bearer) gets a chance. The actual 401 happens inside the route via `requireUser(c)`. This dual-stack pattern lets browsers and CLI share the same handler. Localhost requests without a Bearer header are auto-stamped as `dev@localhost` so `wrangler dev --local` works without faking JWTs.
-- **Worker D1-binding tests must mock the driver, not rely on miniflare migrations**: `/api/*` route tests pass an in-memory `DbDriver` to the route factory plus a fake `R2Bucket` and skip miniflare D1 entirely. Strongly prefer this pattern over `env.DB.exec("CREATE TABLE …")` in `beforeAll`, which rots silently when schemas drift.
-- **Removing transitive deps can flip `@types/node` minor versions**: When upstream consumers go away, the workspace can fall back to a newer `@types/node` (e.g. `25.x` with `undici-types@7`), where `Response.json()` is correctly typed as `Promise<unknown>`. This surfaces as `TS18046` everywhere we did `const x: T = await res.json();`. Fix is to cast at the call site (`(await res.json()) as T`).
-- **Surety mode (vite proxy → prod worker with Bearer injection)**: Local dev defaults to vite on `:7019` proxying `/api/*` to a real Cloudflare Worker (`https://otter.nocoo.workers.dev` by default, override via `OTTER_API_URL`). The proxy auto-injects `Authorization: Bearer <OTTER_DEV_API_TOKEN>` so requests bypass CF Access SSO and hit `apiKeyAuth` directly. Mint the token by opening `https://otter.hexly.ai/api/auth/cli?callback=http://127.0.0.1:65535/cb&state=mint` (302 redirect carries `?token=otk_...`). Vite `loadEnv` reads from `process.cwd()` which is `apps/web/` for the vite process — the `.env` file MUST live at `apps/web/.env`, not the repo root.
-- **Vite 8 default host-check rejects custom local Host headers**: Caddy reverse-proxying `https://otter.dev.hexly.ai` → `localhost:7019` returns 403 from vite because the `Host` header isn't allowlisted. Fix: add `server.allowedHosts: ["otter.dev.hexly.ai", ".dev.hexly.ai"]` (leading dot = wildcard subdomains) to `vite.config.ts`.
-- **Local DNS negative cache vs browser resolver after creating a Cloudflare custom domain**: After adding `routes = [{ pattern = "otter.hexly.ai", custom_domain = true }]` and redeploying, the local stub resolver may still cache "no answer" for several minutes while authoritative NS already returns IPs (verify with `dig +short otter.hexly.ai @<ns>.ns.cloudflare.com`). Browser uses its own DoH resolver and works immediately, but Node.js `fetch` (e.g. vite proxy) gets `getaddrinfo ENOTFOUND`. Workaround: point `OTTER_API_URL` to the `workers.dev` fallback (`https://otter.nocoo.workers.dev`) — Bearer auth works there too because `apiKeyAuth` doesn't require CF Access JWT.
-- **Wrangler `routes` disables `workers_dev` unless explicitly re-enabled**: Adding `routes = [...]` to `wrangler.toml` for a custom domain silently drops the `*.workers.dev` URL. Must set `workers_dev = true` explicitly to keep both available — useful for surety mode (custom domain has CF Access SSO; workers.dev is Bearer-only fallback).
+Move accident narratives to [Retrospective.md](Retrospective.md); keep at most about ten concise recurring project rules here. Put architecture and operational detail in linked docs.
 
-## Quality Gates (S-tier)
-
-| Dim | Gate | Hook |
-|-----|------|------|
-| G1 | Biome strict check (lint + format, 0 errors, 0 warnings) + lint-staged | pre-commit |
-| L1 | Vitest tests and the unchanged coverage thresholds in `vitest.config.ts` | pre-commit |
-| tsc | TypeScript strict type check (core, CLI, Web, API library, Worker) | pre-commit |
-| L2 | Real-HTTP API + CLI E2E vs `wrangler dev --local --persist-to` (miniflare). Boots on `:17020`, fully local — no CF credentials needed. | pre-push |
-| G2 | osv-scanner (lockfile, 0 vulns) + gitleaks (full history, 0 leaks) | pre-push |
-| CI  | Pinned `nocoo/base-ci` quality, L2/L3, Web build, Worker dry run and Worker tests | GitHub Actions |
-| macOS | XCTest + real AppKit UI / packaged CLI integration + unsigned universal package verification | Separate `macOS` workflow |
+- Root and workspace dependency manifests must change together with the lockfile.
+- A local API fake does not validate schema migration or live storage behavior.
+- Preserve trusted dev TLS and host allowlists; do not turn historical TLS workarounds into default checks.
