@@ -16,5 +16,6 @@
     "tsBuildInfoFile": "./node_modules/.cache/tsc-api.tsbuildinfo"
   },
   "include": ["src"],
-  "exclude": ["node_modules", "dist", "src/__tests__/e2e"]
+  "exclude": ["node_modules", "dist", "src/__tests__/e2e"],
+  "references": [{ "path": "../core" }]
 }

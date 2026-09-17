@@ -29,6 +29,7 @@ All notable changes to this project will be documented in this file.
 - Sign and verify bundled CLI helpers before atomic installation to prevent stale executable signatures.
 - Keep Agent status badges on one line with full hover details, and align Mac cards at the top across window sizes.
 - Publish already prepared versions without bumping them again or duplicating reviewed upgrade notes; reject existing local and remote release tags.
+- Declare shared core type dependencies so clean Web, Worker and CI builds run in the correct order.
 
 ### Upgrade
 
