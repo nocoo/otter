@@ -6,6 +6,7 @@
 
 - [开发、采集范围、测试与部署](10-development.md)：当前 CLI、单 Worker、地址配置和本地运行入口。
 - [功能设计索引](features/README.md)
+- [Otter 3.0.0 改版与实施记录](features/04-configuration-backup-redesign.md)：统一来源与 Agent 采集、完整快照、Git 状态、本地/云端备份管理、Mac/Web 调整与验收结果。
 - [Hermes 采集器](features/01-hermes-collector.md)
 - [快照详情页](features/02-snapshot-detail-redesign.md)
 - [macOS Agent 配置工作台设计](features/03-macos-agent-workspace.md)：本机来源关系、skills 编辑器、CLI 控制与原生体验验收。

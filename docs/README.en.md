@@ -4,7 +4,7 @@
 
 <h1 align="center">Otter</h1>
 
-<p align="center">Save macOS development settings and inventories, and inspect snapshots over time.</p>
+<p align="center">Manage Agent configuration sources, protect local settings, and recover complete content.</p>
 
 <p align="center">
   <a href="https://otter.hexly.ai">Website</a> ·
@@ -13,29 +13,37 @@
 
 ## What it does
 
-Otter collects development settings, applications and environment inventories on macOS, then saves them as local or cloud JSON snapshots for moving computers and investigating environment changes. The web interface provides snapshot overviews, file inspection and JSON export. Restoring files and reinstalling software are manual steps.
+Otter 3.0 manages multiple configuration repositories and folders on macOS. It captures Agent instructions, rules, commands and complete skill packages alongside software inventories, including unmanaged local resources, uncommitted files and readable symlink targets within the selected scope. Saved content can be recovered even when the original machine or repository is unavailable.
+
+The CLI owns discovery and backup. The native Mac App manages local sources, Git status, Agent entries and backup tasks, while retaining its instruction and Skill editor. The web interface browses machine history, compares versions and downloads recovery archives. Copying recovered files into live settings and reinstalling software remain manual steps.
 
 A single Cloudflare Worker serves the API and web interface. D1 holds users, tokens and snapshot indexes; R2 stores snapshot bodies and application icons. Snapshot lists and details are scoped to the signed-in email address.
 
 ## Features
 
-- Collect Claude Code, OpenCode and shell settings, plus inventories for Homebrew, applications, VS Code extensions, Docker, fonts, development tools, cloud CLIs, macOS preferences and LaunchAgents.
-- Collect settings, memories, user profiles, scheduled tasks and skill names from the main Hermes profile and named profiles.
-- Save snapshots locally or sign in to upload compressed snapshots. Successful uploads create a local copy, followed by a separate attempt to export and upload application icons.
-- List, inspect and compare local snapshots in the CLI. Comparison tracks added or removed files, file sizes and inventory names; it cannot detect content changes in files of the same size.
-- Browse paginated snapshots, inspect collector results and file contents, export JSON, and manage webhooks for legacy ingestion in the web interface.
+- Register multiple Git repositories or ordinary folders in a shared Mac/CLI registry. Inspect branches, dirty files, conflicts, upstream differences and the last remote check.
+- Capture known configuration entries for Claude Code, Codex, Grok, Pi, Hermes, OpenCode and Gemini CLI. Hermes default, named profiles and configured external skills retain their own identities.
+- Save complete packages, scripts, references, small binary assets, directory and permission metadata, link chains and target bytes. Local resources need no prior Workflow registration.
+- Keep 14 default collectors for Agent settings, shell settings, Homebrew, applications, editor extensions, Docker, fonts, toolchains, cloud CLIs, macOS preferences and LaunchAgent plist content. Applications include IDs, paths, versions and identifiable install sources.
+- Save immutable local snapshots before uploading the same content. Durable receipts, a combined timeline, verification and download support retries and recovery.
+- Compare content, permissions, links and inventory versions. Browse machine, source and Agent/profile history, search filenames/resources, inspect coverage and download individual files or complete recovery ZIPs.
 
-`--slim` excludes only Claude prompt history and session summaries. Other settings, Hermes memories and user profiles are still collected. Credential redaction depends on file types and matching rules. For first use, save and inspect the local JSON before deciding whether to upload. See [collection and snapshot scope](10-development.md#采集与快照边界).
+v2 coverage records exclusions, redaction, inventory-only items, read failures and capture limits. “Complete” means complete within the recorded policy. `--slim` excludes only Claude prompt history and session summaries; Hermes memories and user profiles are still collected. Inspect the local snapshot before uploading. Legacy v1 snapshots remain readable, but skill names cannot recover content that was never saved. See [collection and snapshot scope](10-development.md#采集与快照边界).
 
 ## Usage
 
 ### Installation and local snapshots
+
+Version 3.0.0 on this branch has not been published. Use the repository build below or the local Mac App to try the new functionality before release.
 
 Use macOS and Node.js. The repository declares the Node.js range `^22.12.0 || ^24.0.0 || >=26.0.0`.
 
 ```bash
 npm install -g @nocoo/otter
 otter --help
+otter source add /absolute/path/to/workflow
+otter source add /absolute/path/to/another-source
+otter workspace inspect --json
 otter scan --slim --save
 otter snapshot list
 ```
@@ -45,7 +53,10 @@ Local snapshots live in `~/.config/otter/snapshots/`. Use a full ID or its first
 ```bash
 otter snapshot show SNAPSHOT_ID
 otter snapshot diff OLD_ID NEW_ID
+otter snapshot export SNAPSHOT_ID --destination /absolute/path/to/new-recovery-folder
 ```
+
+The destination must not exist. Exports include saved files, directories, permissions, original link mappings, coverage and software inventories without depending on the source repository. The shared registry is `~/.config/otter/workspace.json`; the Mac App merges its previous source settings on first launch.
 
 ### Cloud backups
 
@@ -54,9 +65,12 @@ The [website](https://otter.hexly.ai) requires an identity allowed by Cloudflare
 ```bash
 otter login
 otter backup --slim
+otter snapshot timeline
+otter snapshot verify SNAPSHOT_ID
+otter snapshot download REMOTE_FULL_ID
 ```
 
-`backup` scans again, sends the snapshot to `https://otter.worker.hexly.ai/api/snapshots` with a Bearer token, and then uploads icons. This flow does not require creating a webhook. Login configuration is stored in `~/.config/otter/config.json`.
+`backup` scans again, saves locally, sends the snapshot to `https://otter.worker.hexly.ai/api/snapshots` with a Bearer token, and then uploads icons. Authentication or upload failures leave the local snapshot intact; retry that artifact with `otter backup --snapshot SNAPSHOT_ID`. No webhook is required. Login configuration is stored in `~/.config/otter/config.json`.
 
 `login --dev` and `backup --dev` use `config.dev.json`. The login page changes to `otter.dev.hexly.ai`, while `OTTER_API_URL` still determines the upload target, defaulting to the production Worker. Both modes share local snapshot and icon directories. See [addresses and login configuration](10-development.md#地址与登录配置) for other deployments.
 
@@ -87,7 +101,7 @@ packages/core/     Shared types
 packages/api/      Hono app factory, authentication and data access library
 ```
 
-`bun run typecheck` checks types; `bun run lint:biome` checks code style. Release deploys the production Worker after successful CI on main. It neither applies D1 migrations nor publishes the npm CLI; see [deployment](10-development.md#部署).
+Emit core declarations with `bunx tsc -p packages/core` before `bun run typecheck`; `bun run lint:biome` checks code style. Release deploys the production Worker after successful CI on main. It neither applies D1 migrations nor publishes the npm CLI. For 3.0, apply `0005_snapshot_v2.sql` first, deploy the API/Web with v1/v2 support, then distribute CLI/Mac clients; see [deployment](10-development.md#部署).
 
 `bun run deploy:check` builds the Web SPA and runs a Wrangler deployment dry run. `apps/api/wrangler.toml` serves the output from `../web/dist`, so the Web UI and API continue to ship as one Worker. The release check verifies the API version, JavaScript, CSS and SPA deep links.
 
@@ -137,6 +151,7 @@ Browser tests require Chromium; install it with `bunx playwright install chromiu
 
 - [Documentation index](README.md)
 - [Current development, collection scope and deployment](10-development.md)
+- [3.0 configuration backup design and acceptance record](features/04-configuration-backup-redesign.md)
 - [Collector design](02-collectors.md)
 - [Hermes collector](features/01-hermes-collector.md)
 - [Snapshot detail design](features/02-snapshot-detail-redesign.md)

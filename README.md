@@ -4,7 +4,7 @@
 
 <h1 align="center">Otter</h1>
 
-<p align="center">保存 macOS 开发环境的配置与清单，查看不同时间的快照。</p>
+<p align="center">管理 Agent 配置来源，保护本机配置，并在需要时取回完整内容。</p>
 
 <p align="center">
   <a href="https://otter.hexly.ai">站点</a> ·
@@ -13,31 +13,37 @@
 
 ## 这是什么
 
-Otter 在 macOS 上采集开发工具配置、应用与环境清单，保存为本地或云端 JSON 快照，方便迁移电脑和核对环境变化。Web 界面提供快照总览、文件查看和 JSON 导出；恢复文件与重新安装软件需要手动完成。
+Otter 3.0 在 macOS 上管理多个配置来源目录，发现各个 Agent 使用的指令、rules、commands 和完整 skill 包，并与软件、工具清单一起保存为本地和云端快照。未纳入 Workflow 的本机配置、未提交文件和符号链接目标也会在扫描范围内采集。原机器或 Git repo 不可访问时，可以从快照导出保存的内容。
 
-原生 macOS Agent Workspace 可扫描本机 harness、查看它们与 Workflow 的链接及副本关系，编辑指令、commands 和完整 Skill 包，并调用内置 CLI 执行备份任务。
+CLI 负责统一采集和备份；Mac App 展示本机的配置来源、Git 状态、Agent 入口和备份情况，保留指令与 Skill 编辑器；Web 按机器浏览历史、比较版本和下载恢复包。文件回填与软件重装仍需手动执行。
 
 云端由一个 Cloudflare Worker 同时提供 API 和 Web 页面。D1 保存用户、Token 与快照索引，R2 保存快照正文和应用图标。快照列表与详情按登录邮箱区分。
 
 ## 功能
 
-- 采集 Claude Code、OpenCode、Shell 配置，以及 Homebrew、应用、VS Code 扩展、Docker、字体、开发工具、Cloud CLI、macOS 偏好和 LaunchAgents 清单。
-- 采集 Hermes 主配置与命名 Profile 的配置、记忆、用户资料、定时任务和技能名称。
-- 在本地保存快照，或登录后压缩上传；成功上传快照后保存本地副本，再尝试导出和上传应用图标。
-- 在 CLI 中列出、查看和比较本地快照。比较依据是文件增删与大小、清单名称变化，无法识别同大小文件的内容变化。
-- 在 Web 中分页查看快照、检查采集器结果与文件内容、导出 JSON，并管理兼容旧接入方式的 Webhook。
+- 多来源登记与 Mac/CLI 共享：Git repo 和普通文件夹均可加入，显示分支、工作区变更、冲突、upstream 和远端检查时间。
+- 统一采集 Claude Code、Codex、Grok、Pi、Hermes、OpenCode、Gemini CLI 的已知配置入口；Hermes default、命名 profile 和配置声明的外部 skills 分别保留。
+- 保存完整 skill 包、脚本、引用和小型二进制资源，记录目录、权限、链接链及目标字节；独立资源不必先纳入 Workflow。
+- 14 个默认采集器保留 Shell、Homebrew、应用、扩展、Docker、字体、工具链、Cloud CLI、macOS 偏好和 LaunchAgent plist；应用清单补充 ID、路径、版本与可识别的安装来源。
+- 先保存不可变本地快照，再上传同一份内容；持久回执、合并时间线、远端核对和下载支持失败后继续处理。
+- 按内容、权限、链接和清单版本比较变化；Web 提供机器历史、来源与 Agent/profile 视图、搜索、覆盖报告、单文件和完整恢复 ZIP。
 
-`--slim` 只排除 Claude 的提示历史和会话摘要。其他配置、Hermes 记忆和用户资料仍会采集。凭据遮盖按文件类型和匹配规则处理；首次使用可先保存本地 JSON 并检查内容，再决定是否上传。具体范围见[采集与运行说明](docs/10-development.md#采集与快照边界)。
+v2 快照会明确记录排除、脱敏、仅清单、读取失败和容量限制。“完整”指记录策略内的采集完整。`--slim` 只排除 Claude 的提示历史和会话摘要，Hermes 记忆和用户资料仍会采集；上传前可检查本地快照。旧 v1 快照仍可查看，其名称清单无法补回过去未保存的 skill 正文。具体范围见[采集与运行说明](docs/10-development.md#采集与快照边界)。
 
 ## 使用
 
 ### 安装与本地快照
+
+本分支的 3.0.0 尚未发布；发布前使用下文的仓库构建或本地 Mac App 验证新增功能。
 
 需要 macOS 和 Node.js；仓库声明的 Node.js 范围为 `^22.12.0 || ^24.0.0 || >=26.0.0`。
 
 ```bash
 npm install -g @nocoo/otter
 otter --help
+otter source add /absolute/path/to/workflow
+otter source add /absolute/path/to/another-source
+otter workspace inspect --json
 otter scan --slim --save
 otter snapshot list
 ```
@@ -47,7 +53,10 @@ otter snapshot list
 ```bash
 otter snapshot show SNAPSHOT_ID
 otter snapshot diff OLD_ID NEW_ID
+otter snapshot export SNAPSHOT_ID --destination /absolute/path/to/new-recovery-folder
 ```
+
+导出目录必须尚不存在。产物包含保存的文件、目录结构、权限、原始链接映射、覆盖报告和软件清单，不依赖原 repo。CLI 来源登记位于 `~/.config/otter/workspace.json`；首次打开新版 Mac App 会合并旧的来源设置。
 
 ### 云端备份
 
@@ -56,9 +65,12 @@ otter snapshot diff OLD_ID NEW_ID
 ```bash
 otter login
 otter backup --slim
+otter snapshot timeline
+otter snapshot verify SNAPSHOT_ID
+otter snapshot download REMOTE_FULL_ID
 ```
 
-`backup` 会重新扫描，通过 Bearer Token 上传到 `https://otter.worker.hexly.ai/api/snapshots`，随后上传图标；当前流程无需先创建 Webhook。登录配置位于 `~/.config/otter/config.json`。
+`backup` 重新扫描并先本地保存，通过 Bearer Token 上传到 `https://otter.worker.hexly.ai/api/snapshots`，随后上传图标。未登录或上传失败时本地快照仍保留，可用 `otter backup --snapshot SNAPSHOT_ID` 重试原产物。无需先创建 Webhook。登录配置位于 `~/.config/otter/config.json`。
 
 `login --dev` 与 `backup --dev` 使用开发配置 `config.dev.json`；登录页切换到 `otter.dev.hexly.ai`，上传目标仍由 `OTTER_API_URL` 决定，未设置时仍是生产 Worker。本地快照和图标目录在两种模式下共用。连接其他部署的说明见[开发指南](docs/10-development.md#地址与登录配置)。
 
@@ -89,7 +101,7 @@ packages/core/     共享类型
 packages/api/      Hono 应用工厂、鉴权与数据访问库
 ```
 
-`bun run typecheck` 检查类型，`bun run lint:biome` 检查代码风格。生产 Worker 在 main 的 CI 成功后由 Release 部署；该流程不执行 D1 迁移，也不发布 npm CLI，详见[部署说明](docs/10-development.md#部署)。
+先运行 `bunx tsc -p packages/core`，再用 `bun run typecheck` 检查类型；`bun run lint:biome` 检查代码风格。生产 Worker 在 main 的 CI 成功后由 Release 部署；该流程不执行 D1 迁移，也不发布 npm CLI。3.0 上线前须先应用 `0005_snapshot_v2.sql`，再部署兼容 v1/v2 的 API/Web，最后分发 CLI/Mac，详见[升级与部署说明](docs/10-development.md#部署)。
 
 `bun run deploy:check` 构建 Web 并执行 Wrangler 部署预演。构建产物位于 `apps/web/dist`，由 `apps/api/wrangler.toml` 的 `../web/dist` 托管；页面和 API 仍随一个 Worker 发布。
 
@@ -140,6 +152,7 @@ HTTP 与 CLI 集成需要先完成上面的 core、cli、api 和 Web 构建。ru
 
 - [文档索引](docs/README.md)
 - [当前开发、采集范围与部署说明](docs/10-development.md)
+- [3.0 配置备份改版与验收记录](docs/features/04-configuration-backup-redesign.md)
 - [采集器设计](docs/02-collectors.md)
 - [Hermes 采集器](docs/features/01-hermes-collector.md)
 - [快照详情页设计](docs/features/02-snapshot-detail-redesign.md)

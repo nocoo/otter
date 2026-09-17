@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.0] - Unreleased
+
+### Features
+
+- Unify CLI and Mac source registration and Agent discovery across multiple repositories, ordinary folders, seven Agents and Hermes profiles.
+- Capture complete skill packages and unmanaged local configuration with binary assets, directories, permissions, link chains, target content and explicit coverage reports.
+- Save immutable v2 snapshots locally before upload; add durable receipts, combined local/remote history, verification, download and portable recovery exports.
+- Add Git working-tree and upstream observations with explicit remote checks and content-based backup status.
+- Organize the Mac App around overview, sources, Agents, backups and software inventories, preserving editing, conditional undo and drafts.
+- Add Web machine history, source and Agent/profile views, search, version comparison and verified file/package/machine recovery downloads.
+
+### Changed
+
+- Keep 14 default collectors; enrich application inventories with IDs, paths and install sources, and retain LaunchAgent plist content.
+- Redact recognized credentials from captured configuration text and report exclusions, limits and partial captures separately from upload success.
+- Validate v2 content, use account-scoped immutable snapshot IDs and index historical resource names with bounded D1 search chunks.
+- Preserve v1 history and CLI event protocol 1; report inventory-only recovery limits for older snapshots.
+
+### Fixes
+
+- Preserve local snapshots through authentication, upload and cancellation failures; distinguish deleted remote records from historical upload receipts.
+- Detect same-size content, executable-bit and link changes without treating incomplete scans as deletions.
+- Persist Mac task history and registry deltas, and retain transaction checkpoints across unchanged scans.
+- Sign and verify bundled CLI helpers before atomic installation to prevent stale executable signatures.
+
+### Upgrade
+
+- Apply D1 migration `0005_snapshot_v2.sql` before deploying the compatible API/Web, then distribute CLI/Mac 3.0.0 and create a fresh full snapshot.
+- This version is prepared locally; production deployment, npm publication and signed/notarized Mac distribution remain separate release steps.
+
 ## [2.1.0] - 2026-09-16
 
 ### Features

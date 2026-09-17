@@ -8,7 +8,7 @@
 
 | 资源 | 用途 |
 | --- | --- |
-| D1 `DB` | 用户、API Token、Webhook 与快照索引 |
+| D1 `DB` | 用户、API Token、Webhook、按账号/设备索引的快照摘要与文件名搜索分块 |
 | R2 `SNAPSHOTS` | 完整 JSON 快照 |
 | R2 `ICONS` | 应用图标，默认前缀 `apps/otter` |
 | `apps/web/dist` | React SPA 静态资源 |
@@ -19,15 +19,46 @@ Wrangler 的 `run_worker_first` 虽然列出 `/v1/*`，实际顶层 dispatcher �
 
 ## 采集与快照边界
 
-采集器使用本机命令和文件路径，主要面向 macOS。未安装的工具、缺少权限或不可读文件会造成跳过或错误项；快照不是完整系统镜像。当前没有自动恢复命令。
+3.0 默认启用 14 个采集器。新增 `agent-workspace` 统一发现登记来源、项目、七类 Agent 的已知配置入口、共享 skills、Hermes 命名 profile 和声明的外部目录，生成快照 schema v2。Mac 消费同一份 CLI 清单。CLI IPC/NDJSON 协议仍为 1，`capabilities` 单独声明支持的快照格式和操作。
 
-Claude 采集包括配置、插件清单、统计缓存、提示历史，以及会话索引摘要中的首条提示、项目路径等字段。`--slim` 仅跳过提示历史与会话摘要。Hermes 采集主 Profile 和命名 Profile 的 `config.yaml`、`SOUL.md`、记忆、用户资料、`cron/jobs.json` 与技能名称；不读取 Hermes 的会话数据库、`.env` 或 `auth.json`。SSH 私钥只记录存在情况，不收集私钥正文。
+已知 Agent 包括 Claude Code、Codex、Grok、Pi、Hermes、OpenCode、Gemini CLI。来源目录即使没有被 Agent 使用也会采集；Agent 目录里的独立 skill 不要求先加入来源。完整包包含脚本、references、assets、小型二进制、空目录与权限，保存符号链接链及可读取目标。配置引用、受管理副本和主动 fork 单独记录；磁盘存在不代表当前 Agent 会话已经加载。
 
-凭据遮盖由 `apps/cli/src/utils/redact.ts` 按格式与字段规则执行，并非所有文件都启用遮盖。Markdown 与 Hermes 记忆正文保留原文，Claude 会话索引的首条提示也不会经过该遮盖函数。上传前应检查实际快照内容。
+采集仍保留 Claude 配置、插件、统计缓存、提示历史及会话索引摘要。`--slim` 仅跳过提示历史与会话摘要。Hermes default 和命名 profile 包括 config、SOUL、记忆、用户资料、cron 和完整 skills；不读取会话数据库、`.env` 或 `auth.json`。SSH 私钥只记存在情况。v2 对所保存的配置文本统一应用凭据字段和内容模式遮盖，包括 Markdown、脚本、JSONC、TOML、YAML；被遮盖的正文无法恢复原凭据，上传前可检查本地产物。
 
-`scan --save` 保存本地 JSON。`backup` 则重新扫描、gzip 上传快照，成功后才保存本地副本；随后尝试应用图标导出与上传，图标失败不会撤回已上传的快照。`scan --json` 当前还会向 stdout 写入 `Scanning environment...`，需要纯 JSON 时使用保存的快照文件或 Web 的 JSON 导出。
+Agent 内容策略为单文件 4 MiB、单份快照内唯一内容 32 MiB、20,000 个条目、深度 32。依赖目录、生成缓存、凭据文件及数据库按策略排除；服务端限制解压后请求为 64 MiB。超过限制、断链、权限不足、采集期间变化都有明确覆盖记录，不会显示为全部已保护。内容摘要在脱敏后计算，同份快照内按摘要去重，导出时还原引用。完整度是记录范围与策略内的结论，不是系统镜像或全盘原子快照。
 
-`~/.config/otter/snapshots/` 在生产与开发配置间共用，`snapshot list/show/diff` 都只操作本地快照。`diff` 比较文件路径、文件大小和清单名称，不比较文件正文或清单版本字段。Web 支持分页与 JSON 导出，主机名搜索框当前禁用。
+`scan --save` 离线保存 JSON。`backup` 先本地保存，再 gzip 上传同一份不可变内容；未登录、断网或响应丢失均保留本地快照。图标在普通备份后单独上传。`scan --json` 的 stdout 是单份 JSON；进度写入 stderr，App 使用版本化 NDJSON 事件。
+
+### 来源与备份命令
+
+| 命令 | 用途 |
+| --- | --- |
+| `otter source add /absolute/folder` | 登记 repo、普通目录或补充资源路径；不修改来源文件 |
+| `otter source list` / `otter source remove SOURCE_ID` | 查看或移除登记；移除不删除目录 |
+| `otter source fetch SOURCE_ID` | 显式检查 Git 远端；保留上次成功时间和本次失败信息 |
+| `otter workspace inspect --json` | 配置来源、Agent 资源、Git 观测、配置与最近本地快照的差异状态 |
+| `otter scan --slim --save` | 无需登录生成完整本地快照，包含默认环境采集器 |
+| `otter backup --snapshot SNAPSHOT_ID` | 重传已有产物；可用 `--snapshot-sha256 HASH` 固定审阅内容 |
+| `otter snapshot list` / `show SNAPSHOT_ID` | 本地列表与内容；完整 ID 或唯一的前八位 ID |
+| `otter snapshot timeline` | 当前 API/账号的本地、远端合并时间线，标明待上传、待核对和远端缺失 |
+| `otter snapshot verify SNAPSHOT_ID` | 读取远端正文与回执，和本地摘要核对 |
+| `otter snapshot download REMOTE_FULL_ID` | 下载远端快照，核对 v2 回执后保存本地 |
+| `otter snapshot diff OLD_ID NEW_ID` | 比较已保存的内容、执行位、链接与清单版本；部分扫描或范围变化不推断删除 |
+| `otter snapshot export SNAPSHOT_ID --destination /absolute/new-folder` | 在新目录中展开配置，生成 `snapshot.json`、`links.json`、`environment.json` 和 `RESTORE.md` |
+
+`source`、`workspace` 和新增 snapshot 命令默认输出 JSON，也支持 `--format ndjson`。`--config-dir` / `OTTER_CONFIG_DIR` 选择独立配置目录，`--output-dir` 选择快照目录。隔离测试使用 `--scan-root`，必须同时指定文件采集器；默认日常采集使用真实用户目录。`--collectors` 自定义列表时要保留 `agent-workspace` 才能获得 v2 的配置覆盖模型。
+
+### 状态与取回
+
+`~/.config/otter/workspace.json` 保存来源、项目和绑定；`device.json` 保存稳定安装身份，机器改名不改变 ID。Mac 首次迁移备份旧设置为 `workspace.macos-import.json`，之后只同步自身更改，保留 CLI 的独立登记和并发冲突。App 的外观、草稿、事务与持久任务仍在 Application Support。认证、安装身份与上传回执不混入可恢复的配置正文。
+
+`snapshots/` 在生产与开发模式间共用；`receipts/` 按 API origin、凭据指纹与快照 ID 分隔。回执不保存 Token。相同 ID/相同内容可重试，相同 ID/不同内容拒绝覆盖。时间线区分采集、上传、最近核对时间；曾成功上传但现在远端缺失时提示重新上传。Git 领先/落后来自本地 upstream，只有显式 fetch 才更新 Otter 的远端检查时间。
+
+配置变化和完整环境变化分别计算稳定摘要，忽略采集时间和耗时。同长度内容、执行位、链接目标及软件版本变化可被识别。Web 显示机器最近采集、最近完整版本、来源与 Agent/profile 历史，支持文件名/资源名搜索、分页和比较；它显示的是采集时状态，不判断原机器此刻在线与否。
+
+CLI 导出与 Web ZIP 会展开保存的链接目标，保留原始路径和链接关系作为恢复说明，不要求原 repo 可用。导出只允许新目录，核对摘要并限制相对路径，保留空目录与执行权限。旧 v1 正文仍可取回，名称清单无法生成缺失的包内容；v1 机器按历史主机名分组，不自动认定为同名 v2 设备。
+
+当前不自动覆盖实际 Agent 配置、不安装软件、不执行恢复脚本，也不后台上传。自定义 Agent home 尚无持久化覆盖设置，可把额外配置目录登记为来源以备份，但不会自动成为一个新的 Agent 实例。来源登记的独占锁在进程被强制终止后可能残留；确认没有 Otter/CLI 写入任务后才能手动移除 `workspace.lock`。这些边界保留在 [3.0 验收记录](features/04-configuration-backup-redesign.md)中。
 
 ## 地址与登录配置
 
@@ -59,7 +90,7 @@ bun run build
 node apps/cli/dist/bin.js --help
 ```
 
-根目录 `build` 只构建 Web。`typecheck` 与 `lint` 都调用类型检查脚本，代码风格使用 `bun run lint:biome`。源代码 CLI 构建后使用 Node 执行，Bun 不是已发布 CLI 的必需运行时。
+根目录 `build` 只构建 Web。`typecheck` 与 `lint` 都调用类型检查脚本；共享类型变更后先 `bunx tsc -p packages/core` 生成声明，再检查下游。代码风格使用 `bun run lint:biome`。源代码 CLI 构建后使用 Node 执行，Bun 不是已发布 CLI 的必需运行时。
 
 ## 本地联调
 
@@ -84,14 +115,16 @@ runner 的鉴权旁路要求显式 `E2E_SKIP_AUTH=true` 且 `ENVIRONMENT` 不是
 | 命令 | 前置条件与运行方式 |
 | --- | --- |
 | `bun run test` | 依赖已安装；Vitest 单元测试 |
-| `bun run test:coverage` | 单元测试与覆盖率报告 |
+| `bun run test:coverage` | 单元测试与覆盖率报告；门槛保持 statements/lines 95%、branches/functions 94% |
 | `bun run test:worker` | Web 已构建；独立 Vitest 配置，在 Cloudflare runtime 中测试 Worker |
 | `bun run test:l2` | core / cli / api / Web 已构建；端口 17020；本地 D1/R2 与临时目录中的 CLI 配置 |
 | `bun run test:e2e` | Chromium；端口 27019；runner 构建 SPA，重建 `.wrangler/state-e2e-spa` 并应用本地迁移 |
 | `bun run test:e2e:bdd` | Chromium；端口 27019；Vite 首页标题 smoke，后端取决于 Vite 代理 |
 | `bun run deploy:check` | 构建 Web 后在 `apps/api` 执行 Wrangler `deploy --dry-run` |
 | `bun run verify:web <URL>` | 对已运行的 Worker 校验 API 版本、Web 资源和 SPA 路由 |
-| `bun run macos:build` | macOS 15+、完整 Xcode、XcodeGen；编译原生应用壳 |
+| `bun run macos:build` | macOS 15+、完整 Xcode、XcodeGen、Bun；编译 Universal App 和双架构 CLI |
+| `bun run macos:test` | XCTest 与实际 AppKit 输入；隔离来源、真实内置 CLI、回环 HTTP、取消、撤销和重启恢复 |
+| `bun run macos:package` | Release 构建、最小 PATH、带空格搬移目录及 DMG/ZIP 挂载验证 |
 
 `bunx playwright install chromium` 安装浏览器。L2 的 CLI 测试使用临时用户目录，采集流程集成注入模拟采集器；它们不执行真实 `backup`。L2 runner 不覆盖 `.dev.vars`，测试身份通过命令行变量注入。
 
@@ -110,6 +143,15 @@ CI 在 main 推送后检查代码、类型与覆盖率，运行 Worker 单元测
 Release 等待 CI 成功，检出对应提交，在仓库根目录安装依赖和构建 Web，然后从 `apps/api` 部署单个 Worker。`apps/api/wrangler.toml` 的静态目录为 `../web/dist`。发布后通过同一个 Worker 的 `https://otter.nocoo.workers.dev` 地址校验 API 版本、JS/CSS 资源和 SPA 路由，无需给 CI 配置 Cloudflare Access 登录凭据。
 
 生产环境继续使用 `CF_API_TOKEN`、`CF_ACCOUNT_ID` secrets 和 `deploy-otter-production` 并发锁。Release 不执行 D1 迁移。自行部署时需配置自己的 D1、两个 R2 绑定、Access team domain / audience、域名与生产环境的 Cloudflare 凭据，并在需要新 schema 的代码部署前完成迁移。
+
+3.0 的升级顺序：
+
+1. 按现有 D1 变更流程保留数据库备份，应用 `apps/api/migrations/0005_snapshot_v2.sql`。迁移保留旧记录，建立账号内快照主键、设备/摘要列与分块搜索表。
+2. 部署同时读取 v1/v2 的 API 和 Web。R2 条件创建保证对象不可变，D1 索引失败可按原 ID 重试；两端成功后才返回上传确认。
+3. 分发 3.0 CLI/Mac。新客户端上传 v2 需要新版 API；旧 v1 客户端仍可对新版 API 使用原接口。Mac 首次启动合并旧来源登记。
+4. 重新执行一次完整本地采集，审阅并上传，核对远端回执和恢复导出，建立新的设备与内容基线。旧快照不回写成 v2。
+
+本轮实现只进行本地验证和打包；`deploy:check` 是部署预演，不执行远程 D1 迁移、Worker 发布或 npm 发布。
 
 macOS 使用独立的 `macOS` workflow，原生目录、构建脚本或该 workflow 改动时触发。它编译应用壳，Web 发布继续只依赖 `CI`。构建命令和产物位置见 [macOS 开发说明](../apps/macos/README.md)。
 
