@@ -195,7 +195,7 @@ struct WorkspaceView: View {
             VStack(alignment: .leading, spacing: 24) {
                 OtterPageHeading(title: "Agents", subtitle: "已知配置、可执行程序与使用上下文。未定位 CLI 的配置仍可浏览和编辑。")
                     .nativeAnchor("page-heading", store: store)
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 235), spacing: 16)], spacing: 16) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 235), spacing: 16, alignment: .top)], spacing: 16) {
                     ForEach(store.index.harnesses) { agent in
                         OtterCard {
                             VStack(alignment: .leading, spacing: 12) {
@@ -423,7 +423,17 @@ struct StatusBadge: View {
     let title: String
     var symbol = "circle.dotted"
     var warning = false
-    var body: some View { Label(title, systemImage: symbol).font(OtterTypography.captionLabel).foregroundStyle(warning ? OtterTheme.warning : OtterTheme.accent).padding(.horizontal, 8).padding(.vertical, 5).background((warning ? OtterTheme.warning : OtterTheme.accent).opacity(0.09), in: Capsule()).fixedSize(horizontal: false, vertical: true) }
+    var body: some View {
+        Label(title.split(whereSeparator: \.isNewline).first.map(String.init) ?? title, systemImage: symbol)
+            .font(OtterTypography.captionLabel)
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .foregroundStyle(warning ? OtterTheme.warning : OtterTheme.accent)
+            .padding(.horizontal, 8).padding(.vertical, 5)
+            .background((warning ? OtterTheme.warning : OtterTheme.accent).opacity(0.09), in: Capsule())
+            .fixedSize(horizontal: false, vertical: true)
+            .help(title)
+    }
 }
 struct MetaRow: View {
     let title: String
