@@ -27,8 +27,8 @@ describe("LaunchAgentsCollector", () => {
     expect(result.lists).toEqual([
       { name: "com.example.sync.plist", meta: { type: "user-agent" } },
     ]);
-    expect(result.files[0].path).toBe("crontab");
-    expect(result.files[0].content).toContain("MAILTO");
+    expect(result.files.find((f) => f.path.endsWith(".plist"))?.content).toBe("plist");
+    expect(result.files.find((f) => f.path === "crontab")?.content).toContain("MAILTO");
   });
 
   it("swallows crontab failures (no crontab configured)", async () => {

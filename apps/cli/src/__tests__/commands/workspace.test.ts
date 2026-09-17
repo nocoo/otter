@@ -356,7 +356,8 @@ describe("native workspace protocol", () => {
     const original = await scan();
     const hash = snapshotDigest(original);
     original.collectors[0].files[0].content = "tampered";
-    await new SnapshotStore(snapshots).save(original);
+    const savedMeta = (await new SnapshotStore(snapshots).list())[0];
+    await writeFile(join(snapshots, savedMeta.filename), JSON.stringify(original));
     const result = await invoke([
       "backup",
       "--snapshot",
@@ -397,7 +398,7 @@ describe("native workspace protocol", () => {
     ["scan", "--json", "--collectors", "made-up"],
     ["snapshot", "show", "missing", "--json"],
     ["snapshot", "diff", "missing", "also-missing", "--json"],
-    ["backup", "--json"],
+    ["backup", "--json", "--scan-root", "FIXTURE", "--collectors", "shell-config"],
     ["backup", "--json", "--snapshot", "missing"],
     ["config", "get", "token", "--json"],
     ["unsupported", "--json"],

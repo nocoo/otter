@@ -1,6 +1,6 @@
 import { exec } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readdir } from "node:fs/promises";
+import { access, readdir, realpath } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import type { CollectedListItem, CollectorCategory, CollectorResult } from "@otter/core";
@@ -8,7 +8,7 @@ import { BaseCollector } from "./base.js";
 
 const execAsync = promisify(exec);
 
-const DOT_APP_SUFFIX = /\.app$/;
+const BUNDLE_ID = /[a-z].*\./i;
 
 /** Generate a deterministic icon URL from an app name and base URL */
 function iconUrl(appName: string, baseUrl: string): string {
@@ -52,6 +52,8 @@ export class ApplicationsCollector extends BaseCollector {
 
       await this.collectFromDir(this.systemAppsDir, apps, result);
       await this.collectFromDir(this.userAppsDir, apps, result);
+      if (this.systemAppsDir === "/Applications")
+        await this.collectFromDir("/System/Applications", apps, result);
 
       result.lists.push(...Array.from(apps.values()).sort((a, b) => a.name.localeCompare(b.name)));
     });
@@ -61,41 +63,80 @@ export class ApplicationsCollector extends BaseCollector {
     appsDir: string,
     apps: Map<string, CollectedListItem>,
     result: CollectorResult,
+    depth = 0,
   ): Promise<void> {
-    try {
-      const entries = await readdir(appsDir, { withFileTypes: true });
-      for (const entry of entries) {
-        if (!entry.isDirectory() || !entry.name.endsWith(".app")) continue;
-
-        const name = entry.name.replace(DOT_APP_SUFFIX, "");
-        const existing = apps.get(name);
-        if (existing) continue;
-
-        // biome-ignore lint/performance/noAwaitInLoops: sequential directory entry processing with deduplication
-        const version = await this.getAppVersion(appsDir, entry.name);
-        const item: CollectedListItem = {
-          name,
-          ...(version ? { version } : {}),
-        };
-        if (this.iconBaseUrl) {
-          item.meta = { iconUrl: iconUrl(name, this.iconBaseUrl) };
+    const entries = await readdir(appsDir, { withFileTypes: true }).catch(
+      (err: NodeJS.ErrnoException) => {
+        if (err.code !== "ENOENT")
+          result.errors.push(`Failed to read applications directory ${appsDir}: ${err.message}`);
+        return [];
+      },
+    );
+    for (const entry of entries) {
+      const path = join(appsDir, entry.name);
+      if (!entry.name.endsWith(".app")) {
+        if (entry.isDirectory() && depth < 3) {
+          // biome-ignore lint/performance/noAwaitInLoops: bounded depth-first traversal avoids spawning plist processes for an entire tree
+          await this.collectFromDir(path, apps, result, depth + 1);
         }
-        apps.set(name, item);
+        continue;
       }
-    } catch (err) {
-      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
-        result.errors.push(
-          `Failed to read applications directory ${appsDir}: ${(err as Error).message}`,
-        );
-      }
+      if ((!entry.isDirectory() && !entry.isSymbolicLink()) || apps.has(path)) continue;
+      const item = await this.applicationItem(appsDir, entry.name, result);
+      if (item) apps.set(path, item);
     }
   }
 
-  private async getAppVersion(appsDir: string, entryName: string): Promise<string | undefined> {
+  private async applicationItem(
+    appsDir: string,
+    entryName: string,
+    result: CollectorResult,
+  ): Promise<CollectedListItem | undefined> {
+    const name = entryName.slice(0, -4),
+      path = join(appsDir, entryName);
+    try {
+      const [version, bundleId, physical, storeReceipt] = await Promise.all([
+        this.getAppVersion(appsDir, entryName),
+        this.getAppVersion(appsDir, entryName, "CFBundleIdentifier"),
+        realpath(path),
+        access(join(path, "Contents/_MASReceipt/receipt")).then(
+          () => true,
+          () => false,
+        ),
+      ]);
+      const installSource = storeReceipt
+        ? "Mac App Store"
+        : physical.includes("/Caskroom/")
+          ? "Homebrew"
+          : path.startsWith("/System/")
+            ? "macOS"
+            : "unknown";
+      return {
+        name,
+        ...(version ? { version } : {}),
+        meta: {
+          path,
+          source: path,
+          installSource,
+          ...(bundleId && BUNDLE_ID.test(bundleId) ? { bundleId } : {}),
+          ...(this.iconBaseUrl ? { iconUrl: iconUrl(name, this.iconBaseUrl) } : {}),
+        },
+      };
+    } catch (error) {
+      result.errors.push(`Failed to inspect application ${path}: ${(error as Error).message}`);
+      return undefined;
+    }
+  }
+
+  private async getAppVersion(
+    appsDir: string,
+    entryName: string,
+    field = "CFBundleShortVersionString",
+  ): Promise<string | undefined> {
     const plistPath = join(appsDir, entryName, "Contents", "Info.plist");
     try {
       const version = await this._execCommand(
-        `defaults read ${JSON.stringify(plistPath)} CFBundleShortVersionString`,
+        `defaults read '${plistPath.replaceAll("'", "'\\''")}' ${field}`,
       );
       const trimmed = version.trim();
       return trimmed.length > 0 ? trimmed : undefined;

@@ -8,6 +8,7 @@ describe("createDefaultCollectors", () => {
     });
 
     expect(collectors.map((collector) => collector.id)).toEqual([
+      "agent-workspace",
       "claude-config",
       "opencode-config",
       "shell-config",

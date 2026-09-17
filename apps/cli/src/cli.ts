@@ -1,7 +1,6 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { defineCommand, yoctoSpinner } from "@nocoo/base-cli";
-import { createDefaultCollectors } from "./collectors/index.js";
 import { resolveBackupTargets } from "./commands/backup.js";
 import { executeConfig } from "./commands/config.js";
 import { executeLogin } from "./commands/login.js";
@@ -13,15 +12,19 @@ import {
   formatSnapshotList,
 } from "./commands/snapshot.js";
 import updateCommand from "./commands/update.js";
-import { runWorkspaceCommand, workspaceConfigDirectory } from "./commands/workspace.js";
+import {
+  runWorkspaceCommand,
+  selectCollectors,
+  workspaceConfigDirectory,
+} from "./commands/workspace.js";
 import { ConfigManager } from "./config/manager.js";
 import { SnapshotStore } from "./storage/local.js";
+import { RemoteStore } from "./storage/remote.js";
 import * as ui from "./ui.js";
 import { uploadIconsToServer } from "./uploader/icons-server.js";
-import { uploadSnapshot } from "./uploader/webhook.js";
 import { exportIcons } from "./utils/icons.js";
 
-export const CLI_VERSION = "2.1.0";
+export const CLI_VERSION = "3.0.0";
 
 const workspaceArgs = {
   json: { type: "boolean", description: "Emit one JSON value (config output is always redacted)" },
@@ -92,9 +95,7 @@ const scanCommand = defineCommand({
     ui.banner(CLI_VERSION);
     (args.json ? console.error : console.log)("Scanning environment...\n");
 
-    const collectors = createDefaultCollectors(homedir(), {
-      slim: args.slim,
-    });
+    const collectors = selectCollectors(homedir(), args.collectors, args.slim, otterConfigDir);
     let scanSpinner: ReturnType<typeof yoctoSpinner> | null = null;
     const useSpinner = !args.json;
     const snapshot = await executeScan(collectors, {
@@ -152,6 +153,10 @@ const backupCommand = defineCommand({
   },
   args: {
     ...workspaceArgs,
+    collectors: {
+      type: "string",
+      description: "Comma-separated collector IDs; defaults to the full snapshot",
+    },
     snapshot: {
       type: "string",
       description: "Upload this saved snapshot without rescanning or uploading icons",
@@ -173,26 +178,13 @@ const backupCommand = defineCommand({
     },
   },
   async run({ args }) {
-    const configManager = getConfigManager();
-    const config = await configManager.load();
-    if (!config.token) {
-      ui.banner(CLI_VERSION);
-      ui.error(`Not logged in. Run ${ui.pc.bold("otter login")} first.`);
-      process.exitCode = 1;
-      return;
-    }
-
-    const { snapshotUrl, iconsUrl, token } = resolveBackupTargets({ token: config.token });
-
     ui.banner(CLI_VERSION);
 
     // ── Step 1: Scan ──
     ui.step("Scanning environment", 1, 3);
     ui.blank();
 
-    const collectors = createDefaultCollectors(homedir(), {
-      slim: args.slim,
-    });
+    const collectors = selectCollectors(homedir(), args.collectors, args.slim, otterConfigDir);
     let backupSpinner: ReturnType<typeof yoctoSpinner> | null = null;
     const snapshot = await executeScan(collectors, {
       onStart: (_id, label) => {
@@ -220,11 +212,21 @@ const backupCommand = defineCommand({
     // ── Step 2: Upload snapshot ──
     ui.step("Uploading snapshot", 2, 3);
 
+    const filename = await snapshotStore.save(snapshot);
+    ui.statusLine(ui.S.success, `Saved locally: ${filename}`);
+    const config = await getConfigManager().load();
+    if (!config.token) {
+      ui.warn(`Snapshot saved. Run otter login, then otter backup --snapshot ${snapshot.id}`);
+      process.exitCode = 1;
+      return;
+    }
+    const { snapshotUrl, iconsUrl, token } = resolveBackupTargets({ token: config.token });
     const spinner = yoctoSpinner({ text: " Uploading..." }).start();
-    const uploadResult = await uploadSnapshot(snapshot, {
-      url: snapshotUrl,
+    const uploadResult = await new RemoteStore(
+      otterConfigDir,
+      new URL(snapshotUrl).origin,
       token,
-    });
+    ).upload(snapshot);
 
     if (!uploadResult.success) {
       spinner.error(` Upload failed: ${uploadResult.error}`);
@@ -233,10 +235,6 @@ const backupCommand = defineCommand({
     }
 
     spinner.success(" Uploaded");
-
-    // Auto-save locally after successful upload
-    await snapshotStore.save(snapshot);
-    ui.statusLine(ui.S.success, `Saved locally`, 0);
 
     ui.blank();
 
@@ -448,15 +446,56 @@ const snapshotDiffCommand = defineCommand({
   },
 });
 
+const recoveryIdArgument = {
+  type: "positional",
+  description: "Snapshot ID (use the full ID when downloading)",
+  required: true,
+} as const;
 const snapshotCommand = defineCommand({
   meta: {
     name: "snapshot",
-    description: "Manage locally-saved snapshots",
+    description: "Inspect, compare and recover local and remote snapshots",
   },
   subCommands: {
     list: snapshotListCommand,
     show: snapshotShowCommand,
     diff: snapshotDiffCommand,
+    timeline: defineCommand({
+      meta: {
+        name: "timeline",
+        description: "Combine local versions, remote history and verified receipts",
+      },
+      args: workspaceArgs,
+    }),
+    verify: defineCommand({
+      meta: {
+        name: "verify",
+        description: "Verify the remote bytes and receipt against a saved local snapshot",
+      },
+      args: { ...workspaceArgs, id: recoveryIdArgument },
+    }),
+    download: defineCommand({
+      meta: {
+        name: "download",
+        description: "Download and verify a remote snapshot into the local store",
+      },
+      args: { ...workspaceArgs, id: recoveryIdArgument },
+    }),
+    export: defineCommand({
+      meta: {
+        name: "export",
+        description: "Export recoverable files, link topology and reinstall inventories",
+      },
+      args: {
+        ...workspaceArgs,
+        id: recoveryIdArgument,
+        destination: {
+          type: "string",
+          description: "New absolute directory; existing destinations are refused",
+          required: true,
+        },
+      },
+    }),
   },
 });
 
@@ -598,5 +637,19 @@ export const main = defineCommand({
     snapshot: snapshotCommand,
     update: updateCommand,
     "export-icons": exportIconsCommand,
+    source: defineCommand({
+      meta: {
+        name: "source",
+        description:
+          "Manage shared configuration folders: list, add <path>, remove <id>, fetch <id>, import --workspace-file <path>",
+      },
+    }),
+    workspace: defineCommand({
+      meta: {
+        name: "workspace",
+        description:
+          "Inspect agents, sources, links, coverage and backup status: workspace inspect --json",
+      },
+    }),
   },
 });

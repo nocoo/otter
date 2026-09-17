@@ -6,14 +6,30 @@ import { parseArgs } from "node:util";
 import type { Collector, Snapshot } from "@otter/core";
 import { createDefaultCollectors } from "../collectors/index.js";
 import { ConfigManager } from "../config/manager.js";
+import { exportSnapshot } from "../snapshot/export.js";
 import { SnapshotStore } from "../storage/local.js";
-import { uploadSnapshot } from "../uploader/webhook.js";
+import { RemoteStore } from "../storage/remote.js";
+import { observeGit } from "../workspace/git.js";
+import {
+  addSource,
+  editRegistry,
+  importWorkspace,
+  readRegistry,
+  syncWorkspace,
+} from "../workspace/registry.js";
 import { buildApiBaseUrl, executeLogin, resolveHost } from "./login.js";
 import { executeScan } from "./scan.js";
 import { diffSnapshots } from "./snapshot.js";
+import { backupState, backupTimeline } from "./workspace-state.js";
 
 export const WORKSPACE_PROTOCOL = 1;
-const FILE_COLLECTORS = new Set(["claude-config", "opencode-config", "shell-config", "hermes"]);
+const FILE_COLLECTORS = new Set([
+  "agent-workspace",
+  "claude-config",
+  "opencode-config",
+  "shell-config",
+  "hermes",
+]);
 const TOKEN_PATTERN = /(?:otk_|Bearer\s+)[A-Za-z0-9_.-]+/gi;
 const FLAGS = {
   json: { type: "boolean" },
@@ -30,6 +46,8 @@ const FLAGS = {
   collectors: { type: "string" },
   snapshot: { type: "string" },
   "snapshot-sha256": { type: "string" },
+  "workspace-file": { type: "string" },
+  destination: { type: "string" },
 } as const;
 
 interface WorkspaceIo {
@@ -71,8 +89,13 @@ export function validatedApiUrl(value: string): string {
   return url.origin;
 }
 
-function selectCollectors(root: string, selection: string | undefined, slim: boolean): Collector[] {
-  const all = createDefaultCollectors(root, { slim });
+export function selectCollectors(
+  root: string,
+  selection: string | undefined,
+  slim: boolean,
+  configDirectory: string,
+): Collector[] {
+  const all = createDefaultCollectors(root, { slim, configDirectory });
   if (root !== homedir() && !selection) {
     throw new Error("An explicit --scan-root requires --collectors (file collectors only)");
   }
@@ -82,7 +105,7 @@ function selectCollectors(root: string, selection: string | undefined, slim: boo
     throw new Error("Unknown collector in --collectors");
   if (root !== homedir() && [...ids].some((id) => !FILE_COLLECTORS.has(id))) {
     throw new Error(
-      "An isolated scan only supports claude-config, opencode-config, shell-config and hermes",
+      "An isolated scan only supports agent-workspace, claude-config, opencode-config, shell-config and hermes",
     );
   }
   return all.filter((c) => ids.has(c.id));
@@ -101,7 +124,10 @@ export async function runWorkspaceCommand(
   if (argv.includes("--help") || argv.includes("-h")) return undefined;
   const flags = new Set(argv.map((arg) => arg.split("=", 1)[0]));
   if (
-    argv[0] !== "capabilities" &&
+    !["capabilities", "source", "workspace"].includes(argv[0] ?? "") &&
+    !(
+      argv[0] === "snapshot" && ["timeline", "verify", "download", "export"].includes(argv[1] ?? "")
+    ) &&
     !flags.has("--json") &&
     !flags.has("--format") &&
     !flags.has("--snapshot") &&
@@ -153,6 +179,8 @@ export async function runWorkspaceCommand(
         result = {
           protocolVersion: WORKSPACE_PROTOCOL,
           cliVersion: version,
+          snapshotVersions: [1, 2],
+          workspaceSchemaVersion: 2,
           platform: process.platform,
           arch: process.arch,
           operations: [
@@ -163,6 +191,17 @@ export async function runWorkspaceCommand(
             "backup.snapshot",
             "config.status",
             "login",
+            "workspace.inspect",
+            "source.list",
+            "source.add",
+            "source.remove",
+            "source.fetch",
+            "source.import",
+            "source.apply",
+            "snapshot.timeline",
+            "snapshot.verify",
+            "snapshot.download",
+            "snapshot.export",
           ],
           formats: ["json", "ndjson"],
           paths: { scanRoot, configPath: config.configPath, outputDir },
@@ -184,10 +223,47 @@ export async function runWorkspaceCommand(
         };
         break;
       }
+      case "source": {
+        if (!action || action === "list") result = await readRegistry(configDir);
+        else if (action === "import" && values["workspace-file"])
+          result = await importWorkspace(configDir, values["workspace-file"]);
+        else if (action === "apply" && values["workspace-file"])
+          result = await syncWorkspace(configDir, values["workspace-file"]);
+        else if (action === "add" && positionals[2])
+          result = await editRegistry(configDir, (registry) =>
+            addSource(registry, positionals[2] as string),
+          );
+        else if (action === "remove" && positionals[2])
+          result = await editRegistry(configDir, (registry) => {
+            registry.sources = registry.sources.filter(
+              (s) => s.id !== positionals[2] && s.path !== positionals[2],
+            );
+          });
+        else if (action === "fetch" && positionals[2]) {
+          const source = (await readRegistry(configDir)).sources.find(
+            (s) => s.id === positionals[2] || s.path === positionals[2],
+          );
+          if (!source) throw new Error("Registered source not found");
+          result = await observeGit(source.path, configDir, source.id, true);
+        } else
+          throw new Error(
+            "Use source list/add <absolute-folder>/remove <id>/fetch <id>/import --workspace-file <path>",
+          );
+        break;
+      }
+      case "workspace":
       case "scan": {
+        if (command === "workspace" && action !== "inspect")
+          throw new Error("Use workspace inspect");
         const snapshot = await executeScan(
-          selectCollectors(scanRoot, values.collectors, values.slim ?? false),
+          selectCollectors(
+            scanRoot,
+            command === "workspace" ? "agent-workspace" : values.collectors,
+            values.slim ?? false,
+            configDir,
+          ),
           {
+            homeDir: scanRoot,
             onStart: (id, label) => {
               if (ndjson) emit("progress", { collectorId: id, label, phase: "started" });
               else io.stderr(`Scanning ${label}\n`);
@@ -206,6 +282,10 @@ export async function runWorkspaceCommand(
           },
         );
         snapshot.machine.homeDir = scanRoot;
+        if (command === "workspace") {
+          result = { workspace: snapshot.workspace, backup: await backupState(snapshot, store) };
+          break;
+        }
         const filename = values.save ? await store.save(snapshot) : undefined;
         result = ndjson ? { snapshot, filename, sha256: snapshotDigest(snapshot) } : snapshot;
         break;
@@ -215,11 +295,35 @@ export async function runWorkspaceCommand(
           result = await store.list();
           break;
         }
+        if (action === "timeline") {
+          secret = (await config.load()).token;
+          result = await backupTimeline(store, configDir, apiUrl, secret);
+          break;
+        }
+        if (action === "download") {
+          secret = (await config.load()).token;
+          if (!secret || !positionals[2])
+            throw new Error("Log in and specify a remote snapshot ID");
+          result = await new RemoteStore(configDir, apiUrl, secret).download(positionals[2], store);
+          break;
+        }
         const first = positionals[2] ? await store.load(positionals[2]) : null;
         if (!first)
           throw new Error("Snapshot not found (use a full ID or unique eight-character ID)");
         if (action === "show") {
           result = { snapshot: first, sha256: snapshotDigest(first) };
+          break;
+        }
+        if (action === "export") {
+          if (!values.destination)
+            throw new Error("Export requires --destination <new absolute directory>");
+          result = await exportSnapshot(first, values.destination);
+          break;
+        }
+        if (action === "verify") {
+          secret = (await config.load()).token;
+          if (!secret) throw new Error("Not logged in. Run otter login first");
+          result = await new RemoteStore(configDir, apiUrl, secret).verify(first);
           break;
         }
         if (action !== "diff") throw new Error("Unknown snapshot action");
@@ -229,25 +333,35 @@ export async function runWorkspaceCommand(
         break;
       }
       case "backup": {
-        if (!values.snapshot)
-          throw new Error("Structured backup requires --snapshot <id>; scan --save first");
-        const snapshot = await store.load(values.snapshot);
+        const snapshot = values.snapshot
+          ? await store.load(values.snapshot)
+          : await executeScan(
+              selectCollectors(scanRoot, values.collectors, values.slim ?? false, configDir),
+              { homeDir: scanRoot },
+            );
         if (!snapshot) throw new Error("Reviewed snapshot not found");
         const sha256 = snapshotDigest(snapshot);
         if (values["snapshot-sha256"] && sha256 !== values["snapshot-sha256"])
           throw new Error("Snapshot changed since review; inspect it again before uploading");
+        if (!values.snapshot) await store.save(snapshot);
         const loaded = await config.load();
         secret = loaded.token;
-        if (!secret) throw new Error("Not logged in. Run otter login first");
+        if (!secret)
+          throw new Error(
+            `Not logged in. Snapshot ${snapshot.id} is saved locally; run otter login, then backup --snapshot ${snapshot.id}`,
+          );
         if (ndjson)
           emit("progress", { phase: "uploading", snapshotId: snapshot.id, sha256, apiUrl });
-        const uploaded = await uploadSnapshot(snapshot, {
-          url: `${apiUrl}/api/snapshots`,
-          token: secret,
-        });
+        const uploaded = await new RemoteStore(configDir, apiUrl, secret).upload(snapshot);
         if (!uploaded.success)
           throw new Error(uploaded.error ?? "Upload failed; server acceptance is unconfirmed");
-        result = { snapshotId: snapshot.id, sha256, apiUrl, uploaded: true };
+        result = {
+          snapshotId: snapshot.id,
+          sha256,
+          apiUrl,
+          uploaded: true,
+          receipt: uploaded.receipt,
+        };
         break;
       }
       case "login": {

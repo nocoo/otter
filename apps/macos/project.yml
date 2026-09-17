@@ -65,7 +65,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ai.hexly.otter
         PRODUCT_NAME: Otter
-        MARKETING_VERSION: "2.1.0"
+        MARKETING_VERSION: "3.0.0"
         CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: true
         ENABLE_HARDENED_RUNTIME: true

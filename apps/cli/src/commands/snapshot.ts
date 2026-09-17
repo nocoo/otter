@@ -123,6 +123,7 @@ export interface SnapshotDiffResult {
   addedCollectors: string[];
   removedCollectors: string[];
   collectors: CollectorDiff[];
+  coverageWarning?: string;
 }
 
 /**
@@ -131,43 +132,42 @@ export interface SnapshotDiffResult {
  * Content, versions and metadata are compared, including equal-length edits.
  */
 export function diffSnapshots(oldSnap: Snapshot, newSnap: Snapshot): SnapshotDiffResult {
+  const scopeChanged =
+    !!oldSnap.workspace &&
+    !!newSnap.workspace &&
+    oldSnap.workspace.scopeFingerprint !== newSnap.workspace.scopeFingerprint;
+  const incomplete =
+    scopeChanged ||
+    newSnap.workspace?.coverage.complete === false ||
+    newSnap.collectors.some((c) => c.errors.length > 0);
   const oldCollectorMap = new Map(oldSnap.collectors.map((c) => [c.id, c]));
   const newCollectorMap = new Map(newSnap.collectors.map((c) => [c.id, c]));
 
-  const allIds = new Set([...oldCollectorMap.keys(), ...newCollectorMap.keys()]);
-
-  const addedCollectors: string[] = [];
-  const removedCollectors: string[] = [];
+  const addedCollectors = newSnap.collectors
+    .filter((collector) => !oldCollectorMap.has(collector.id))
+    .map((collector) => collector.label);
+  const removedCollectors = incomplete
+    ? []
+    : oldSnap.collectors
+        .filter((collector) => !newCollectorMap.has(collector.id))
+        .map((collector) => collector.label);
   const collectors: CollectorDiff[] = [];
-
-  for (const id of allIds) {
-    const oldC = oldCollectorMap.get(id);
-    const newC = newCollectorMap.get(id);
-
-    if (!oldC && newC) {
-      addedCollectors.push(newC.label);
-      continue;
-    }
-    if (oldC && !newC) {
-      removedCollectors.push(oldC.label);
-      continue;
-    }
-
-    // Both exist — diff files and lists
-    // biome-ignore lint/style/noNonNullAssertion: guaranteed non-null — early returns above handle the null cases
-    const fileDiffs = diffFiles(oldC!.files, newC!.files);
-    // biome-ignore lint/style/noNonNullAssertion: guaranteed non-null — early returns above handle the null cases
-    const listDiffs = diffLists(oldC!.lists, newC!.lists);
-
-    if (fileDiffs.length > 0 || listDiffs.length > 0) {
+  for (const [id, newCollector] of newCollectorMap) {
+    const oldCollector = oldCollectorMap.get(id);
+    if (!oldCollector) continue;
+    const fileDiffs = diffFiles(oldCollector.files, newCollector.files).filter(
+      (entry) => !incomplete || entry.type !== "removed",
+    );
+    const listDiffs = diffLists(oldCollector.lists, newCollector.lists).filter(
+      (entry) => !incomplete || entry.type !== "removed",
+    );
+    if (fileDiffs.length || listDiffs.length)
       collectors.push({
         collectorId: id,
-        // biome-ignore lint/style/noNonNullAssertion: guaranteed non-null — early returns above handle the null cases
-        collectorLabel: newC!.label,
+        collectorLabel: newCollector.label,
         files: fileDiffs,
         lists: listDiffs,
       });
-    }
   }
 
   return {
@@ -176,6 +176,13 @@ export function diffSnapshots(oldSnap: Snapshot, newSnap: Snapshot): SnapshotDif
     addedCollectors,
     removedCollectors,
     collectors,
+    ...(incomplete
+      ? {
+          coverageWarning: scopeChanged
+            ? "The capture scopes differ. Missing entries are unknown, not confirmed deletions."
+            : "The newer capture is incomplete. Missing entries are unknown, not confirmed deletions.",
+        }
+      : {}),
   };
 }
 
@@ -183,15 +190,28 @@ function diffFiles(
   oldFiles: Snapshot["collectors"][0]["files"],
   newFiles: Snapshot["collectors"][0]["files"],
 ): DiffEntry[] {
-  const oldMap = new Map(oldFiles.map((f) => [f.path, f]));
-  const newMap = new Map(newFiles.map((f) => [f.path, f]));
+  const identity = (f: (typeof oldFiles)[number]) =>
+    f.rootId ? `${f.rootId}/${f.relativePath}` : f.path;
+  const oldMap = new Map(oldFiles.map((f) => [identity(f), f]));
+  const newMap = new Map(newFiles.map((f) => [identity(f), f]));
   const entries: DiffEntry[] = [];
 
   for (const [path, newFile] of newMap) {
     const oldFile = oldMap.get(path);
     if (!oldFile) {
       entries.push({ type: "added", label: path });
-    } else if (oldFile.content !== newFile.content || oldFile.sizeBytes !== newFile.sizeBytes) {
+    } else if (
+      (oldFile.sha256 && newFile.sha256
+        ? oldFile.sha256 !== newFile.sha256
+        : oldFile.content !== newFile.content) ||
+      oldFile.sizeBytes !== newFile.sizeBytes ||
+      oldFile.mode !== newFile.mode ||
+      oldFile.kind !== newFile.kind ||
+      oldFile.targetKind !== newFile.targetKind ||
+      oldFile.entryMode !== newFile.entryMode ||
+      oldFile.linkTarget !== newFile.linkTarget ||
+      JSON.stringify(oldFile.links) !== JSON.stringify(newFile.links)
+    ) {
       entries.push({ type: "changed", label: path });
     }
   }
@@ -251,6 +271,7 @@ export function formatSnapshotDiff(diff: SnapshotDiffResult): string {
     diff.addedCollectors.length > 0 ||
     diff.removedCollectors.length > 0 ||
     diff.collectors.length > 0;
+  if (diff.coverageWarning) lines.push(`  ${diff.coverageWarning}`);
 
   if (!hasChanges) {
     lines.push("  No differences found.");

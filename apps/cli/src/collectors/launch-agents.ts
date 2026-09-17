@@ -21,6 +21,12 @@ export class LaunchAgentsCollector extends BaseCollector {
   collect(): Promise<CollectorResult> {
     return this.timed(async (result) => {
       const agentsDir = join(this.homeDir, "Library", "LaunchAgents");
+      result.files.push(
+        ...(await this.collectDir(agentsDir, result, {
+          redact: true,
+          filter: (path) => path.endsWith(".plist"),
+        })),
+      );
       try {
         const entries = await readdir(agentsDir, { withFileTypes: true });
         result.lists.push(

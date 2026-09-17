@@ -1,5 +1,6 @@
 import { gzipSync } from "node:zlib";
 import type { Snapshot, UploaderConfig, UploadResult } from "@otter/core";
+import { digest } from "../workspace/files.js";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 
@@ -37,10 +38,29 @@ export async function uploadSnapshot(
     const durationMs = Math.round(performance.now() - start);
 
     if (response.ok) {
+      const body = (await response.json().catch(() => ({}))) as {
+        receipt?: import("@otter/core").RemoteReceipt;
+      };
+      if (
+        snapshot.version === 2 &&
+        (body.receipt?.snapshotId !== snapshot.id ||
+          body.receipt.sha256 !== digest(jsonBody) ||
+          !body.receipt.account ||
+          !body.receipt.receivedAt)
+      ) {
+        return {
+          success: false,
+          statusCode: response.status,
+          durationMs,
+          error:
+            "Server acceptance is unconfirmed: receipt missing or digest mismatch. Upgrade the server, then verify or retry this saved snapshot.",
+        };
+      }
       return {
         success: true,
         statusCode: response.status,
         durationMs,
+        ...(body.receipt ? { receipt: body.receipt } : {}),
       };
     }
 

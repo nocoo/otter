@@ -29,6 +29,17 @@ export interface SnapshotRow {
   snapshot_at: number;
   // biome-ignore lint/style/useNamingConvention: D1 column name
   uploaded_at: number;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
+  schema_version?: number;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
+  device_id?: string | null;
+  sha256?: string | null;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
+  coverage_complete?: number | null;
+  // biome-ignore lint/style/useNamingConvention: D1 column name
+  summary_json?: string | null;
+  // biome-ignore lint/style/useNamingConvention: query result column name
+  latest_complete_id?: string | null;
 }
 
 export interface SnapshotMetadata {
@@ -43,17 +54,21 @@ export interface SnapshotMetadata {
 
 const SELECT_COLS = `id, user_id, hostname, platform, arch, username,
   collector_count, file_count, list_count, size_bytes, r2_key,
-  snapshot_at, uploaded_at`;
+  snapshot_at, uploaded_at, schema_version, device_id, sha256, coverage_complete, summary_json`;
 
 export interface ListOptions {
   limit?: number;
   before?: number | null;
+  cursor?: string;
+  device?: string;
+  search?: string;
 }
 
 export interface ListResult {
   rows: SnapshotRow[];
   total: number;
   nextBefore: number | null;
+  nextCursor: string | null;
 }
 
 export async function listSnapshots(
@@ -61,30 +76,52 @@ export async function listSnapshots(
   userId: string,
   options: ListOptions = {},
 ): Promise<ListResult> {
-  const limit = Math.min(Math.max(options.limit ?? 20, 1), 100);
+  const limit = Number.isFinite(options.limit)
+    ? Math.min(Math.max(options.limit ?? 20, 1), 100)
+    : 20;
   const before = options.before ?? null;
-
-  const sql = before
-    ? `SELECT ${SELECT_COLS} FROM snapshots
-       WHERE user_id = ?1 AND uploaded_at < ?2
-       ORDER BY uploaded_at DESC LIMIT ?3`
-    : `SELECT ${SELECT_COLS} FROM snapshots
-       WHERE user_id = ?1
-       ORDER BY uploaded_at DESC LIMIT ?2`;
-  const params = before ? [userId, before, limit] : [userId, limit];
-
+  const params: unknown[] = [userId];
+  const conditions = ["user_id = ?1"];
+  if (options.device) {
+    params.push(options.device);
+    conditions.push(`COALESCE(device_id, 'legacy:' || hostname) = ?${params.length}`);
+  }
+  if (options.search) {
+    params.push(options.search);
+    conditions.push(
+      `(instr(lower(hostname), lower(?${params.length})) > 0 OR EXISTS (SELECT 1 FROM snapshot_search search WHERE search.user_id = snapshots.user_id AND search.snapshot_id = snapshots.id AND instr(lower(search.terms), lower(?${params.length})) > 0))`,
+    );
+  }
+  const countParams = [...params];
+  const countConditions = [...conditions];
+  if (options.cursor) {
+    const [time, id] = JSON.parse(options.cursor) as [number, string];
+    if (!Number.isFinite(time) || typeof id !== "string") throw new Error("Invalid cursor");
+    params.push(time, id);
+    conditions.push(
+      `(uploaded_at < ?${params.length - 1} OR (uploaded_at = ?${params.length - 1} AND id < ?${params.length}))`,
+    );
+  } else if (before) {
+    params.push(before);
+    conditions.push(`uploaded_at < ?${params.length}`);
+  }
+  params.push(limit);
+  const sql = `SELECT ${SELECT_COLS} FROM snapshots
+       WHERE ${conditions.join(" AND ")}
+       ORDER BY uploaded_at DESC, id DESC LIMIT ?${params.length}`;
   const [rows, countRow] = await Promise.all([
     driver.query<SnapshotRow>(sql, params),
     driver.queryFirst<{ total: number }>(
-      "SELECT COUNT(*) as total FROM snapshots WHERE user_id = ?1",
-      [userId],
+      `SELECT COUNT(*) as total FROM snapshots WHERE ${countConditions.join(" AND ")}`,
+      countParams,
     ),
   ]);
-
   const last = rows[rows.length - 1];
   const nextBefore = rows.length === limit ? (last?.uploaded_at ?? null) : null;
+  const nextCursor =
+    rows.length === limit && last ? JSON.stringify([last.uploaded_at, last.id]) : null;
 
-  return { rows, total: countRow?.total ?? 0, nextBefore };
+  return { rows, total: countRow?.total ?? 0, nextBefore, nextCursor };
 }
 
 export function getSnapshotMeta(
@@ -110,8 +147,15 @@ export async function snapshotExists(
   return row !== null;
 }
 
-export async function deleteSnapshotMeta(driver: DbDriver, snapshotId: string): Promise<void> {
-  await driver.execute("DELETE FROM snapshots WHERE id = ?1", [snapshotId]);
+export async function deleteSnapshotMeta(
+  driver: DbDriver,
+  snapshotId: string,
+  userId: string,
+): Promise<void> {
+  await driver.execute("DELETE FROM snapshots WHERE id = ?1 AND user_id = ?2", [
+    snapshotId,
+    userId,
+  ]);
 }
 
 export interface InsertSnapshotInput {
@@ -124,6 +168,11 @@ export interface InsertSnapshotInput {
   r2Key: string;
   snapshotAt: number;
   uploadedAt: number;
+  schemaVersion?: number;
+  deviceId?: string;
+  sha256?: string;
+  complete?: boolean;
+  summary?: unknown;
 }
 
 export function insertSnapshotStatement(input: InsertSnapshotInput): {
@@ -134,8 +183,9 @@ export function insertSnapshotStatement(input: InsertSnapshotInput): {
     sql: `INSERT INTO snapshots (
         id, user_id, webhook_id, hostname, platform, arch, username,
         collector_count, file_count, list_count, size_bytes, r2_key,
-        snapshot_at, uploaded_at
-      ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)`,
+        snapshot_at, uploaded_at, schema_version, device_id, sha256, coverage_complete, summary_json
+      ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)
+      ON CONFLICT(user_id, id) DO NOTHING`,
     params: [
       input.id,
       input.userId,
@@ -151,10 +201,28 @@ export function insertSnapshotStatement(input: InsertSnapshotInput): {
       input.r2Key,
       input.snapshotAt,
       input.uploadedAt,
+      input.schemaVersion ?? 1,
+      input.deviceId ?? null,
+      input.sha256 ?? null,
+      input.complete === undefined ? null : Number(input.complete),
+      input.summary ? JSON.stringify(input.summary) : null,
     ],
   };
 }
 
 export function snapshotR2Key(userId: string, snapshotId: string): string {
   return `${userId}/${snapshotId}.json`;
+}
+
+export function listDevices(driver: DbDriver, userId: string): Promise<SnapshotRow[]> {
+  return driver.query<SnapshotRow>(
+    `WITH ranked AS (
+    SELECT *, ROW_NUMBER() OVER (PARTITION BY COALESCE(device_id, 'legacy:' || hostname) ORDER BY snapshot_at DESC, uploaded_at DESC, id DESC) AS position
+    FROM snapshots WHERE user_id = ?1
+  ) SELECT *, (SELECT id FROM snapshots complete WHERE complete.user_id = ranked.user_id
+    AND COALESCE(complete.device_id, 'legacy:' || complete.hostname) = COALESCE(ranked.device_id, 'legacy:' || ranked.hostname)
+    AND coverage_complete = 1 ORDER BY snapshot_at DESC, uploaded_at DESC, id DESC LIMIT 1) AS latest_complete_id
+  FROM ranked WHERE position = 1 ORDER BY snapshot_at DESC`,
+    [userId],
+  );
 }

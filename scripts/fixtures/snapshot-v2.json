@@ -1,0 +1,335 @@
+{
+  "version": 2,
+  "id": "v2-fixture-snapshot",
+  "createdAt": "2026-09-17T00:00:00.000Z",
+  "machine": {
+    "hostname": "Recovery Mac",
+    "platform": "darwin",
+    "arch": "arm64",
+    "username": "fixture",
+    "homeDir": "/Users/fixture",
+    "osVersion": "15.0",
+    "nodeVersion": "v24.0.0"
+  },
+  "collectors": [
+    {
+      "id": "agent-workspace",
+      "label": "Agent configurations and sources",
+      "category": "config",
+      "files": [
+        {
+          "path": "/Users/fixture/workflow/AGENTS.md",
+          "rootId": "workflow",
+          "relativePath": "AGENTS.md",
+          "kind": "file",
+          "encoding": "utf8",
+          "content": "Read the project rules before changing files.\n",
+          "sizeBytes": 46,
+          "sha256": "61426a4f1a44d93ce4f32b9722e01ade2644fc1636c321763f7a19891dfd000a",
+          "mode": 420,
+          "resolvedPath": "/Users/fixture/workflow/AGENTS.md",
+          "links": []
+        },
+        {
+          "path": "/Users/fixture/workflow/rules/team.md",
+          "rootId": "workflow",
+          "relativePath": "rules/team.md",
+          "kind": "file",
+          "encoding": "utf8",
+          "content": "Preserve user changes.\n",
+          "sizeBytes": 23,
+          "sha256": "a179f18d9025971811ee475cb914fa9c08e12ef4868eaf90616ba0c364b872f4",
+          "mode": 420,
+          "resolvedPath": "/Users/fixture/workflow/rules/team.md",
+          "links": []
+        },
+        {
+          "path": "/Users/fixture/.claude/CLAUDE.md",
+          "rootId": "claude:default",
+          "relativePath": "CLAUDE.md",
+          "kind": "symlink",
+          "encoding": "utf8",
+          "content": "Read the project rules before changing files.\n",
+          "sizeBytes": 46,
+          "sha256": "61426a4f1a44d93ce4f32b9722e01ade2644fc1636c321763f7a19891dfd000a",
+          "mode": 420,
+          "resolvedPath": "/Users/fixture/workflow/AGENTS.md",
+          "links": [
+            {
+              "path": "/Users/fixture/.claude/CLAUDE.md",
+              "target": "/Users/fixture/workflow/AGENTS.md",
+              "resolvedPath": "/Users/fixture/workflow/AGENTS.md"
+            }
+          ],
+          "linkTarget": "/Users/fixture/workflow/AGENTS.md"
+        },
+        {
+          "path": "/Users/fixture/.claude/skills/local/SKILL.md",
+          "rootId": "claude:default",
+          "relativePath": "skills/local/SKILL.md",
+          "kind": "file",
+          "encoding": "utf8",
+          "content": "---\nname: local\ndescription: An independent skill\n---\nUse scripts/run.sh.\n",
+          "sizeBytes": 74,
+          "sha256": "5d5c44f63b4adbbfc86ba863e129ca292e09faca233cb566d18be5963c7d9799",
+          "mode": 420,
+          "resolvedPath": "/Users/fixture/.claude/skills/local/SKILL.md",
+          "links": []
+        },
+        {
+          "path": "/Users/fixture/.claude/skills/local/scripts/run.sh",
+          "rootId": "claude:default",
+          "relativePath": "skills/local/scripts/run.sh",
+          "kind": "file",
+          "encoding": "utf8",
+          "content": "#!/bin/sh\necho recovered\n",
+          "sizeBytes": 25,
+          "sha256": "aeee505cc9eaaa655a2ccc3a29436608bfaf4b4e03736fb84be6058d7d00279d",
+          "mode": 493,
+          "resolvedPath": "/Users/fixture/.claude/skills/local/scripts/run.sh",
+          "links": []
+        },
+        {
+          "path": "/Users/fixture/.hermes/SOUL.md",
+          "rootId": "hermes:default",
+          "relativePath": "SOUL.md",
+          "kind": "file",
+          "encoding": "utf8",
+          "content": "hermes:default persona\n",
+          "sizeBytes": 23,
+          "sha256": "29bff55f6fe07333836869793959819f18848537eeba88fa16549ba10efee532",
+          "mode": 420,
+          "resolvedPath": "/Users/fixture/.hermes/SOUL.md",
+          "links": []
+        },
+        {
+          "path": "/Users/fixture/.hermes/profiles/cherry/SOUL.md",
+          "rootId": "hermes:cherry",
+          "relativePath": "SOUL.md",
+          "kind": "file",
+          "encoding": "utf8",
+          "content": "hermes:cherry persona\n",
+          "sizeBytes": 22,
+          "sha256": "1acded1c417050acb9b63831f748c924d97a0e5b1a18f31c5cbff6df75375c38",
+          "mode": 420,
+          "resolvedPath": "/Users/fixture/.hermes/profiles/cherry/SOUL.md",
+          "links": []
+        }
+      ],
+      "lists": [],
+      "errors": [],
+      "skipped": [],
+      "durationMs": 20
+    },
+    {
+      "id": "applications",
+      "label": "Installed Applications",
+      "category": "environment",
+      "files": [],
+      "lists": [
+        {
+          "name": "Cursor",
+          "version": "1.0",
+          "meta": {
+            "bundleId": "com.example.cursor",
+            "path": "/Applications/Cursor.app",
+            "installSource": "unknown"
+          }
+        }
+      ],
+      "errors": [],
+      "skipped": [],
+      "durationMs": 5
+    }
+  ],
+  "workspace": {
+    "schemaVersion": 2,
+    "deviceId": "fixture-stable-device",
+    "observedAt": "2026-09-17T00:00:00.000Z",
+    "contentFingerprint": "460ee6aa3a80359181b794cc31a7185addba77626e9f719c10e3c8efb8668a1d",
+    "configurationFingerprint": "b7d64a9221007dfd5390f7df6cd5b8f3ea4f82faa1237141e35ebf161f5511a1",
+    "scopeFingerprint": "5f161c9149882e0e10124bc5dd5c11f0fbe8ec452edd52bcec76b01e9252cb33",
+    "registry": {
+      "version": 1,
+      "sources": [
+        {
+          "id": "workflow",
+          "path": "/Users/fixture/workflow",
+          "label": "workflow"
+        }
+      ],
+      "projects": [],
+      "bindings": []
+    },
+    "roots": [
+      {
+        "id": "workflow",
+        "path": "/Users/fixture/workflow",
+        "label": "workflow",
+        "role": "source",
+        "agentIds": [],
+        "status": "complete",
+        "git": {
+          "checkedAt": "2026-09-17T00:00:00.000Z",
+          "repository": true,
+          "branch": "main",
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "upstream": "origin/main",
+          "remote": "https://example.com/workflow.git",
+          "repoKey": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "ahead": 1,
+          "behind": 0,
+          "staged": 1,
+          "unstaged": 2,
+          "untracked": 1,
+          "conflicts": 0,
+          "detached": false,
+          "unborn": false
+        }
+      },
+      {
+        "id": "claude:default",
+        "path": "/Users/fixture/.claude",
+        "label": "claude:default",
+        "role": "agent",
+        "agentIds": ["claude:default"],
+        "status": "complete"
+      },
+      {
+        "id": "hermes:default",
+        "path": "/Users/fixture/.hermes",
+        "label": "hermes:default",
+        "role": "agent",
+        "agentIds": ["hermes:default"],
+        "status": "complete"
+      },
+      {
+        "id": "hermes:cherry",
+        "path": "/Users/fixture/.hermes/profiles/cherry",
+        "label": "hermes:cherry",
+        "role": "agent",
+        "agentIds": ["hermes:cherry"],
+        "status": "complete"
+      }
+    ],
+    "agents": [
+      {
+        "id": "claude:default",
+        "kind": "claude",
+        "profile": "default",
+        "configPath": "/Users/fixture/.claude",
+        "discovery": "on-disk"
+      },
+      {
+        "id": "hermes:default",
+        "kind": "hermes",
+        "profile": "default",
+        "configPath": "/Users/fixture/.hermes",
+        "discovery": "on-disk"
+      },
+      {
+        "id": "hermes:cherry",
+        "kind": "hermes",
+        "profile": "cherry",
+        "configPath": "/Users/fixture/.hermes/profiles/cherry",
+        "discovery": "on-disk"
+      }
+    ],
+    "resources": [
+      {
+        "id": "workflow/AGENTS.md",
+        "rootId": "workflow",
+        "relativePath": "AGENTS.md",
+        "path": "/Users/fixture/workflow/AGENTS.md",
+        "name": "AGENTS.md",
+        "kind": "instruction",
+        "agentIds": [],
+        "relationship": "source",
+        "digest": "61426a4f1a44d93ce4f32b9722e01ade2644fc1636c321763f7a19891dfd000a",
+        "fileCount": 1
+      },
+      {
+        "id": "workflow/rules/team.md",
+        "rootId": "workflow",
+        "relativePath": "rules/team.md",
+        "path": "/Users/fixture/workflow/rules/team.md",
+        "name": "team.md",
+        "kind": "rule",
+        "agentIds": [],
+        "relationship": "source",
+        "digest": "a179f18d9025971811ee475cb914fa9c08e12ef4868eaf90616ba0c364b872f4",
+        "fileCount": 1
+      },
+      {
+        "id": "claude:default/CLAUDE.md",
+        "rootId": "claude:default",
+        "relativePath": "CLAUDE.md",
+        "path": "/Users/fixture/.claude/CLAUDE.md",
+        "name": "CLAUDE.md",
+        "kind": "instruction",
+        "agentIds": ["claude:default"],
+        "relationship": "symlink",
+        "digest": "61426a4f1a44d93ce4f32b9722e01ade2644fc1636c321763f7a19891dfd000a",
+        "fileCount": 1,
+        "sourceId": "workflow",
+        "counterpart": "/Users/fixture/workflow/AGENTS.md"
+      },
+      {
+        "id": "claude:default/skills/local",
+        "rootId": "claude:default",
+        "relativePath": "skills/local",
+        "path": "/Users/fixture/.claude/skills/local",
+        "name": "local",
+        "kind": "skill",
+        "agentIds": ["claude:default"],
+        "relationship": "independent",
+        "digest": "bc4a71180870f7945155fbb02f4b0a2e3faa2a62d6d31b7039013055ed19869a",
+        "fileCount": 2
+      },
+      {
+        "id": "hermes:default/SOUL.md",
+        "rootId": "hermes:default",
+        "relativePath": "SOUL.md",
+        "path": "/Users/fixture/.hermes/SOUL.md",
+        "name": "SOUL.md",
+        "kind": "instruction",
+        "agentIds": ["hermes:default"],
+        "relationship": "independent",
+        "digest": "29bff55f6fe07333836869793959819f18848537eeba88fa16549ba10efee532",
+        "fileCount": 1
+      },
+      {
+        "id": "hermes:cherry/SOUL.md",
+        "rootId": "hermes:cherry",
+        "relativePath": "SOUL.md",
+        "path": "/Users/fixture/.hermes/profiles/cherry/SOUL.md",
+        "name": "SOUL.md",
+        "kind": "instruction",
+        "agentIds": ["hermes:cherry"],
+        "relationship": "independent",
+        "digest": "1acded1c417050acb9b63831f748c924d97a0e5b1a18f31c5cbff6df75375c38",
+        "fileCount": 1
+      }
+    ],
+    "coverage": {
+      "complete": true,
+      "files": 7,
+      "bytes": 259,
+      "issues": [
+        {
+          "rootId": "workflow",
+          "path": "/Users/fixture/workflow/.git",
+          "status": "excluded",
+          "reason": "Git objects excluded; working configuration is included"
+        }
+      ],
+      "policy": {
+        "version": 1,
+        "maxFileBytes": 4194304,
+        "maxTotalBytes": 33554432,
+        "maxEntries": 20000,
+        "maxDepth": 32
+      }
+    }
+  }
+}

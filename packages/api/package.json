@@ -1,6 +1,6 @@
 {
   "name": "@otter/api",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@types/node": "26.5.1",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "@otter/core": "workspace:*"
   }
 }

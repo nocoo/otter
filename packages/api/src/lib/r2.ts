@@ -4,9 +4,12 @@
 
 export interface R2ObjectBodyLike {
   text(): Promise<string>;
+  customMetadata?: Record<string, string>;
 }
 
 export interface R2PutOptions {
+  onlyIf?: { etagDoesNotMatch?: string };
+  customMetadata?: Record<string, string>;
   httpMetadata?: {
     contentType?: string;
     cacheControl?: string;

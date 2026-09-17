@@ -15,6 +15,7 @@ export { VSCodeCollector } from "./vscode.js";
 
 import { homedir } from "node:os";
 import type { Collector } from "@otter/core";
+import { AgentWorkspaceCollector } from "./agent-workspace.js";
 import { ApplicationsCollector } from "./applications.js";
 import { ClaudeConfigCollector } from "./claude-config.js";
 import { CloudCLICollector } from "./cloud-cli.js";
@@ -36,6 +37,7 @@ const DEFAULT_ICON_BASE_URL = "https://s.zhe.to/apps/otter";
  * Options for creating the default set of collectors.
  */
 export interface CollectorOptions {
+  configDirectory?: string;
   /** If true, exclude behavior data (history.jsonl, session summaries) */
   slim?: boolean;
   /** Base URL for deterministic icon URLs (default: s.zhe.to/apps/otter) */
@@ -51,6 +53,7 @@ export function createDefaultCollectors(
 ): Collector[] {
   const iconBaseUrl = options.iconBaseUrl ?? DEFAULT_ICON_BASE_URL;
   return [
+    new AgentWorkspaceCollector(homeDir, options.configDirectory),
     new ClaudeConfigCollector(homeDir, { slim: options.slim ?? false }),
     new OpenCodeConfigCollector(homeDir),
     new ShellConfigCollector(homeDir),

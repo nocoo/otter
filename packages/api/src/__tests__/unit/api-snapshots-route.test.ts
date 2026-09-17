@@ -136,6 +136,8 @@ function memoryDriver(state: { snaps: SnapRow[]; webhooks: WebhookRow[] }): DbDr
           number,
           number,
         ];
+        if (state.snaps.some((s) => s.id === id && s.user_id === user_id))
+          return { changes: 0, lastRowId: null };
         state.snaps.push({
           id,
           user_id,
@@ -195,6 +197,7 @@ function fakeBucket(): {
     },
     async put(key: string, value: string, options?: unknown) {
       putCalls.push({ key, value, options });
+      if (store.has(key) && (options as { onlyIf?: unknown })?.onlyIf) return null;
       store.set(key, typeof value === "string" ? value : "");
       return {};
     },
@@ -373,7 +376,7 @@ describe("createApiSnapshotsRoute", () => {
       });
       expect(res.status).toBe(201);
       const body = (await res.json()) as { success: boolean; snapshotId: string };
-      expect(body).toEqual({ success: true, snapshotId: "s3" });
+      expect(body).toMatchObject({ success: true, snapshotId: "s3" });
 
       expect(bucketPair.putCalls).toHaveLength(1);
       expect(bucketPair.putCalls[0]?.key).toBe("alice@x/s3.json");

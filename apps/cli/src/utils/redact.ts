@@ -6,6 +6,10 @@
  * line-oriented (ini-like) config formats.
  */
 
+import { parse as parseJsonc } from "jsonc-parser";
+import { parse as parseToml, stringify as stringifyToml } from "smol-toml";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
+
 const REDACTED = "[REDACTED]";
 
 // ---------------------------------------------------------------------------
@@ -429,4 +433,45 @@ export function redactSecrets(content: string, filePath: string): string {
   }
 
   return content;
+}
+
+const JSON_CONFIG = /\.(?:json|jsonc)$/;
+const YAML_CONFIG = /\.ya?ml$/;
+const STRUCTURED_CONFIG = /\.(?:jsonc?|toml|ya?ml)$/;
+
+/** v2 captures arbitrary package text, including scripts, Markdown, TOML and JSONC. */
+export function redactCapturedText(content: string, filePath: string): string {
+  const lower = filePath.toLowerCase();
+  let result = content;
+  try {
+    if (JSON_CONFIG.test(lower)) {
+      const errors: import("jsonc-parser").ParseError[] = [];
+      const value: unknown = parseJsonc(content, errors, { allowTrailingComma: true });
+      if (errors.length) throw new Error("Invalid JSON");
+      const [redacted, changed] = redactObject(value);
+      if (changed) result = JSON.stringify(redacted, null, 2);
+    } else if (lower.endsWith(".toml")) {
+      const [redacted, changed] = redactObject(parseToml(content));
+      if (changed) result = stringifyToml(redacted as Record<string, unknown>);
+    } else if (YAML_CONFIG.test(lower)) {
+      const [redacted, changed] = redactObject(parseYaml(content, { maxAliasCount: 50 }));
+      if (changed) result = stringifyYaml(redacted);
+    } else {
+      result = redactSecrets(content, filePath);
+    }
+  } catch {
+    // Malformed configurations still get captured, using conservative line-based removal.
+    result = redactYamlSecrets(redactLineSecrets(content));
+    result = result.replace(
+      /(["'][\w.-]*(?:token|secret|password|api.?key|credential|auth)[\w.-]*["']\s*:\s*)["'][^\n]*?["']/gi,
+      '$1"[REDACTED]"',
+    );
+  }
+  result = result.replace(
+    /(<key>[^<]*(?:token|secret|password|api.?key|credential|auth)[^<]*<\/key>\s*<string>)[\s\S]*?(<\/string>)/gi,
+    "$1[REDACTED]$2",
+  );
+  return redactValuePatterns(
+    STRUCTURED_CONFIG.test(lower) ? result : redactShellSecrets(result),
+  )[0];
 }

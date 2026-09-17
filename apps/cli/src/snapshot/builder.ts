@@ -2,6 +2,7 @@ import { execSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { arch, homedir, hostname, platform, release, userInfo } from "node:os";
 import type { Collector, CollectorResult, MachineInfo, Snapshot } from "@otter/core";
+import { finalizeSnapshot } from "../collectors/agent-workspace.js";
 
 /**
  * Get the user-friendly computer name on macOS via `scutil --get ComputerName`.
@@ -62,11 +63,11 @@ async function runCollector(collector: Collector): Promise<CollectorResult> {
 export async function buildSnapshot(collectors: Collector[]): Promise<Snapshot> {
   const results = await Promise.all(collectors.map(runCollector));
 
-  return {
+  return finalizeSnapshot({
     version: 1,
     createdAt: new Date().toISOString(),
     id: randomUUID(),
     machine: getMachineInfo(),
     collectors: results,
-  };
+  });
 }

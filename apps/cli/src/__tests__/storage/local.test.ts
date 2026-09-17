@@ -70,7 +70,7 @@ describe("SnapshotStore", () => {
 
     const filename = await store.save(snapshot);
 
-    expect(filename).toBe("2026-03-06T12-30-00_abcdef12-3456-7890-abcd-ef1234567890.json");
+    expect(filename).toBe("abcdef12-3456-7890-abcd-ef1234567890.json");
   });
 
   it("should write valid JSON to disk", async () => {
@@ -115,7 +115,7 @@ describe("SnapshotStore", () => {
     const filename = await store.save(snapshot);
 
     // No .000Z to strip — just colons replaced
-    expect(filename).toBe("2026-01-15T08-05-30Z_abcdef12-3456-7890-abcd-ef1234567890.json");
+    expect(filename).toBe("abcdef12-3456-7890-abcd-ef1234567890.json");
   });
 
   // -------------------------------------------------------------------------
@@ -150,7 +150,7 @@ describe("SnapshotStore", () => {
     expect(meta.id).toBe("abcdef12-3456-7890-abcd-ef1234567890");
     expect(meta.shortId).toBe("abcdef12");
     expect(meta.createdAt).toBe("2026-03-06T12:30:00.000Z");
-    expect(meta.filename).toBe("2026-03-06T12-30-00_abcdef12-3456-7890-abcd-ef1234567890.json");
+    expect(meta.filename).toBe("abcdef12-3456-7890-abcd-ef1234567890.json");
     expect(meta.sizeBytes).toBeGreaterThan(0);
     expect(meta.collectorCount).toBe(2);
     expect(meta.fileCount).toBe(1); // only shell-config has 1 file

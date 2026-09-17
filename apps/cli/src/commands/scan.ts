@@ -1,7 +1,9 @@
 import type { Collector, CollectorResult, Snapshot } from "@otter/core";
+import { finalizeSnapshot } from "../collectors/agent-workspace.js";
 import { buildSnapshot } from "../snapshot/builder.js";
 
 export interface ScanOptions {
+  homeDir?: string;
   /** Called when a collector is about to start */
   onStart?: (collectorId: string, label: string) => void;
   /** Called after each collector finishes */
@@ -43,6 +45,7 @@ export async function executeScan(
   // Build snapshot with pre-collected results
   // We bypass buildSnapshot's internal collection since we already ran them
   const snapshot = await buildSnapshot([]);
+  if (options.homeDir) snapshot.machine.homeDir = options.homeDir;
   snapshot.collectors = results;
-  return snapshot;
+  return finalizeSnapshot(snapshot);
 }

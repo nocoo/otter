@@ -1,4 +1,4 @@
-import { createExecutionContext, waitOnExecutionContext } from "cloudflare:test";
+import { applyD1Migrations, createExecutionContext, waitOnExecutionContext } from "cloudflare:test";
 import { env } from "cloudflare:workers";
 import { beforeAll, describe, expect, it } from "vitest";
 import app from "../index.js";
@@ -23,10 +23,10 @@ interface HealthResponse {
 
 describe("Health API", () => {
   beforeAll(async () => {
-    // Seed the test database with the snapshots table
-    await env.DB.exec(
-      "CREATE TABLE IF NOT EXISTS snapshots (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, webhook_id TEXT NOT NULL, hostname TEXT NOT NULL, platform TEXT NOT NULL, arch TEXT NOT NULL, username TEXT NOT NULL, collector_count INTEGER NOT NULL, file_count INTEGER NOT NULL, list_count INTEGER NOT NULL, size_bytes INTEGER NOT NULL, r2_key TEXT NOT NULL, snapshot_at INTEGER NOT NULL, uploaded_at INTEGER NOT NULL)",
-    );
+    await applyD1Migrations(env.DB, env.TEST_MIGRATIONS);
+    await env.DB.prepare("INSERT OR IGNORE INTO users (id, email) VALUES (?1, ?1)")
+      .bind("test-user")
+      .run();
   });
 
   it("GET /health returns ok when D1 is reachable", async () => {
@@ -55,7 +55,7 @@ describe("Health API", () => {
       .bind(
         "test-snap-1",
         "test-user",
-        "test-webhook",
+        null,
         "test-host",
         "darwin",
         "arm64",

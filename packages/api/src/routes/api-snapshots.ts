@@ -11,19 +11,20 @@ import type { DbDriver } from "../lib/db/driver";
 import { readMaybeGzip } from "../lib/gzip";
 import type { R2BucketLike } from "../lib/r2";
 import {
-  extractSnapshotMetadata,
   isValidSnapshotPayload,
   type SnapshotPayload,
+  sha256,
+  validateSnapshotContents,
 } from "../lib/snapshot-payload";
 import {
   deleteSnapshotMeta,
   getSnapshotMeta,
-  insertSnapshotStatement,
+  type ListOptions,
+  listDevices,
   listSnapshots,
   type SnapshotRow,
-  snapshotR2Key,
 } from "../lib/snapshot-repo";
-import { ensureUser } from "../lib/user-repo";
+import { SnapshotWriteError, storeSnapshot } from "../lib/snapshot-storage";
 
 interface SnapshotResponse {
   id: string;
@@ -37,6 +38,11 @@ interface SnapshotResponse {
   sizeBytes: number;
   snapshotAt: number;
   uploadedAt: number;
+  schemaVersion: number;
+  deviceId: string | null;
+  complete: boolean | null;
+  sha256: string | null;
+  summary: unknown;
 }
 
 function toSnapshotResponse(row: SnapshotRow): SnapshotResponse {
@@ -52,6 +58,11 @@ function toSnapshotResponse(row: SnapshotRow): SnapshotResponse {
     sizeBytes: row.size_bytes,
     snapshotAt: row.snapshot_at,
     uploadedAt: row.uploaded_at,
+    schemaVersion: row.schema_version ?? 1,
+    deviceId: row.device_id ?? null,
+    complete: row.coverage_complete == null ? null : row.coverage_complete === 1,
+    sha256: row.sha256 ?? null,
+    summary: row.summary_json ? JSON.parse(row.summary_json) : null,
   };
 }
 
@@ -59,6 +70,33 @@ function requireUser(c: Context<AppEnv>): { email: string } | Response {
   const email = c.get("accessEmail");
   if (!email) return c.json({ error: "Unauthorized" }, 401);
   return { email };
+}
+
+function validCursor(cursor: string): boolean {
+  try {
+    const value: unknown = JSON.parse(cursor);
+    return (
+      Array.isArray(value) &&
+      value.length === 2 &&
+      typeof value[0] === "number" &&
+      Number.isFinite(value[0]) &&
+      typeof value[1] === "string"
+    );
+  } catch {
+    return false;
+  }
+}
+async function parseSnapshotBody(request: Request): Promise<SnapshotPayload | string> {
+  const { json, error } = await readMaybeGzip(request);
+  if (error) return error;
+  try {
+    const parsed: unknown = JSON.parse(json);
+    if (!isValidSnapshotPayload(parsed) || !(await validateSnapshotContents(parsed)))
+      return "Invalid snapshot format";
+    return parsed;
+  } catch {
+    return "Invalid JSON body";
+  }
 }
 
 export interface SnapshotsRouteOptions {
@@ -74,7 +112,14 @@ export function createApiSnapshotsRoute(opts: SnapshotsRouteOptions) {
     if (auth instanceof Response) return auth;
     const limitParam = c.req.query("limit");
     const beforeParam = c.req.query("before");
-    const listOpts: { limit?: number; before?: number | null } = {};
+    const listOpts: ListOptions = {};
+    const cursor = c.req.query("cursor"),
+      device = c.req.query("device"),
+      search = c.req.query("search");
+    if (cursor && !validCursor(cursor)) return c.json({ error: "Invalid cursor" }, 400);
+    if (cursor) listOpts.cursor = cursor;
+    if (device) listOpts.device = device;
+    if (search) listOpts.search = search.slice(0, 200);
     if (limitParam) listOpts.limit = Number.parseInt(limitParam, 10);
     if (beforeParam) listOpts.before = Number.parseInt(beforeParam, 10);
     const result = await listSnapshots(opts.getDriver(c), auth.email, listOpts);
@@ -82,6 +127,20 @@ export function createApiSnapshotsRoute(opts: SnapshotsRouteOptions) {
       snapshots: result.rows.map(toSnapshotResponse),
       total: result.total,
       nextBefore: result.nextBefore,
+      nextCursor: result.nextCursor,
+    });
+  });
+
+  app.get("/devices", async (c) => {
+    const auth = requireUser(c);
+    if (auth instanceof Response) return auth;
+    const rows = await listDevices(opts.getDriver(c), auth.email);
+    return c.json({
+      devices: rows.map((row) => ({
+        ...toSnapshotResponse(row),
+        deviceKey: row.device_id ?? `legacy:${row.hostname}`,
+        latestCompleteId: row.latest_complete_id ?? null,
+      })),
     });
   });
 
@@ -89,59 +148,26 @@ export function createApiSnapshotsRoute(opts: SnapshotsRouteOptions) {
     const auth = requireUser(c);
     if (auth instanceof Response) return auth;
 
-    const { json: jsonString, error: decompressError } = await readMaybeGzip(c.req.raw);
-    if (decompressError) return c.json({ error: decompressError }, 400);
-
-    let snapshot: SnapshotPayload;
-    try {
-      const parsed: unknown = JSON.parse(jsonString);
-      if (!isValidSnapshotPayload(parsed)) {
-        return c.json({ error: "Invalid snapshot format" }, 400);
-      }
-      snapshot = parsed;
-    } catch {
-      return c.json({ error: "Invalid JSON body" }, 400);
-    }
-
-    const meta = extractSnapshotMetadata(snapshot);
-    const sizeBytes = new TextEncoder().encode(jsonString).length;
-    const r2Key = snapshotR2Key(auth.email, snapshot.id);
-    const driver = opts.getDriver(c);
+    const snapshot = await parseSnapshotBody(c.req.raw);
+    if (typeof snapshot === "string") return c.json({ error: snapshot }, 400);
 
     try {
-      await opts.getBucket(c).put(r2Key, jsonString, {
-        httpMetadata: { contentType: "application/json" },
-      });
+      const stored = await storeSnapshot(
+        opts.getDriver(c),
+        opts.getBucket(c),
+        auth.email,
+        snapshot,
+      );
+      return c.json(
+        { success: true, snapshotId: snapshot.id, receipt: stored.receipt },
+        stored.created ? 201 : 200,
+      );
     } catch (error) {
-      console.error("[api/snapshots] Failed to store snapshot in R2:", error);
-      return c.json({ error: "Failed to store snapshot" }, 500);
+      return c.json(
+        { error: error instanceof Error ? error.message : "Snapshot upload failed" },
+        error instanceof SnapshotWriteError ? error.status : 500,
+      );
     }
-
-    const now = Date.now();
-    const snapshotAt = new Date(snapshot.createdAt).getTime();
-    const insert = insertSnapshotStatement({
-      id: snapshot.id,
-      userId: auth.email,
-      webhookId: null,
-      meta,
-      sizeBytes,
-      r2Key,
-      snapshotAt,
-      uploadedAt: now,
-    });
-
-    try {
-      // Defensive: /api/auth/cli already runs ensureUser at mint time, but a
-      // FK violation here would surface as a 500 that's hard to diagnose.
-      // Idempotent — costs one INSERT ... ON CONFLICT DO NOTHING per upload.
-      await ensureUser(driver, auth.email);
-      await driver.execute(insert.sql, insert.params);
-    } catch (error) {
-      console.error("[api/snapshots] Failed to write snapshot metadata to D1:", error);
-      return c.json({ error: "Failed to index snapshot" }, 500);
-    }
-
-    return c.json({ success: true, snapshotId: snapshot.id }, 201);
   });
 
   app.get("/:id", async (c) => {
@@ -154,7 +180,19 @@ export function createApiSnapshotsRoute(opts: SnapshotsRouteOptions) {
     const object = await opts.getBucket(c).get(row.r2_key);
     if (!object) return c.json({ error: "Snapshot data not found in storage" }, 404);
     const data = JSON.parse(await object.text());
-    return c.json({ snapshot: toSnapshotResponse(row), data });
+    const digest = await sha256(JSON.stringify(data));
+    if (row.sha256 && row.sha256 !== digest)
+      return c.json({ error: "Stored snapshot digest mismatch" }, 500);
+    return c.json({
+      snapshot: toSnapshotResponse(row),
+      data,
+      receipt: {
+        snapshotId: row.id,
+        sha256: digest,
+        account: auth.email,
+        receivedAt: new Date(row.uploaded_at).toISOString(),
+      },
+    });
   });
 
   app.delete("/:id", async (c) => {
@@ -165,7 +203,7 @@ export function createApiSnapshotsRoute(opts: SnapshotsRouteOptions) {
     const row = await getSnapshotMeta(driver, auth.email, id);
     if (!row) return c.json({ error: "Snapshot not found" }, 404);
     await opts.getBucket(c).delete(row.r2_key);
-    await deleteSnapshotMeta(driver, id);
+    await deleteSnapshotMeta(driver, id, auth.email);
     return c.json({ success: true });
   });
 

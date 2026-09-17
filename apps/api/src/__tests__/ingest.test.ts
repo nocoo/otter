@@ -1,4 +1,4 @@
-import { createExecutionContext, waitOnExecutionContext } from "cloudflare:test";
+import { applyD1Migrations, createExecutionContext, waitOnExecutionContext } from "cloudflare:test";
 import { env } from "cloudflare:workers";
 import { beforeAll, describe, expect, it } from "vitest";
 import app from "../index.js";
@@ -32,23 +32,20 @@ const mockSnapshot = {
 
 describe("Ingest API", () => {
   beforeAll(async () => {
-    // Seed test database
-    await env.DB.exec(
-      "CREATE TABLE IF NOT EXISTS webhooks (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, token TEXT UNIQUE NOT NULL, name TEXT NOT NULL, is_active INTEGER DEFAULT 1, created_at INTEGER NOT NULL, last_used_at INTEGER)",
-    );
-    await env.DB.exec(
-      "CREATE TABLE IF NOT EXISTS snapshots (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, webhook_id TEXT NOT NULL, hostname TEXT NOT NULL, platform TEXT NOT NULL, arch TEXT NOT NULL, username TEXT NOT NULL, collector_count INTEGER NOT NULL, file_count INTEGER NOT NULL, list_count INTEGER NOT NULL, size_bytes INTEGER NOT NULL, r2_key TEXT NOT NULL, snapshot_at INTEGER NOT NULL, uploaded_at INTEGER NOT NULL)",
-    );
+    await applyD1Migrations(env.DB, env.TEST_MIGRATIONS);
+    await env.DB.prepare("INSERT OR IGNORE INTO users (id, email) VALUES (?1, ?1)")
+      .bind("test-user-id")
+      .run();
 
     // Insert test webhooks
     await env.DB.prepare(
-      "INSERT OR REPLACE INTO webhooks (id, user_id, token, name, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+      "INSERT OR REPLACE INTO webhooks (id, user_id, token, label, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?)",
     )
       .bind("webhook-1", "test-user-id", VALID_TOKEN, "Test Webhook", 1, Date.now())
       .run();
 
     await env.DB.prepare(
-      "INSERT OR REPLACE INTO webhooks (id, user_id, token, name, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+      "INSERT OR REPLACE INTO webhooks (id, user_id, token, label, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?)",
     )
       .bind("webhook-2", "test-user-id", DISABLED_TOKEN, "Disabled Webhook", 0, Date.now())
       .run();

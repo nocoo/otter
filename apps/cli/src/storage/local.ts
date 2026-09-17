@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import { link, mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Snapshot } from "@otter/core";
+import { digest } from "../workspace/files.js";
 
-const MILLIS_SUFFIX = /\.\d{3}Z$/;
-const COLON = /:/g;
+const SNAPSHOT_ID = /^[A-Za-z\d_-]{1,128}$/;
 
 /** Metadata for a locally-stored snapshot (without loading full content) */
 export interface SnapshotMeta {
@@ -24,24 +24,21 @@ export interface SnapshotMeta {
   fileCount: number;
   /** Total list items across all collectors */
   listCount: number;
+  schemaVersion?: number;
+  deviceId?: string;
+  complete?: boolean;
+  fingerprint?: string;
+  hostname?: string;
 }
 
 /**
- * Convert an ISO 8601 timestamp to a filesystem-safe string.
- * Replaces colons with dashes to avoid issues on Windows.
- * Example: "2026-03-06T12:30:00.000Z" → "2026-03-06T12-30-00"
- */
-function toFileTimestamp(iso: string): string {
-  return iso.replace(COLON, "-").replace(MILLIS_SUFFIX, "");
-}
-
-/**
- * Build the snapshot filename from its metadata.
- * Full IDs prevent two snapshots taken in the same second from overwriting each other.
+ * One canonical destination per ID makes conflicting concurrent writes impossible.
+ * Legacy timestamped filenames remain readable.
  */
 function buildFilename(snapshot: Snapshot): string {
-  const ts = toFileTimestamp(snapshot.createdAt);
-  return `${ts}_${snapshot.id}.json`;
+  if (!SNAPSHOT_ID.test(snapshot.id) || !Number.isFinite(Date.parse(snapshot.createdAt)))
+    throw new Error("Invalid snapshot identity or timestamp");
+  return `${snapshot.id}.json`;
 }
 
 /**
@@ -63,6 +60,15 @@ async function parseMetaFromFile(filePath: string, filename: string): Promise<Sn
       collectorCount: snapshot.collectors.length,
       fileCount: snapshot.collectors.reduce((sum, c) => sum + c.files.length, 0),
       listCount: snapshot.collectors.reduce((sum, c) => sum + c.lists.length, 0),
+      schemaVersion: snapshot.version,
+      hostname: snapshot.machine.computerName ?? snapshot.machine.hostname,
+      ...(snapshot.workspace
+        ? {
+            deviceId: snapshot.workspace.deviceId,
+            complete: snapshot.workspace.coverage.complete,
+            fingerprint: snapshot.workspace.contentFingerprint,
+          }
+        : {}),
     };
   } catch {
     // Corrupt or unreadable file — skip it
@@ -85,6 +91,11 @@ export class SnapshotStore {
   async save(snapshot: Snapshot): Promise<string> {
     await mkdir(this.storageDir, { recursive: true, mode: 0o700 });
     const filename = buildFilename(snapshot);
+    const existing = await this.load(snapshot.id);
+    if (existing && digest(JSON.stringify(existing)) !== digest(JSON.stringify(snapshot)))
+      throw new Error("Snapshot ID already exists with different content");
+    if (existing)
+      return (await this.list()).find((meta) => meta.id === snapshot.id)?.filename ?? filename;
     const filePath = join(this.storageDir, filename);
     const temporary = join(this.storageDir, `.${randomUUID()}.tmp`);
     try {
@@ -92,7 +103,14 @@ export class SnapshotStore {
         mode: 0o600,
         flag: "wx",
       });
-      await rename(temporary, filePath);
+      try {
+        await link(temporary, filePath);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+        const winner = JSON.parse(await readFile(filePath, "utf8")) as Snapshot;
+        if (digest(JSON.stringify(winner)) !== digest(JSON.stringify(snapshot)))
+          throw new Error("Snapshot ID already exists with different content");
+      }
     } finally {
       await rm(temporary, { force: true });
     }
@@ -113,9 +131,11 @@ export class SnapshotStore {
 
     const jsonFiles = entries.filter((f) => f.endsWith(".json"));
 
-    const results = await Promise.all(
-      jsonFiles.map((filename) => parseMetaFromFile(join(this.storageDir, filename), filename)),
-    );
+    const results: (SnapshotMeta | null)[] = [];
+    for (const filename of jsonFiles) {
+      // biome-ignore lint/performance/noAwaitInLoops: bound memory to one potentially large recovery snapshot
+      results.push(await parseMetaFromFile(join(this.storageDir, filename), filename));
+    }
     const metas = results.filter((m): m is SnapshotMeta => m !== null);
 
     // Sort newest first

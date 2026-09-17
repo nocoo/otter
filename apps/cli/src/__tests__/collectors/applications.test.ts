@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -121,12 +121,12 @@ describe("ApplicationsCollector", () => {
       const result = await collector.collect();
 
       const hash = createHash("sha256").update("Slack").digest("hex").slice(0, 12);
-      expect(result.lists[0].meta).toEqual({
+      expect(result.lists[0].meta).toMatchObject({
         iconUrl: `https://s.zhe.to/apps/otter/${hash}.png`,
       });
     });
 
-    it("should not include meta when iconBaseUrl is omitted", async () => {
+    it("records installation paths even without icons", async () => {
       await mkdir(join(tempAppsDir, "Slack.app"), { recursive: true });
 
       const collector = new ApplicationsCollector(
@@ -138,7 +138,10 @@ describe("ApplicationsCollector", () => {
       collector._execCommand = async () => "";
       const result = await collector.collect();
 
-      expect(result.lists[0].meta).toBeUndefined();
+      expect(result.lists[0].meta).toMatchObject({
+        path: join(tempAppsDir, "Slack.app"),
+        installSource: "unknown",
+      });
     });
 
     it("should generate deterministic URLs based on app name", async () => {
@@ -178,7 +181,7 @@ describe("ApplicationsCollector", () => {
     expect(result.lists.map((item) => item.name)).toEqual(["Cursor", "Safari"]);
   });
 
-  it("should deduplicate apps that exist in both directories", async () => {
+  it("preserves two distinct installations with the same display name", async () => {
     await mkdir(join(tempAppsDir, "Slack.app"), { recursive: true });
     await mkdir(join(tempUserAppsDir, "Slack.app"), { recursive: true });
 
@@ -186,8 +189,8 @@ describe("ApplicationsCollector", () => {
     collector._execCommand = async () => "";
     const result = await collector.collect();
 
-    expect(result.lists).toHaveLength(1);
-    expect(result.lists[0].name).toBe("Slack");
+    expect(result.lists).toHaveLength(2);
+    expect(new Set(result.lists.map((item) => item.meta?.path)).size).toBe(2);
   });
 
   it("should capture app versions from Info.plist", async () => {
@@ -202,7 +205,7 @@ describe("ApplicationsCollector", () => {
 
     const result = await collector.collect();
 
-    expect(result.lists).toEqual([{ name: "Docker", version: "4.39.0" }]);
+    expect(result.lists).toMatchObject([{ name: "Docker", version: "4.39.0" }]);
   });
 
   it("should ignore version lookup failures", async () => {
@@ -215,7 +218,36 @@ describe("ApplicationsCollector", () => {
 
     const result = await collector.collect();
 
-    expect(result.lists).toEqual([{ name: "Docker" }]);
+    expect(result.lists).toMatchObject([{ name: "Docker" }]);
     expect(result.errors).toHaveLength(0);
+  });
+
+  it("captures nested bundles, identities and install sources while continuing past a broken application link", async () => {
+    const receipt = join(tempAppsDir, "Utilities/Store.app/Contents/_MASReceipt");
+    await mkdir(receipt, { recursive: true });
+    await writeFile(join(receipt, "receipt"), "synthetic receipt");
+    const brew = join(tempHome, "Caskroom/tool/1.0/Tool.app");
+    await mkdir(brew, { recursive: true });
+    await symlink(brew, join(tempAppsDir, "Tool.app"));
+    await symlink("/otter-fixture-missing", join(tempAppsDir, "Broken.app"));
+    await writeFile(join(tempAppsDir, "NotABundle.app"), "regular file");
+    const collector = new ApplicationsCollector(tempHome, tempAppsDir, undefined, tempAppsDir);
+    collector._execCommand = async (command) =>
+      command.endsWith("CFBundleIdentifier") ? "fixture.app" : "1.0";
+    const result = await collector.collect();
+    expect(result.lists).toMatchObject([
+      {
+        name: "Store",
+        version: "1.0",
+        meta: { bundleId: "fixture.app", installSource: "Mac App Store" },
+      },
+      {
+        name: "Tool",
+        version: "1.0",
+        meta: { bundleId: "fixture.app", installSource: "Homebrew" },
+      },
+    ]);
+    expect(result.errors.some((error) => error.includes("Broken.app"))).toBe(true);
+    expect(result.lists.some((item) => item.name === "NotABundle")).toBe(false);
   });
 });

@@ -37,6 +37,7 @@ describe("uploadSnapshot", () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
+      json: async () => ({}),
     });
     globalThis.fetch = mockFetch;
 
@@ -64,6 +65,7 @@ describe("uploadSnapshot", () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
+      json: async () => ({}),
     });
 
     const result = await uploadSnapshot(createTestSnapshot(), {
@@ -126,6 +128,7 @@ describe("uploadSnapshot", () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
+      json: async () => ({}),
     });
 
     await uploadSnapshot(createTestSnapshot(), {

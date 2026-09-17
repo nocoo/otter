@@ -20,8 +20,25 @@ export interface CollectedFile {
   path: string;
   /** File content as UTF-8 string */
   content: string;
+  /** v2 duplicate content references another inline file with this SHA-256 in the same snapshot. */
+  contentRef?: string;
   /** File size in bytes */
   sizeBytes: number;
+  /** v2: portable location, link structure, and saved-byte integrity. */
+  rootId?: string;
+  relativePath?: string;
+  kind?: "file" | "directory" | "symlink";
+  /** Resolved target type, absent for unreadable links. */
+  targetKind?: "file" | "directory";
+  encoding?: "utf8" | "base64";
+  sha256?: string;
+  /** Mode of the captured target; POSIX symlink permissions do not control the target. */
+  mode?: number;
+  entryMode?: number;
+  linkTarget?: string;
+  resolvedPath?: string;
+  links?: { path: string; target: string; resolvedPath: string }[];
+  redacted?: boolean;
 }
 
 /** A list-only item (e.g., installed apps, brew packages, skills) */
@@ -52,6 +69,8 @@ export interface CollectorResult {
   skipped: string[];
   /** Duration of collection in milliseconds */
   durationMs: number;
+  /** Internal collector handoff; promoted to Snapshot.workspace by the builder. */
+  workspace?: WorkspaceCapture;
 }
 
 /** Interface that every collector must implement */
@@ -93,7 +112,7 @@ export interface MachineInfo {
 /** A complete backup snapshot */
 export interface Snapshot {
   /** Schema version for forward compatibility */
-  version: 1;
+  version: 1 | 2;
   /** ISO 8601 timestamp of when the snapshot was created */
   createdAt: string;
   /** Unique snapshot identifier (UUIDv4) */
@@ -102,6 +121,7 @@ export interface Snapshot {
   machine: MachineInfo;
   /** Results from all collectors */
   collectors: CollectorResult[];
+  workspace?: WorkspaceCapture;
 }
 
 // ---------------------------------------------------------------------------
@@ -128,6 +148,145 @@ export interface UploadResult {
   error?: string;
   /** Duration of upload in milliseconds */
   durationMs: number;
+  receipt?: RemoteReceipt;
+}
+
+export type AgentKind = "claude" | "codex" | "grok" | "pi" | "hermes" | "opencode" | "gemini";
+export type ResourceKind = "skill" | "instruction" | "command" | "rule" | "hook" | "configuration";
+
+export interface SourceRegistration {
+  id: string;
+  path: string;
+  label: string;
+}
+export interface WorkspaceRegistry {
+  version: 1;
+  sources: SourceRegistration[];
+  projects: string[];
+  bindings: {
+    id: string;
+    source: string;
+    target: string;
+    mode: "link" | "copy" | "fork";
+    baseSource?: string;
+    baseTarget?: string;
+    createdAt?: string | number;
+  }[];
+}
+export interface GitObservation {
+  checkedAt: string;
+  repository: boolean;
+  branch?: string;
+  commit?: string;
+  upstream?: string;
+  remote?: string;
+  repoKey?: string;
+  ahead: number;
+  behind: number;
+  staged: number;
+  unstaged: number;
+  untracked: number;
+  conflicts: number;
+  detached: boolean;
+  unborn: boolean;
+  remoteCheckedAt?: string;
+  fetchError?: string;
+  error?: string;
+}
+export interface CaptureRoot {
+  id: string;
+  path: string;
+  entryPath?: string;
+  /** Relative entries selected within the root; omitted when the whole root is captured. */
+  include?: string[];
+  label: string;
+  role: "source" | "agent" | "shared" | "external" | "project";
+  agentIds: string[];
+  /** Selected project context, including instructions inherited from parent directories. */
+  cwd?: string;
+  git?: GitObservation;
+  status: "complete" | "partial" | "missing";
+}
+export interface AgentInstallation {
+  id: string;
+  kind: AgentKind;
+  profile: string;
+  configPath: string;
+  executable?: string;
+  version?: string;
+  /** Filesystem discovery does not assert loading in an existing session. */
+  discovery: "on-disk";
+}
+export interface WorkspaceResource {
+  id: string;
+  rootId: string;
+  relativePath: string;
+  path: string;
+  resolvedPath?: string;
+  name: string;
+  kind: ResourceKind;
+  agentIds: string[];
+  discovery?: {
+    agentId: string;
+    state: "on-disk" | "disabled" | "unsupported" | "project-only";
+    reason?: string;
+    cwd?: string;
+  }[];
+  sourceId?: string;
+  counterpart?: string;
+  relationship:
+    | "source"
+    | "independent"
+    | "symlink"
+    | "hardlink"
+    | "configurationReference"
+    | "managedCopy"
+    | "sourceChanged"
+    | "localChanged"
+    | "bothChanged"
+    | "fork"
+    | "equalContent"
+    | "unknownLineage"
+    | "broken";
+  digest: string;
+  fileCount: number;
+}
+export interface CoverageIssue {
+  rootId: string;
+  path: string;
+  status: "excluded" | "redacted" | "error" | "limit" | "unstable" | "invalid" | "list-only";
+  reason: string;
+}
+export interface WorkspaceCapture {
+  schemaVersion: 2;
+  deviceId: string;
+  observedAt: string;
+  contentFingerprint: string;
+  configurationFingerprint: string;
+  scopeFingerprint: string;
+  registry: WorkspaceRegistry;
+  roots: CaptureRoot[];
+  agents: AgentInstallation[];
+  resources: WorkspaceResource[];
+  coverage: {
+    complete: boolean;
+    files: number;
+    bytes: number;
+    issues: CoverageIssue[];
+    policy: {
+      version: number;
+      maxFileBytes: number;
+      maxTotalBytes: number;
+      maxEntries: number;
+      maxDepth: number;
+    };
+  };
+}
+export interface RemoteReceipt {
+  snapshotId: string;
+  sha256: string;
+  receivedAt: string;
+  account: string;
 }
 
 // ---------------------------------------------------------------------------

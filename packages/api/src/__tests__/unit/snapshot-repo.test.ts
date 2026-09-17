@@ -58,8 +58,8 @@ describe("snapshot-repo", () => {
     }));
     const { driver, calls } = createMockDriver({
       responses: [
-        { match: "uploaded_at < ?2", rows },
         { match: "COUNT(*)", rows: [{ total: 99 }] },
+        { match: "uploaded_at < ?2", rows },
       ],
     });
 
@@ -101,12 +101,12 @@ describe("snapshot-repo", () => {
 
   it("deleteSnapshotMeta runs DELETE", async () => {
     const { driver, calls } = createMockDriver();
-    await deleteSnapshotMeta(driver, "s9");
+    await deleteSnapshotMeta(driver, "s9", "u1");
     expect(calls[0]?.sql).toContain("DELETE FROM snapshots");
-    expect(calls[0]?.params).toEqual(["s9"]);
+    expect(calls[0]?.params).toEqual(["s9", "u1"]);
   });
 
-  it("insertSnapshotStatement produces the expected 14-param INSERT", () => {
+  it("insertSnapshotStatement produces the expected 19-param INSERT", () => {
     const stmt = insertSnapshotStatement({
       id: "s1",
       userId: "u1",
@@ -126,7 +126,7 @@ describe("snapshot-repo", () => {
       uploadedAt: 20,
     });
     expect(stmt.sql).toContain("INSERT INTO snapshots");
-    expect(stmt.params).toHaveLength(14);
+    expect(stmt.params).toHaveLength(19);
     expect(stmt.params[0]).toBe("s1");
     expect(stmt.params[11]).toBe("u1/s1.json");
   });
