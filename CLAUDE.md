@@ -35,7 +35,7 @@ This file is the quality contract; hooks, CI and config are enforcement. Close i
 
 ## Commands
 
-Run from root with Bun, Node 22.12+ (supported engine range in package.json), gitleaks and OSV. Native checks require macOS, full Xcode and xcodegen. Use local test-owned storage and fake data; no CF credentials are needed for local L2.
+Run from root with Bun, Node 22.12+ (supported engine range in package.json), gitleaks and OSV. Native checks require macOS, full Xcode and xcodegen. Before L2, build `packages/core`, `apps/cli`, `packages/api` in that order with `bun run --cwd <path> build`, then the SPA; the runner needs compiled CLI and static assets. No CF credentials are needed for local L2.
 
 ```bash
 bun install --frozen-lockfile
