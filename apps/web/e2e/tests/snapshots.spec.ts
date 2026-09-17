@@ -23,7 +23,7 @@ function makeSnapshot(id: string, hostname: string, overrides: Record<string, un
   };
 }
 
-// Page 1: 20 snapshots, with nextBefore pointing to page 2
+// Page 1: 20 snapshots, with nextCursor pointing to page 2
 const page1Snapshots = Array.from({ length: 20 }, (_, i) =>
   makeSnapshot(`snap-${String(i + 1).padStart(3, "0")}`, `host-${i + 1}`, {
     uploadedAt: now - i * 60_000,
@@ -47,34 +47,34 @@ test.describe("Snapshots List", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ snapshots: page1Snapshots.slice(0, 5), total: 5, nextBefore: null }),
+        body: JSON.stringify({ snapshots: page1Snapshots.slice(0, 5), total: 5, nextCursor: null }),
       });
     });
 
     await page.goto("/snapshots");
 
     // Table header columns should be visible
-    await expect(page.getByRole("columnheader", { name: "Host" })).toBeVisible();
-    await expect(page.getByRole("columnheader", { name: "Platform" })).toBeVisible();
-    await expect(page.getByRole("columnheader", { name: "Collectors" })).toBeVisible();
-    await expect(page.getByRole("columnheader", { name: "Files" })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Machine / snapshot" })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Captured" })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Coverage" })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Files / items" })).toBeVisible();
 
     // Hostnames should appear in the table
     await expect(page.getByText("host-1", { exact: true })).toBeVisible();
     await expect(page.getByText("host-5", { exact: true })).toBeVisible();
 
     // Pagination text
-    await expect(page.getByText("Showing 1-5 of 5 snapshots")).toBeVisible();
+    await expect(page.getByText("5 records")).toBeVisible();
   });
 
   test("pagination controls navigate between pages", async ({ page }) => {
-    let requestedBefore: string | null = null;
+    let requestedCursor: string | null = null;
 
     await page.route("**/api/snapshots*", async (route) => {
       const url = new URL(route.request().url());
-      requestedBefore = url.searchParams.get("before");
+      requestedCursor = url.searchParams.get("cursor");
 
-      if (!requestedBefore) {
+      if (!requestedCursor) {
         // Page 1
         await route.fulfill({
           status: 200,
@@ -83,7 +83,7 @@ test.describe("Snapshots List", () => {
             snapshots: page1Snapshots,
             total: 25,
             // biome-ignore lint/style/noNonNullAssertion: fixed-length mock array
-            nextBefore: page1Snapshots[19]!.uploadedAt,
+            nextCursor: JSON.stringify([page1Snapshots[19]!.uploadedAt, page1Snapshots[19]!.id]),
           }),
         });
       } else {
@@ -94,7 +94,7 @@ test.describe("Snapshots List", () => {
           body: JSON.stringify({
             snapshots: page2Snapshots,
             total: 25,
-            nextBefore: null,
+            nextCursor: null,
           }),
         });
       }
@@ -103,26 +103,22 @@ test.describe("Snapshots List", () => {
     await page.goto("/snapshots");
 
     // Page 1 info
-    await expect(page.getByText("Page 1 of 2")).toBeVisible();
+    await expect(page.getByText("Page 1")).toBeVisible();
     await expect(page.getByText("host-1", { exact: true })).toBeVisible();
 
     // Click Next
-    const nextButton = page
-      .locator("button")
-      .filter({ has: page.locator("svg.lucide-chevron-right") });
+    const nextButton = page.getByRole("button", { name: "Next", exact: true });
     await nextButton.click();
 
     // Page 2 info
-    await expect(page.getByText("Page 2 of 2")).toBeVisible();
+    await expect(page.getByText("Page 2")).toBeVisible();
     await expect(page.getByText("host-21")).toBeVisible();
 
     // Click Prev to go back
-    const prevButton = page
-      .locator("button")
-      .filter({ has: page.locator("svg.lucide-chevron-left") });
+    const prevButton = page.getByRole("button", { name: "Previous", exact: true });
     await prevButton.click();
 
-    await expect(page.getByText("Page 1 of 2")).toBeVisible();
+    await expect(page.getByText("Page 1")).toBeVisible();
   });
 
   test("table columns render hostname, platform badge, and counts", async ({ page }) => {
@@ -149,7 +145,7 @@ test.describe("Snapshots List", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ snapshots, total: 2, nextBefore: null }),
+        body: JSON.stringify({ snapshots, total: 2, nextCursor: null }),
       });
     });
 
@@ -160,8 +156,8 @@ test.describe("Snapshots List", () => {
     await expect(page.getByText("ci-linux")).toBeVisible();
 
     // Platform badges
-    await expect(page.getByText("darwin/arm64")).toBeVisible();
-    await expect(page.getByText("linux/x86_64")).toBeVisible();
+    await expect(page.getByText("darwin/arm64", { exact: false })).toBeVisible();
+    await expect(page.getByText("linux/x86_64", { exact: false })).toBeVisible();
 
     // Snapshot ID short codes should be visible
     await expect(page.getByText("snap-abc")).toBeVisible();
@@ -173,14 +169,16 @@ test.describe("Snapshots List", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ snapshots: [], total: 0, nextBefore: null }),
+        body: JSON.stringify({ snapshots: [], total: 0, nextCursor: null }),
       });
     });
 
     await page.goto("/snapshots");
 
     await expect(page.getByText("No snapshots yet")).toBeVisible();
-    await expect(page.getByText("Configure a webhook and run the CLI")).toBeVisible();
+    await expect(
+      page.getByText("Run otter backup to save your configuration and environment."),
+    ).toBeVisible();
   });
 
   test("clicking a snapshot row navigates to detail page", async ({ page }) => {
@@ -199,7 +197,7 @@ test.describe("Snapshots List", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ snapshots, total: 1, nextBefore: null }),
+        body: JSON.stringify({ snapshots, total: 1, nextCursor: null }),
       });
     });
 
@@ -207,7 +205,7 @@ test.describe("Snapshots List", () => {
 
     // Click the snapshot row → navigates to detail page
     // The row uses onClick={router.push}, not an <a> link
-    await page.getByText("snap-nav", { exact: false }).first().click();
+    await page.getByRole("link", { name: "clickable-host", exact: true }).click();
     await expect(page).toHaveURL(/\/snapshots\/snap-nav-test$/);
   });
 });

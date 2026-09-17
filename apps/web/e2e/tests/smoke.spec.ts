@@ -33,7 +33,7 @@ test.beforeEach(async ({ page }) => {
 test("dashboard renders for localhost-stamped session", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your machines" })).toBeVisible();
 });
 
 test("snapshot detail renders rich snapshot", async ({ page }) => {

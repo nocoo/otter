@@ -8,7 +8,7 @@ import { APP_VERSION } from "@/lib/version";
 import { useSidebar } from "./sidebar-context";
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/", label: "Machines", icon: LayoutDashboard },
   { href: "/snapshots", label: "Snapshots", icon: Archive },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

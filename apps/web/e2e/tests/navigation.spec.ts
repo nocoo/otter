@@ -7,7 +7,7 @@ test.describe("Navigation", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ snapshots: [], total: 0, nextBefore: null }),
+        body: JSON.stringify({ devices: [], snapshots: [], total: 0, nextCursor: null }),
       });
     });
     await page.route("**/api/webhooks*", async (route) => {
@@ -24,19 +24,19 @@ test.describe("Navigation", () => {
     await expect(page).toHaveURL(/\/$/);
 
     // Navigate to Snapshots
-    await page.getByRole("link", { name: "Snapshots" }).click();
+    await page.locator("aside").getByRole("link", { name: "Snapshots" }).click();
     await expect(page).toHaveURL(/\/snapshots$/);
     await expect(page.getByRole("heading", { name: "Snapshots" })).toBeVisible();
 
     // Navigate to Settings
-    await page.getByRole("link", { name: "Settings" }).click();
+    await page.locator("aside").getByRole("link", { name: "Settings" }).click();
     await expect(page).toHaveURL(/\/settings$/);
     await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
 
-    // Navigate back to Dashboard
-    await page.getByRole("link", { name: "Dashboard" }).click();
+    // Navigate back to Machines
+    await page.locator("aside").getByRole("link", { name: "Machines" }).click();
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Your machines" })).toBeVisible();
   });
 
   test("active sidebar link is highlighted", async ({ page }) => {
@@ -46,13 +46,13 @@ test.describe("Navigation", () => {
     const snapshotsLink = page.locator("aside").getByRole("link", { name: "Snapshots" });
     await expect(snapshotsLink).not.toHaveClass(/text-muted-foreground/);
 
-    // The Dashboard link should have the inactive class (text-muted-foreground)
-    const dashboardLink = page.locator("aside").getByRole("link", { name: "Dashboard" });
+    // The Machines link should have the inactive class (text-muted-foreground)
+    const dashboardLink = page.locator("aside").getByRole("link", { name: "Machines" });
     await expect(dashboardLink).toHaveClass(/text-muted-foreground/);
   });
 
   test("breadcrumbs show correct path segments", async ({ page }) => {
-    // Dashboard shows "Home"
+    // Machines shows "Home"
     await page.goto("/");
     await expect(page.locator("header nav").getByText("Home")).toBeVisible();
 
@@ -83,7 +83,7 @@ test.describe("Navigation", () => {
 
     // Sidebar overlay should appear with nav links
     await expect(page.locator("aside")).toBeVisible();
-    await expect(page.locator("aside").getByText("Dashboard")).toBeVisible();
+    await expect(page.locator("aside").getByText("Machines")).toBeVisible();
     await expect(page.locator("aside").getByText("Snapshots")).toBeVisible();
     await expect(page.locator("aside").getByText("Settings")).toBeVisible();
   });

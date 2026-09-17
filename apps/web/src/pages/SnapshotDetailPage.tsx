@@ -6,6 +6,7 @@ import { ExportSection } from "@/components/snapshot/export-section";
 import { formatDateTime } from "@/components/snapshot/helpers";
 import { OverviewTab } from "@/components/snapshot/overview-tab";
 import type { SnapshotData, SnapshotMeta } from "@/components/snapshot/types";
+import { RecoveryDownload, WorkspaceSnapshot } from "@/components/snapshot/workspace-snapshot";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -108,42 +109,53 @@ export function SnapshotDetailPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="overview">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="config" className="gap-1.5">
-            <Settings className="h-3.5 w-3.5" strokeWidth={1.5} />
-            Config
-            <Badge variant="secondary" className="text-2xs font-normal ml-0.5 px-1.5 py-0">
-              {configCount}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="environment" className="gap-1.5">
-            <Globe className="h-3.5 w-3.5" strokeWidth={1.5} />
-            Environment
-            <Badge variant="secondary" className="text-2xs font-normal ml-0.5 px-1.5 py-0">
-              {envCount}
-            </Badge>
-          </TabsTrigger>
-        </TabsList>
+      {snapshotData.workspace ? (
+        <WorkspaceSnapshot data={snapshotData} />
+      ) : (
+        <>
+          <div className="rounded-lg bg-secondary p-4 text-sm text-muted-foreground">
+            Legacy snapshot: some skills were saved as names only. Missing package contents cannot
+            be recovered from the list.
+          </div>
+          <RecoveryDownload data={snapshotData} />
+          <Tabs defaultValue="overview">
+            <TabsList>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="config" className="gap-1.5">
+                <Settings className="h-3.5 w-3.5" strokeWidth={1.5} />
+                Config
+                <Badge variant="secondary" className="text-2xs font-normal ml-0.5 px-1.5 py-0">
+                  {configCount}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger value="environment" className="gap-1.5">
+                <Globe className="h-3.5 w-3.5" strokeWidth={1.5} />
+                Environment
+                <Badge variant="secondary" className="text-2xs font-normal ml-0.5 px-1.5 py-0">
+                  {envCount}
+                </Badge>
+              </TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="overview">
-          <OverviewTab
-            meta={meta}
-            collectors={collectors}
-            totalFiles={totalFiles}
-            totalLists={totalLists}
-          />
-        </TabsContent>
+            <TabsContent value="overview">
+              <OverviewTab
+                meta={meta}
+                collectors={collectors}
+                totalFiles={totalFiles}
+                totalLists={totalLists}
+              />
+            </TabsContent>
 
-        <TabsContent value="config">
-          <CollectorsTab collectors={collectors} category="config" />
-        </TabsContent>
+            <TabsContent value="config">
+              <CollectorsTab collectors={collectors} category="config" />
+            </TabsContent>
 
-        <TabsContent value="environment">
-          <CollectorsTab collectors={collectors} category="environment" />
-        </TabsContent>
-      </Tabs>
+            <TabsContent value="environment">
+              <CollectorsTab collectors={collectors} category="environment" />
+            </TabsContent>
+          </Tabs>
+        </>
+      )}
 
       <ExportSection data={snapshotData} snapshotId={id} />
     </div>

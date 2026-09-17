@@ -1,4 +1,5 @@
 import type { SnapshotCollector } from "@otter/api/lib/snapshot-collectors";
+import type { WorkspaceCapture } from "@otter/core";
 
 export type FileData = SnapshotCollector["files"][number];
 export type ListItem = SnapshotCollector["lists"][number];
@@ -27,6 +28,8 @@ export interface SnapshotData {
     platform: string;
     arch: string;
     username: string;
+    homeDir?: string;
   };
   collectors: Collector[];
+  workspace?: WorkspaceCapture;
 }
