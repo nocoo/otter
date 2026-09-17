@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 - Add Git working-tree and upstream observations with explicit remote checks and content-based backup status.
 - Organize the Mac App around overview, sources, Agents, backups and software inventories, preserving editing, conditional undo and drafts.
 - Add Web machine history, source and Agent/profile views, search, version comparison and verified file/package/machine recovery downloads.
+- Link the Web header to the Hexly project page and add tooltips for header controls.
 
 ### Changed
 
