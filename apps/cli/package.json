@@ -34,7 +34,7 @@
   "license": "MIT",
   "dependencies": {
     "@nocoo/base-cli": "^0.3.0",
-    "yaml": "^2.9.0",
+    "yaml": "2.9.1",
     "smol-toml": "1.8.0",
     "jsonc-parser": "^3.3.1"
   },
