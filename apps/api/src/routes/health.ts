@@ -4,10 +4,6 @@ import type { Env, Variables } from "../types.js";
 // biome-ignore lint/style/useNamingConvention: Hono generic parameter names
 export const healthRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
 
-interface CountRow {
-  count: number;
-}
-
 /**
  * GET /health — lightweight health check
  *
@@ -26,15 +22,11 @@ healthRoutes.get("/", async (c) => {
   // Check D1 connectivity
   let d1Latency: number | null = null;
   let d1Error: string | null = null;
-  let snapshotCount: number | null = null;
 
   try {
     const d1Start = Date.now();
-    const result = await c.env.DB.prepare(
-      "SELECT COUNT(*) as count FROM snapshots",
-    ).first<CountRow>();
+    await c.env.DB.prepare("SELECT 1").first();
     d1Latency = Date.now() - d1Start;
-    snapshotCount = result?.count ?? 0;
   } catch (err) {
     d1Latency = Date.now() - start;
     d1Error = err instanceof Error ? err.message : "D1 connectivity check failed";
@@ -59,7 +51,7 @@ healthRoutes.get("/", async (c) => {
   return c.json({
     status: "ok",
     checks: {
-      d1: { reachable: true, latencyMs: d1Latency, snapshots: snapshotCount },
+      d1: { reachable: true, latencyMs: d1Latency },
     },
     system,
     latencyMs: totalLatency,

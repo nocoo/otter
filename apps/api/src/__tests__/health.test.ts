@@ -10,7 +10,6 @@ interface HealthResponse {
     d1: {
       reachable: boolean;
       latencyMs: number;
-      snapshots?: number;
       error?: string;
     };
   };
@@ -41,43 +40,9 @@ describe("Health API", () => {
     expect(body.status).toBe("ok");
     expect(body.checks.d1.reachable).toBe(true);
     expect(typeof body.checks.d1.latencyMs).toBe("number");
-    expect(typeof body.checks.d1.snapshots).toBe("number");
+    expect(body.checks.d1).not.toHaveProperty("snapshots");
     expect(body.system.runtime).toBe("cloudflare-workers");
     expect(body.system.env).toBe("test");
     expect(typeof body.latencyMs).toBe("number");
-  });
-
-  it("GET /health includes snapshot count", async () => {
-    // Insert a test snapshot
-    await env.DB.prepare(
-      "INSERT INTO snapshots (id, user_id, webhook_id, hostname, platform, arch, username, collector_count, file_count, list_count, size_bytes, r2_key, snapshot_at, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    )
-      .bind(
-        "test-snap-1",
-        "test-user",
-        null,
-        "test-host",
-        "darwin",
-        "arm64",
-        "testuser",
-        5,
-        10,
-        100,
-        1024,
-        "test/key.json",
-        1712345678000,
-        1712345678000,
-      )
-      .run();
-
-    const req = new Request("http://localhost/health");
-    const ctx = createExecutionContext();
-    const res = await app.fetch(req, env, ctx);
-    await waitOnExecutionContext(ctx);
-
-    expect(res.status).toBe(200);
-
-    const body = (await res.json()) as HealthResponse;
-    expect(body.checks.d1.snapshots).toBeGreaterThanOrEqual(1);
   });
 });

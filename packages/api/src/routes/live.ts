@@ -3,18 +3,14 @@ import type { AppEnv } from "../lib/app-env";
 import { queryFirst as httpQueryFirst } from "../lib/cf/d1";
 import { APP_VERSION } from "../lib/version";
 
-interface CountRow {
-  count: number;
-}
-
 const app = new Hono<AppEnv>();
 
-function fetchSnapshotCount(c: Context<AppEnv>): Promise<CountRow | null> {
+function checkD1(c: Context<AppEnv>): Promise<unknown> {
   const driver = c.get("driver");
   if (driver) {
-    return driver.queryFirst<CountRow>("SELECT COUNT(*) as count FROM snapshots");
+    return driver.queryFirst("SELECT 1");
   }
-  return httpQueryFirst<CountRow>("SELECT COUNT(*) as count FROM snapshots");
+  return httpQueryFirst("SELECT 1");
 }
 
 app.get("/", async (c) => {
@@ -31,13 +27,11 @@ app.get("/", async (c) => {
 
   let d1Latency: number | null = null;
   let d1Error: string | null = null;
-  let snapshotCount: number | null = null;
 
   try {
     const d1Start = Date.now();
-    const row = await fetchSnapshotCount(c);
+    await checkD1(c);
     d1Latency = Date.now() - d1Start;
-    snapshotCount = row?.count ?? 0;
   } catch (err) {
     d1Latency = Date.now() - start;
     d1Error = err instanceof Error ? err.message : "D1 connectivity check failed";
@@ -66,7 +60,7 @@ app.get("/", async (c) => {
     status: "ok",
     version: APP_VERSION,
     checks: {
-      d1: { reachable: true, latencyMs: d1Latency, snapshots: snapshotCount },
+      d1: { reachable: true, latencyMs: d1Latency },
     },
     system,
     latencyMs: totalLatency,

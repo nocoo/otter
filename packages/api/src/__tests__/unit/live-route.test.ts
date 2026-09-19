@@ -22,7 +22,7 @@ describe("GET /v1/live", () => {
   });
 
   it("returns status ok when D1 is reachable", async () => {
-    mockQueryFirst.mockResolvedValue({ count: 42 });
+    mockQueryFirst.mockResolvedValue({ "1": 1 });
 
     const res = await app.request("/v1/live");
     const body = (await res.json()) as any;
@@ -31,7 +31,7 @@ describe("GET /v1/live", () => {
     expect(body.status).toBe("ok");
     expect(body.version).toBe("2.0.0");
     expect(body.checks.d1.reachable).toBe(true);
-    expect(body.checks.d1.snapshots).toBe(42);
+    expect(body.checks.d1).not.toHaveProperty("snapshots");
     expect(typeof body.checks.d1.latencyMs).toBe("number");
     expect(typeof body.latencyMs).toBe("number");
 
@@ -43,7 +43,7 @@ describe("GET /v1/live", () => {
   });
 
   it("falls back to 'development' env label when NODE_ENV is unset", async () => {
-    mockQueryFirst.mockResolvedValue({ count: 0 });
+    mockQueryFirst.mockResolvedValue({ "1": 1 });
     const original = process.env.NODE_ENV;
     delete process.env.NODE_ENV;
     try {
@@ -55,7 +55,7 @@ describe("GET /v1/live", () => {
     }
   });
 
-  it("returns status ok with zero snapshots when D1 returns null", async () => {
+  it("returns status ok when the D1 request succeeds without a row", async () => {
     mockQueryFirst.mockResolvedValue(null);
 
     const res = await app.request("/v1/live");
@@ -64,7 +64,7 @@ describe("GET /v1/live", () => {
     expect(res.status).toBe(200);
     expect(body.status).toBe("ok");
     expect(body.checks.d1.reachable).toBe(true);
-    expect(body.checks.d1.snapshots).toBe(0);
+    expect(body.checks.d1).not.toHaveProperty("snapshots");
   });
 
   it("returns status error with 503 when D1 fails", async () => {
@@ -108,7 +108,7 @@ describe("GET /v1/live", () => {
   });
 
   it("sets no-cache headers on success", async () => {
-    mockQueryFirst.mockResolvedValue({ count: 1 });
+    mockQueryFirst.mockResolvedValue({ "1": 1 });
 
     const res = await app.request("/v1/live");
 
@@ -124,7 +124,7 @@ describe("GET /v1/live", () => {
   });
 
   it("does not require authentication", async () => {
-    mockQueryFirst.mockResolvedValue({ count: 0 });
+    mockQueryFirst.mockResolvedValue({ "1": 1 });
 
     const res = await app.request("/v1/live");
     const body = (await res.json()) as any;
@@ -133,18 +133,18 @@ describe("GET /v1/live", () => {
     expect(body.status).toBe("ok");
   });
 
-  it("uses lightweight SELECT COUNT query for D1 check", async () => {
-    mockQueryFirst.mockResolvedValue({ count: 10 });
+  it("uses a constant SELECT query for D1 check", async () => {
+    mockQueryFirst.mockResolvedValue({ "1": 1 });
 
     await app.request("/v1/live");
 
     expect(mockQueryFirst).toHaveBeenCalledTimes(1);
-    expect(mockQueryFirst).toHaveBeenCalledWith("SELECT COUNT(*) as count FROM snapshots");
+    expect(mockQueryFirst).toHaveBeenCalledWith("SELECT 1");
   });
 
   it("latencyMs reflects actual timing", async () => {
     mockQueryFirst.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve({ count: 0 }), 10)),
+      () => new Promise((resolve) => setTimeout(() => resolve({ "1": 1 }), 10)),
     );
 
     const res = await app.request("/v1/live");
