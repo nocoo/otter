@@ -98,11 +98,11 @@ CLI 包内还定义了以下类型（`apps/cli/src/storage/local.ts`）：
 `apps/web`（Vite SPA）和 `apps/api`（Cloudflare Worker）部署到**同一个 Worker**：`web/dist` 通过 wrangler 的 `[assets]` binding 由 Worker 直接托管，`/api/*` 由同一 Worker 处理。生产环境绑了两个域名：
 
 - `otter.hexly.ai`（custom domain，CF Access SSO 守门）
-- `otter.nocoo.workers.dev`（workers.dev fallback，无 CF Access，纯 Bearer）
+- `otter.worker.hexly.ai` — custom domain for Bearer-authenticated machine requests; workers.dev and preview URLs are disabled.
 
 业务逻辑全部封装在 `@otter/api` 的 `createApp({ basePath, driver, bucket, auth })` 工厂里。Worker 入口（`apps/api/src/index.ts`）只做 binding 适配：把 `c.env.DB`（D1 binding）包成 `DbDriver`，把 `c.env.SNAPSHOTS`（R2 binding）传进去，然后 `apiApp.fetch(c.req.raw, c.env, c.executionCtx)`。
 
-本地开发是 surety 模式：vite dev server（`:7019`）把 `/api/*` 反代到生产 worker（默认 `https://otter.nocoo.workers.dev`，可通过 `OTTER_API_URL` 覆写），并自动注入 `Authorization: Bearer <OTTER_DEV_API_TOKEN>`。如果想完全脱离生产数据，把 `OTTER_API_URL` 指向 `http://localhost:8787` 并 `bun run dev:worker`（wrangler dev 本地 D1/R2 模拟，accessAuth 看到 localhost 自动 stamp `dev@localhost`，不需要 Bearer）。
+本地开发是 surety 模式：vite dev server（`:7019`）把 `/api/*` 反代到生产 worker（默认 `https://otter.worker.hexly.ai`，可通过 `OTTER_API_URL` 覆写），并自动注入 `Authorization: Bearer <OTTER_DEV_API_TOKEN>`。如果想完全脱离生产数据，把 `OTTER_API_URL` 指向 `http://localhost:8787` 并 `bun run dev:worker`（wrangler dev 本地 D1/R2 模拟，accessAuth 看到 localhost 自动 stamp `dev@localhost`，不需要 Bearer）。
 
 `/api/*` 路由清单（由 `createApp()` 装配，basePath 默认 `/api`）：
 

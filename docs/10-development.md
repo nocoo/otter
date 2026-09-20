@@ -67,7 +67,7 @@ CLI 导出与 Web ZIP 会展开保存的链接目标，保留原始路径和链�
 | 浏览器站点 | `https://otter.hexly.ai`，Cloudflare Access |
 | 开发登录页 | `https://otter.dev.hexly.ai`，由 `login --dev` 选择 |
 | CLI 上传 API | `https://otter.worker.hexly.ai`，由进程环境变量 `OTTER_API_URL` 覆盖 |
-| Vite 代理 | `https://otter.nocoo.workers.dev`，由 Vite 环境中的 `OTTER_API_URL` 覆盖 |
+| Vite 代理 | `https://otter.worker.hexly.ai`，由 Vite 环境中的 `OTTER_API_URL` 覆盖 |
 | CLI 登录配置 | `~/.config/otter/config.json` 或 `config.dev.json` |
 | 本地图标 | `~/.config/otter/icons/`，两种配置共用 |
 
@@ -140,7 +140,7 @@ OTTER_API_URL=http://127.0.0.1:17020 OTTER_DEV_API_TOKEN= bun run test:e2e:bdd
 
 CI 在 main 推送后检查代码、类型与覆盖率，运行 Worker 单元测试、本地 API / CLI 集成、基于生产构建的浏览器测试、Vite BDD smoke，以及 Worker 部署预演。浏览器 runner 和发布后的检查复用 `scripts/verify-web.ts`，确保缺失 JS 被 SPA 回退成 HTTP 200 时也能发现问题。
 
-Release 等待 CI 成功，检出对应提交，在仓库根目录安装依赖和构建 Web，然后从 `apps/api` 部署单个 Worker。`apps/api/wrangler.toml` 的静态目录为 `../web/dist`。发布后通过同一个 Worker 的 `https://otter.nocoo.workers.dev` 地址校验 API 版本、JS/CSS 资源和 SPA 路由，无需给 CI 配置 Cloudflare Access 登录凭据。
+Release 等待 CI 成功，检出对应提交，在仓库根目录安装依赖和构建 Web，然后从 `apps/api` 部署单个 Worker。`apps/api/wrangler.toml` 的静态目录为 `../web/dist`。发布后通过同一个 Worker 的 `https://otter.worker.hexly.ai` 地址校验 API 版本、JS/CSS 资源和 SPA 路由，无需给 CI 配置 Cloudflare Access 登录凭据。
 
 生产环境继续使用 `CF_API_TOKEN`、`CF_ACCOUNT_ID` secrets 和 `deploy-otter-production` 并发锁。Release 不执行 D1 迁移。自行部署时需配置自己的 D1、两个 R2 绑定、Access team domain / audience、域名与生产环境的 Cloudflare 凭据，并在需要新 schema 的代码部署前完成迁移。
 

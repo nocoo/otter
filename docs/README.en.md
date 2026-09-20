@@ -90,7 +90,7 @@ bun run build
 
 The root `build` command builds only the web SPA. Inspect the compiled CLI with `node apps/cli/dist/bin.js --help`.
 
-`bun run dev` starts Vite on port 7019. Its default `/api` proxy points to the production service at `https://otter.nocoo.workers.dev`. Set `OTTER_API_URL` and the required `OTTER_DEV_API_TOKEN` in `apps/web/.env` before starting; API operations affect that target. This Vite configuration does not use the root `.env` as its environment file. See [local development](10-development.md#本地联调) for a local D1/R2 backend.
+`bun run dev` starts Vite on port 7019. Its default `/api` proxy points to the production service at `https://otter.worker.hexly.ai`. Set `OTTER_API_URL` and the required `OTTER_DEV_API_TOKEN` in `apps/web/.env` before starting; API operations affect that target. This Vite configuration does not use the root `.env` as its environment file. See [local development](10-development.md#本地联调) for a local D1/R2 backend.
 
 ```text
 apps/web/          Vite / React pages

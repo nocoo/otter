@@ -90,7 +90,7 @@ bun run build
 
 根目录的 `build` 只构建 Web SPA。编译后的 CLI 可用 `node apps/cli/dist/bin.js --help` 查看帮助。
 
-`bun run dev` 在端口 7019 启动 Vite，默认把 `/api` 代理到生产服务 `https://otter.nocoo.workers.dev`。启动前在 `apps/web/.env` 中设置目标 `OTTER_API_URL` 和所需的 `OTTER_DEV_API_TOKEN`；接口操作作用于该目标。根目录 `.env` 不作为这份 Vite 配置的环境文件。使用本地 D1/R2 联调的步骤见[本地联调](docs/10-development.md#本地联调)。
+`bun run dev` 在端口 7019 启动 Vite，默认把 `/api` 代理到生产服务 `https://otter.worker.hexly.ai`。启动前在 `apps/web/.env` 中设置目标 `OTTER_API_URL` 和所需的 `OTTER_DEV_API_TOKEN`；接口操作作用于该目标。根目录 `.env` 不作为这份 Vite 配置的环境文件。使用本地 D1/R2 联调的步骤见[本地联调](docs/10-development.md#本地联调)。
 
 ```text
 apps/web/          Vite / React 页面

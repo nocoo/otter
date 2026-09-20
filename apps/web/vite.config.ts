@@ -7,7 +7,7 @@ import pkg from "./package.json" with { type: "json" };
 // biome-ignore lint/style/useNamingConvention: Vite config factory
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "OTTER_");
-  const target = env.OTTER_API_URL ?? "https://otter.nocoo.workers.dev";
+  const target = env.OTTER_API_URL ?? "https://otter.worker.hexly.ai";
   const devToken = env.OTTER_DEV_API_TOKEN ?? "";
 
   return {

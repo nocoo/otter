@@ -54,7 +54,7 @@ Otter Dashboard 是 Otter 备份系统的 Web 端，提供快照浏览、文件�
 | 域名 | CF Access | 默认用途 |
 |---|---|---|
 | `otter.hexly.ai` | 启用（SSO） | 浏览器交互；CLI mint token |
-| `otter.nocoo.workers.dev` | 不启用 | Bearer-only 通道；vite proxy 默认目标 |
+| `otter.worker.hexly.ai` | 不启用 | Bearer-only 通道；vite proxy 默认目标 |
 
 ## D1 Schema
 
@@ -232,7 +232,7 @@ Worker:
 
 | 变量 | 用途 | 适用 |
 |---|---|---|
-| `OTTER_API_URL` | vite proxy 目标（默认 `https://otter.nocoo.workers.dev`） | 本地 dev |
+| `OTTER_API_URL` | vite proxy 目标（默认 `https://otter.worker.hexly.ai`） | 本地 dev |
 | `OTTER_DEV_API_TOKEN` | vite proxy 注入的 Bearer token | 本地 dev |
 | `CF_ACCESS_TEAM_DOMAIN` | CF Access 验签 issuer | worker（wrangler.toml） |
 | `CF_ACCESS_AUD` | CF Access JWT audience | worker |

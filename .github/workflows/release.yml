@@ -37,7 +37,7 @@ jobs:
       environment: production
       concurrency-group: deploy-otter-production
       timeout-minutes: 15
-      verify-command: "bun run verify:web https://otter.nocoo.workers.dev"
+      verify-command: "bun run verify:web https://otter.worker.hexly.ai"
       verify-retries: 6
       verify-retry-seconds: 5
     secrets:

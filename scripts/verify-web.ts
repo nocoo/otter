@@ -52,5 +52,5 @@ export async function verifyWeb(baseUrl: string): Promise<void> {
 }
 
 if (import.meta.main) {
-  await verifyWeb(process.argv[2] ?? "https://otter.nocoo.workers.dev");
+  await verifyWeb(process.argv[2] ?? "https://otter.worker.hexly.ai");
 }
