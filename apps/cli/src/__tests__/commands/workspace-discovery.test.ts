@@ -45,6 +45,50 @@ async function scan() {
 }
 
 describe("workspace discovery and registry", () => {
+  it("discovers a minimal Codex configuration without inventing external references", async () => {
+    await put(join(home, ".codex/config.toml"), 'model = "fixture"\n');
+
+    const discovered = await discoverWorkspace(home, empty(), false);
+
+    expect(discovered.issues).toEqual([]);
+    expect(discovered.agents).toEqual([
+      expect.objectContaining({ kind: "codex", configPath: join(home, ".codex") }),
+    ]);
+    expect(discovered.plans.filter((plan) => plan.root.role === "external")).toEqual([]);
+  });
+
+  it("preserves enabled Codex skill directories and ignores entries without paths", async () => {
+    await put(
+      join(home, ".codex/config.toml"),
+      [
+        "[[skills.config]]",
+        "enabled = false",
+        "[[skills.config]]",
+        'path = "~/skills/enabled"',
+        "enabled = true",
+        "[[skills.config]]",
+        'path = "~/skills/default"',
+      ].join("\n"),
+    );
+    await put(join(home, "skills/enabled/SKILL.md"), "Enabled fixture\n");
+    await put(join(home, "skills/default/SKILL.md"), "Default fixture\n");
+
+    const discovered = await discoverWorkspace(home, empty(), false);
+    const external = discovered.plans.filter((plan) => plan.root.role === "external");
+
+    expect(discovered.issues).toEqual([]);
+    expect(external.map((plan) => plan.root.path)).toEqual([
+      join(home, "skills/enabled"),
+      join(home, "skills/default"),
+    ]);
+    for (const plan of external) {
+      expect(plan.skillRoot).toBe(true);
+      expect(plan.consumers).toEqual([
+        expect.objectContaining({ agentId: "codex:default", disabledPaths: [] }),
+      ]);
+    }
+  });
+
   it("discovers Codex explicit instructions/disabled skill packages, shared roots, project entries and installed Claude plugin caches", async () => {
     await put(
       join(home, ".codex/config.toml"),
