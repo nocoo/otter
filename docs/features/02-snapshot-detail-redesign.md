@@ -252,7 +252,7 @@ export const snapshotBadge = {
 
 ## 交付切分（原子化提交，v1 修订：来自 Reviewer 反馈 #6）
 
-按 CLAUDE.md 「原子化 commit」要求分片提交，每片可独立通过 `bun run test` + `bun run typecheck`，且每片都能落到"可交互、可测试的中间态"，不出现 UI 半成品。
+按 AGENTS.md 「原子化 commit」要求分片提交，每片可独立通过 `bun run test` + `bun run typecheck`，且每片都能落到“可交互、可测试的中间态”，不出现 UI 半成品。
 
 | 序号 | Commit | 内容 | 落地后可测 |
 |------|--------|------|-----------|

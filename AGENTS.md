@@ -2,7 +2,7 @@
 
 Configuration backup snapshots with a CLI, browser workspace and native macOS app.
 Profile: ts-worker-web + native-tool (Swift/CLI).
-Direction: [configuration backup design](docs/features/04-configuration-backup-redesign.md). Frameworks must preserve this handbook.
+Human overview: [README.md](README.md). Direction: [configuration backup design](docs/features/04-configuration-backup-redesign.md). Frameworks must preserve this handbook. Maintain this root `AGENTS.md` as the only project handbook; do not create a `CLAUDE.md` alias, copy or import.
 
 ## Sources of Truth
 
@@ -52,23 +52,22 @@ bun run deploy:check             # build + local Worker dry run
 
 ## Verification
 
-6DQ = L1/L2/L3 + G1/G2 + D1 (test isolation). Status: `enforced`, `planned`, `manual`, or `N/A`; partial enforcement below does not certify the full required bar.
-L1 requires statements, branches, functions and lines each ≥95%, with no skipped/focused tests; preserve any stricter package threshold. Native tools must identify unmeasured metrics as gaps.
-G1 requires check-only strict analysis/formatting with zero errors/warnings. G2 requires dependency and secret scans, with missing required scanners failing.
+6DQ = L1/L2/L3 + G2 + D1 (test isolation); the former G1 dimension was merged into L1 on 2026-09-21. Status: `enforced`, `planned`, `manual`, or `N/A`; partial enforcement below does not certify the full required bar.
+L1 requires statements, branches, functions and lines each ≥95%, with no skipped/focused tests; preserve any stricter package threshold. Native tools must identify unmeasured metrics as gaps. L1 also includes check-only strict analysis/formatting with zero errors/warnings (the former G1 contract). G2 requires dependency and secret scans, with missing required scanners failing.
 
 | Dimension | Status | Required proof and current evidence/gap |
 |---|---|---|
 | L1 TypeScript | planned | Hooks/CI run coverage with statements/lines 95%, branches/functions 94%; UI/auth/entry and Worker exclusions leave full all-four 95% incomplete. |
 | L1 Swift | planned | Separate macOS CI runs native tests; no all-four 95% native coverage gate. |
+| L1 static (former G1, TypeScript / Swift) | planned | TS build/typecheck and Biome run in CI; `lint` is only typechecking, Biome lacks errors-on-warnings outside lint-staged, and strict native analysis is incomplete. |
 | L2 HTTP / CLI | planned | `test:l2` boots local Wrangler and tests real API/CLI flows; require verified 100% route/auth/error coverage. Unit driver fakes are not real HTTP proof. |
 | L3 web / native | planned | `test:e2e` serves built SPA/local Worker; macOS CI checks real AppKit and packaged CLI. Full page/desktop coverage is not enforced; root BDD uses a Vite proxy and needs explicit local target. |
-| G1 TypeScript / Swift | planned | TS build/typecheck and Biome run in CI; `lint` is only typechecking, Biome lacks errors-on-warnings outside lint-staged, and strict native analysis is incomplete. |
 | G2 | enforced | Hooks/CI require OSV and gitleaks, including full-history pre-push scanning. |
 | D1 | planned | L2 is local with an inserted marker, but fixed `.wrangler/e2e` is recursively deleted without marker/path checks; browser fixed state and server reuse also need guards. |
 
 Pre-commit runs staged Biome, plain unit tests, project-reference typecheck and staged gitleaks in parallel. Pre-push runs coverage, local L2, OSV and full-history gitleaks in parallel. CI adds Worker/build/browser gates and path-filtered macOS test/package jobs. Hooks inspect working files, not every pushed commit.
 
-Target hooks: pre-commit checks G1 + L1 against the index snapshot (`git checkout-index`) in <30s; pre-push checks L2 and G2 in parallel against every stdin push ref/commit in <3min, plus build where applicable. L3 runs in CI or an explicit manual lane.
+Target hooks: pre-commit checks unified L1 (types, check-only lint, coverage) against the index snapshot (`git checkout-index`) in <30s; pre-push checks L2 and G2 in parallel against every stdin push ref/commit in <3min, plus build where applicable. L3 runs in CI or an explicit manual lane.
 Never bypass commit/push hooks, force-push, or use autofix in checks. Documentation changes do not authorize deploying or implementing new gates.
 
 ## Resources / Isolation
