@@ -2,6 +2,48 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.1] - 2026-10-01
+
+### Changed
+- Record caddy path lookup
+- Align release wrangler pin to 4.145.0
+- Align node 22 pins with lint-staged
+- Bump wrangler to clear undici
+- Bump vitest to 5.0.3
+- Bump hono to 4.13.12
+- Bump lint-staged to 17.6.0
+- Bump biome to 2.5.15
+- Cover TOML references (#556)
+- Bump wrangler to 4.136.3 (#557)
+- Bump smol-toml to 1.9.0 (#556)
+- Bump workers types (#555)
+- Migrate claude handbook to agents.md
+- Align cloudflare toolchain
+- Update node
+- Avoid snapshot scans in health checks
+- Update yaml
+- Update wrangler
+- Update smol-toml
+- Update lucide-react
+- Update fflate
+- Update workers-types
+- Pin vitest 5.0.1
+- Clarify agent handbook validation prerequisites
+- Normalize agent handbook and retrospective
+- Update biome
+- Update react-router
+- Update hono
+- Align root vitest 5.0.1
+
+### Fixes
+- Use custom domain in otter env example
+- Disable worker default and preview urls
+- Keep dependency lint checks read-only
+- Use supported worker test runner
+- Align deploy Wrangler with lockfile
+- Stabilize button hit targets and compact tooltips
+- Isolate workspace subprocesses
+
 ## [3.0.0] - 2026-09-17
 
 ### Features
