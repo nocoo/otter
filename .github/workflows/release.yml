@@ -32,7 +32,7 @@ jobs:
       node-version: "22.23.3"
       install-policy: "blocked"
       build-command: "bun run build"
-      wrangler-version: "4.136.3"
+      wrangler-version: "4.145.0"
       wrangler-working-directory: "apps/api"
       environment: production
       concurrency-group: deploy-otter-production
