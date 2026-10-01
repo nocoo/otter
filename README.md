@@ -36,7 +36,7 @@ v2 快照会明确记录排除、脱敏、仅清单、读取失败和容量限�
 
 v3.0.0 的 Mac 安装包与升级说明见 [GitHub Release](https://github.com/nocoo/otter/releases/tag/v3.0.0)。自行部署时，请先升级 API，再使用新客户端上传完整快照。
 
-需要 macOS 和 Node.js；仓库声明的 Node.js 范围为 `^22.12.0 || ^24.0.0 || >=26.0.0`。
+需要 macOS 和 Node.js；仓库声明的 Node.js 范围为 `^22.23.3 || ^24.0.0 || >=26.0.0`。
 
 ```bash
 npm install -g @nocoo/otter

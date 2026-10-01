@@ -36,7 +36,7 @@ v2 coverage records exclusions, redaction, inventory-only items, read failures a
 
 See the [v3.0.0 GitHub Release](https://github.com/nocoo/otter/releases/tag/v3.0.0) for Mac downloads and upgrade notes. For self-hosted installations, upgrade the API before uploading full snapshots with the new clients.
 
-Use macOS and Node.js. The repository declares the Node.js range `^22.12.0 || ^24.0.0 || >=26.0.0`.
+Use macOS and Node.js. The repository declares the Node.js range `^22.23.3 || ^24.0.0 || >=26.0.0`.
 
 ```bash
 npm install -g @nocoo/otter
