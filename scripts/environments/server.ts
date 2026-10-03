@@ -260,7 +260,7 @@ export async function startLocalServer(options: Options = {}) {
                 ],
               },
             ],
-        server: { middlewareMode: true, hmr: { server }, watch: { ignored: ["**/.wrangler/**"] } },
+        server: { middlewareMode: true, ws: { server }, watch: { ignored: ["**/.wrangler/**"] } },
       });
     }
     server.listen(port, "127.0.0.1");
