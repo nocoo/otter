@@ -1,18 +1,25 @@
+import { ConfirmDialog, SegmentControl, useConfirm } from "@nocoo/basalt";
 import { useState } from "react";
 import { getEnvironment, selectEnvironment } from "@/lib/environment";
-import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 
 export function EnvironmentSwitch() {
   const environment = getEnvironment();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { confirm, dialogProps } = useConfirm();
   if (!environment?.local) return null;
   const change = async (mode: string) => {
     setBusy(true);
     setError(null);
     try {
       await selectEnvironment(mode, () =>
-        window.confirm("Discard unsaved changes and switch environments?"),
+        confirm({
+          title: "Discard unsaved changes?",
+          description:
+            "Switching environments discards your unsaved changes and returns to the home page.",
+          confirmLabel: "Discard and switch",
+          variant: "destructive",
+        }),
       );
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Environment switch failed");
@@ -22,29 +29,24 @@ export function EnvironmentSwitch() {
   };
   return (
     <>
-      <Tabs
+      <SegmentControl
+        legend="Environment"
+        className="mr-2 [&>legend]:sr-only [&_[data-slot=segment-control-viewport]]:overflow-visible [&_[data-slot=segment-control-viewport]]:pb-0"
         value={environment.mode ?? ""}
+        disabled={busy}
         onValueChange={(mode) => void change(mode)}
-        className="mr-2"
-        activationMode="manual"
-      >
-        <TabsList aria-label="Environment" className="h-8">
-          <TabsTrigger value="demo" disabled={busy || environment.locked}>
-            Demo
-          </TabsTrigger>
-          <TabsTrigger value="e2e" disabled={busy}>
-            E2E
-          </TabsTrigger>
-          <TabsTrigger value="prod" disabled={busy || environment.locked}>
-            Prod
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+        options={[
+          { value: "demo", label: "Demo", disabled: environment.locked },
+          { value: "e2e", label: "E2E" },
+          { value: "prod", label: "Prod", disabled: environment.locked },
+        ]}
+      />
       {error && (
-        <span role="alert" className="max-w-64 text-xs text-destructive">
+        <span role="alert" className="max-w-64 text-xs text-basalt-destructive">
           {error}
         </span>
       )}
+      <ConfirmDialog {...dialogProps} />
     </>
   );
 }

@@ -12,6 +12,8 @@
           var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
           var dark = stored === "dark" || (stored !== "light" && prefersDark);
           document.documentElement.classList.toggle("dark", dark);
+          document.documentElement.classList.toggle("light", !dark);
+          document.documentElement.dataset.mode = dark ? "dark" : "light";
         } catch (_) {}
       })();
     </script>

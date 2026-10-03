@@ -11,8 +11,9 @@ into HTML; neither build mode, hostname nor browser preferences grants it. A hos
 bundle has no capability or switching endpoint. Locally served built bundles use the
 same gateway and control.
 
-The upper-right action area begins with `Demo | E2E | Prod`, using existing Radix Tabs
-with keyboard navigation and selected/disabled states. Selection is accepted by the
+The upper-right action area begins with `Demo | E2E | Prod`, using Basalt 2.1.8
+`SegmentControl` with keyboard navigation and selected/disabled states. Unsaved edits
+use Basalt `ConfirmDialog`, not the browser-native confirmation prompt. Selection is accepted by the
 server, checked against the current instance and CSRF/origin protections, remembered
 as the enum in `otter:environment-mode`, then reloads `/`. Explicit startup wins over
 browser preference; automated E2E always wins and never changes that preference.
@@ -96,7 +97,7 @@ media. Presentation relative time is not frozen; receipt timestamps reflect seed
 ## Verified evidence and remaining gaps
 
 Local implementation checks: L2 15 tests; Worker 21 tests; SPA browser 28 tests;
-BDD smoke 1 test; full unit suite 739 tests. Coverage S/B/F/L:
+BDD smoke 1 test; full unit suite 740 tests. Coverage S/B/F/L:
 96.99/94.34/96.37/97.68% against the existing configured scope. Branches remain below
 the handbook's all-four 95% destination; thresholds/exclusions were not weakened.
 
@@ -105,7 +106,18 @@ leftmost control placement, draft cancel/accept, stale-instance 409, E2E fresh r
 missing Production credential 401, server-side automated lock, hosted invisibility,
 concurrent identity/data isolation, foreign ownership rejection and checked cleanup.
 It replaces only the external font CSS boundary for reproducible browser checks.
-Screenshot: `/tmp/otter-environments-demo.png`, 1440×1000, local Demo, fixture v1.
+Screenshots: `/tmp/otter-environments-demo.png`, `/tmp/otter-environments-demo-dark.png`,
+`/tmp/otter-environments-mobile-dark.png` and `/tmp/otter-environments-confirm.png`.
+Desktop 1440×1000 and mobile 390×844; local fixture v1. Basalt segment selection,
+normal theme cycling, mobile overflow, dialog focus and cancel/accept were exercised.
+
+The focused Basalt adoption uses published 2.1.8, verified against registry metadata,
+GitHub Release and installed declarations/AI guides. Read-only source reference:
+Basalt `ac93bca576adc13f4af383250a5a068a0538756d`; its 2.2.0 source is not treated as
+published API. SegmentControl, ConfirmDialog, ThemeProvider, AccentProvider,
+ThemeToggle and affected header controls use the package Tailwind contract. Existing
+page controls, shell and unprefixed token CSS are not migrated by this focused change;
+whole-application Basalt compliance remains pending.
 
 Real Prod data/auth/Access/MFA were not verified. Existing browser UI interception
 suites remain for focused view cases and are not claimed as full HTTP proof. Full

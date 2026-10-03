@@ -110,7 +110,7 @@ export function beginEnvironmentWrite(): () => void {
 }
 export async function selectEnvironment(
   mode: string,
-  confirmDiscard: () => boolean,
+  confirmDiscard: () => boolean | Promise<boolean>,
 ): Promise<boolean> {
   const current = environment;
   if (
@@ -124,7 +124,7 @@ export async function selectEnvironment(
     return false;
   switching = true;
   try {
-    if ((dirty || writes > 0) && !confirmDiscard()) return false;
+    if ((dirty || writes > 0) && !(await confirmDiscard())) return false;
     const accepted = await accept(current, mode);
     remember(accepted);
     window.location.assign("/");

@@ -1,5 +1,13 @@
 # Retrospective
 
+## 2026-10-04: New environment controls must use Basalt
+
+The first environment control reused Otter's copied Radix Tabs and browser-native
+confirmation. The owner corrected the design requirement. This surface now uses
+published Basalt SegmentControl, ConfirmDialog, ThemeProvider and ThemeToggle with
+the documented Tailwind contract. Check the Basalt skill before adding controls;
+existing copied templates are not evidence of current design compliance.
+
 ## 2026-10-04: Automated browser tests must never inherit a live proxy
 
 The owner reported E2E machine records in Production. Source inspection confirmed

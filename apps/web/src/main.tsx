@@ -1,3 +1,5 @@
+import { ThemeProvider } from "@nocoo/basalt";
+import { AccentProvider } from "@nocoo/basalt/providers/accent";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
@@ -11,7 +13,11 @@ initializeEnvironment()
   .then(() => {
     createRoot(rootElement).render(
       <StrictMode>
-        <App />
+        <ThemeProvider>
+          <AccentProvider defaultAccent="teal" persist={false}>
+            <App />
+          </AccentProvider>
+        </ThemeProvider>
       </StrictMode>,
     );
   })

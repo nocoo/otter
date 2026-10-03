@@ -1,8 +1,7 @@
 "use client";
 
+import { Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@nocoo/basalt";
 import type { ReactElement } from "react";
-import { Button } from "../ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 
 export function HeaderTooltip({ label, children }: { label: string; children: ReactElement }) {
   return (
@@ -20,12 +19,7 @@ export function HeaderTooltip({ label, children }: { label: string; children: Re
 export function HexlyLink() {
   return (
     <HeaderTooltip label="Otter on hexly.ai">
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 shrink-0 text-muted-foreground hover:text-foreground"
-        asChild
-      >
+      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" asChild>
         <a
           href="https://hexly.ai/projects/otter"
           target="_blank"

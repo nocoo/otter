@@ -45,14 +45,34 @@ try {
   await page.getByRole("heading", { name: "Your machines" }).waitFor();
   await page.getByRole("heading", { name: "Studio Mac" }).waitFor();
   assert.equal(
-    await page.getByRole("tab", { name: "Demo", exact: true }).getAttribute("aria-selected"),
+    await page.getByRole("radio", { name: "Demo", exact: true }).getAttribute("aria-checked"),
     "true",
   );
   const actions = page.locator("header > div").last();
-  assert.equal(await actions.locator(":scope > *").first().getAttribute("data-slot"), "tabs");
+  assert.equal(
+    await actions
+      .locator(":scope > *")
+      .first()
+      .evaluate((node) => node.tagName),
+    "FIELDSET",
+  );
   await page.screenshot({ path: "/tmp/otter-environments-demo.png", fullPage: true });
+  await page.getByRole("button", { name: "Toggle theme" }).click();
+  await page.getByRole("button", { name: "Toggle theme" }).click();
+  assert.equal(await page.locator("html").getAttribute("data-mode"), "dark");
+  await page.waitForTimeout(350);
+  await page.screenshot({ path: "/tmp/otter-environments-demo-dark.png", fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  const segment = page.getByRole("radio", { name: "Demo", exact: true });
+  const rect = await segment.boundingBox();
+  assert.ok(rect && rect.x >= 0 && rect.x + rect.width <= 390);
+  await page.waitForTimeout(350);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+  await page.screenshot({ path: "/tmp/otter-environments-mobile-dark.png", fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole("button", { name: "Toggle theme" }).click();
   const oldDemo = manual.descriptor().instanceId;
-  await page.getByRole("tab", { name: "E2E", exact: true }).click();
+  await page.getByRole("radio", { name: "E2E", exact: true }).click();
   await page.getByText("No matching machines yet").waitFor();
   assert.equal(manual.descriptor().mode, "e2e");
   assert.equal((await fetch(`${manual.url}/__local/instances/${oldDemo}/api/me`)).status, 409);
@@ -68,19 +88,24 @@ try {
   await page.getByLabel("Label", { exact: true }).fill("Unsaved local draft");
   await page.keyboard.press("Escape");
   const instance = manual.descriptor().instanceId;
-  page.once("dialog", (dialog) => dialog.dismiss());
-  await page.getByRole("tab", { name: "Demo", exact: true }).click({ force: true });
+  await page.getByRole("radio", { name: "Demo", exact: true }).click();
+  const cancel = page.getByRole("alertdialog").getByRole("button", { name: "Cancel" });
+  await cancel.waitFor();
+  await page.waitForTimeout(200);
+  assert.equal(await cancel.evaluate((node) => document.activeElement === node), true);
+  await page.screenshot({ path: "/tmp/otter-environments-confirm.png", fullPage: true });
+  await cancel.click();
   assert.equal(manual.descriptor().instanceId, instance);
-  page.once("dialog", (dialog) => dialog.accept());
-  await page.getByRole("tab", { name: "Demo", exact: true }).click({ force: true });
+  await page.getByRole("radio", { name: "Demo", exact: true }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Discard and switch" }).click();
   await page.getByRole("heading", { name: "Studio Mac" }).waitFor();
   assert.equal(existsSync(firstE2e.state.path), false);
-  await page.getByRole("tab", { name: "E2E", exact: true }).click();
+  await page.getByRole("radio", { name: "E2E", exact: true }).click();
   await page.getByText("No matching machines yet").waitFor();
   assert.notEqual(manual.runtime?.instanceId, firstE2e.instanceId);
-  await page.getByRole("tab", { name: "Prod", exact: true }).click();
+  await page.getByRole("radio", { name: "Prod", exact: true }).click();
   await page.waitForFunction(
-    () => document.querySelector('[role="tab"][data-state="active"]')?.textContent === "Prod",
+    () => document.querySelector('[role="radio"][aria-checked="true"]')?.textContent === "Prod",
   );
   await page.getByRole("heading", { name: "Your machines" }).waitFor();
   assert.equal(manual.descriptor().mode, "prod");
@@ -89,7 +114,7 @@ try {
   );
   assert.equal(response.status, 401);
   assert.match(await response.text(), /Production sign-in required/);
-  await page.getByRole("tab", { name: "Demo", exact: true }).click();
+  await page.getByRole("radio", { name: "Demo", exact: true }).click();
   await page.getByRole("heading", { name: "Studio Mac" }).waitFor();
   assert.equal(await page.evaluate(() => localStorage.getItem("otter:environment-mode")), "demo");
   assert.deepEqual(external, []);
@@ -103,11 +128,11 @@ try {
   await automatedPage.goto(automated.url);
   await automatedPage.getByRole("heading", { name: "Your machines" }).waitFor();
   assert.equal(
-    await automatedPage.getByRole("tab", { name: "Demo", exact: true }).isDisabled(),
+    await automatedPage.getByRole("radio", { name: "Demo", exact: true }).isDisabled(),
     true,
   );
   assert.equal(
-    await automatedPage.getByRole("tab", { name: "Prod", exact: true }).isDisabled(),
+    await automatedPage.getByRole("radio", { name: "Prod", exact: true }).isDisabled(),
     true,
   );
   await automatedPage.close();
@@ -129,7 +154,7 @@ try {
   });
   await hostedPage.goto(hosted.url);
   await hostedPage.getByRole("heading", { name: "Your machines" }).waitFor();
-  assert.equal(await hostedPage.getByRole("tablist", { name: "Environment" }).count(), 0);
+  assert.equal(await hostedPage.getByRole("group", { name: "Environment" }).count(), 0);
   assert.equal((await select(hosted, "prod")).status, 403);
   await hostedPage.close();
   await hosted.close();

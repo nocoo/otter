@@ -1,3 +1,4 @@
+import { Button, ThemeToggle } from "@nocoo/basalt";
 import { Menu } from "lucide-react";
 import { useEffect } from "react";
 import { Outlet, useLocation } from "react-router";
@@ -5,7 +6,6 @@ import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { EnvironmentSwitch } from "@/components/layout/environment-switch";
 import { Sidebar } from "@/components/layout/sidebar";
 import { SidebarProvider, useSidebar } from "@/components/layout/sidebar-context";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { HeaderTooltip, HexlyLink } from "./components/layout/header-links";
 
@@ -80,17 +80,19 @@ function AppShellInner() {
           <div className="flex items-center gap-3">
             {isMobile && (
               <HeaderTooltip label="Open navigation">
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setMobileOpen(true)}
                   aria-label="Open navigation"
-                  className="flex h-8 w-8 min-h-11 min-w-11 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                 >
-                  <Menu className="h-5 w-5" aria-hidden="true" strokeWidth={1.5} />
-                </button>
+                  <Menu aria-hidden="true" strokeWidth={1.5} />
+                </Button>
               </HeaderTooltip>
             )}
-            <Breadcrumbs items={breadcrumbs} />
+            <div className="hidden sm:block">
+              <Breadcrumbs items={breadcrumbs} />
+            </div>
           </div>
           <div className="flex items-center gap-1">
             <EnvironmentSwitch />
@@ -114,7 +116,7 @@ function AppShellInner() {
               </a>
             </HeaderTooltip>
             <HexlyLink />
-            <ThemeToggle />
+            <ThemeToggle aria-label="Toggle theme" />
           </div>
         </header>
 

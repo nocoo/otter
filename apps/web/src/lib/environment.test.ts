@@ -158,6 +158,26 @@ describe("local environment client", () => {
     expect(module.apiPath("/api/me")).toContain("fixture-instance");
   });
 
+  it("waits for asynchronous discard confirmation without changing selection on cancel", async () => {
+    const module = await moduleWith();
+    module.setEnvironmentDraft(true);
+    let confirm: (value: boolean) => void = () => undefined;
+    const choice = module.selectEnvironment(
+      "e2e",
+      () =>
+        new Promise<boolean>((done) => {
+          confirm = done;
+        }),
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(await module.selectEnvironment("prod", () => true)).toBe(false);
+    confirm(false);
+    expect(await choice).toBe(false);
+    expect(module.getEnvironment()?.mode).toBe("demo");
+    expect(storage.setItem).not.toHaveBeenCalled();
+    expect(assign).not.toHaveBeenCalled();
+  });
+
   it("never remembers hosted or automated preferences", async () => {
     fetchMock
       .mockResolvedValueOnce(Response.json({ ...base, local: false, mode: null, instanceId: null }))
