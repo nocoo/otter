@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "bun ../../scripts/dev.ts",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "biome check --error-on-warnings",

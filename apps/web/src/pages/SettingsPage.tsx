@@ -1,5 +1,5 @@
 import { Check, Copy, Loader2, Mail, Plus, Shield, Trash2, User, Webhook } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { apiFetch, useApi } from "@/api";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { ingestBase, setEnvironmentDraft } from "@/lib/environment";
 import { formatDate } from "@/lib/utils";
 
 interface WebhookToken {
@@ -72,9 +73,6 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-const WORKER_URL =
-  (import.meta.env.VITE_WORKER_URL as string | undefined) ?? "https://otter.worker.hexly.ai";
-
 interface WebhookRowProps {
   webhook: WebhookToken;
   onToggle: (id: string) => void;
@@ -84,7 +82,7 @@ interface WebhookRowProps {
 }
 
 function WebhookRow({ webhook, onToggle, onDelete, isToggling, isDeleting }: WebhookRowProps) {
-  const fullUrl = `${WORKER_URL}/ingest/${webhook.token}`;
+  const fullUrl = new URL(`${ingestBase()}/ingest/${webhook.token}`, window.location.origin).href;
 
   return (
     <div className="rounded-xl bg-card p-4 space-y-3">
@@ -168,6 +166,11 @@ export function SettingsPage() {
   const [creating, setCreating] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setEnvironmentDraft(newLabel.length > 0);
+    return () => setEnvironmentDraft(false);
+  }, [newLabel]);
 
   const webhooks = data?.webhooks ?? [];
 

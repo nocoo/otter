@@ -25,13 +25,13 @@ describe("apiKeyAuth", () => {
     expect(r.status).toBe(200);
   });
 
-  it("dev-bypasses on localhost without bearer", async () => {
+  it("rejects unauthenticated localhost requests", async () => {
     const { driver } = createMockDriver();
     const app = makeApp(driver);
     const r = await app.fetch(
       new Request("http://localhost/api/x", { headers: { host: "localhost" } }),
     );
-    expect(r.status).toBe(200);
+    expect(r.status).toBe(401);
   });
 
   it("passes through if accessAuthenticated already set", async () => {

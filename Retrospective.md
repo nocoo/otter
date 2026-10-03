@@ -1,5 +1,26 @@
 # Retrospective
 
+## 2026-10-04: Automated browser tests must never inherit a live proxy
+
+The owner reported E2E machine records in Production. Source inspection confirmed
+that the former BDD runner launched Vite, whose default `/api` proxy targeted the
+production Worker. A localhost frontend URL did not establish local data isolation;
+the report's exact production records were not inspected or deleted.
+
+Both browser configurations now use the dedicated locked native-local E2E launcher,
+refuse inherited production credentials and disable server reuse. Vite's production
+proxy and authentication bypasses were removed. Each run owns fresh D1/R2 state and
+an authenticated fixture identity, with marker/path/ownership checks before cleanup.
+Regression checks cover the entrypoint, Prod lock and data isolation. Production
+cleanup requires a separate record inventory and explicit deletion authorization.
+
+During implementation, forwarding the gateway's `port: 0` into its Worker made
+readiness poll port zero rather than Wrangler's allocated port. Runtime options now
+pass only their own fields. Playwright's default process termination also left a
+local child/state behind; both configs now use SIGTERM with bounded cleanup. The
+owned leftovers were stopped and recovered only after dead-owner and D1-marker
+verification. Keep gateway and Worker ports separate and verify cleanup at runtime.
+
 Accident narratives belong here. Keep only recurring project rules in `AGENTS.md`; cross-project lessons belong in global rules and deterministic checks in hooks/tests.
 
 Historical workarounds below record prior incidents; they do not authorize disabling TLS verification or contacting live services in automated tests.

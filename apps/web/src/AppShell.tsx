@@ -2,6 +2,7 @@ import { Menu } from "lucide-react";
 import { useEffect } from "react";
 import { Outlet, useLocation } from "react-router";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { EnvironmentSwitch } from "@/components/layout/environment-switch";
 import { Sidebar } from "@/components/layout/sidebar";
 import { SidebarProvider, useSidebar } from "@/components/layout/sidebar-context";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -92,6 +93,7 @@ function AppShellInner() {
             <Breadcrumbs items={breadcrumbs} />
           </div>
           <div className="flex items-center gap-1">
+            <EnvironmentSwitch />
             <HeaderTooltip label="GitHub repository">
               <a
                 href="https://github.com/nocoo/otter"

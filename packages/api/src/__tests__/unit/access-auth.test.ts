@@ -39,14 +39,15 @@ describe("accessAuth", () => {
     expect(r.status).toBe(200);
   });
 
-  it("dev-bypasses on localhost without bearer", async () => {
-    const app = makeApp();
+  it("does not bypass authentication on localhost", async () => {
+    const app = makeApp({
+      CF_ACCESS_TEAM_DOMAIN: "team.cloudflareaccess.com",
+      CF_ACCESS_AUD: "aud",
+    });
     const r = await app.fetch(
       new Request("http://localhost:7020/api/me", { headers: { host: "localhost:7020" } }),
     );
-    const json = (await r.json()) as { auth: boolean; email: string };
-    expect(json.auth).toBe(true);
-    expect(json.email).toBe("dev@localhost");
+    expect(r.status).toBe(401);
   });
 
   it("on localhost WITH bearer, doesn't auto-auth (lets apiKeyAuth handle)", async () => {
@@ -169,32 +170,18 @@ describe("accessAuth", () => {
     expect(json.error).toMatch(/invalid access jwt/i);
   });
 
-  it("E2E_SKIP_AUTH bypasses auth outside production", async () => {
+  it("ignores obsolete E2E authentication bypass flags", async () => {
     const app = makeApp({
       ENVIRONMENT: "test",
       E2E_SKIP_AUTH: "true",
       DEV_USER_EMAIL: "e2e@test.local",
+      CF_ACCESS_TEAM_DOMAIN: "team.cloudflareaccess.com",
+      CF_ACCESS_AUD: "aud",
     });
     const r = await app.fetch(
-      new Request("https://otter-test.workers.dev/api/me", {
-        headers: { host: "otter-test.workers.dev" },
-      }),
+      new Request("http://localhost/api/me", { headers: { host: "localhost" } }),
     );
-    const json = (await r.json()) as { auth: boolean; email: string };
-    expect(json.auth).toBe(true);
-    expect(json.email).toBe("e2e@test.local");
-  });
-
-  it("E2E_SKIP_AUTH uses dev@localhost when DEV_USER_EMAIL not set", async () => {
-    const app = makeApp({ ENVIRONMENT: "test", E2E_SKIP_AUTH: "true" });
-    const r = await app.fetch(
-      new Request("https://otter-test.workers.dev/api/me", {
-        headers: { host: "otter-test.workers.dev" },
-      }),
-    );
-    const json = (await r.json()) as { auth: boolean; email: string };
-    expect(json.auth).toBe(true);
-    expect(json.email).toBe("dev@localhost");
+    expect(r.status).toBe(401);
   });
 
   it("E2E_SKIP_AUTH does NOT bypass in production", async () => {

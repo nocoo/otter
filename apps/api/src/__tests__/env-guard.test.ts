@@ -117,7 +117,7 @@ describe("envGuardMiddleware", () => {
     expect(res.status).toBe(200);
   });
 
-  it("skips guard when E2E_SKIP_AUTH=true in non-production", async () => {
+  it("obsolete auth flags do not skip resource isolation", async () => {
     const app = new Hono<{ Bindings: Env; Variables: Variables }>();
     app.use("*", envGuardMiddleware);
     app.get("/", (c) => c.json({ ok: true }));
@@ -135,7 +135,7 @@ describe("envGuardMiddleware", () => {
     const res = await app.fetch(req, testEnv, ctx);
     await waitOnExecutionContext(ctx);
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(500);
   });
 
   it("E2E_SKIP_AUTH does NOT skip guard in production (still rejects test resources)", async () => {

@@ -7,7 +7,6 @@ import type { Context, Next } from "hono";
 import { touchApiTokenLastUsed, verifyApiToken } from "../lib/api-token-repo";
 import type { AppEnv } from "../lib/app-env";
 import type { DbDriver } from "../lib/db/driver";
-import { isLocalhost } from "./is-localhost";
 
 const PUBLIC_PATHS = ["/api/live", "/v1/live"];
 
@@ -26,8 +25,6 @@ export function createApiKeyAuth(opts: ApiKeyAuthOptions) {
   return async function apiKeyAuth(c: Context<AppEnv>, next: Next) {
     if (PUBLIC_PATHS.includes(c.req.path)) return next();
 
-    const hasBearer = (c.req.header("Authorization") ?? "").startsWith("Bearer ");
-    if (isLocalhost(c) && !hasBearer) return next();
     if (c.get("accessAuthenticated")) return next();
 
     const token = extractBearer(c.req.header("Authorization"));

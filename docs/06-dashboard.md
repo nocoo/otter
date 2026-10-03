@@ -268,9 +268,9 @@ otter backup
 
 ## E2E 测试约定
 
-- 独立 wrangler dev --local 进程，端口隔离（17020 / 27019）
-- `E2E_SKIP_AUTH=true` + `ENVIRONMENT !== "production"`（accessAuth 自动 stamp dev@localhost）
-- 每次启动清盘 persist 目录 + 重新跑 migrations，天然隔离
+- Native local Wrangler workers with unique D1/R2 stores and fixture identities; production migrations and normal Bearer verification.
+- Both Playwright configurations use the dedicated locked local runner, never the interactive Vite/Prod proxy; server reuse is disabled.
+- Cleanup validates canonical paths, owner metadata and D1 markers. See [local environments](./12-local-environments.md).
 - Snapshot detail 须展示 collector `version` 与 `meta`（如 pinned、editor、current）
 
 ## 相关文档

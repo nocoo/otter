@@ -2,6 +2,7 @@ import { ExternalLink, ShieldAlert, Terminal } from "lucide-react";
 import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
+import { apiPath } from "@/lib/environment";
 
 // CLI pairing — Step 2 of the unified protocol.
 //
@@ -87,9 +88,11 @@ export function CliConnectPage() {
     );
   }
 
-  const mintUrl = `/api/auth/cli?callback=${encodeURIComponent(callback)}${
-    state ? `&state=${encodeURIComponent(state)}` : ""
-  }`;
+  const mintUrl = apiPath(
+    `/api/auth/cli?callback=${encodeURIComponent(callback)}${
+      state ? `&state=${encodeURIComponent(state)}` : ""
+    }`,
+  );
 
   const handleAuthorize = () => {
     setAuthorizing(true);

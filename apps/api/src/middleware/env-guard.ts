@@ -9,8 +9,7 @@ import type { Env, Variables } from "../types.js";
  * - 生产环境禁止使用 *-test 资源
  * - 校验失败立即 500，不执行任何业务逻辑
  *
- * Skipped when E2E_SKIP_AUTH=true (local miniflare mode — all resources
- * are local SQLite files, no remote prod/test distinction applies).
+ * Local launchers use matching *-test binding names and the same guard.
  */
 export async function envGuardMiddleware(
   // biome-ignore lint/style/useNamingConvention: Hono generic parameter names
@@ -18,15 +17,6 @@ export async function envGuardMiddleware(
   next: Next,
 ): Promise<Response | undefined> {
   const env = c.env.ENVIRONMENT ?? "production";
-
-  // Local E2E: all bindings are miniflare SQLite — resource naming is irrelevant.
-  // Only skip in non-production to preserve production safety net.
-  const e2eLocal =
-    (c.env as unknown as Record<string, string | undefined>)["E2E_SKIP_AUTH"] === "true";
-  if (e2eLocal && env !== "production") {
-    await next();
-    return;
-  }
 
   // 仅对 test 环境强制校验
   if (env === "test") {

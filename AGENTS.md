@@ -21,8 +21,8 @@ This file is the quality contract; hooks, CI and config are enforcement. Close i
 
 - Preserve complete source bytes/symlinks within the collection policy; snapshot locally first, then upload identical immutable content. Collected user configuration may contain secrets.
 - `packages/api` exports a runtime-agnostic Hono factory, embedded by the sole Worker in `apps/api`; `/api/*` serves browsers, `/ingest/*` the CLI. D1 indexes and R2 payloads stay coordinated.
-- Access authentication falls through to Bearer; `requireUser` owns rejection. Keep localhost-only dev identity stamping out of production.
-- Vite dev may proxy a real Worker using `OTTER_API_URL` and `OTTER_DEV_API_TOKEN`; its env file is `apps/web/.env`. Automated tests must explicitly use the local runner.
+- Access authentication falls through to verified Bearer tokens; no localhost or mode-based identity stamping. Demo/E2E seed server-held fixture tokens into local D1.
+- `bun run dev` launches the local-only Demo/E2E/Prod gateway. Only interactive Prod uses `OTTER_DEV_API_TOKEN` from `apps/web/.env` against the fixed production API. Vite has no production proxy; automated E2E never reads daily env files.
 - Build core declarations before downstream TypeScript reference checks. Keep `@nocoo/otter` as the CLI package; core type-only code is not separately published.
 
 ## Stack / Layout
@@ -45,7 +45,9 @@ bun run build
 bun run test:coverage
 bun run test:worker
 bun run test:l2
-bun run test:e2e                 # built SPA + local Worker
+bun run test:e2e                 # built SPA + locked isolated local Worker
+bun run test:e2e:bdd             # same local-only runner, never Vite/prod proxy
+bun scripts/verify-environments.ts # local switching and isolation acceptance
 bun run macos:test
 bun run deploy:check             # build + local Worker dry run
 ```
@@ -61,9 +63,9 @@ L1 requires statements, branches, functions and lines each ≥95%, with no skipp
 | L1 Swift | planned | Separate macOS CI runs native tests; no all-four 95% native coverage gate. |
 | L1 static (former G1, TypeScript / Swift) | planned | TS build/typecheck and Biome run in CI; `lint` is only typechecking, Biome lacks errors-on-warnings outside lint-staged, and strict native analysis is incomplete. |
 | L2 HTTP / CLI | planned | `test:l2` boots local Wrangler and tests real API/CLI flows; require verified 100% route/auth/error coverage. Unit driver fakes are not real HTTP proof. |
-| L3 web / native | planned | `test:e2e` serves built SPA/local Worker; macOS CI checks real AppKit and packaged CLI. Full page/desktop coverage is not enforced; root BDD uses a Vite proxy and needs explicit local target. |
+| L3 web / native | planned | `test:e2e` serves built SPA/local Worker; macOS CI checks real AppKit and packaged CLI. Full page/desktop coverage is not enforced; both browser configs now use the locked local-only runner. |
 | G2 | enforced | Hooks/CI require OSV and gitleaks, including full-history pre-push scanning. |
-| D1 | planned | L2 is local with an inserted marker, but fixed `.wrangler/e2e` is recursively deleted without marker/path checks; browser fixed state and server reuse also need guards. |
+| D1 | planned | Local launchers allocate unique E2E D1/R2 state and identity, validate canonical path/owner and D1 markers before cleanup, and reject Prod credentials. Browser server reuse is disabled. Whole-repo isolation and external-boundary coverage remain incomplete. |
 
 Pre-commit runs staged Biome, plain unit tests, project-reference typecheck and staged gitleaks in parallel. Pre-push runs coverage, local L2, OSV and full-history gitleaks in parallel. CI adds Worker/build/browser gates and path-filtered macOS test/package jobs. Hooks inspect working files, not every pushed commit.
 
@@ -72,7 +74,14 @@ Never bypass commit/push hooks, force-push, or use autofix in checks. Documentat
 
 ## Resources / Isolation
 
-Dev: Vite 7019 and Worker 7020. L2 defaults to loopback 17020 (`OTTER_L2_PORT`), using `apps/api/.wrangler/e2e`; browser runner uses 27019. Serialize fixed-state runners. Required direction is unique per-run local D1/R2 directories, checked test marker and canonical-path/ownership guards before cleanup. Never copy daily credentials or snapshots into fixtures.
+Local gateway: loopback 7019 through `https://otter.dev.hexly.ai`; managed Workers and L2 allocate loopback ports. Both browser suites use gateway 27019 and must run serially, without server reuse. Demo persists in `apps/api/.wrangler/environments/demo`; each E2E owns a fresh sibling directory, identity and D1 marker. Cleanup rejects foreign paths, symlinks and ownership/marker mismatch. Never copy daily credentials or snapshots into fixtures. See [local environments](docs/12-local-environments.md).
+
+```bash
+bun run dev                     # preference, then Demo
+bun run dev -- --mode e2e        # interactive, switchable E2E
+bun run dev:built                # locally served production build
+bun run demo:reset               # stop the interactive server first
+```
 
 ## Operations / Release
 

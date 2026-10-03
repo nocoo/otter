@@ -8,14 +8,15 @@ export default defineConfig({
   workers: process.env.CI ? 1 : 2,
   reporter: "html",
   use: {
-    baseURL: "http://localhost:27019",
+    baseURL: "http://127.0.0.1:27019",
     trace: "on-first-retry",
     headless: true,
   },
   webServer: {
-    command: "bun run --cwd apps/web dev -- --port 27019",
-    port: 27019,
-    reuseExistingServer: !process.env.CI,
+    command: "bun scripts/run-e2e-spa.ts",
+    url: "http://127.0.0.1:27019/api/me",
+    reuseExistingServer: false,
+    gracefulShutdown: { signal: "SIGTERM", timeout: 20_000 },
     timeout: 60_000,
   },
 });

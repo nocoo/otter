@@ -64,7 +64,7 @@ describe("L2 webhooks CRUD", () => {
   it("POST → GET → PATCH → DELETE round-trip", async () => {
     const created = await postWebhook(`${RUN_TAG}-roundtrip`);
     expect(created.token).toMatch(/^[A-Za-z0-9_-]{20,}$/);
-    expect(created.user_id).toBe("dev@localhost");
+    expect(created.user_id).toBe(process.env.OTTER_L2_EMAIL);
 
     const getRes = await fetch(`${baseUrl}/api/webhooks/${created.id}`);
     expect(getRes.status).toBe(200);

@@ -1,6 +1,7 @@
 import { Archive, LayoutDashboard, LogOut, PanelLeft, Settings } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import useSWR from "swr";
+import { apiFetch } from "@/api";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -18,7 +19,7 @@ interface MeResponse {
   sub: string;
 }
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json() as Promise<MeResponse>);
+const fetcher = (url: string) => apiFetch<MeResponse>(url);
 
 function signOut() {
   window.location.href = "/cdn-cgi/access/logout";

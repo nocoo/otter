@@ -247,35 +247,16 @@ describe("D1 client", () => {
 
   // --- E2E test isolation guard ---
 
-  it("throws in E2E mode when CF_D1_TEST_DATABASE_ID is missing", async () => {
-    process.env.E2E_SKIP_AUTH = "true";
+  it("refuses all remote D1 requests in automated E2E", async () => {
+    process.env.OTTER_AUTOMATED_E2E = "true";
     const { query } = await import("../../lib/cf/d1");
-    await expect(query("SELECT 1")).rejects.toThrow(
-      "D1 safety: E2E mode active but CF_D1_TEST_DATABASE_ID not set",
-    );
+    await expect(query("SELECT 1")).rejects.toThrow("automated E2E cannot access");
+    expect(fetchMock).not.toHaveBeenCalled();
+    delete process.env.OTTER_AUTOMATED_E2E;
   });
 
-  it("throws in E2E mode when database IDs don't match", async () => {
-    process.env.E2E_SKIP_AUTH = "true";
-    process.env.CF_D1_TEST_DATABASE_ID = "different-db";
-    const { query } = await import("../../lib/cf/d1");
-    await expect(query("SELECT 1")).rejects.toThrow("D1 safety: CF_D1_DATABASE_ID");
-  });
-
-  it("passes in E2E mode when database IDs match", async () => {
-    process.env.E2E_SKIP_AUTH = "true";
-    process.env.CF_D1_TEST_DATABASE_ID = "test-db";
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      json: async () => makeD1Response([{ id: 1 }]),
-    });
-    const { query } = await import("../../lib/cf/d1");
-    const result = await query("SELECT 1");
-    expect(result).toEqual([{ id: 1 }]);
-  });
-
-  it("does not trigger guard when E2E_SKIP_AUTH is not set", async () => {
-    delete process.env.E2E_SKIP_AUTH;
+  it("does not trigger the local-only guard outside automated E2E", async () => {
+    delete process.env.OTTER_AUTOMATED_E2E;
     fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => makeD1Response([{ id: 1 }]),

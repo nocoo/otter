@@ -67,7 +67,7 @@ CLI 导出与 Web ZIP 会展开保存的链接目标，保留原始路径和链�
 | 浏览器站点 | `https://otter.hexly.ai`，Cloudflare Access |
 | 开发登录页 | `https://otter.dev.hexly.ai`，由 `login --dev` 选择 |
 | CLI 上传 API | `https://otter.worker.hexly.ai`，由进程环境变量 `OTTER_API_URL` 覆盖 |
-| Vite 代理 | `https://otter.worker.hexly.ai`，由 Vite 环境中的 `OTTER_API_URL` 覆盖 |
+| Local Prod gateway | Fixed `https://otter.worker.hexly.ai`; server-side `OTTER_DEV_API_TOKEN` from `apps/web/.env` |
 | CLI 登录配置 | `~/.config/otter/config.json` 或 `config.dev.json` |
 | 本地图标 | `~/.config/otter/icons/`，两种配置共用 |
 
@@ -94,21 +94,19 @@ node apps/cli/dist/bin.js --help
 
 ## 本地联调
 
-`bun run dev` 启动 Vite，默认端口 7019。其 `loadEnv()` 从 `apps/web` 工作目录读取环境文件，因此首次配置应在 `apps/web/.env` 中设置 `OTTER_API_URL`、`OTTER_DEV_API_TOKEN`，根目录 `.env.example` 可作字段参考。默认代理连接生产 Worker，目标服务的 Token 由代理放进 `Authorization` 请求头。
-
-需要本地 D1 / R2 时，可复用仓库的隔离 API runner。在完成构建后，先确认端口 17020 空闲，再于终端一运行：
+`bun run dev` starts the trusted local gateway on loopback 7019; open `https://otter.dev.hexly.ai` through the existing Caddy route. Build core and Web once before the first launch. The upper-right `Demo | E2E | Prod` control is present only when the launcher supplies its capability, including `dev:built`.
 
 ```bash
-bun scripts/run-api-e2e.ts
+bun run dev                     # accepted preference, then Demo
+bun run dev -- --mode demo      # explicit initial target
+bun run dev -- --mode e2e       # manual E2E remains switchable
+bun run dev:built               # serve apps/web/dist locally
+bun run demo:reset              # explicit reset; stop the dev server first
 ```
 
-它每次启动都会清空 `apps/api/.wrangler/e2e`，按顺序应用迁移，并启动 `--local --persist-to` Worker，使用测试邮箱 `dev@localhost`。该目录只保存可丢弃的联调数据。终端二显式连接它，并清空代理 Token，让本地测试身份生效：
+Demo uses persistent synthetic fixtures. Manual E2E creates a fresh local D1/R2 store and identity, and removes its owned state when leaving. Both execute production migrations and normal Bearer-token verification; no authentication bypass remains. Prod uses the fixed deployed API and a real token from `apps/web/.env`, never browser storage. Missing authentication is an explicit 401, not fallback to Demo. See [local environments and fixture evidence](12-local-environments.md).
 
-```bash
-OTTER_API_URL=http://127.0.0.1:17020 OTTER_DEV_API_TOKEN= bun run dev
-```
-
-runner 的鉴权旁路要求显式 `E2E_SKIP_AUTH=true` 且 `ENVIRONMENT` 不是 production。普通 `bun run dev:worker` 是 Wrangler 的独立开发入口，默认端口 8787；它不会自动更改 Vite 的代理目标，也不会自动应用迁移。不要把本地测试身份变量部署到生产。
+Automated runners ignore interactive preferences, refuse production credentials, lock the server to E2E, and do not load daily `.env` or `.dev.vars`. The old Vite production proxy and fixed test-state deletion were removed. Do not use `dev:worker` as an automated test target.
 
 ## 测试入口
 
@@ -117,24 +115,16 @@ runner 的鉴权旁路要求显式 `E2E_SKIP_AUTH=true` 且 `ENVIRONMENT` 不是
 | `bun run test` | 依赖已安装；Vitest 单元测试 |
 | `bun run test:coverage` | 单元测试与覆盖率报告；门槛保持 statements/lines 95%、branches/functions 94% |
 | `bun run test:worker` | Web 已构建；独立 Vitest 配置，在 Cloudflare runtime 中测试 Worker |
-| `bun run test:l2` | core / cli / api / Web 已构建；端口 17020；本地 D1/R2 与临时目录中的 CLI 配置 |
-| `bun run test:e2e` | Chromium；端口 27019；runner 构建 SPA，重建 `.wrangler/state-e2e-spa` 并应用本地迁移 |
-| `bun run test:e2e:bdd` | Chromium；端口 27019；Vite 首页标题 smoke，后端取决于 Vite 代理 |
+| `bun run test:l2` | Built core/CLI/API/Web; dynamically allocated loopback gateway and isolated local D1/R2 |
+| `bun run test:e2e` | Chromium; gateway 27019; built SPA and fresh locked local Worker |
+| `bun run test:e2e:bdd` | Chromium; same local-only runner on 27019; no Vite production proxy |
 | `bun run deploy:check` | 构建 Web 后在 `apps/api` 执行 Wrangler `deploy --dry-run` |
 | `bun run verify:web <URL>` | 对已运行的 Worker 校验 API 版本、Web 资源和 SPA 路由 |
 | `bun run macos:build` | macOS 15+、完整 Xcode、XcodeGen、Bun；编译 Universal App 和双架构 CLI |
 | `bun run macos:test` | XCTest 与实际 AppKit 输入；隔离来源、真实内置 CLI、回环 HTTP、取消、撤销和重启恢复 |
 | `bun run macos:package` | Release 构建、最小 PATH、带空格搬移目录及 DMG/ZIP 挂载验证 |
 
-`bunx playwright install chromium` 安装浏览器。L2 的 CLI 测试使用临时用户目录，采集流程集成注入模拟采集器；它们不执行真实 `backup`。L2 runner 不覆盖 `.dev.vars`，测试身份通过命令行变量注入。
-
-两套 Playwright 配置都可能在非 CI 模式复用已有服务，且都使用端口 27019。执行前需释放端口。运行 `test:l2` 前也需停止手动启动的同端口 runner。
-
-若要让 BDD smoke 使用本地 API，保持上节终端一的 runner 运行，在另一终端执行：
-
-```bash
-OTTER_API_URL=http://127.0.0.1:17020 OTTER_DEV_API_TOKEN= bun run test:e2e:bdd
-```
+`bunx playwright install chromium` installs Chromium. CLI tests use disposable configuration directories and do not scan the real machine. Each E2E runtime uses a generated configuration, local-only bindings, a fixture Bearer token and checked ownership markers. Neither browser configuration reuses existing servers; both send SIGTERM and await cleanup. Serialize the two browser suites because they share gateway port 27019. L2 ports and persistence are unique per run.
 
 ## 部署
 

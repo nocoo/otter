@@ -34,7 +34,7 @@ describe("L2 smoke", () => {
     expect(body.system.env).toBe("test");
   });
 
-  it("GET /api/me from localhost auto-stamps dev@localhost", async () => {
+  it("GET /api/me verifies the isolated fixture token", async () => {
     const res = await fetch(`${baseUrl}/api/me`);
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
@@ -42,7 +42,7 @@ describe("L2 smoke", () => {
       authenticated: boolean;
     };
     expect(body.authenticated).toBe(true);
-    expect(body.email).toBe("dev@localhost");
+    expect(body.email).toBe(process.env.OTTER_L2_EMAIL);
   });
 
   it("GET /health (legacy public probe) returns 200", async () => {
