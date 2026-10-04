@@ -1,5 +1,14 @@
 # Retrospective
 
+## 2026-10-04: Component adoption does not establish spacing or typography
+
+The resource viewer inherited 24px/16px Dialog typography beside 12px file content,
+while its root was not a layout container: header, actions and cards had no vertical
+gap. Stacked Body/Well padding added excess inset inside the preview. Use explicit
+viewer layout/type hierarchy and one content inset; inspect both themes and widths.
+Four browser regressions now measure CSS font sizes, gaps and padding. Touch-size
+assertions use layout height rather than a bounding box scaled by entry animation.
+
 ## 2026-10-04: Verify Basalt APIs and actual response shapes
 
 The full migration initially assumed that Basalt's Dialog max-width enlarged its

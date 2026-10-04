@@ -32,7 +32,7 @@ function CategoryBreakdownChart({ collectors }: { collectors: Collector[] }) {
 
   return (
     <LayerCard>
-      <LayerCard.Header>By Category</LayerCard.Header>
+      <LayerCard.Header className="text-sm font-medium">By Category</LayerCard.Header>
       <LayerCard.Body>
         <DonutChart
           data={chartData}
@@ -41,7 +41,7 @@ function CategoryBreakdownChart({ collectors }: { collectors: Collector[] }) {
           showLegend
           valueFormatter={(value) => value + (value !== 1 ? " collectors" : " collector")}
           dataAlternative={
-            <LayerCard.Well className="space-y-2 rounded-basalt-lg p-3">
+            <LayerCard.Well className="space-y-2 rounded-basalt-lg p-3 text-xs leading-5">
               {chartData.map((category) => (
                 <div
                   key={category.name}
@@ -72,7 +72,7 @@ function TopCollectorsChart({ collectors }: { collectors: Collector[] }) {
 
   return (
     <LayerCard>
-      <LayerCard.Header>Top Collectors</LayerCard.Header>
+      <LayerCard.Header className="text-sm font-medium">Top Collectors</LayerCard.Header>
       {topCollectors.length === 0 ? (
         <LayerCard.Empty title="No files captured" />
       ) : (
@@ -84,7 +84,7 @@ function TopCollectorsChart({ collectors }: { collectors: Collector[] }) {
             className="h-40 w-full"
             valueFormatter={(value) => value + (value !== 1 ? " files" : " file")}
             dataAlternative={
-              <LayerCard.Well className="space-y-2 rounded-basalt-lg p-3">
+              <LayerCard.Well className="space-y-2 rounded-basalt-lg p-3 text-xs leading-5">
                 {topCollectors.map((collector) => (
                   <div key={collector.x} className="flex items-center justify-between gap-3">
                     <span className="font-medium text-basalt-foreground">{collector.x}</span>
@@ -117,7 +117,7 @@ function IssuesSection({ collectors }: { collectors: Collector[] }) {
       <div className="grid gap-4 lg:grid-cols-2">
         {errors.length > 0 && (
           <LayerCard>
-            <LayerCard.Header className="text-basalt-destructive">
+            <LayerCard.Header className="text-sm font-medium text-basalt-destructive">
               {errors.length} Error{errors.length !== 1 ? "s" : ""}
             </LayerCard.Header>
             <LayerCard.Body>
@@ -136,7 +136,9 @@ function IssuesSection({ collectors }: { collectors: Collector[] }) {
         )}
         {skipped.length > 0 && (
           <LayerCard>
-            <LayerCard.Header>{skipped.length} Skipped</LayerCard.Header>
+            <LayerCard.Header className="text-sm font-medium">
+              {skipped.length} Skipped
+            </LayerCard.Header>
             <LayerCard.Body>
               <ul className="space-y-2">
                 {skipped.map((item, index) => (

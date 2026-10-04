@@ -144,10 +144,12 @@ export function SettingsPage() {
                 New Token
               </Button>
             </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create Webhook Token</DialogTitle>
-                <DialogDescription>A friendly name to identify this token.</DialogDescription>
+            <DialogContent className="flex flex-col gap-4 p-4 text-sm sm:p-5">
+              <DialogHeader className="space-y-1">
+                <DialogTitle className="text-base leading-6">Create Webhook Token</DialogTitle>
+                <DialogDescription className="text-xs leading-5">
+                  A friendly name to identify this token.
+                </DialogDescription>
               </DialogHeader>
               <form
                 className="space-y-4"

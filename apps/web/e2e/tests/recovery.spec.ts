@@ -102,6 +102,61 @@ test("downloads complete local skills, global instructions and environment inven
   expect(strFromU8(full["links.json"] ?? new Uint8Array())).toContain("CLAUDE.md");
 });
 
+for (const theme of ["light", "dark"] as const) {
+  for (const width of [1440, 390]) {
+    test(`resource viewer spacing and type scale remain readable at ${width}px in ${theme}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
+      await page.addInitScript((value) => localStorage.setItem("theme", value), theme);
+      await page.goto(`/snapshots/${older.id}`);
+      await page.getByRole("tab", { name: "Files & resources" }).click();
+      await page.getByRole("button", { name: "AGENTS.md", exact: true }).click();
+      const dialog = page.getByRole("dialog");
+      const title = dialog.getByRole("heading", { name: "AGENTS.md", exact: true });
+      await expect(title).toHaveCSS("font-size", "16px");
+      const description = dialog.locator(`[id="${await dialog.getAttribute("aria-describedby")}"]`);
+      await expect(description).toHaveCSS("font-size", "12px");
+      const actions = dialog.getByTestId("resource-actions");
+      const files = dialog.getByRole("region", { name: "Package files" });
+      await expect(files.getByText("Package files", { exact: true })).toHaveCSS(
+        "font-size",
+        "14px",
+      );
+      const titleBox = await title.boundingBox();
+      const descriptionBox = await description.boundingBox();
+      const actionsBox = await actions.boundingBox();
+      const filesBox = await files.boundingBox();
+      expect(titleBox && descriptionBox && actionsBox && filesBox).toBeTruthy();
+      expect(
+        (actionsBox?.y ?? 0) - ((descriptionBox?.y ?? 0) + (descriptionBox?.height ?? 0)),
+      ).toBeGreaterThanOrEqual(12);
+      expect(
+        (filesBox?.y ?? 0) - ((actionsBox?.y ?? 0) + (actionsBox?.height ?? 0)),
+      ).toBeGreaterThanOrEqual(12);
+      const preview = dialog.getByRole("region", { name: "Resource preview" }).locator("pre");
+      await expect(preview).toHaveCSS("font-size", "12px");
+      await expect(preview).toHaveCSS("line-height", "20px");
+      await expect(preview.locator("..")).toHaveCSS("padding", "12px");
+      expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+      await dialog.getByRole("button", { name: "Close resource viewer" }).click();
+      await page.getByRole("button", { name: "local", exact: true }).click();
+      const script = dialog.getByRole("button", {
+        name: "skills/local/scripts/run.sh",
+        exact: true,
+      });
+      await script.click();
+      await expect(dialog.getByText("echo recovered", { exact: false })).toBeVisible();
+      if (width === 390) {
+        await expect(script).toHaveCSS("min-height", "44px");
+        expect(await script.evaluate((node) => node.clientHeight)).toBeGreaterThanOrEqual(44);
+      }
+      expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+      await dialog.getByRole("button", { name: "Close resource viewer" }).click();
+    });
+  }
+}
+
 test("searches historical files and compares versions in capture order, preserving incomplete-scan warnings", async ({
   page,
 }, testInfo) => {

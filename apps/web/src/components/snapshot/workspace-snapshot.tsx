@@ -62,6 +62,7 @@ export function RecoveryDownload({
     <div>
       <Button
         variant="outline"
+        size="sm"
         disabled={busy}
         onClick={async () => {
           setBusy(true);
@@ -139,7 +140,10 @@ function ResourceContent({
         if (!open) close();
       }}
     >
-      <DialogContent size="xl" className="max-h-[90vh] overflow-auto">
+      <DialogContent
+        size="xl"
+        className="flex max-h-[90vh] flex-col gap-4 overflow-auto p-4 text-sm sm:p-5"
+      >
         <DialogClose asChild>
           <Button
             variant="ghost"
@@ -150,19 +154,20 @@ function ResourceContent({
             <X strokeWidth={1.5} aria-hidden="true" />
           </Button>
         </DialogClose>
-        <DialogHeader className="pr-8">
-          <DialogTitle>{resource.name}</DialogTitle>
-          <DialogDescription>
-            {resource.path} · {relationshipNames[resource.relationship] ?? resource.relationship}
+        <DialogHeader className="space-y-1 pr-8">
+          <DialogTitle className="break-words text-base leading-6">{resource.name}</DialogTitle>
+          <DialogDescription className="flex flex-wrap gap-x-2 gap-y-1 text-xs leading-5">
+            <span className="min-w-0 break-all">{resource.path}</span>
+            <span>· {relationshipNames[resource.relationship] ?? resource.relationship}</span>
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-wrap items-center gap-3">
+        <div data-testid="resource-actions" className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <RecoveryDownload data={data} resource={resource} />
           <span className="text-xs text-basalt-muted-foreground">
             {resource.fileCount} saved files
           </span>
           {resource.counterpart && (
-            <span className="text-xs text-basalt-muted-foreground">
+            <span className="min-w-0 break-all text-xs leading-5 text-basalt-muted-foreground">
               Source: {resource.counterpart}
             </span>
           )}
@@ -182,33 +187,34 @@ function ResourceContent({
             </LayerCard.Body>
           </LayerCard>
         )}
-        <div className="grid gap-4 md:grid-cols-[240px_1fr]">
+        <div className="grid min-w-0 items-start gap-3 md:grid-cols-[minmax(0,16rem)_minmax(0,1fr)]">
           <LayerCard
             role="region"
             className="overflow-auto max-h-[52vh]"
             aria-label="Package files"
           >
-            <LayerCard.Header>Package files</LayerCard.Header>
+            <LayerCard.Header className="text-sm font-medium">Package files</LayerCard.Header>
             <LayerCard.Body className="space-y-1 p-2">
               {files
                 .filter((f) => f.kind !== "directory")
                 .map((f) => (
                   <Button
+                    size="sm"
                     variant={file?.path === f.path ? "secondary" : "ghost"}
                     aria-pressed={file?.path === f.path}
                     key={f.path}
                     onClick={() => setSelected(f.path)}
-                    className="h-auto w-full justify-start whitespace-normal break-all p-2 text-left text-xs font-mono"
+                    className="h-auto min-h-11 w-full justify-start whitespace-normal break-all px-3 py-2 text-left font-mono text-xs leading-5 sm:min-h-9"
                   >
                     {f.relativePath ?? f.path}
                   </Button>
                 ))}
             </LayerCard.Body>
           </LayerCard>
-          <LayerCard className="min-w-0">
+          <LayerCard role="region" aria-label="Resource preview" className="min-w-0">
             {file ? (
               <>
-                <LayerCard.Header className="flex-wrap items-center">
+                <LayerCard.Header className="flex-wrap items-center gap-2 py-2">
                   <span className="text-xs text-basalt-muted-foreground">
                     {formatSize(file.sizeBytes)} · mode {file.mode?.toString(8) ?? "unknown"}
                     {file.redacted && " · credentials redacted"}
@@ -223,9 +229,9 @@ function ResourceContent({
                     Download file
                   </Button>
                 </LayerCard.Header>
-                <LayerCard.Body>
+                <LayerCard.Well className="space-y-3 p-3">
                   {file.links?.length ? (
-                    <Accordion type="single" collapsible className="mb-3">
+                    <Accordion type="single" collapsible>
                       <AccordionItem value="links">
                         <AccordionTrigger>Link chain at capture time</AccordionTrigger>
                         <AccordionContent>
@@ -237,19 +243,15 @@ function ResourceContent({
                     </Accordion>
                   ) : null}
                   {file.encoding === "base64" ? (
-                    <LayerCard.Well className="rounded-basalt-lg text-sm">
-                      Binary asset preserved. Download to view it.
-                    </LayerCard.Well>
+                    <p className="text-sm">Binary asset preserved. Download to view it.</p>
                   ) : (
-                    <LayerCard.Well className="rounded-basalt-lg">
-                      <pre className="whitespace-pre-wrap break-words overflow-auto max-h-[45vh] text-xs font-mono">
-                        {file.content.slice(0, 512000)}
-                        {file.content.length > 512000 &&
-                          "\n…Preview truncated. Download the complete file."}
-                      </pre>
-                    </LayerCard.Well>
+                    <pre className="max-h-[45vh] overflow-auto whitespace-pre-wrap break-words font-mono text-xs leading-5">
+                      {file.content.slice(0, 512000)}
+                      {file.content.length > 512000 &&
+                        "\n…Preview truncated. Download the complete file."}
+                    </pre>
                   )}
-                </LayerCard.Body>
+                </LayerCard.Well>
               </>
             ) : (
               <LayerCard.Empty
@@ -315,17 +317,17 @@ export function WorkspaceSnapshot({ data }: { data: SnapshotData }) {
     <div className="space-y-5">
       <LayerCard>
         <LayerCard.Header className="flex-wrap items-center">
-          <h2 className="font-medium text-basalt-foreground">
+          <h2 className="text-sm font-medium text-basalt-foreground">
             {coverageLabel(w.coverage.complete)}
           </h2>
           <RecoveryDownload data={data} />
         </LayerCard.Header>
         <LayerCard.Body>
-          <p className="text-sm text-basalt-muted-foreground mt-1">
+          <p className="text-sm text-basalt-muted-foreground">
             {w.coverage.files} files · {formatSize(w.coverage.bytes)} · {w.coverage.issues.length}{" "}
             coverage notes
           </p>
-          <p className="text-xs text-basalt-muted-foreground mt-2">
+          <p className="mt-1 text-xs leading-5 text-basalt-muted-foreground">
             Observed {w.observedAt}. Git and link states describe this capture.
           </p>
         </LayerCard.Body>
@@ -347,7 +349,7 @@ export function WorkspaceSnapshot({ data }: { data: SnapshotData }) {
                   <article key={root.id}>
                     <LayerCard>
                       <LayerCard.Header>
-                        <h2 className="font-medium flex items-center gap-2 text-basalt-foreground">
+                        <h2 className="flex items-center gap-2 text-sm font-medium text-basalt-foreground">
                           <FolderGit2 size={18} />
                           {root.label}
                         </h2>
@@ -395,7 +397,7 @@ export function WorkspaceSnapshot({ data }: { data: SnapshotData }) {
                 <article key={agent.id}>
                   <LayerCard>
                     <LayerCard.Header>
-                      <h2 className="flex items-center gap-2 font-medium text-basalt-foreground">
+                      <h2 className="flex items-center gap-2 text-sm font-medium text-basalt-foreground">
                         <Terminal size={18} />
                         {agent.kind} <span className="text-basalt-primary">{agent.profile}</span>
                       </h2>

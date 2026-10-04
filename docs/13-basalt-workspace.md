@@ -72,13 +72,14 @@ Basalt initials fallback. Real-owner avatar visibility remains an explicit Prod 
   collapsed logout, navigation semantics, identity-bound cache and breadcrumbs;
   source-level sign-off obtained. Task-owned helper panes were closed.
 - Frozen install, project typecheck, check-only Biome with errors-on-warnings, build,
-  755 unit tests/coverage, 21 Worker tests, 16 L2 HTTP/CLI tests, 29 browser tests and
+  755 unit tests/coverage, 21 Worker tests, 16 L2 HTTP/CLI tests, 33 browser tests and
   BDD smoke passed. Four coverage S/B/F/L: 97.02/94.38/96.39/97.69; the existing 94%
   branch gate passes, but handbook all-four 95% attainment remains incomplete.
 - Environment acceptance retains Demo/manual E2E/Prod-auth-required switching,
   automated locks, hosted invisibility, stale-request rejection and owned cleanup.
-- `bun scripts/verify-basalt.ts` captured 43 scenarios with local native storage:
-  eight routes × two themes × desktop/mobile, legacy/workspace panels, both viewers,
+- `bun scripts/verify-basalt.ts` captured 51 scenarios with local native storage:
+  eight routes × two themes × desktop/mobile, legacy/workspace panels, single-file
+  and skill-package viewers in all four theme/viewport combinations, both viewers,
   collapsed rail and mobile navigation. It rejects page errors and horizontal
   overflow, checks viewer width, stable logo placement, route URLs and modal focus.
   Evidence: ignored `test-results/basalt-acceptance/manifest.json` and PNGs.
@@ -86,6 +87,15 @@ Basalt initials fallback. Real-owner avatar visibility remains an explicit Prod 
   tokens and valid timestamps, resource/file viewers, charts, snapshot table,
   comparison warning and CLI pairing. Real local webhook CRUD has a browser
   regression so camelCase mocks cannot hide state/date errors again.
+
+## Typography and spacing refinement
+
+Resource/file viewers and the token dialog use a compact 16px title, 14px body/card
+heading and 12px metadata/code scale. Resource header, actions and content have an
+explicit 16px layout gap. Preview content has one 12px Well inset, not stacked
+Body/Well padding. Mobile file choices retain 44px minimum touch height. Paths wrap
+independently of relationship labels. Four real-storage browser cases assert the
+rendered type scale, spacing, preview inset, non-overflow and file selection.
 
 Physical iPhone safe-area/software-keyboard behavior, real avatar/provider/Access
 login, exhaustive visual contrast and native desktop design remain unverified.

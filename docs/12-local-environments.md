@@ -97,7 +97,7 @@ media. Presentation relative time is not frozen; receipt timestamps reflect seed
 
 ## Verified evidence and remaining gaps
 
-Local implementation checks: L2 16 tests; Worker 21 tests; SPA browser 29 tests;
+Local implementation checks: L2 16 tests; Worker 21 tests; SPA browser 33 tests;
 BDD smoke 1 test; full unit suite 755 tests. Coverage S/B/F/L:
 97.02/94.38/96.39/97.69% against the existing configured scope. Branches remain below
 the handbook's all-four 95% destination; thresholds/exclusions were not weakened.

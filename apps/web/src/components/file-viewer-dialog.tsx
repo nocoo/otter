@@ -272,7 +272,7 @@ export function FileViewerDialog({ file, open, onOpenChange }: FileViewerDialogP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="xl" className="max-h-[85vh] flex flex-col gap-3">
+      <DialogContent size="xl" className="flex max-h-[85vh] flex-col gap-4 p-4 text-sm sm:p-5">
         <DialogClose asChild>
           <Button
             variant="ghost"
@@ -285,12 +285,12 @@ export function FileViewerDialog({ file, open, onOpenChange }: FileViewerDialogP
         </DialogClose>
         {/* Header */}
         <DialogHeader className="shrink-0">
-          <div className="flex items-center justify-between gap-3 pr-8">
-            <div className="min-w-0">
-              <DialogTitle className="text-sm font-medium truncate font-mono">
-                {filename}
-              </DialogTitle>
-              <DialogDescription className="text-xs mt-1 truncate">{file?.path}</DialogDescription>
+          <div className="flex items-start justify-between gap-3 pr-8">
+            <div className="min-w-0 space-y-1">
+              <DialogTitle className="truncate text-base leading-6">{filename}</DialogTitle>
+              <DialogDescription className="break-all text-xs leading-5">
+                {file?.path}
+              </DialogDescription>
             </div>
             <Button variant="outline" size="sm" onClick={handleCopy} className="shrink-0 gap-1">
               {copied ? (
@@ -321,7 +321,7 @@ export function FileViewerDialog({ file, open, onOpenChange }: FileViewerDialogP
 
           {/* Footer stats */}
           {stats && (
-            <LayerCard.Footer className="justify-start gap-4 text-xs text-basalt-muted-foreground shrink-0">
+            <LayerCard.Footer className="shrink-0 justify-start gap-x-4 gap-y-2 py-2 text-xs text-basalt-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <FileText className="h-3 w-3" strokeWidth={1.5} />
                 {formatSize(stats.size)}

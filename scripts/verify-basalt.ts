@@ -68,11 +68,13 @@ try {
     ],
     ["not-found", "/not-a-page", "404"],
   ];
+  await page.goto(server.url);
+  await page.getByRole("heading", { name: "Your machines" }).waitFor();
   for (const theme of ["light", "dark"]) {
     for (const width of [1440, 390]) {
       // biome-ignore lint/performance/noAwaitInLoops: the same browser page must switch viewports sequentially
       await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
-      await page.addInitScript((mode) => {
+      await page.evaluate((mode) => {
         localStorage.setItem("theme", mode);
       }, theme);
       for (const [name, path, heading] of routes) {
@@ -82,6 +84,7 @@ try {
           .locator("[data-basalt-island]")
           .getByRole("heading", { name: heading, exact: true })
           .waitFor();
+        await page.waitForFunction((mode) => document.documentElement.dataset.mode === mode, theme);
         await capture(`${name}-${theme}-${width}`);
       }
     }
@@ -108,6 +111,23 @@ try {
   await page.getByRole("button", { name: "Close resource viewer" }).waitFor();
   await capture("resource-viewer");
   await page.getByRole("button", { name: "Close resource viewer" }).click();
+  for (const theme of ["light", "dark"]) {
+    for (const width of [1440, 390]) {
+      // biome-ignore lint/performance/noAwaitInLoops: viewer geometry depends on the selected viewport and theme
+      await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
+      await page.evaluate((value) => localStorage.setItem("theme", value), theme);
+      await page.reload();
+      await page.waitForFunction((mode) => document.documentElement.dataset.mode === mode, theme);
+      await page.getByRole("tab", { name: "Files & resources", exact: true }).click();
+      await page.getByRole("button", { name: "AGENTS.md", exact: true }).click();
+      await capture(`resource-single-file-${theme}-${width}`);
+      await page.getByRole("button", { name: "Close resource viewer" }).click();
+      await page.getByRole("button", { name: "local", exact: true }).click();
+      await capture(`resource-package-${theme}-${width}`);
+      await page.getByRole("button", { name: "Close resource viewer" }).click();
+    }
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(`${server.url}/snapshots/basalt-legacy`);
   for (const name of [/Overview/, /Config.*5/, /Environment.*8/]) {
     // biome-ignore lint/performance/noAwaitInLoops: verify all legacy panels with unchanged collector data
