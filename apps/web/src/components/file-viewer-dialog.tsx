@@ -1,44 +1,29 @@
-import { Check, Copy, FileText, Hash, Type } from "lucide-react";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import { type BundledLanguage, codeToTokens, type ThemedToken } from "shiki";
-import { Button } from "@/components/ui/button";
 import {
+  Button,
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton";
+  LayerCard,
+} from "@nocoo/basalt";
+import { useTheme } from "@nocoo/basalt/providers/theme";
+import { Check, Copy, FileText, Hash, Type, X } from "lucide-react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { type BundledLanguage, codeToTokens, type ThemedToken } from "shiki";
 import { formatSize } from "@/lib/utils";
 
 const WHITESPACE_SPLIT = /\s+/;
 
-// ---------------------------------------------------------------------------
-// Theme detection (reuses the app's class-based dark mode)
-// ---------------------------------------------------------------------------
-
-function subscribeTheme(cb: () => void) {
-  // Listen to manual toggle via custom event
-  window.addEventListener("theme-change", cb);
-  // Listen to OS-level scheme change
-  const mq = window.matchMedia("(prefers-color-scheme: dark)");
-  mq.addEventListener("change", cb);
-  // Also observe class changes on <html> as a fallback
-  const observer = new MutationObserver(cb);
-  observer.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ["class"],
-  });
-  return () => {
-    window.removeEventListener("theme-change", cb);
-    mq.removeEventListener("change", cb);
-    observer.disconnect();
-  };
+function subscribeSystemTheme(callback: () => void) {
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  media.addEventListener("change", callback);
+  return () => media.removeEventListener("change", callback);
 }
 
-function getIsDark() {
-  return document.documentElement.classList.contains("dark");
+function getSystemIsDark() {
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
 
 function getServerIsDark() {
@@ -46,7 +31,9 @@ function getServerIsDark() {
 }
 
 function useIsDark() {
-  return useSyncExternalStore(subscribeTheme, getIsDark, getServerIsDark);
+  const { theme } = useTheme();
+  const systemIsDark = useSyncExternalStore(subscribeSystemTheme, getSystemIsDark, getServerIsDark);
+  return theme === "dark" || (theme === "system" && systemIsDark);
 }
 
 // ---------------------------------------------------------------------------
@@ -157,11 +144,11 @@ function CodeEditor({ tokens, lineCount }: { tokens: ThemedToken[][] | null; lin
         <div
           // biome-ignore lint/suspicious/noArrayIndexKey: lines are positional, index is the natural key
           key={lineIdx}
-          className="flex hover:bg-code-line-hover"
+          className="flex hover:bg-basalt-accent"
         >
           {/* Line number gutter */}
           <span
-            className="shrink-0 select-none text-right pr-4 pl-4 sticky left-0 text-code-gutter-text bg-code-gutter-bg"
+            className="shrink-0 select-none text-right pr-4 pl-4 sticky left-0 text-basalt-muted-foreground bg-basalt-bright"
             style={{ minWidth: `calc(${gutterWidth} + 2rem)` }}
           >
             {lineIdx + 1}
@@ -197,15 +184,15 @@ function PlainEditor({ content, lineCount }: { content: string; lineCount: numbe
         <div
           // biome-ignore lint/suspicious/noArrayIndexKey: lines are positional, index is the natural key
           key={lineIdx}
-          className="flex hover:bg-code-line-hover"
+          className="flex hover:bg-basalt-accent"
         >
           <span
-            className="shrink-0 select-none text-right pr-4 pl-4 sticky left-0 text-code-gutter-text bg-code-gutter-bg"
+            className="shrink-0 select-none text-right pr-4 pl-4 sticky left-0 text-basalt-muted-foreground bg-basalt-bright"
             style={{ minWidth: `calc(${gutterWidth} + 2rem)` }}
           >
             {lineIdx + 1}
           </span>
-          <span className="flex-1 whitespace-pre-wrap break-all pr-4 py-0 text-code-text">
+          <span className="flex-1 whitespace-pre-wrap break-all pr-4 py-0 text-basalt-foreground">
             {line || "\n"}
           </span>
         </div>
@@ -285,26 +272,29 @@ export function FileViewerDialog({ file, open, onOpenChange }: FileViewerDialogP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-6xl max-h-[85vh] flex flex-col p-0 gap-0 bg-code-bg border-code-border text-code-text [&_[data-slot=dialog-close]]:text-code-text-secondary [&_[data-slot=dialog-close]]:hover:text-code-text">
+      <DialogContent size="xl" className="max-h-[85vh] flex flex-col gap-3">
+        <DialogClose asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-3 top-3"
+            aria-label="Close file viewer"
+          >
+            <X strokeWidth={1.5} aria-hidden="true" />
+          </Button>
+        </DialogClose>
         {/* Header */}
-        <DialogHeader className="px-5 pt-5 pb-3 border-b border-code-border shrink-0">
+        <DialogHeader className="shrink-0">
           <div className="flex items-center justify-between gap-3 pr-8">
             <div className="min-w-0">
-              <DialogTitle className="text-sm font-medium truncate font-mono text-code-text">
+              <DialogTitle className="text-sm font-medium truncate font-mono">
                 {filename}
               </DialogTitle>
-              <DialogDescription className="text-xs mt-1 truncate text-code-text-secondary">
-                {file?.path}
-              </DialogDescription>
+              <DialogDescription className="text-xs mt-1 truncate">{file?.path}</DialogDescription>
             </div>
-            <Button
-              variant="outline"
-              size="xs"
-              onClick={handleCopy}
-              className="shrink-0 gap-1 border-code-border bg-code-btn-bg text-code-text hover:bg-code-btn-hover hover:text-code-text"
-            >
+            <Button variant="outline" size="sm" onClick={handleCopy} className="shrink-0 gap-1">
               {copied ? (
-                <Check className="h-3 w-3 text-success" strokeWidth={1.5} />
+                <Check className="h-3 w-3 text-basalt-heatmap-green-4" strokeWidth={1.5} />
               ) : (
                 <Copy className="h-3 w-3" strokeWidth={1.5} />
               )}
@@ -314,45 +304,39 @@ export function FileViewerDialog({ file, open, onOpenChange }: FileViewerDialogP
         </DialogHeader>
 
         {/* Code editor area */}
-        <div className="flex-1 overflow-auto min-h-0 py-2">
-          {loading ? (
-            <div className="px-4 py-4 space-y-2">
-              {Array.from({ length: 12 }).map((_, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: skeleton lines are static, never reorder
-                <div key={`code-line-${i}`} className="flex gap-4">
-                  <Skeleton className="h-4 w-8 shrink-0" />
-                  <Skeleton className="h-4" style={{ width: `${Math.random() * 40 + 40}%` }} />
-                </div>
-              ))}
-            </div>
-          ) : tokens ? (
-            <CodeEditor tokens={tokens} lineCount={lineCount} />
-          ) : content ? (
-            <PlainEditor content={content} lineCount={lineCount} />
-          ) : (
-            <div className="flex items-center justify-center py-12 text-sm text-code-text-secondary">
-              No content available
-            </div>
-          )}
-        </div>
+        <LayerCard className="flex min-h-0 flex-1 flex-col" padding="none">
+          <LayerCard.Well className="min-h-0 flex-1 overflow-auto px-0 py-2">
+            {loading ? (
+              <LayerCard.Loading label="Loading file content" />
+            ) : tokens ? (
+              <CodeEditor tokens={tokens} lineCount={lineCount} />
+            ) : content ? (
+              <PlainEditor content={content} lineCount={lineCount} />
+            ) : (
+              <div className="flex items-center justify-center py-12 text-sm text-basalt-muted-foreground">
+                No content available
+              </div>
+            )}
+          </LayerCard.Well>
 
-        {/* Footer stats */}
-        {stats && (
-          <div className="px-5 py-3 border-t border-code-border flex items-center gap-4 text-xs text-code-text-secondary shrink-0">
-            <span className="flex items-center gap-1.5">
-              <FileText className="h-3 w-3" strokeWidth={1.5} />
-              {formatSize(stats.size)}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Hash className="h-3 w-3" strokeWidth={1.5} />
-              {stats.lines.toLocaleString()} line{stats.lines !== 1 ? "s" : ""}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Type className="h-3 w-3" strokeWidth={1.5} />
-              {stats.words.toLocaleString()} word{stats.words !== 1 ? "s" : ""}
-            </span>
-          </div>
-        )}
+          {/* Footer stats */}
+          {stats && (
+            <LayerCard.Footer className="justify-start gap-4 text-xs text-basalt-muted-foreground shrink-0">
+              <span className="flex items-center gap-1.5">
+                <FileText className="h-3 w-3" strokeWidth={1.5} />
+                {formatSize(stats.size)}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Hash className="h-3 w-3" strokeWidth={1.5} />
+                {stats.lines.toLocaleString()} line{stats.lines !== 1 ? "s" : ""}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Type className="h-3 w-3" strokeWidth={1.5} />
+                {stats.words.toLocaleString()} word{stats.words !== 1 ? "s" : ""}
+              </span>
+            </LayerCard.Footer>
+          )}
+        </LayerCard>
       </DialogContent>
     </Dialog>
   );

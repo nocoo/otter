@@ -20,6 +20,7 @@ import { createApiWebhooksRoute } from "./routes/api-webhooks";
 import { createAuthCliRoute } from "./routes/auth-cli";
 import live from "./routes/live";
 import meRoute from "./routes/me";
+import profileRoute from "./routes/profile";
 
 export interface CreateAppOptions {
   /** Mount prefix for the new D1-binding routes. Defaults to "/api". */
@@ -68,6 +69,7 @@ export function createApp(opts: CreateAppOptions = {}) {
 
     apiApp.route("/live", live);
     apiApp.route("/me", meRoute);
+    apiApp.route("/profile", profileRoute);
     apiApp.route("/auth/cli", createAuthCliRoute({ getDriver: () => driver }));
     apiApp.route("/webhooks", createApiWebhooksRoute({ getDriver: () => driver }));
 

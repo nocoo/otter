@@ -46,10 +46,10 @@ export function formatMetaLabel(key: string): string {
  */
 export function badgeClassName(key: string): string {
   if (key === "pinned" || key === "default" || key === "current") {
-    return "border-success/30 bg-success/10 text-success";
+    return "border-basalt-heatmap-green-4/30 bg-basalt-heatmap-green-4/10 text-basalt-heatmap-green-4";
   }
   if (key === "type") {
-    return "border-info/30 bg-info/10 text-info";
+    return "border-basalt-info/30 bg-basalt-info/10 text-basalt-info";
   }
   return "";
 }

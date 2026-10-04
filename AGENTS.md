@@ -29,7 +29,7 @@ This file is the quality contract; hooks, CI and config are enforcement. Close i
 
 | Component | Path / choice |
 |---|---|
-| Web / Worker | `apps/web` Vite/React; `apps/api` D1/R2/SPA assets |
+| Web / Worker | `apps/web` Vite/React + `@nocoo/basalt` 2.2.0; `apps/api` D1/R2/SPA assets |
 | Shared / CLI | `packages/core`, `packages/api`, `apps/cli` |
 | Native | `apps/macos`, Swift/AppKit; isolated build/test scripts |
 
@@ -48,6 +48,7 @@ bun run test:l2
 bun run test:e2e                 # built SPA + locked isolated local Worker
 bun run test:e2e:bdd             # same local-only runner, never Vite/prod proxy
 bun scripts/verify-environments.ts # local switching and isolation acceptance
+bun scripts/verify-basalt.ts       # built SPA, disposable rich E2E, all-route captures
 bun run macos:test
 bun run deploy:check             # build + local Worker dry run
 ```

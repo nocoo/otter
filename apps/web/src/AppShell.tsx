@@ -1,139 +1,130 @@
-import { Button, ThemeToggle } from "@nocoo/basalt";
+import {
+  Button,
+  ContentIsland,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  ThemeToggle,
+} from "@nocoo/basalt";
+import { AppHeader } from "@nocoo/basalt/components/app-header";
+import { AppMain, AppSkipLink, AppShell as BasaltShell } from "@nocoo/basalt/components/app-shell";
 import { Menu } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Outlet, useLocation } from "react-router";
-import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { EnvironmentSwitch } from "@/components/layout/environment-switch";
+import { HeaderTooltip, HexlyLink } from "@/components/layout/header-links";
 import { Sidebar } from "@/components/layout/sidebar";
-import { SidebarProvider, useSidebar } from "@/components/layout/sidebar-context";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { HeaderTooltip, HexlyLink } from "./components/layout/header-links";
 
-const ROUTE_LABELS: Record<string, string> = {
+const LABELS: Record<string, string> = {
   snapshots: "Snapshots",
+  devices: "Machines",
+  compare: "Compare",
   settings: "Settings",
   cli: "CLI",
   connect: "Connect",
 };
 
-function breadcrumbsFromPathname(pathname: string) {
-  const segments = pathname.split("/").filter(Boolean);
-  const items: { label: string; href?: string }[] = [{ label: "Home", href: "/" }];
-
-  let href = "";
-  for (let i = 0; i < segments.length; i++) {
-    const seg = segments[i];
-    if (!seg) continue;
-    href += `/${seg}`;
-    const isLast = i === segments.length - 1;
-    const label = ROUTE_LABELS[seg] ?? seg.slice(0, 8);
-    items.push(isLast ? { label } : { label, href });
-  }
-
-  return items;
-}
-
-function AppShellInner() {
+export function AppShell() {
   const isMobile = useIsMobile();
-  const { mobileOpen, setMobileOpen } = useSidebar();
   const { pathname } = useLocation();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: pathname triggers the effect intentionally
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const menu = useRef<HTMLButtonElement>(null);
   useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname, setMobileOpen]);
-
-  useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [mobileOpen]);
-
-  const breadcrumbs = breadcrumbsFromPathname(pathname);
-
+    if (pathname) setMobileOpen(false);
+  }, [pathname]);
+  const segments = pathname.split("/").filter(Boolean);
+  const title = segments.length
+    ? (LABELS[segments.at(-1) ?? ""] ?? segments.at(-1)?.slice(0, 8) ?? "Home")
+    : "Home";
+  const breadcrumbs = segments.length
+    ? [
+        { href: "/", label: "Home" },
+        ...segments
+          .slice(0, -1)
+          .filter((part) => part !== "cli")
+          .map((part, index) => ({
+            ...(part === "devices"
+              ? { href: "/" }
+              : part === "cli"
+                ? {}
+                : { href: `/${segments.slice(0, index + 1).join("/")}` }),
+            label: LABELS[part] ?? part,
+          })),
+      ]
+    : [];
   return (
-    <div className="flex min-h-screen w-full bg-background">
-      {!isMobile && <Sidebar />}
-
-      {isMobile && mobileOpen && (
-        <>
-          {/* biome-ignore lint/a11y/noNoninteractiveElementInteractions: backdrop overlay dismiss */}
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: backdrop overlay dismiss */}
-          {/* biome-ignore lint/a11y/useKeyWithClickEvents: backdrop overlay dismiss */}
-          <div
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-xs"
-            onClick={() => setMobileOpen(false)}
-          />
-          <div className="fixed inset-y-0 left-0 z-50 w-[260px]">
-            <Sidebar />
-          </div>
-        </>
+    <BasaltShell layout="responsive" className="relative">
+      <AppSkipLink>Skip to main content</AppSkipLink>
+      {!isMobile ? (
+        <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
+      ) : (
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+          <SheetContent
+            side="left"
+            className="w-[260px] max-w-[260px] border-0 p-0 bg-basalt-background"
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              menu.current?.focus();
+            }}
+          >
+            <SheetTitle className="sr-only">Navigation</SheetTitle>
+            <SheetDescription className="sr-only">
+              Navigate your configuration workspace.
+            </SheetDescription>
+            <Sidebar collapsed={false} onToggle={() => setMobileOpen(false)} />
+          </SheetContent>
+        </Sheet>
       )}
-
-      <main className="flex flex-1 flex-col min-h-screen min-w-0">
-        <header className="flex h-14 shrink-0 items-center justify-between px-4 md:px-6">
-          <div className="flex items-center gap-3">
-            {isMobile && (
-              <HeaderTooltip label="Open navigation">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setMobileOpen(true)}
-                  aria-label="Open navigation"
-                >
-                  <Menu aria-hidden="true" strokeWidth={1.5} />
+      <AppMain>
+        <AppHeader
+          data-testid="app-header"
+          density={isMobile ? "compact" : "comfortable"}
+          {...(!isMobile ? { title, breadcrumbs } : {})}
+          leading={
+            isMobile ? (
+              <Button
+                ref={menu}
+                variant="ghost"
+                size="icon"
+                aria-label="Open navigation"
+                onClick={() => setMobileOpen(true)}
+              >
+                <Menu strokeWidth={1.5} aria-hidden="true" />
+              </Button>
+            ) : null
+          }
+          actions={
+            <>
+              <EnvironmentSwitch />
+              <HeaderTooltip label="GitHub repository">
+                <Button asChild variant="ghost" size="icon">
+                  <a
+                    href="https://github.com/nocoo/otter"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="GitHub repository"
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.86c-2.78.6-3.37-1.18-3.37-1.18-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.89 1.53 2.34 1.09 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.56-1.11-4.56-4.95 0-1.09.39-1.99 1.03-2.69-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.03a9.57 9.57 0 0 1 5 0c1.91-1.3 2.75-1.03 2.75-1.03.55 1.38.2 2.4.1 2.65.64.7 1.03 1.6 1.03 2.69 0 3.85-2.34 4.7-4.57 4.95.36.31.68.92.68 1.86v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2Z" />
+                    </svg>
+                    <span className="sr-only">GitHub</span>
+                  </a>
                 </Button>
               </HeaderTooltip>
-            )}
-            <div className="hidden sm:block">
-              <Breadcrumbs items={breadcrumbs} />
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <EnvironmentSwitch />
-            <HeaderTooltip label="GitHub repository">
-              <a
-                href="https://github.com/nocoo/otter"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="GitHub repository"
-                className="flex h-8 w-8 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              >
-                <span className="sr-only">GitHub</span>
-                <svg
-                  className="h-[18px] w-[18px]"
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2Z" />
-                </svg>
-              </a>
-            </HeaderTooltip>
-            <HexlyLink />
-            <ThemeToggle aria-label="Toggle theme" />
-          </div>
-        </header>
-
-        <div className="flex-1 px-2 pb-2 md:px-3 md:pb-3">
-          <div className="h-full rounded-[16px] md:rounded-[20px] bg-card p-3 md:p-5 overflow-y-auto">
+              <HexlyLink />
+              <ThemeToggle aria-label="Toggle theme" />
+            </>
+          }
+        />
+        <div className="flex min-h-0 flex-1 flex-col px-2 pb-2 md:px-3 md:pb-3">
+          <ContentIsland className="relative">
             <Outlet />
-          </div>
+          </ContentIsland>
         </div>
-      </main>
-    </div>
-  );
-}
-
-export function AppShell() {
-  return (
-    <SidebarProvider>
-      <AppShellInner />
-    </SidebarProvider>
+      </AppMain>
+    </BasaltShell>
   );
 }

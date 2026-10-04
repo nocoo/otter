@@ -1,6 +1,5 @@
+import { Button, LayerCard } from "@nocoo/basalt";
 import { Clock, Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import type { SnapshotData } from "./types";
 
 interface ExportSectionProps {
@@ -22,12 +21,12 @@ export function ExportSection({ data, snapshotId }: ExportSectionProps) {
   };
 
   return (
-    <Card className="py-0">
-      <CardContent className="px-5 py-4">
-        <div className="flex items-center justify-between">
+    <LayerCard>
+      <LayerCard.Body>
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
-            <span className="text-sm text-muted-foreground">
+            <Clock className="h-4 w-4 text-basalt-muted-foreground" strokeWidth={1.5} />
+            <span className="text-sm text-basalt-muted-foreground">
               Download the full snapshot as JSON
             </span>
           </div>
@@ -36,7 +35,7 @@ export function ExportSection({ data, snapshotId }: ExportSectionProps) {
             Export JSON
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </LayerCard.Body>
+    </LayerCard>
   );
 }

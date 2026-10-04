@@ -26,12 +26,20 @@ test.describe("Navigation", () => {
     // Navigate to Snapshots
     await page.locator("aside").getByRole("link", { name: "Snapshots" }).click();
     await expect(page).toHaveURL(/\/snapshots$/);
-    await expect(page.getByRole("heading", { name: "Snapshots" })).toBeVisible();
+    await expect(
+      page
+        .locator("[data-basalt-surface-root]")
+        .getByRole("heading", { name: "Snapshots", exact: true }),
+    ).toBeVisible();
 
     // Navigate to Settings
     await page.locator("aside").getByRole("link", { name: "Settings" }).click();
     await expect(page).toHaveURL(/\/settings$/);
-    await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+    await expect(
+      page
+        .locator("[data-basalt-surface-root]")
+        .getByRole("heading", { name: "Settings", exact: true }),
+    ).toBeVisible();
 
     // Navigate back to Machines
     await page.locator("aside").getByRole("link", { name: "Machines" }).click();
@@ -44,27 +52,30 @@ test.describe("Navigation", () => {
 
     // The Snapshots link should have the active class (text-foreground, NOT text-muted-foreground)
     const snapshotsLink = page.locator("aside").getByRole("link", { name: "Snapshots" });
-    await expect(snapshotsLink).not.toHaveClass(/text-muted-foreground/);
+    await expect(snapshotsLink).toHaveAttribute("aria-current", "page");
 
-    // The Machines link should have the inactive class (text-muted-foreground)
     const dashboardLink = page.locator("aside").getByRole("link", { name: "Machines" });
-    await expect(dashboardLink).toHaveClass(/text-muted-foreground/);
+    await expect(dashboardLink).not.toHaveAttribute("aria-current", "page");
   });
 
   test("breadcrumbs show correct path segments", async ({ page }) => {
     // Machines shows "Home"
     await page.goto("/");
-    await expect(page.locator("header nav").getByText("Home")).toBeVisible();
+    await expect(page.locator("header").getByRole("heading", { name: "Home" })).toBeVisible();
 
     // Snapshots page shows "Home > Snapshots"
     await page.goto("/snapshots");
     await expect(page.locator("header nav").getByText("Home")).toBeVisible();
-    await expect(page.locator("header nav").getByText("Snapshots")).toBeVisible();
+    await expect(
+      page.getByTestId("app-header").getByRole("heading", { name: "Snapshots", exact: true }),
+    ).toBeVisible();
 
     // Settings page shows "Home > Settings"
     await page.goto("/settings");
     await expect(page.locator("header nav").getByText("Home")).toBeVisible();
-    await expect(page.locator("header nav").getByText("Settings")).toBeVisible();
+    await expect(
+      page.getByTestId("app-header").getByRole("heading", { name: "Settings", exact: true }),
+    ).toBeVisible();
   });
 
   test("mobile viewport shows hamburger menu that opens sidebar", async ({ page }) => {

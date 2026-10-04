@@ -1,7 +1,6 @@
+import { Badge, Input, LayerCard } from "@nocoo/basalt";
 import { filterCollectors, type SnapshotCollector } from "@otter/api/lib/snapshot-collectors";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { CollectorCard } from "./collector-card";
 
 interface CollectorsTabProps {
@@ -27,18 +26,18 @@ export function CollectorsTab({ collectors, category }: CollectorsTabProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search collectors, files, items, or metadata..."
-          className="bg-background/70"
+          aria-label="Search collectors, files, items, or metadata"
         />
-        <Badge variant="secondary" className="text-2xs font-normal shrink-0">
+        <Badge variant="secondary" className="text-xs font-normal shrink-0">
           {filtered.length}/{categoryCollectors.length}
         </Badge>
       </div>
 
       {/* Collector cards */}
       {filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-card px-5 py-8 text-center">
-          <p className="text-sm text-muted-foreground">No collectors match the current search.</p>
-        </div>
+        <LayerCard>
+          <LayerCard.Empty title="No collectors match the current search." />
+        </LayerCard>
       ) : (
         <div className="space-y-3">
           {filtered

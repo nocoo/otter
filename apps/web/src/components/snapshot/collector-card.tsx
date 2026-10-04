@@ -1,7 +1,7 @@
+import { Badge, LayerCard } from "@nocoo/basalt";
+import { SectionRule } from "@nocoo/basalt/components/section-rule";
 import { AlertTriangle, FileText, Info, List, SkipForward } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileRow } from "./file-row";
 import { computeIconUrl, listItemKey, resolveIconUrl } from "./helpers";
 import { ListItemRow } from "./list-item-row";
@@ -41,63 +41,52 @@ export function CollectorCard({ collector }: { collector: Collector }) {
   }, [isApps, collector.lists, totalLists]);
 
   return (
-    <Card className="gap-0 py-0 overflow-hidden">
+    <LayerCard>
       {/* Header */}
-      <CardHeader className="gap-0 px-5 py-4 border-b border-border/40">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm">{collector.label}</CardTitle>
+      <LayerCard.Header>
+        <div className="flex w-full items-center justify-between gap-3">
+          <h3 className="text-sm font-medium text-basalt-foreground">{collector.label}</h3>
           <div className="flex items-center gap-3">
             {totalFiles > 0 && (
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <span className="text-xs text-basalt-muted-foreground flex items-center gap-1">
                 <FileText className="h-3 w-3" strokeWidth={1.5} />
                 {totalFiles}
               </span>
             )}
             {totalLists > 0 && (
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <span className="text-xs text-basalt-muted-foreground flex items-center gap-1">
                 <List className="h-3 w-3" strokeWidth={1.5} />
                 {totalLists}
               </span>
             )}
             {hasErrors && (
-              <Badge
-                variant="outline"
-                className="text-2xs font-normal border-destructive/30 bg-destructive/10 text-destructive"
-              >
+              <Badge variant="error" className="text-xs font-normal">
                 {collector.errors.length} error{collector.errors.length !== 1 ? "s" : ""}
               </Badge>
             )}
           </div>
         </div>
-      </CardHeader>
+      </LayerCard.Header>
 
       {/* Content */}
-      <CardContent className="px-5 py-4">
-        <div className="divide-y divide-border/30 [&>*]:py-3 first:[&>*]:pt-0 last:[&>*]:pb-0">
+      <LayerCard.Body>
+        <div className="space-y-4">
           {/* Files */}
           {totalFiles > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <FileText className="h-3 w-3" strokeWidth={1.5} />
-                Files
-              </h4>
+            <SectionRule title="Files">
               <div className="space-y-2">
                 {collector.files.map((file) => (
                   <FileRow key={file.path} file={file} />
                 ))}
               </div>
-            </div>
+            </SectionRule>
           )}
 
           {/* Items */}
           {totalLists > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <List className="h-3 w-3" strokeWidth={1.5} />
-                Items
-              </h4>
+            <SectionRule title="Items">
               {hasSshKeys && (
-                <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <p className="text-xs text-basalt-muted-foreground flex items-center gap-1.5">
                   <Info className="h-3 w-3 shrink-0" strokeWidth={1.5} />
                   Keys are detected only — content is never backed up.
                 </p>
@@ -116,44 +105,50 @@ export function CollectorCard({ collector }: { collector: Collector }) {
                   );
                 })}
               </div>
-            </div>
+            </SectionRule>
           )}
 
           {/* Errors */}
           {hasErrors && (
-            <div className="space-y-2">
-              <h4 className="text-xs font-medium text-destructive uppercase tracking-wider flex items-center gap-1.5">
-                <AlertTriangle className="h-3 w-3" strokeWidth={1.5} aria-hidden="true" />
-                Errors
-              </h4>
+            <SectionRule
+              title={
+                <span className="flex items-center gap-1.5 text-basalt-destructive">
+                  <AlertTriangle className="h-3 w-3" strokeWidth={1.5} aria-hidden="true" />
+                  Errors
+                </span>
+              }
+            >
               <ul className="space-y-1.5">
                 {collector.errors.map((err) => (
-                  <li key={err} className="border-l-2 border-destructive/40 pl-3 py-1.5">
-                    <p className="text-xs text-destructive/80">{err}</p>
+                  <li key={err} className="border-l-2 border-basalt-destructive/40 pl-3 py-1.5">
+                    <p className="text-xs text-basalt-destructive/80">{err}</p>
                   </li>
                 ))}
               </ul>
-            </div>
+            </SectionRule>
           )}
 
           {/* Skipped */}
           {hasSkipped && (
-            <div className="space-y-2">
-              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <SkipForward className="h-3 w-3" strokeWidth={1.5} aria-hidden="true" />
-                Skipped
-              </h4>
+            <SectionRule
+              title={
+                <span className="flex items-center gap-1.5">
+                  <SkipForward className="h-3 w-3" strokeWidth={1.5} aria-hidden="true" />
+                  Skipped
+                </span>
+              }
+            >
               <ul className="space-y-1.5">
                 {(collector.skipped ?? []).map((msg) => (
-                  <li key={msg} className="border-l-2 border-border pl-3 py-1.5">
-                    <p className="text-xs text-muted-foreground">{msg}</p>
+                  <li key={msg} className="border-l-2 border-basalt-border pl-3 py-1.5">
+                    <p className="text-xs text-basalt-muted-foreground">{msg}</p>
                   </li>
                 ))}
               </ul>
-            </div>
+            </SectionRule>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </LayerCard.Body>
+    </LayerCard>
   );
 }

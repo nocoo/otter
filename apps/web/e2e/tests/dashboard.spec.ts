@@ -26,8 +26,10 @@ test("machine cards separate capture coverage from receipt time, with links to t
   await expect(page.getByRole("heading", { name: "Your machines" })).toBeVisible();
   const card = page.locator("article").filter({ hasText: "Recovery Mac" });
   await expect(card.getByText("Partial capture")).toBeVisible();
-  await expect(card.getByText("2 sources")).toBeVisible();
-  await expect(card.getByText("9 agent profiles")).toBeVisible();
+  await expect(card.locator("dl > div").filter({ hasText: "Sources" })).toHaveText("Sources2");
+  await expect(card.locator("dl > div").filter({ hasText: "Agent profiles" })).toHaveText(
+    "Agent profiles9",
+  );
   await expect(card.getByText(/Captured/)).toBeVisible();
   await expect(card.getByText(/Received/)).toBeVisible();
   await expect(card.getByRole("link", { name: "Latest complete snapshot" })).toHaveAttribute(

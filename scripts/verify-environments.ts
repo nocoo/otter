@@ -48,7 +48,7 @@ try {
     await page.getByRole("radio", { name: "Demo", exact: true }).getAttribute("aria-checked"),
     "true",
   );
-  const actions = page.locator("header > div").last();
+  const actions = page.getByTestId("app-header").locator(":scope > div").last();
   assert.equal(
     await actions
       .locator(":scope > *")

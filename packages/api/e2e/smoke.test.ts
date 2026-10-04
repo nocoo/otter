@@ -45,6 +45,17 @@ describe("L2 smoke", () => {
     expect(body.email).toBe(process.env.OTTER_L2_EMAIL);
   });
 
+  it("GET /api/profile uses the verified fixture identity and rejects a bogus token", async () => {
+    const res = await fetch(`${baseUrl}/api/profile?email=other@example.com`);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ avatar: null });
+    expect(res.headers.get("cache-control")).toBe("no-store");
+    const invalid = await fetch(`${baseUrl}/api/profile`, {
+      headers: { Authorization: "Bearer otk_invalid" },
+    });
+    expect(invalid.status).toBe(403);
+  });
+
   it("GET /health (legacy public probe) returns 200", async () => {
     const res = await fetch(`${baseUrl}/health`);
     expect(res.status).toBe(200);

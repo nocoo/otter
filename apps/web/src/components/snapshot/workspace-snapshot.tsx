@@ -1,16 +1,37 @@
-import type { CaptureRoot, WorkspaceResource } from "@otter/core";
-import { Download, FolderGit2, Link2, Terminal } from "lucide-react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import {
+  Badge,
+  Button,
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  Input,
+  LayerCard,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@nocoo/basalt";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@nocoo/basalt/components/accordion";
+import { SectionRule } from "@nocoo/basalt/components/section-rule";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@nocoo/basalt/components/table";
+import type { CaptureRoot, WorkspaceResource } from "@otter/core";
+import { Download, FolderGit2, Link2, Terminal, X } from "lucide-react";
+import { useState } from "react";
 import { coverageLabel, fileBytes, materializedFiles, recoveryArchive } from "@/lib/recovery";
 import { formatSize } from "@/lib/utils";
 import { CollectorsTab } from "./collectors-tab";
@@ -62,7 +83,7 @@ export function RecoveryDownload({
         {busy ? "Verifying files…" : resource ? "Download package" : "Download recovery ZIP"}
       </Button>
       {error && (
-        <p role="alert" className="text-sm text-destructive mt-2">
+        <p role="alert" className="text-sm text-basalt-destructive mt-2">
           {error}
         </p>
       )}
@@ -118,8 +139,18 @@ function ResourceContent({
         if (!open) close();
       }}
     >
-      <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-auto">
-        <DialogHeader>
+      <DialogContent size="xl" className="max-h-[90vh] overflow-auto">
+        <DialogClose asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-3 top-3"
+            aria-label="Close resource viewer"
+          >
+            <X strokeWidth={1.5} aria-hidden="true" />
+          </Button>
+        </DialogClose>
+        <DialogHeader className="pr-8">
           <DialogTitle>{resource.name}</DialogTitle>
           <DialogDescription>
             {resource.path} · {relationshipNames[resource.relationship] ?? resource.relationship}
@@ -127,47 +158,58 @@ function ResourceContent({
         </DialogHeader>
         <div className="flex flex-wrap items-center gap-3">
           <RecoveryDownload data={data} resource={resource} />
-          <span className="text-xs text-muted-foreground">{resource.fileCount} saved files</span>
+          <span className="text-xs text-basalt-muted-foreground">
+            {resource.fileCount} saved files
+          </span>
           {resource.counterpart && (
-            <span className="text-xs text-muted-foreground">Source: {resource.counterpart}</span>
+            <span className="text-xs text-basalt-muted-foreground">
+              Source: {resource.counterpart}
+            </span>
           )}
         </div>
         {issues.length > 0 && (
-          <section
-            className="rounded-lg border border-border p-3 text-sm"
-            aria-label="Resource coverage"
-          >
-            {issues.map((issue) => (
-              <p key={`${issue.path}:${issue.status}`}>
-                <strong>{issue.status}</strong> · {issue.reason}
-                <code className="block text-xs text-muted-foreground break-all">{issue.path}</code>
-              </p>
-            ))}
-          </section>
+          <LayerCard role="region" className="text-sm" aria-label="Resource coverage">
+            <LayerCard.Header>Resource coverage</LayerCard.Header>
+            <LayerCard.Body className="space-y-2">
+              {issues.map((issue) => (
+                <p key={`${issue.path}:${issue.status}`}>
+                  <strong>{issue.status}</strong> · {issue.reason}
+                  <code className="block text-xs text-basalt-muted-foreground break-all">
+                    {issue.path}
+                  </code>
+                </p>
+              ))}
+            </LayerCard.Body>
+          </LayerCard>
         )}
         <div className="grid gap-4 md:grid-cols-[240px_1fr]">
-          <section
-            className="rounded-lg bg-secondary p-2 overflow-auto max-h-[52vh]"
+          <LayerCard
+            role="region"
+            className="overflow-auto max-h-[52vh]"
             aria-label="Package files"
           >
-            {files
-              .filter((f) => f.kind !== "directory")
-              .map((f) => (
-                <button
-                  type="button"
-                  key={f.path}
-                  onClick={() => setSelected(f.path)}
-                  className={`block text-left text-xs font-mono w-full p-2 rounded break-all ${file?.path === f.path ? "bg-background text-primary" : "hover:bg-background/70"}`}
-                >
-                  {f.relativePath ?? f.path}
-                </button>
-              ))}
-          </section>
-          <div className="min-w-0">
+            <LayerCard.Header>Package files</LayerCard.Header>
+            <LayerCard.Body className="space-y-1 p-2">
+              {files
+                .filter((f) => f.kind !== "directory")
+                .map((f) => (
+                  <Button
+                    variant={file?.path === f.path ? "secondary" : "ghost"}
+                    aria-pressed={file?.path === f.path}
+                    key={f.path}
+                    onClick={() => setSelected(f.path)}
+                    className="h-auto w-full justify-start whitespace-normal break-all p-2 text-left text-xs font-mono"
+                  >
+                    {f.relativePath ?? f.path}
+                  </Button>
+                ))}
+            </LayerCard.Body>
+          </LayerCard>
+          <LayerCard className="min-w-0">
             {file ? (
               <>
-                <div className="flex flex-wrap gap-2 items-center justify-between mb-3">
-                  <span className="text-xs text-muted-foreground">
+                <LayerCard.Header className="flex-wrap items-center">
+                  <span className="text-xs text-basalt-muted-foreground">
                     {formatSize(file.sizeBytes)} · mode {file.mode?.toString(8) ?? "unknown"}
                     {file.redacted && " · credentials redacted"}
                   </span>
@@ -180,33 +222,42 @@ function ResourceContent({
                   >
                     Download file
                   </Button>
-                </div>
-                {file.links?.length ? (
-                  <details className="text-xs text-muted-foreground mb-3">
-                    <summary>Link chain at capture time</summary>
-                    <pre className="overflow-auto p-2">
-                      {file.links.map((l) => `${l.path} → ${l.target}`).join("\n")}
-                    </pre>
-                  </details>
-                ) : null}
-                {file.encoding === "base64" ? (
-                  <p className="p-6 bg-secondary rounded-lg text-sm">
-                    Binary asset preserved. Download to view it.
-                  </p>
-                ) : (
-                  <pre className="whitespace-pre-wrap break-words overflow-auto max-h-[45vh] bg-secondary p-4 rounded-lg text-xs font-mono">
-                    {file.content.slice(0, 512000)}
-                    {file.content.length > 512000 &&
-                      "\n…Preview truncated. Download the complete file."}
-                  </pre>
-                )}
+                </LayerCard.Header>
+                <LayerCard.Body>
+                  {file.links?.length ? (
+                    <Accordion type="single" collapsible className="mb-3">
+                      <AccordionItem value="links">
+                        <AccordionTrigger>Link chain at capture time</AccordionTrigger>
+                        <AccordionContent>
+                          <pre className="overflow-auto p-2">
+                            {file.links.map((l) => `${l.path} → ${l.target}`).join("\n")}
+                          </pre>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  ) : null}
+                  {file.encoding === "base64" ? (
+                    <LayerCard.Well className="rounded-basalt-lg text-sm">
+                      Binary asset preserved. Download to view it.
+                    </LayerCard.Well>
+                  ) : (
+                    <LayerCard.Well className="rounded-basalt-lg">
+                      <pre className="whitespace-pre-wrap break-words overflow-auto max-h-[45vh] text-xs font-mono">
+                        {file.content.slice(0, 512000)}
+                        {file.content.length > 512000 &&
+                          "\n…Preview truncated. Download the complete file."}
+                      </pre>
+                    </LayerCard.Well>
+                  )}
+                </LayerCard.Body>
               </>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                No readable file content. Inspect the coverage report.
-              </p>
+              <LayerCard.Empty
+                title="No readable file content."
+                description="Inspect the coverage report."
+              />
             )}
-          </div>
+          </LayerCard>
         </div>
       </DialogContent>
     </Dialog>
@@ -216,14 +267,16 @@ function ResourceContent({
 function SourceGitState({ root }: { root: CaptureRoot }) {
   const git = root.git;
   if (!git?.repository)
-    return <p className="text-sm text-muted-foreground">{git?.error ?? "Folder without Git"}</p>;
+    return (
+      <p className="text-sm text-basalt-muted-foreground">{git?.error ?? "Folder without Git"}</p>
+    );
   return (
     <div className="space-y-2 text-sm">
       <p>
         {git.detached ? "Detached HEAD" : git.unborn ? "No initial commit" : git.branch} ·{" "}
         {git.commit?.slice(0, 10)}
       </p>
-      <p className="text-muted-foreground">
+      <p className="text-basalt-muted-foreground">
         {git.staged} staged · {git.unstaged} unstaged · {git.untracked} untracked · {git.conflicts}{" "}
         conflicts
       </p>
@@ -232,13 +285,13 @@ function SourceGitState({ root }: { root: CaptureRoot }) {
           ? `${git.upstream} · ${git.ahead} ahead / ${git.behind} behind`
           : "No upstream configured"}
       </p>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-basalt-muted-foreground">
         {git.remoteCheckedAt
           ? `Remote checked ${git.remoteCheckedAt}`
           : "Remote not checked; tracking refs may be stale"}
       </p>
       {(git.fetchError || git.error) && (
-        <p className="text-destructive">{git.fetchError || git.error}</p>
+        <p className="text-basalt-destructive">{git.fetchError || git.error}</p>
       )}
     </div>
   );
@@ -260,19 +313,23 @@ export function WorkspaceSnapshot({ data }: { data: SnapshotData }) {
   );
   return (
     <div className="space-y-5">
-      <div className="rounded-xl border border-border bg-secondary p-5 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="font-medium">{coverageLabel(w.coverage.complete)}</p>
-          <p className="text-sm text-muted-foreground mt-1">
+      <LayerCard>
+        <LayerCard.Header className="flex-wrap items-center">
+          <h2 className="font-medium text-basalt-foreground">
+            {coverageLabel(w.coverage.complete)}
+          </h2>
+          <RecoveryDownload data={data} />
+        </LayerCard.Header>
+        <LayerCard.Body>
+          <p className="text-sm text-basalt-muted-foreground mt-1">
             {w.coverage.files} files · {formatSize(w.coverage.bytes)} · {w.coverage.issues.length}{" "}
             coverage notes
           </p>
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-xs text-basalt-muted-foreground mt-2">
             Observed {w.observedAt}. Git and link states describe this capture.
           </p>
-        </div>
-        <RecoveryDownload data={data} />
-      </div>
+        </LayerCard.Body>
+      </LayerCard>
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex flex-wrap h-auto gap-1">
           <TabsTrigger value="sources">Sources</TabsTrigger>
@@ -282,195 +339,228 @@ export function WorkspaceSnapshot({ data }: { data: SnapshotData }) {
           <TabsTrigger value="coverage">Coverage report</TabsTrigger>
         </TabsList>
         <TabsContent value="sources">
-          <div className="grid gap-4 lg:grid-cols-2">
-            {w.roots
-              .filter((r) => r.role === "source")
-              .map((root) => (
-                <article key={root.id} className="p-5 rounded-xl bg-secondary space-y-3">
-                  <h2 className="font-medium flex items-center gap-2">
-                    <FolderGit2 size={18} />
-                    {root.label}
-                  </h2>
-                  <p className="text-xs text-muted-foreground break-all">{root.path}</p>
-                  <p className="text-sm">
-                    {root.status === "complete" ? "Captured within policy" : "Partial coverage"} ·{" "}
-                    {w.resources.filter((r) => r.sourceId === root.id).length} resources
-                  </p>
-                  <SourceGitState root={root} />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setRootId(root.id);
-                      setAgentId("");
-                      setTab("resources");
-                    }}
-                  >
-                    Browse source and consumers
-                  </Button>
-                </article>
-              ))}
-            {!w.roots.some((r) => r.role === "source") && (
-              <p className="p-5 text-sm text-muted-foreground">
-                No registered sources. Independent Agent configurations remain included below.
-              </p>
-            )}
-          </div>
+          <SectionRule title="Sources">
+            <div className="grid gap-4 lg:grid-cols-2">
+              {w.roots
+                .filter((r) => r.role === "source")
+                .map((root) => (
+                  <article key={root.id}>
+                    <LayerCard>
+                      <LayerCard.Header>
+                        <h2 className="font-medium flex items-center gap-2 text-basalt-foreground">
+                          <FolderGit2 size={18} />
+                          {root.label}
+                        </h2>
+                      </LayerCard.Header>
+                      <LayerCard.Body className="space-y-3">
+                        <p className="text-xs text-basalt-muted-foreground break-all">
+                          {root.path}
+                        </p>
+                        <p className="text-sm">
+                          {root.status === "complete"
+                            ? "Captured within policy"
+                            : "Partial coverage"}{" "}
+                          · {w.resources.filter((r) => r.sourceId === root.id).length} resources
+                        </p>
+                        <LayerCard.Well className="rounded-basalt-lg p-3">
+                          <SourceGitState root={root} />
+                        </LayerCard.Well>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setRootId(root.id);
+                            setAgentId("");
+                            setTab("resources");
+                          }}
+                        >
+                          Browse source and consumers
+                        </Button>
+                      </LayerCard.Body>
+                    </LayerCard>
+                  </article>
+                ))}
+              {!w.roots.some((r) => r.role === "source") && (
+                <p className="p-5 text-sm text-basalt-muted-foreground">
+                  No registered sources. Independent Agent configurations remain included below.
+                </p>
+              )}
+            </div>
+          </SectionRule>
         </TabsContent>
         <TabsContent value="agents">
-          <div className="grid gap-4 lg:grid-cols-3">
-            {w.agents.map((agent) => (
-              <article key={agent.id} className="rounded-xl bg-secondary p-5 space-y-3">
-                <h2 className="flex items-center gap-2 font-medium">
-                  <Terminal size={18} />
-                  {agent.kind} <span className="text-primary">{agent.profile}</span>
-                </h2>
-                <p className="text-xs text-muted-foreground break-all">{agent.configPath}</p>
-                <p className="text-sm">{agent.version ?? "Version not recorded"}</p>
-                <div className="flex flex-wrap gap-2 text-xs">
-                  {["instruction", "skill", "command", "rule", "hook", "configuration"].map(
-                    (kind) => (
-                      <span key={kind} className="rounded bg-background px-2 py-1">
-                        {
-                          w.resources.filter(
-                            (r) => r.agentIds.includes(agent.id) && r.kind === kind,
-                          ).length
-                        }{" "}
-                        {kind}
-                      </span>
-                    ),
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Disk entries observed; existing session loading is unverified.
-                </p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setAgentId(agent.id);
-                    setRootId("");
-                    setTab("resources");
-                  }}
-                >
-                  Browse profile
-                </Button>
-              </article>
-            ))}
-          </div>
+          <SectionRule title="Agents & profiles">
+            <div className="grid gap-4 lg:grid-cols-3">
+              {w.agents.map((agent) => (
+                <article key={agent.id}>
+                  <LayerCard>
+                    <LayerCard.Header>
+                      <h2 className="flex items-center gap-2 font-medium text-basalt-foreground">
+                        <Terminal size={18} />
+                        {agent.kind} <span className="text-basalt-primary">{agent.profile}</span>
+                      </h2>
+                    </LayerCard.Header>
+                    <LayerCard.Body className="space-y-3">
+                      <p className="text-xs text-basalt-muted-foreground break-all">
+                        {agent.configPath}
+                      </p>
+                      <p className="text-sm">{agent.version ?? "Version not recorded"}</p>
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        {["instruction", "skill", "command", "rule", "hook", "configuration"].map(
+                          (kind) => (
+                            <Badge key={kind} variant="secondary">
+                              {
+                                w.resources.filter(
+                                  (r) => r.agentIds.includes(agent.id) && r.kind === kind,
+                                ).length
+                              }{" "}
+                              {kind}
+                            </Badge>
+                          ),
+                        )}
+                      </div>
+                      <p className="text-xs text-basalt-muted-foreground">
+                        Disk entries observed; existing session loading is unverified.
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setAgentId(agent.id);
+                          setRootId("");
+                          setTab("resources");
+                        }}
+                      >
+                        Browse profile
+                      </Button>
+                    </LayerCard.Body>
+                  </LayerCard>
+                </article>
+              ))}
+            </div>
+          </SectionRule>
         </TabsContent>
         <TabsContent value="resources">
-          <div className="space-y-4">
-            <div className="flex flex-wrap gap-3">
-              <Input
-                placeholder="Search paths, instructions, skills, rules…"
-                aria-label="Search resources"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="max-w-lg"
-              />
-              {(rootId || agentId) && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setRootId("");
-                    setAgentId("");
-                  }}
-                >
-                  Clear scope filter
-                </Button>
-              )}
-              <span className="text-sm text-muted-foreground self-center">
-                {resources.length} resources
-              </span>
-            </div>
-            <div className="rounded-xl bg-secondary overflow-auto">
-              <table className="w-full text-sm" aria-label="Configuration resources">
-                <thead>
-                  <tr className="text-left border-b border-border">
-                    {["Resource", "Kind", "Profiles", "Relationship", "Saved files"].map((t) => (
-                      <th className="p-3 font-medium text-muted-foreground text-xs" key={t}>
-                        {t}
-                      </th>
+          <SectionRule title="Files & resources">
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-3">
+                <Input
+                  placeholder="Search paths, instructions, skills, rules…"
+                  aria-label="Search resources"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="max-w-lg"
+                />
+                {(rootId || agentId) && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setRootId("");
+                      setAgentId("");
+                    }}
+                  >
+                    Clear scope filter
+                  </Button>
+                )}
+                <span className="text-sm text-basalt-muted-foreground self-center">
+                  {resources.length} resources
+                </span>
+              </div>
+              <LayerCard padding="none">
+                <Table aria-label="Configuration resources">
+                  <TableHeader>
+                    <TableRow>
+                      {["Resource", "Kind", "Profiles", "Relationship", "Saved files"].map((t) => (
+                        <TableHead key={t}>{t}</TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {resources.map((r) => (
+                      <TableRow key={r.id}>
+                        <TableCell>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="h-auto p-0 text-left"
+                            onClick={() => setResource(r)}
+                          >
+                            {r.name}
+                          </Button>
+                          <p
+                            className="text-xs text-basalt-muted-foreground mt-1 max-w-md truncate"
+                            title={r.path}
+                          >
+                            {r.path}
+                          </p>
+                        </TableCell>
+                        <TableCell>{r.kind}</TableCell>
+                        <TableCell className="text-xs">
+                          {r.discovery?.length
+                            ? r.discovery.map((d) => (
+                                <p key={d.agentId} title={d.reason}>
+                                  {d.agentId}
+                                  {d.state === "disabled"
+                                    ? " · disabled"
+                                    : d.state === "unsupported"
+                                      ? " · legacy / unverified"
+                                      : d.state === "project-only"
+                                        ? " · project"
+                                        : ""}
+                                </p>
+                              ))
+                            : r.agentIds.join(", ") || "Source only"}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <span className="inline-flex items-center gap-1">
+                            <Link2 size={12} />
+                            {relationshipNames[r.relationship] ?? r.relationship}
+                          </span>
+                        </TableCell>
+                        <TableCell className="tabular-nums">{r.fileCount}</TableCell>
+                      </TableRow>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {resources.map((r) => (
-                    <tr key={r.id} className="border-b border-border/50">
-                      <td className="p-3">
-                        <button
-                          type="button"
-                          className="text-primary font-medium text-left hover:underline"
-                          onClick={() => setResource(r)}
-                        >
-                          {r.name}
-                        </button>
-                        <p
-                          className="text-xs text-muted-foreground mt-1 max-w-md truncate"
-                          title={r.path}
-                        >
-                          {r.path}
-                        </p>
-                      </td>
-                      <td className="p-3">{r.kind}</td>
-                      <td className="p-3 text-xs">
-                        {r.discovery?.length
-                          ? r.discovery.map((d) => (
-                              <p key={d.agentId} title={d.reason}>
-                                {d.agentId}
-                                {d.state === "disabled"
-                                  ? " · disabled"
-                                  : d.state === "unsupported"
-                                    ? " · legacy / unverified"
-                                    : d.state === "project-only"
-                                      ? " · project"
-                                      : ""}
-                              </p>
-                            ))
-                          : r.agentIds.join(", ") || "Source only"}
-                      </td>
-                      <td className="p-3 text-xs">
-                        <span className="inline-flex items-center gap-1">
-                          <Link2 size={12} />
-                          {relationshipNames[r.relationship] ?? r.relationship}
-                        </span>
-                      </td>
-                      <td className="p-3">{r.fileCount}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </TableBody>
+                </Table>
+              </LayerCard>
             </div>
-          </div>
+          </SectionRule>
         </TabsContent>
         <TabsContent value="environment">
           <CollectorsTab collectors={data.collectors} category="environment" />
         </TabsContent>
         <TabsContent value="coverage">
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Policy {w.coverage.policy.version}: {formatSize(w.coverage.policy.maxFileBytes)} per
-              file, {formatSize(w.coverage.policy.maxTotalBytes)} of unique source and Agent
-              content, {w.coverage.policy.maxEntries.toLocaleString()} entries. Redactions,
-              exclusions and failures are separate outcomes.
-            </p>
-            {!w.coverage.issues.length && <p>No omissions were reported within this policy.</p>}
-            <ul className="space-y-2">
-              {w.coverage.issues.map((issue) => (
-                <li
-                  key={`${issue.rootId}:${issue.path}:${issue.status}:${issue.reason}`}
-                  className="rounded-lg bg-secondary p-3 text-sm"
-                >
-                  <span className="font-medium">{issue.status}</span>
-                  <p className="mt-1">{issue.reason}</p>
-                  <code className="block text-xs mt-1 text-muted-foreground break-all">
-                    {issue.path}
-                  </code>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <SectionRule title="Coverage report">
+            <div className="space-y-4">
+              <p className="text-sm text-basalt-muted-foreground">
+                Policy {w.coverage.policy.version}: {formatSize(w.coverage.policy.maxFileBytes)} per
+                file, {formatSize(w.coverage.policy.maxTotalBytes)} of unique source and Agent
+                content, {w.coverage.policy.maxEntries.toLocaleString()} entries. Redactions,
+                exclusions and failures are separate outcomes.
+              </p>
+              {!w.coverage.issues.length && <p>No omissions were reported within this policy.</p>}
+              <ul className="space-y-2">
+                {w.coverage.issues.map((issue) => (
+                  <li
+                    key={`${issue.rootId}:${issue.path}:${issue.status}:${issue.reason}`}
+                    className="text-sm"
+                  >
+                    <LayerCard>
+                      <LayerCard.Header>
+                        <span className="font-medium">{issue.status}</span>
+                      </LayerCard.Header>
+                      <LayerCard.Body>
+                        <p className="mt-1">{issue.reason}</p>
+                        <code className="block text-xs mt-1 text-basalt-muted-foreground break-all">
+                          {issue.path}
+                        </code>
+                      </LayerCard.Body>
+                    </LayerCard>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </SectionRule>
         </TabsContent>
       </Tabs>
       {resource && (

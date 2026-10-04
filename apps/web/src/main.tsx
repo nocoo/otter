@@ -1,4 +1,4 @@
-import { ThemeProvider } from "@nocoo/basalt";
+import { ThemeProvider, Toaster, TooltipProvider } from "@nocoo/basalt";
 import { AccentProvider } from "@nocoo/basalt/providers/accent";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -15,7 +15,10 @@ initializeEnvironment()
       <StrictMode>
         <ThemeProvider>
           <AccentProvider defaultAccent="teal" persist={false}>
-            <App />
+            <TooltipProvider>
+              <App />
+              <Toaster />
+            </TooltipProvider>
           </AccentProvider>
         </ThemeProvider>
       </StrictMode>,

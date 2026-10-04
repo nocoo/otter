@@ -1,21 +1,22 @@
+import { Button, LayerCard } from "@nocoo/basalt";
+import { PageHeader } from "@nocoo/basalt/components/page-header";
 import { Link } from "react-router";
 
 export function NotFoundPage() {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6">
-      <img src="/logo-80.png" alt="Otter" width={80} height={80} className="opacity-40" />
-      <div className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-foreground">404</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          This page doesn&apos;t exist or has been moved.
-        </p>
-      </div>
-      <Link
-        to="/"
-        className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-      >
-        Back to Dashboard
-      </Link>
+    <div className="mx-auto max-w-lg space-y-6">
+      <PageHeader title="404" description="This page doesn't exist or has been moved." />
+      <LayerCard>
+        <LayerCard.Empty
+          icon={<img src="/logo-80.png" alt="Otter" width={80} height={80} />}
+          title="Page not found"
+          action={
+            <Button asChild>
+              <Link to="/">Back to Dashboard</Link>
+            </Button>
+          }
+        />
+      </LayerCard>
     </div>
   );
 }

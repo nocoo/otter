@@ -11,23 +11,47 @@ const mockWebhooks = [
     id: "wh-1",
     token: "tok-aaaabbbb",
     label: "dev-macbook",
-    isActive: true,
-    createdAt: now - 86_400_000, // 1 day ago
-    lastUsedAt: now - 3_600_000, // 1 hour ago
+    is_active: 1,
+    created_at: now - 86_400_000,
+    last_used_at: now - 3_600_000,
   },
   {
     id: "wh-2",
     token: "tok-ccccdddd",
     label: "ci-pipeline",
-    isActive: false,
-    createdAt: now - 172_800_000, // 2 days ago
-    lastUsedAt: null,
+    is_active: 0,
+    created_at: now - 172_800_000,
+    last_used_at: null,
   },
 ];
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
+
+test("real local webhook CRUD preserves active state and timestamps", async ({ page, request }) => {
+  const label = `basalt-real-${Date.now()}`;
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "New Token" }).click();
+  await page.getByLabel("Label", { exact: true }).fill(label);
+  await page.getByRole("dialog").getByRole("button", { name: "Create", exact: true }).click();
+  await expect(page.getByText(label, { exact: true })).toBeVisible();
+  const toggle = page.getByRole("switch", { name: `Toggle ${label}` });
+  await expect(toggle).toBeChecked();
+  await expect(page.getByText("Invalid Date", { exact: false })).toHaveCount(0);
+  const response = await request.get("/api/webhooks");
+  const body = (await response.json()) as {
+    webhooks: Array<{ id: string; label: string; is_active: number; created_at: number }>;
+  };
+  const row = body.webhooks.find((item) => item.label === label);
+  expect(row).toBeDefined();
+  expect(row?.is_active).toBe(1);
+  expect(row?.created_at).toBeGreaterThan(0);
+  await toggle.click();
+  await expect(toggle).not.toBeChecked();
+  await page.getByRole("button", { name: `Delete ${label}` }).click();
+  await expect(page.getByText(label, { exact: true })).toHaveCount(0);
+});
 
 test.describe("Settings", () => {
   test("renders account section with fallback user in E2E mode", async ({ page }) => {
@@ -42,7 +66,11 @@ test.describe("Settings", () => {
     await page.goto("/settings");
 
     // Header
-    await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+    await expect(
+      page
+        .locator("[data-basalt-surface-root]")
+        .getByRole("heading", { name: "Settings", exact: true }),
+    ).toBeVisible();
     await expect(page.getByText("Manage your account and webhook tokens")).toBeVisible();
 
     // Account section — localhost stamps dev@localhost into the session.
@@ -96,9 +124,9 @@ test.describe("Settings", () => {
           id: "wh-new",
           token: "tok-new-12345",
           label: body.label,
-          isActive: true,
-          createdAt: Date.now(),
-          lastUsedAt: null,
+          is_active: 1,
+          created_at: Date.now(),
+          last_used_at: null,
         };
         webhooks = [created];
         await route.fulfill({
@@ -147,7 +175,7 @@ test.describe("Settings", () => {
       const req = route.request();
       if (req.method() === "PATCH") {
         const body = req.postDataJSON();
-        row = { ...row, isActive: body.isActive };
+        row = { ...row, is_active: body.isActive ? 1 : 0 };
         await route.fulfill({
           status: 200,
           contentType: "application/json",

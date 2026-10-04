@@ -99,19 +99,19 @@ describe("snapshot helpers", () => {
 
   describe("badgeClassName", () => {
     it("returns success classes for pinned", () => {
-      expect(badgeClassName("pinned")).toContain("text-success");
+      expect(badgeClassName("pinned")).toContain("text-basalt-heatmap-green-4");
     });
 
     it("returns success classes for default", () => {
-      expect(badgeClassName("default")).toContain("text-success");
+      expect(badgeClassName("default")).toContain("text-basalt-heatmap-green-4");
     });
 
     it("returns success classes for current", () => {
-      expect(badgeClassName("current")).toContain("text-success");
+      expect(badgeClassName("current")).toContain("text-basalt-heatmap-green-4");
     });
 
     it("returns info classes for type", () => {
-      expect(badgeClassName("type")).toContain("text-info");
+      expect(badgeClassName("type")).toContain("text-basalt-info");
     });
 
     it("returns empty string for unknown keys", () => {

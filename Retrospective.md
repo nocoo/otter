@@ -1,5 +1,21 @@
 # Retrospective
 
+## 2026-10-04: Verify Basalt APIs and actual response shapes
+
+The full migration initially assumed that Basalt's Dialog max-width enlarged its
+fixed default width, that Dialog added a close button, and that SidebarItem could
+replace links without losing browser navigation. Independent review found those
+regressions. Read declarations and runtime source: use Dialog size, explicit
+DialogClose controls and Button-asChild Router Links. Never invent token names;
+Basalt has heatmap green tokens, not `--basalt-success`.
+
+Real-storage screenshots exposed pre-existing Settings mock drift: production
+webhook responses use snake_case, while UI fixtures used camelCase. A frontend
+mapping now preserves timestamps and activation state; a real local browser CRUD
+regression replaces that false confidence. Check real JSON before rebuilding views.
+The public avatar API has no CORS header, so lookup belongs in the authenticated
+same-origin Worker and uses only the verified email hash; no browser endpoint proxy.
+
 ## 2026-10-04: New environment controls must use Basalt
 
 The first environment control reused Otter's copied Radix Tabs and browser-native

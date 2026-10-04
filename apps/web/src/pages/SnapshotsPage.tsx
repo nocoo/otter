@@ -1,9 +1,18 @@
+import { Button, Checkbox, Input, LayerCard } from "@nocoo/basalt";
+import { PageHeader } from "@nocoo/basalt/components/page-header";
+import { SectionRule } from "@nocoo/basalt/components/section-rule";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@nocoo/basalt/components/table";
 import { Archive, GitCompareArrows } from "lucide-react";
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useApi } from "@/api";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { coverageLabel, type RecoveryMeta } from "@/lib/recovery";
 import { formatDateTime, formatSize } from "@/lib/utils";
 
@@ -29,131 +38,143 @@ export function SnapshotsPage() {
   }>(`/api/snapshots?${query}`);
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Snapshots</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Capture time, coverage and cloud receipt are recorded separately.
-          </p>
-        </div>
-        <Input
-          aria-label="Search snapshots"
-          placeholder="Search machines or resource names…"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setCursors([""]);
-          }}
-          className="max-w-sm"
-        />
-      </div>
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-sm text-muted-foreground">
-          {data?.total ?? 0} records{device && " · selected machine"}
-        </span>
-        {selected.length === 2 ? (
-          <Link
-            className="inline-flex items-center gap-2 text-sm text-primary"
-            to={`/compare?before=${chronological[0]?.id}&after=${chronological[1]?.id}`}
-          >
-            <GitCompareArrows size={16} />
-            Compare selected
-          </Link>
+      <PageHeader
+        title="Snapshots"
+        description="Capture time, coverage and cloud receipt are recorded separately."
+        actions={
+          <Input
+            aria-label="Search snapshots"
+            placeholder="Search machines or resource names…"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCursors([""]);
+            }}
+            className="w-full max-w-sm"
+          />
+        }
+      />
+      <SectionRule
+        title={`${data?.total ?? 0} records${device ? " · selected machine" : ""}`}
+        actions={
+          selected.length === 2 ? (
+            <Button asChild variant="outline" size="sm">
+              <Link to={`/compare?before=${chronological[0]?.id}&after=${chronological[1]?.id}`}>
+                <GitCompareArrows aria-hidden="true" />
+                Compare selected
+              </Link>
+            </Button>
+          ) : (
+            <span className="text-xs text-basalt-muted-foreground">
+              Select two snapshots to compare
+            </span>
+          )
+        }
+      >
+        {isLoading ? (
+          <LayerCard.Loading label="Loading snapshots…" />
+        ) : error ? (
+          <LayerCard role="alert">
+            <LayerCard.Empty
+              title="Failed to load snapshots"
+              action={
+                <Button variant="outline" onClick={() => void mutate()}>
+                  Retry
+                </Button>
+              }
+            />
+          </LayerCard>
+        ) : !data?.snapshots.length ? (
+          <LayerCard>
+            <LayerCard.Empty
+              icon={<Archive strokeWidth={1.5} />}
+              title="No snapshots yet"
+              description="Run otter backup to save your configuration and environment."
+            />
+          </LayerCard>
         ) : (
-          <span className="text-xs text-muted-foreground">Select two snapshots to compare</span>
-        )}
-      </div>
-      {isLoading ? (
-        <p role="status">Loading snapshots…</p>
-      ) : error ? (
-        <div role="alert">
-          <p>Failed to load snapshots</p>
-          <Button variant="outline" onClick={() => void mutate()}>
-            Retry
-          </Button>
-        </div>
-      ) : !data?.snapshots.length ? (
-        <div className="p-12 text-center rounded-xl bg-secondary">
-          <Archive className="mx-auto mb-3" />
-          <p>No snapshots yet</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Run otter backup to save your configuration and environment.
-          </p>
-        </div>
-      ) : (
-        <div className="rounded-xl bg-secondary p-1 overflow-x-auto">
-          <table className="w-full text-sm" aria-label="Snapshots list">
-            <thead>
-              <tr className="text-left text-xs text-muted-foreground border-b border-border">
-                {[
-                  "Compare",
-                  "Machine / snapshot",
-                  "Captured",
-                  "Coverage",
-                  "Files / items",
-                  "Size",
-                  "Received",
-                ].map((h) => (
-                  <th className="p-3 font-medium" key={h}>
-                    {h}
-                  </th>
+          <LayerCard padding="none">
+            <Table aria-label="Snapshots list">
+              <TableHeader>
+                <TableRow>
+                  {[
+                    "Compare",
+                    "Machine / snapshot",
+                    "Captured",
+                    "Coverage",
+                    "Files / items",
+                    "Size",
+                    "Received",
+                  ].map((title) => (
+                    <TableHead key={title}>{title}</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.snapshots.map((snapshot) => (
+                  <TableRow
+                    key={snapshot.id}
+                    variant={selected.some((s) => s.id === snapshot.id) ? "selected" : "default"}
+                  >
+                    <TableCell>
+                      <Checkbox
+                        aria-label={`Compare ${snapshot.id}`}
+                        checked={selected.some((s) => s.id === snapshot.id)}
+                        disabled={
+                          selected.length === 2 && !selected.some((s) => s.id === snapshot.id)
+                        }
+                        onCheckedChange={(checked) =>
+                          setSelected((previous) =>
+                            checked === true
+                              ? [...previous, { id: snapshot.id, capturedAt: snapshot.snapshotAt }]
+                              : previous.filter((s) => s.id !== snapshot.id),
+                          )
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Button asChild variant="link" size="sm" className="px-0">
+                        <Link to={`/snapshots/${snapshot.id}`}>{snapshot.hostname}</Link>
+                      </Button>
+                      <p className="text-xs text-basalt-muted-foreground">
+                        {snapshot.id.slice(0, 8)} · {snapshot.platform}/{snapshot.arch}
+                      </p>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap tabular-nums">
+                      {formatDateTime(snapshot.snapshotAt)}
+                    </TableCell>
+                    <TableCell>{coverageLabel(snapshot.complete)}</TableCell>
+                    <TableCell className="tabular-nums">
+                      {snapshot.fileCount} / {snapshot.listCount}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap tabular-nums">
+                      {formatSize(snapshot.sizeBytes)}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs text-basalt-muted-foreground tabular-nums">
+                      {formatDateTime(snapshot.uploadedAt)}
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.snapshots.map((snapshot) => (
-                <tr className="border-b border-border/50 last:border-0" key={snapshot.id}>
-                  <td className="p-3">
-                    <input
-                      type="checkbox"
-                      aria-label={`Compare ${snapshot.id}`}
-                      checked={selected.some((s) => s.id === snapshot.id)}
-                      disabled={
-                        selected.length === 2 && !selected.some((s) => s.id === snapshot.id)
-                      }
-                      onChange={(e) =>
-                        setSelected((previous) =>
-                          e.target.checked
-                            ? [...previous, { id: snapshot.id, capturedAt: snapshot.snapshotAt }]
-                            : previous.filter((s) => s.id !== snapshot.id),
-                        )
-                      }
-                    />
-                  </td>
-                  <td className="p-3">
-                    <Link to={`/snapshots/${snapshot.id}`} className="font-medium text-primary">
-                      {snapshot.hostname}
-                    </Link>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {snapshot.id.slice(0, 8)} · {snapshot.platform}/{snapshot.arch}
-                    </div>
-                  </td>
-                  <td className="p-3 whitespace-nowrap">{formatDateTime(snapshot.snapshotAt)}</td>
-                  <td className="p-3">{coverageLabel(snapshot.complete)}</td>
-                  <td className="p-3 tabular-nums">
-                    {snapshot.fileCount} / {snapshot.listCount}
-                  </td>
-                  <td className="p-3 whitespace-nowrap">{formatSize(snapshot.sizeBytes)}</td>
-                  <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">
-                    {formatDateTime(snapshot.uploadedAt)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      <div className="flex justify-between">
+              </TableBody>
+            </Table>
+          </LayerCard>
+        )}
+      </SectionRule>
+      <div className="flex items-center justify-between gap-3">
         <Button
           variant="outline"
+          size="sm"
           disabled={cursors.length === 1}
           onClick={() => setCursors(cursors.slice(0, -1))}
         >
           Previous
         </Button>
-        <span className="text-sm text-muted-foreground">Page {cursors.length}</span>
+        <span className="text-xs text-basalt-muted-foreground tabular-nums">
+          Page {cursors.length}
+        </span>
         <Button
           variant="outline"
+          size="sm"
           disabled={!data?.nextCursor}
           onClick={() => {
             if (data?.nextCursor) setCursors([...cursors, data.nextCursor]);

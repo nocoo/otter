@@ -1,5 +1,7 @@
+import { LinkProvider } from "@nocoo/basalt";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { AppShell } from "./AppShell";
+import { RouterLink } from "./components/layout/router-link";
 import { CliConnectPage } from "./pages/CliConnectPage";
 import { ComparePage } from "./pages/ComparePage";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -12,18 +14,20 @@ import { SnapshotsPage } from "./pages/SnapshotsPage";
 export function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route element={<AppShell />}>
-          <Route index element={<DashboardPage />} />
-          <Route path="devices/:deviceId" element={<DevicePage />} />
-          <Route path="compare" element={<ComparePage />} />
-          <Route path="snapshots" element={<SnapshotsPage />} />
-          <Route path="snapshots/:id" element={<SnapshotDetailPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="cli/connect" element={<CliConnectPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Route>
-      </Routes>
+      <LinkProvider render={RouterLink}>
+        <Routes>
+          <Route element={<AppShell />}>
+            <Route index element={<DashboardPage />} />
+            <Route path="devices/:deviceId" element={<DevicePage />} />
+            <Route path="compare" element={<ComparePage />} />
+            <Route path="snapshots" element={<SnapshotsPage />} />
+            <Route path="snapshots/:id" element={<SnapshotDetailPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="cli/connect" element={<CliConnectPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+        </Routes>
+      </LinkProvider>
     </BrowserRouter>
   );
 }

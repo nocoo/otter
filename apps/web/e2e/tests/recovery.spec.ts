@@ -113,7 +113,7 @@ test("searches historical files and compares versions in capture order, preservi
   await page.getByRole("link", { name: "Compare selected" }).click();
   await expect(page).toHaveURL(new RegExp(`before=${older.id}&after=${newer.id}`));
   await expect(page.getByText("The later scan is incomplete.", { exact: false })).toBeVisible();
-  await page.locator("summary").filter({ hasText: "scripts/run.sh" }).click();
+  await page.getByRole("button", { name: /scripts\/run\.sh/ }).click();
   await expect(page.getByText("echo modified", { exact: false })).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath("configuration-comparison.png"),
