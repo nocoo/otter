@@ -19,7 +19,7 @@
     },
     "apps/api": {
       "name": "@otter/worker",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "dependencies": {
         "@otter/api": "workspace:*",
         "hono": "4.13.12",
@@ -35,7 +35,7 @@
     },
     "apps/cli": {
       "name": "@nocoo/otter",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "bin": {
         "otter": "dist/bin.js",
       },
@@ -52,7 +52,7 @@
     },
     "apps/web": {
       "name": "@otter/web",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "dependencies": {
         "@nocoo/basalt": "2.2.0",
         "@otter/api": "workspace:*",
@@ -82,7 +82,7 @@
     },
     "packages/api": {
       "name": "@otter/api",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "dependencies": {
         "hono": "4.13.12",
         "jose": "^6.2.12",
@@ -96,7 +96,7 @@
     },
     "packages/core": {
       "name": "@otter/core",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "devDependencies": {
         "@types/node": "26.6.2",
       },

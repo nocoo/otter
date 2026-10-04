@@ -1,5 +1,13 @@
 # Retrospective
 
+## 2026-10-04: Validate release manifests before running the lockfile writer
+
+A malformed tool replacement briefly appended JSON fragments to root package.json.
+The generated diff caught it before commit or publication; the version line was
+repaired and every workspace manifest parsed and checked against the release
+version before installation/build. Inspect the exact replacement and validate JSON
+immediately after manifest changes; package-manager exit status alone is not proof.
+
 ## 2026-10-04: Component adoption does not establish spacing or typography
 
 The resource viewer inherited 24px/16px Dialog typography beside 12px file content,

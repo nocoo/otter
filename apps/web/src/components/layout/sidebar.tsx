@@ -108,7 +108,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
           {!collapsed && (
             <>
               <span className="text-lg font-semibold tracking-tight">Otter</span>
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="font-mono text-xs">
                 v{APP_VERSION}
               </Badge>
               <Button

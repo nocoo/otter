@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.1.0] - 2026-10-04
+
+### Features
+- Add local Demo, manual E2E and authenticated Prod environments with persistent synthetic Demo data, fresh isolated E2E state and a local-only environment switch.
+- Add an authenticated public-avatar endpoint backed by lizheng.blog; query the verified account's email hash and retain the initials fallback without changing account identity.
+
+### Changed
+- Rebuild all eight Web routes, navigation groups, cards, tables, charts and viewers with Basalt 2.2.0 and its design tokens; preserve snapshot data, filtering and recovery exports.
+- Use responsive shell geometry, accessible mobile navigation and compact, consistent viewer typography and spacing.
+- Remove copied UI controls, obsolete chart/color systems and unused direct dependencies.
+
+### Fixes
+- Run both browser E2E suites and HTTP/CLI integration tests against locked native-local Workers, never the production Vite proxy; reject inherited production credentials and guard state cleanup by ownership and D1 markers.
+- Replace localhost/mode authentication bypasses with normally verified local fixture Bearer tokens while retaining real production authentication.
+- Map actual webhook API fields correctly so activation state and timestamps match stored data; cover real local browser CRUD.
+- Keep avatar caches account-scoped, preserve link navigation and collapsed logout, and restore explicit viewer sizing, close controls and modal focus.
+- Keep registry mirror URLs out of the release lockfile and use current Vite WebSocket options.
+
+### Upgrade
+- No new D1 migration is required. Local development now defaults to Demo; select Prod explicitly and configure OTTER_DEV_API_TOKEN in apps/web/.env for real data.
+- This GitHub release does not publish the CLI to npm or attach signed/notarized native installers.
+
 ## [3.0.1] - 2026-10-01
 
 ### Changed
