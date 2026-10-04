@@ -11,7 +11,7 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
-    "@nocoo/basalt": "2.1.8",
+    "@nocoo/basalt": "2.2.0",
     "@otter/api": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
