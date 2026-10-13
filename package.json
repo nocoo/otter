@@ -53,7 +53,7 @@
   },
   "overrides": {
     "esbuild": ">=0.28.1",
-    "hono": "4.13.12",
+    "hono": "4.13.13",
     "vite": ">=8.3.0",
     "path-to-regexp": ">=8.4.0",
     "picomatch": ">=4.0.4",
@@ -65,6 +65,6 @@
     "ws": ">=8.21.0"
   },
   "dependencies": {
-    "hono": "4.13.12"
+    "hono": "4.13.13"
   }
 }
