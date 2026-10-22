@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.6.2/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -40,10 +40,10 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "a11y": "error",
       "complexity": {
-        "recommended": true,
+        "preset": "recommended",
         "noExcessiveCognitiveComplexity": "error",
         "noExcessiveLinesPerFunction": "off",
         "noVoid": "off",
@@ -52,7 +52,7 @@
         "noStaticOnlyClass": "error"
       },
       "correctness": {
-        "recommended": true,
+        "preset": "recommended",
         "noNodejsModules": "off",
         "noUnresolvedImports": "off",
         "noUndeclaredDependencies": "off",
@@ -62,7 +62,7 @@
         "useHookAtTopLevel": "error"
       },
       "performance": {
-        "recommended": true,
+        "preset": "recommended",
         "useTopLevelRegex": "error",
         "noAwaitInLoops": "error",
         "noDelete": "error",
@@ -71,11 +71,11 @@
         "noJsxPropsBind": "off"
       },
       "security": {
-        "recommended": true,
+        "preset": "recommended",
         "noGlobalEval": "error"
       },
       "suspicious": {
-        "recommended": true,
+        "preset": "recommended",
         "noConsole": "off",
         "useAwait": "error",
         "noEmptyBlockStatements": "error",
@@ -87,7 +87,7 @@
         "noLeakedRender": "off"
       },
       "style": {
-        "recommended": true,
+        "preset": "recommended",
         "noDefaultExport": "off",
         "noNonNullAssertion": "error",
         "useComponentExportOnlyModules": "error",
