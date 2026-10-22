@@ -1,6 +1,6 @@
 {
   "name": "@otter/worker",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -14,13 +14,13 @@
   "dependencies": {
     "@otter/api": "workspace:*",
     "hono": "4.13.13",
-    "jose": "^6.2.12"
+    "jose": "^6.2.13"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.23.0",
-    "@cloudflare/workers-types": "5.20261012.1",
+    "@cloudflare/workers-types": "5.20261021.1",
     "typescript": "7.0.2",
     "vitest": "4.1.11",
-    "wrangler": "4.149.0"
+    "wrangler": "4.151.3"
   }
 }

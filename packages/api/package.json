@@ -1,6 +1,6 @@
 {
   "name": "@otter/api",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "hono": "4.13.13",
-    "jose": "^6.2.12",
+    "jose": "^6.2.13",
     "zod": "4.6.7"
   },
   "devDependencies": {
