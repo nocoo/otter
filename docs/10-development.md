@@ -79,7 +79,7 @@ CLI 导出与 Web ZIP 会展开保存的链接目标，保留原始路径和链�
 
 ## 安装与构建
 
-Bun 用于工作区安装与脚本；Node.js 范围遵循根 `package.json` 的 `^22.23.3 || ^24.0.0 || >=26.0.0`。构建顺序与 CI 的 HTTP / CLI 集成任务一致：
+Bun 用于工作区安装与脚本；Node.js 范围遵循根 `package.json` 的 `^22.23.4 || ^24.0.0 || >=26.0.0`。构建顺序与 CI 的 HTTP / CLI 集成任务一致：
 
 ```bash
 bun install --frozen-lockfile
