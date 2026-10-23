@@ -20,7 +20,7 @@ export function FileRow({ file }: { file: FileData }) {
 
   return (
     <>
-      <LayerCard.Well className="flex items-center gap-3 rounded-basalt-lg px-3 py-2.5">
+      <LayerCard.Well className="flex items-center gap-3">
         <FileText className="h-3.5 w-3.5 text-basalt-muted-foreground shrink-0" strokeWidth={1.5} />
         <code
           className="text-xs font-mono text-basalt-foreground truncate flex-1"

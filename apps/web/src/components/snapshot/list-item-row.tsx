@@ -16,7 +16,7 @@ export function ListItemRow({ item, iconUrl, isSshKey }: ListItemRowProps) {
   const [iconError, setIconError] = useState(false);
 
   return (
-    <LayerCard.Well className="flex items-center gap-2.5 rounded-basalt-lg px-3 py-2.5">
+    <LayerCard.Well className="flex items-center gap-2.5">
       {isSshKey ? (
         <CircleCheck className="h-4 w-4 text-basalt-heatmap-green-4 shrink-0" strokeWidth={1.5} />
       ) : iconUrl && !iconError ? (

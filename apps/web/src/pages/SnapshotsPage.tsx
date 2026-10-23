@@ -133,7 +133,7 @@ export function SnapshotsPage() {
                       />
                     </TableCell>
                     <TableCell>
-                      <Button asChild variant="link" size="sm" className="px-0">
+                      <Button asChild variant="link" size="sm">
                         <Link to={`/snapshots/${snapshot.id}`}>{snapshot.hostname}</Link>
                       </Button>
                       <p className="text-xs text-basalt-muted-foreground">

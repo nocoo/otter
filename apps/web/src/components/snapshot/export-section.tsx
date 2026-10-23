@@ -30,7 +30,12 @@ export function ExportSection({ data, snapshotId }: ExportSectionProps) {
               Download the full snapshot as JSON
             </span>
           </div>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={handleDownload}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-basalt-space-md"
+            onClick={handleDownload}
+          >
             <Download className="h-3.5 w-3.5" strokeWidth={1.5} />
             Export JSON
           </Button>
