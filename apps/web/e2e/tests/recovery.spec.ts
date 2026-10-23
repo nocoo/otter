@@ -149,7 +149,8 @@ for (const theme of ["light", "dark"] as const) {
       await expect(dialog.getByText("echo recovered", { exact: false })).toBeVisible();
       if (width === 390) {
         await expect(script).toHaveCSS("min-height", "44px");
-        expect(await script.evaluate((node) => node.clientHeight)).toBeGreaterThanOrEqual(44);
+        const scriptBox = await script.boundingBox();
+        expect(scriptBox?.height ?? 0).toBeGreaterThanOrEqual(44);
       }
       expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
       await dialog.getByRole("button", { name: "Close resource viewer" }).click();

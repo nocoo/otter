@@ -19,12 +19,12 @@ test.describe("Navigation", () => {
     });
   });
 
-  test("sidebar links navigate to correct pages", async ({ page }) => {
+  test("sidebar items navigate to correct pages", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveURL(/\/$/);
 
     // Navigate to Snapshots
-    await page.locator("aside").getByRole("link", { name: "Snapshots" }).click();
+    await page.locator("aside").getByRole("button", { name: "Snapshots" }).click();
     await expect(page).toHaveURL(/\/snapshots$/);
     await expect(
       page
@@ -33,7 +33,7 @@ test.describe("Navigation", () => {
     ).toBeVisible();
 
     // Navigate to Settings
-    await page.locator("aside").getByRole("link", { name: "Settings" }).click();
+    await page.locator("aside").getByRole("button", { name: "Settings" }).click();
     await expect(page).toHaveURL(/\/settings$/);
     await expect(
       page
@@ -42,19 +42,19 @@ test.describe("Navigation", () => {
     ).toBeVisible();
 
     // Navigate back to Machines
-    await page.locator("aside").getByRole("link", { name: "Machines" }).click();
+    await page.locator("aside").getByRole("button", { name: "Machines" }).click();
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole("heading", { name: "Your machines" })).toBeVisible();
   });
 
-  test("active sidebar link is highlighted", async ({ page }) => {
+  test("active sidebar item is highlighted", async ({ page }) => {
     await page.goto("/snapshots");
 
-    // The Snapshots link should have the active class (text-foreground, NOT text-muted-foreground)
-    const snapshotsLink = page.locator("aside").getByRole("link", { name: "Snapshots" });
+    // The Snapshots row should be marked as the current page (text-foreground, NOT text-muted-foreground)
+    const snapshotsLink = page.locator("aside").getByRole("button", { name: "Snapshots" });
     await expect(snapshotsLink).toHaveAttribute("aria-current", "page");
 
-    const dashboardLink = page.locator("aside").getByRole("link", { name: "Machines" });
+    const dashboardLink = page.locator("aside").getByRole("button", { name: "Machines" });
     await expect(dashboardLink).not.toHaveAttribute("aria-current", "page");
   });
 

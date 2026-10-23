@@ -1,5 +1,15 @@
 # Retrospective
 
+## 2026-10-24: A narrower browser command is not the CI browser job
+
+The Basalt 3.2.1 upgrade passed the root `test:e2e:bdd` smoke and was pushed, but
+CI's L3 job runs `apps/web` Playwright specs, which still queried sidebar `<a>`
+roles after the navigation moved to Basalt `SidebarItem` buttons, and asserted a
+touch target through `clientHeight`, which excludes the 1px border that 3.x adds
+to the secondary button. Both failures were reproducible locally in two minutes.
+Run every browser command the workflow names before pushing, and assert touch
+height from the layout box rather than the content box.
+
 ## 2026-10-04: Validate release manifests before running the lockfile writer
 
 A malformed tool replacement briefly appended JSON fragments to root package.json.
