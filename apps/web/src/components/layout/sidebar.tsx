@@ -7,6 +7,8 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarHeader,
+  SidebarIconItem,
+  SidebarItem,
   SidebarNav,
   SidebarUser,
   Tooltip,
@@ -14,7 +16,7 @@ import {
   TooltipTrigger,
 } from "@nocoo/basalt";
 import { Archive, LayoutDashboard, LogOut, PanelLeft, Settings } from "lucide-react";
-import { Link, useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import useSWR from "swr";
 import { apiFetch } from "@/api";
 import { APP_VERSION } from "@/lib/version";
@@ -32,6 +34,7 @@ const GROUPS = [
 
 export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { data: session } = useSWR<{ email: string }>("/api/me", (path: string) =>
     apiFetch<{ email: string }>(path),
   );
@@ -72,23 +75,25 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
       ? pathname === href || pathname.startsWith("/devices/")
       : pathname === href || pathname.startsWith(`${href}/`);
   const item = (entry: (typeof items)[number]) => {
-    const control = (
-      <Button
-        asChild
+    const control = collapsed ? (
+      <SidebarIconItem
         key={entry.href}
-        variant={active(entry.href) ? "secondary" : "ghost"}
-        size={collapsed ? "icon" : "default"}
-        className={collapsed ? "" : "w-full justify-start"}
+        active={active(entry.href)}
+        aria-label={entry.label}
+        onClick={() => navigate(entry.href)}
       >
-        <Link
-          to={entry.href}
-          aria-current={active(entry.href) ? "page" : undefined}
-          aria-label={entry.label}
-        >
-          <entry.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
-          {!collapsed && <span>{entry.label}</span>}
-        </Link>
-      </Button>
+        <entry.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
+      </SidebarIconItem>
+    ) : (
+      <SidebarItem
+        key={entry.href}
+        active={active(entry.href)}
+        aria-label={entry.label}
+        onClick={() => navigate(entry.href)}
+      >
+        <entry.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
+        <span className="flex-1 truncate text-left">{entry.label}</span>
+      </SidebarItem>
     );
     return collapsed ? (
       <Tooltip key={entry.href}>
