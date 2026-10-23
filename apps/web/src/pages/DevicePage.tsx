@@ -12,7 +12,7 @@ export function DevicePage() {
   const { data, error, isLoading } = useApi<{ devices: RecoveryMeta[] }>("/api/snapshots/devices");
   const device = data?.devices.find((d) => d.deviceKey === deviceId);
   return (
-    <div className="space-y-6">
+    <div className="space-y-basalt-layout-lg">
       <PageHeader
         title={device?.hostname ?? "Machine"}
         description="Machine history and captured configuration."

@@ -118,7 +118,7 @@ export function SettingsPage() {
     }
   };
   return (
-    <div className="space-y-6">
+    <div className="space-y-basalt-layout-lg">
       <PageHeader title="Settings" description="Manage your account and webhook tokens" />
       <SectionRule title="Account">
         <LayerCard>

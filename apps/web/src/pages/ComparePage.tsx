@@ -27,7 +27,7 @@ export function ComparePage() {
   const result =
     before.data && after.data ? compareRecovery(before.data.data, after.data.data) : null;
   return (
-    <div className="space-y-6">
+    <div className="space-y-basalt-layout-lg">
       <PageHeader
         title="Compare snapshots"
         description="Comparing saved content, permissions, links and environment lists. Different machine or profile customizations do not imply a synchronization error."

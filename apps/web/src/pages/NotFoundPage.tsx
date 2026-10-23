@@ -4,7 +4,7 @@ import { Link } from "react-router";
 
 export function NotFoundPage() {
   return (
-    <div className="mx-auto max-w-lg space-y-6">
+    <div className="mx-auto max-w-lg space-y-basalt-layout-lg">
       <PageHeader title="404" description="This page doesn't exist or has been moved." />
       <LayerCard>
         <LayerCard.Empty

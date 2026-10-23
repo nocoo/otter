@@ -33,7 +33,7 @@ export function SnapshotDetailPage() {
   const configCount = collectors.filter((c) => c.category === "config").length;
   const envCount = collectors.filter((c) => c.category === "environment").length;
   return (
-    <div className="space-y-6">
+    <div className="space-y-basalt-layout-lg">
       <PageHeader
         title={
           <>

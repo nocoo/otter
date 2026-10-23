@@ -23,7 +23,7 @@ export function CliConnectPage() {
   const [authorizing, setAuthorizing] = useState(false);
   const valid = !!callback && isValidCallback(callback);
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl space-y-basalt-layout-lg">
       <PageHeader title="Connect CLI" description="Link your Otter CLI to this dashboard" />
       {!callback ? (
         <LayerCard>

@@ -18,7 +18,7 @@ export function DashboardPage() {
     `${d.hostname} ${d.platform}`.toLowerCase().includes(search.toLowerCase()),
   );
   return (
-    <div className="space-y-6">
+    <div className="space-y-basalt-layout-lg">
       <PageHeader
         title="Your machines"
         description="Find the configuration you need, even when the original machine is unavailable."

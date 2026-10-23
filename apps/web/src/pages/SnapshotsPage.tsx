@@ -37,7 +37,7 @@ export function SnapshotsPage() {
     nextCursor: string | null;
   }>(`/api/snapshots?${query}`);
   return (
-    <div className="space-y-6">
+    <div className="space-y-basalt-layout-lg">
       <PageHeader
         title="Snapshots"
         description="Capture time, coverage and cloud receipt are recorded separately."
