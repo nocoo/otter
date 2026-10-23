@@ -24,7 +24,7 @@ import * as ui from "./ui.js";
 import { uploadIconsToServer } from "./uploader/icons-server.js";
 import { exportIcons } from "./utils/icons.js";
 
-export const CLI_VERSION = "3.1.2";
+export const CLI_VERSION = "3.1.3";
 
 const workspaceArgs = {
   json: { type: "boolean", description: "Emit one JSON value (config output is always redacted)" },

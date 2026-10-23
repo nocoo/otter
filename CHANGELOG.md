@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.1.3] - 2026-10-24
+
+### Changed
+
+- Override `undici` to 7.30.1 so the dependency scan no longer reports the
+  advisories published against 7.29.1.
+- Use the Basalt sidebar row controls and shared layout roles for navigation,
+  page sections, list rows and buttons instead of local geometry overrides.
+- Upgrade `@nocoo/basalt` to 3.2.1, Wrangler to 4.152.0 and
+  `@cloudflare/workers-types` to 5.20261023.1.
+
 ## [3.1.0] - 2026-10-04
 
 ### Features
