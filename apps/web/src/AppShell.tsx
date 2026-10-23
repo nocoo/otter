@@ -120,7 +120,7 @@ export function AppShell() {
           }
         />
         <div className="flex min-h-0 flex-1 flex-col px-2 pb-2 md:px-3 md:pb-3">
-          <ContentIsland className="relative text-sm">
+          <ContentIsland className="relative text-basalt-base">
             <Outlet />
           </ContentIsland>
         </div>

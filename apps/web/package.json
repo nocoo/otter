@@ -11,7 +11,7 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
-    "@nocoo/basalt": "2.2.0",
+    "@nocoo/basalt": "3.2.1",
     "@otter/api": "workspace:*",
     "clsx": "^2.1.1",
     "fflate": "0.8.3",

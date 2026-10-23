@@ -2,7 +2,6 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-  Badge,
   Sidebar as BasaltSidebar,
   Button,
   SidebarFooter,
@@ -104,13 +103,13 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
     <BasaltSidebar collapsed={collapsed}>
       <SidebarHeader>
         <div className="flex w-full items-center gap-3">
-          <img src="/logo-24.png" alt="Otter" width={24} height={24} className="ml-3 shrink-0" />
+          <img src="/logo-24.png" alt="Otter" width={24} height={24} className="shrink-0" />
           {!collapsed && (
             <>
               <span className="text-lg font-semibold tracking-tight">Otter</span>
-              <Badge variant="secondary" className="font-mono text-xs">
+              <span className="shrink-0 rounded-md bg-basalt-secondary px-basalt-space-md py-basalt-space-xs font-mono text-[10px] leading-none font-medium text-basalt-muted-foreground">
                 v{APP_VERSION}
-              </Badge>
+              </span>
               <Button
                 variant="ghost"
                 size="icon"
@@ -128,14 +127,14 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         <Button
           variant="ghost"
           size="icon"
-          className="mb-1 self-center"
+          className="mb-basalt-space-sm self-center"
           aria-label="Expand sidebar"
           onClick={onToggle}
         >
           <PanelLeft strokeWidth={1.5} aria-hidden="true" />
         </Button>
       )}
-      <SidebarNav aria-label="Main navigation" className={collapsed ? "items-center gap-1" : ""}>
+      <SidebarNav aria-label="Main navigation">
         {collapsed
           ? items.map(item)
           : GROUPS.map((group) => (
@@ -144,7 +143,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
               </SidebarGroup>
             ))}
       </SidebarNav>
-      <SidebarFooter className={collapsed ? "flex justify-center px-0" : ""}>
+      <SidebarFooter>
         {collapsed ? (
           <Tooltip>
             <TooltipTrigger asChild>
