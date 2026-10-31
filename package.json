@@ -54,7 +54,7 @@
   "overrides": {
     "@vitest/mocker": "4.1.12",
     "esbuild": ">=0.28.1",
-    "hono": "4.13.13",
+    "hono": "4.13.14",
     "vite": ">=8.3.5",
     "path-to-regexp": ">=8.4.0",
     "picomatch": ">=4.0.4",
@@ -68,6 +68,6 @@
     "zod": "4.6.7"
   },
   "dependencies": {
-    "hono": "4.13.13"
+    "hono": "4.13.14"
   }
 }
