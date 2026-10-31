@@ -1,6 +1,6 @@
 {
   "name": "@otter/worker",
-  "version": "3.1.3",
+  "version": "3.1.4",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@otter/api": "workspace:*",
-    "hono": "4.13.13",
+    "hono": "4.13.14",
     "jose": "^6.2.13"
   },
   "devDependencies": {

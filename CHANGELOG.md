@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.1.4] - 2026-10-31
+
+### Changed
+
+- Bump `react-router` to 8.5.1 and `hono` to 4.13.14.
+
 ## [3.1.3] - 2026-10-24
 
 ### Changed

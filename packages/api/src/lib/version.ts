@@ -1,1 +1,1 @@
-export const APP_VERSION: string = process.env["APP_VERSION"] ?? "3.1.3";
+export const APP_VERSION: string = process.env["APP_VERSION"] ?? "3.1.4";
