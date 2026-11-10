@@ -1,9 +1,9 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 # Pre-push: G2 security gates + L2 API E2E in parallel (L1 coverage runs at pre-commit).
 # osv-scanner (lockfile vulnerabilities) + gitleaks (full git history secret scan).
 # L2 boots wrangler dev --local and runs real-HTTP API + CLI tests.
 # gitleaks runs at pre-commit too (staged-only); this is the deeper full-history scan.
-set -o pipefail
+set -e
 
 TMPDIR_HOOK=$(mktemp -d -t otter-prepush-XXXXXX)
 trap 'rm -rf "$TMPDIR_HOOK"' EXIT
