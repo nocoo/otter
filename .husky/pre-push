@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 # Pre-push: G2 security gates + L2 API E2E in parallel (L1 coverage runs at pre-commit).
 # osv-scanner (lockfile vulnerabilities) + gitleaks (full git history secret scan).
 # L2 boots wrangler dev --local and runs real-HTTP API + CLI tests.
