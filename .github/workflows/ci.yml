@@ -12,7 +12,7 @@ jobs:
     uses: nocoo/base-ci/.github/workflows/quality.yml@633a5545fcfec91b688840650d4edf3e9cc1abbd # v2026.10
     with:
       runtime-version: "1.4.2"
-      node-version: "22.23.4"
+      node-version: "26.12.1"
       install-policy: "project"
       coverage-path: "coverage"
       test-command: "bun run test:coverage"
@@ -24,7 +24,7 @@ jobs:
     uses: nocoo/base-ci/.github/workflows/test-job.yml@633a5545fcfec91b688840650d4edf3e9cc1abbd # v2026.10
     with:
       runtime-version: "1.4.2"
-      node-version: "22.23.4"
+      node-version: "26.12.1"
       install-policy: "blocked"
       browser: "chromium"
       timeout-minutes: 20
@@ -40,7 +40,7 @@ jobs:
     uses: nocoo/base-ci/.github/workflows/test-job.yml@633a5545fcfec91b688840650d4edf3e9cc1abbd # v2026.10
     with:
       runtime-version: "1.4.2"
-      node-version: "22.23.4"
+      node-version: "26.12.1"
       install-policy: "blocked"
       timeout-minutes: 10
       pre-command: |
@@ -55,7 +55,7 @@ jobs:
     uses: nocoo/base-ci/.github/workflows/test-job.yml@633a5545fcfec91b688840650d4edf3e9cc1abbd # v2026.10
     with:
       runtime-version: "1.4.2"
-      node-version: "22.23.4"
+      node-version: "26.12.1"
       install-policy: "blocked"
       timeout-minutes: 10
       command: "bun run deploy:check && bun run test:worker"
