@@ -141,13 +141,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         )}
       </SidebarHeader>
       {collapsed && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="mb-basalt-space-sm self-center"
-          aria-label="Expand sidebar"
-          onClick={onToggle}
-        >
+        <Button variant="ghost" size="icon" aria-label="Expand sidebar" onClick={onToggle}>
           <PanelLeft strokeWidth={1.5} aria-hidden="true" />
         </Button>
       )}
