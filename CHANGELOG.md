@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.1.5] - 2026-11-10
+
+### Changed
+
+- Routine dependency updates (Biome, Vitest, Hono, Tailwind CSS, Playwright, and related packages).
+
 ## [3.1.4] - 2026-10-31
 
 ### Changed

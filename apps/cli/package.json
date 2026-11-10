@@ -1,6 +1,6 @@
 {
   "name": "@nocoo/otter",
-  "version": "3.1.4",
+  "version": "3.1.5",
   "description": "Backup and restore your Mac development environment configuration",
   "type": "module",
   "bin": {
@@ -40,6 +40,6 @@
   },
   "devDependencies": {
     "@otter/core": "workspace:*",
-    "@types/node": "26.6.5"
+    "@types/node": "26.6.6"
   }
 }
