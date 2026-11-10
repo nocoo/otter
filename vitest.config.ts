@@ -1,3 +1,4 @@
+import { availableParallelism } from "node:os";
 import { resolve } from "node:path";
 import { defineConfig } from "vitest/config";
 
@@ -10,7 +11,7 @@ export default defineConfig({
   test: {
     globals: true,
     pool: "vmThreads",
-    maxWorkers: 12,
+    maxWorkers: Math.min(12, availableParallelism()),
     exclude: [
       "**/node_modules/**",
       "**/dist/**",
