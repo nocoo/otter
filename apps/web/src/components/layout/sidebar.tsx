@@ -7,8 +7,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarHeader,
-  SidebarIconItem,
-  SidebarItem,
   SidebarNav,
   SidebarUser,
   Tooltip,
@@ -16,9 +14,10 @@ import {
   TooltipTrigger,
 } from "@nocoo/basalt";
 import { Archive, LayoutDashboard, LogOut, PanelLeft, Settings } from "lucide-react";
-import { useLocation, useNavigate } from "react-router";
+import { Link, useLocation } from "react-router";
 import useSWR from "swr";
 import { apiFetch } from "@/api";
+import { cn } from "@/lib/utils";
 import { APP_VERSION } from "@/lib/version";
 
 const GROUPS = [
@@ -32,9 +31,12 @@ const GROUPS = [
   { label: "Workspace", items: [{ href: "/settings", label: "Settings", icon: Settings }] },
 ];
 
+/** Same destination row contract as basalt SidebarItem / SidebarIconItem (3.2.1). */
+const SIDEBAR_DESTINATION_LINK_CLASS =
+  "basalt-ui basalt-nav-item flex min-w-0 shrink-0 min-h-[calc(var(--basalt-line-row)+2*var(--basalt-space-lg))] items-center gap-basalt-row-gap rounded-basalt-md px-basalt-row-x py-basalt-space-lg text-left text-basalt-base font-normal leading-basalt-row basalt-focus basalt-focus-inset [&>svg]:size-basalt-icon-lg [&>svg]:shrink-0";
+
 export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const { pathname } = useLocation();
-  const navigate = useNavigate();
   const { data: session } = useSWR<{ email: string }>("/api/me", (path: string) =>
     apiFetch<{ email: string }>(path),
   );
@@ -75,28 +77,27 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
       ? pathname === href || pathname.startsWith("/devices/")
       : pathname === href || pathname.startsWith(`${href}/`);
   const item = (entry: (typeof items)[number]) => {
-    const control = collapsed ? (
-      <SidebarIconItem
+    const isActive = active(entry.href);
+    const control = (
+      <Link
         key={entry.href}
-        active={active(entry.href)}
+        to={entry.href}
+        aria-current={isActive ? "page" : undefined}
         aria-label={entry.label}
-        onClick={() => navigate(entry.href)}
+        data-basalt-hover-item=""
+        data-sidebar-row=""
+        data-hover-selected={isActive || undefined}
+        className={cn(
+          SIDEBAR_DESTINATION_LINK_CLASS,
+          collapsed ? "relative w-basalt-control justify-center" : "w-full",
+        )}
       >
         <entry.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
-      </SidebarIconItem>
-    ) : (
-      <SidebarItem
-        key={entry.href}
-        active={active(entry.href)}
-        aria-label={entry.label}
-        onClick={() => navigate(entry.href)}
-      >
-        <entry.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
-        <span className="flex-1 truncate text-left">{entry.label}</span>
-      </SidebarItem>
+        {!collapsed && <span className="flex-1 truncate text-left">{entry.label}</span>}
+      </Link>
     );
     return collapsed ? (
-      <Tooltip key={entry.href}>
+      <Tooltip key={entry.href} delayDuration={0}>
         <TooltipTrigger asChild>{control}</TooltipTrigger>
         <TooltipContent side="right" sideOffset={8}>
           {entry.label}
