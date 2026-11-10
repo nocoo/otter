@@ -31,6 +31,7 @@ jobs:
       workflow-lint-required-workflow: nocoo/base-ci/.github/workflows/deploy-worker.yml
       workflow-lint-yamllint: true
       worker: true
+      worker-directory: "."
       worker-command: bun run deploy:check && bun run test:worker
       l2: true
       l2-command: >-
