@@ -504,6 +504,19 @@ describe("HermesCollector", () => {
   // Empty profiles directory
   // -------------------------------------------------------------------------
 
+  it("ignores loose files inside the profiles directory", async () => {
+    const hermesDir = join(tempHome, ".hermes");
+    await mkdir(join(hermesDir, "cron"), { recursive: true });
+    await writeFile(join(hermesDir, "SOUL.md"), "main persona");
+    await mkdir(join(hermesDir, "profiles"), { recursive: true });
+    await writeFile(join(hermesDir, "profiles", "loose.txt"), "not-a-profile");
+
+    const collector = new HermesCollector(tempHome);
+    const result = await collector.collect();
+
+    expect(result.lists.map((item) => item.name)).not.toContain("loose.txt");
+  });
+
   it("should handle empty profiles directory", async () => {
     const hermesDir = join(tempHome, ".hermes");
     await mkdir(join(hermesDir, "profiles"), { recursive: true });

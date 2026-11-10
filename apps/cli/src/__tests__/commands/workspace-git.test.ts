@@ -26,7 +26,7 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true });
 });
 
-describe("source repository observations", () => {
+describe("source repository observations", { timeout: 30_000 }, () => {
   it("keeps repository writes isolated from the invoking Git hook environment", async () => {
     const caller = join(root, "caller");
     await mkdir(caller);

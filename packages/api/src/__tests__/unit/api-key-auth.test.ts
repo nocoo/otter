@@ -11,6 +11,7 @@ function makeApp(driver: DbDriver) {
   const mw = createApiKeyAuth({ getDriver: () => driver });
   app.use("*", mw);
   app.get("/api/live", (c) => c.text("live"));
+  app.get("/v1/live", (c) => c.text("live"));
   app.get("/api/x", (c) =>
     c.json({ email: c.get("accessEmail") ?? null, auth: c.get("accessAuthenticated") ?? false }),
   );
@@ -18,6 +19,13 @@ function makeApp(driver: DbDriver) {
 }
 
 describe("apiKeyAuth", () => {
+  it("passes through /v1/live without auth", async () => {
+    const { driver } = createMockDriver();
+    const app = makeApp(driver);
+    const r = await app.fetch(new Request("https://prod/v1/live"));
+    expect(r.status).toBe(200);
+  });
+
   it("passes through /api/live without auth", async () => {
     const { driver } = createMockDriver();
     const app = makeApp(driver);
@@ -51,6 +59,28 @@ describe("apiKeyAuth", () => {
     const { driver } = createMockDriver();
     const app = makeApp(driver);
     const r = await app.fetch(new Request("https://prod/api/x", { headers: { host: "prod" } }));
+    expect(r.status).toBe(401);
+  });
+
+  it("returns 401 when Authorization has too many parts", async () => {
+    const { driver } = createMockDriver();
+    const app = makeApp(driver);
+    const r = await app.fetch(
+      new Request("https://prod/api/x", {
+        headers: { host: "prod", Authorization: "Bearer one two" },
+      }),
+    );
+    expect(r.status).toBe(401);
+  });
+
+  it("returns 401 when Bearer token is empty", async () => {
+    const { driver } = createMockDriver();
+    const app = makeApp(driver);
+    const r = await app.fetch(
+      new Request("https://prod/api/x", {
+        headers: { host: "prod", Authorization: "Bearer " },
+      }),
+    );
     expect(r.status).toBe(401);
   });
 

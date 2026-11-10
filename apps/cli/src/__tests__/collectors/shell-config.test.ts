@@ -106,6 +106,17 @@ describe("ShellConfigCollector", () => {
     );
   });
 
+  it("records ssh scan failures when ~/.ssh is not a directory", async () => {
+    await writeFile(join(tempHome, ".ssh"), "not-a-directory");
+
+    const collector = new ShellConfigCollector(tempHome);
+    const result = await collector.collect();
+
+    expect(result.errors.some((error) => error.includes("Failed to scan SSH directory"))).toBe(
+      true,
+    );
+  });
+
   it("should return empty when no shell configs exist", async () => {
     const collector = new ShellConfigCollector(tempHome);
     const result = await collector.collect();

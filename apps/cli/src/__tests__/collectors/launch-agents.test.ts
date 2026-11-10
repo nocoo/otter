@@ -52,10 +52,14 @@ describe("LaunchAgentsCollector", () => {
     expect(result.files).toHaveLength(0);
   });
 
-  it("records non-ENOENT errors when reading launch agents dir fails", async () => {
-    const collector = new LaunchAgentsCollector("/nonexistent/path/that/is/not/enoent");
+  it("records non-ENOENT errors when the launch agents path is not a directory", async () => {
+    await rm(join(tempHome, "Library", "LaunchAgents"), { recursive: true });
+    await writeFile(join(tempHome, "Library", "LaunchAgents"), "not-a-directory");
+
+    const collector = new LaunchAgentsCollector(tempHome);
     collector._execCommand = async () => "";
     const result = await collector.collect();
-    expect(result.errors.some((e) => e.includes("Failed to read launch agents"))).toBe(false);
+
+    expect(result.errors.some((e) => e.includes("Failed to read launch agents"))).toBe(true);
   });
 });

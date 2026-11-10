@@ -214,6 +214,18 @@ describe("DevToolchainCollector", () => {
     );
   });
 
+  it("stops reading rustup toolchains at the first blank line after names", async () => {
+    const collector = new DevToolchainCollector("/fake/home");
+    collector._execCommand = async (cmd: string) => {
+      if (cmd === "rustup show") {
+        return ["installed toolchains", "--------------------", "stable", "", "nightly"].join("\n");
+      }
+      throw new Error("not found");
+    };
+    const result = await collector.collect();
+    expect(result.lists.map((item) => item.name)).toEqual(["stable"]);
+  });
+
   it("rustup with empty installed-toolchains section (startIndex resolves but no toolchains)", async () => {
     const collector = new DevToolchainCollector("/fake/home");
     collector._execCommand = async (cmd: string) => {

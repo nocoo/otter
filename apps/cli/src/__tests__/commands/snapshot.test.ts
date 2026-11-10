@@ -149,6 +149,22 @@ describe("formatSnapshotDetail", () => {
     const output = formatSnapshotDetail(snapshot);
     expect(output).toContain("permission denied");
   });
+
+  it("should show skipped collector notices when present", () => {
+    const snapshot = makeSnapshot({
+      collectors: [makeCollector({ skipped: ["cursor: not installed"] })],
+    });
+    const output = formatSnapshotDetail(snapshot);
+    expect(output).toContain("cursor: not installed");
+  });
+
+  it("should omit skipped output when the field is absent", () => {
+    const collector = makeCollector({ skipped: [] });
+    delete (collector as { skipped?: string[] }).skipped;
+    const output = formatSnapshotDetail(makeSnapshot({ collectors: [collector] }));
+    expect(output).not.toContain("not installed");
+    expect(output).toContain("Shell Config");
+  });
 });
 
 // ---------------------------------------------------------------------------

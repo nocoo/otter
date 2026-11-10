@@ -1,6 +1,83 @@
 #!/usr/bin/env sh
-# Pre-commit: parallel stage orchestration via Bun.spawn (scripts/precommit.ts).
-# G1 (lint-staged Biome) + L1 (vitest tests, coverage at pre-push) + tsc + gitleaks (staged).
-# Husky 9 invokes hooks under `sh -e $hook` ignoring shebangs, so this thin
-# wrapper exec's bun for the actual logic.
-exec bun scripts/precommit.ts
+# L1 against the Git index snapshot (matrix/hooky pattern).
+set -e
+command -v git >/dev/null 2>&1 || {
+	echo "pre-commit: git is required" >&2
+	exit 1
+}
+command -v bun >/dev/null 2>&1 || {
+	echo "pre-commit: bun is required" >&2
+	exit 1
+}
+command -v gitleaks >/dev/null 2>&1 || {
+	echo "pre-commit: gitleaks is required" >&2
+	exit 1
+}
+
+snapshot=
+cleanup() {
+	status=$?
+	trap - EXIT INT TERM HUP
+	if [ -n "$snapshot" ]; then
+		rm -rf "$snapshot" || :
+		snapshot=
+	fi
+	exit "$status"
+}
+trap cleanup EXIT
+trap "exit 130" INT
+trap "exit 143" TERM
+trap "exit 129" HUP
+
+# gitleaks reads the commit index; run before stripping Git hook environment.
+gitleaks protect --staged --no-banner
+
+snapshot=$(mktemp -d "${TMPDIR:-/tmp}/otter-index-XXXXXX")
+git checkout-index --all --prefix="$snapshot/"
+repo=$(git rev-parse --show-toplevel)
+
+if [ ! -d "$repo/node_modules" ]; then
+	echo "pre-commit: node_modules is required" >&2
+	exit 1
+fi
+if [ ! -f "$snapshot/package.json" ] || [ ! -f "$snapshot/bun.lock" ]; then
+	echo "pre-commit: staged package.json and bun.lock are required" >&2
+	exit 1
+fi
+if ! cmp -s "$snapshot/package.json" "$repo/package.json" || ! cmp -s "$snapshot/bun.lock" "$repo/bun.lock"; then
+	echo "pre-commit: staged package.json/bun.lock must match the installed worktree copies" >&2
+	exit 1
+fi
+
+mkdir "$snapshot/node_modules"
+for entry in "$repo/node_modules"/*; do
+	[ -e "$entry" ] || continue
+	ln -s "$entry" "$snapshot/node_modules/${entry##*/}"
+done
+ln -s "$repo/node_modules/.bin" "$snapshot/node_modules/.bin"
+for ws in "$repo"/apps/* "$repo"/packages/*; do
+	[ -d "$ws/node_modules" ] || continue
+	rel="${ws#$repo/}"
+	mkdir -p "$snapshot/$(dirname "$rel")"
+	mkdir -p "$snapshot/$rel"
+	ln -s "$ws/node_modules" "$snapshot/$rel/node_modules"
+done
+mkdir -p "$snapshot/node_modules/.vite" "$snapshot/node_modules/.vitest" "$snapshot/.cache"
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX
+unset GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES
+export XDG_CACHE_HOME="$snapshot/.cache"
+export XDG_STATE_HOME="$snapshot/.cache"
+PATH="$snapshot/node_modules/.bin:$PATH"
+
+export OTTER_PRECOMMIT_BIOME_FILES=$(
+	git diff --cached --name-only --diff-filter=ACM |
+		grep -E '\.(ts|tsx|js|mjs|json|jsonc|css)$' || true
+)
+cd "$snapshot"
+
+if ! grep -Fq -- '--coverage' package.json; then
+	echo "pre-commit: test:coverage must run vitest with --coverage" >&2
+	exit 1
+fi
+
+exec bun "$repo/scripts/precommit.ts"

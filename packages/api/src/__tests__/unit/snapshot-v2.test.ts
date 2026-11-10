@@ -9,6 +9,7 @@ import type { AppEnv } from "../../lib/app-env";
 import type { DbDriver } from "../../lib/db/driver";
 import type { R2BucketLike } from "../../lib/r2";
 import {
+  extractSnapshotMetadata,
   isValidSnapshotPayload,
   sha256,
   validateSnapshotContents,
@@ -127,7 +128,7 @@ describe("immutable v2 snapshot service", () => {
     const metadata = required(objects.values().next().value).metadata;
     driver.execute = original;
     const retried = await storeSnapshot(driver, bucket, "user@example.com", snapshot);
-    expect(retried.receipt.receivedAt).toBe(metadata["receivedAt"]);
+    expect(retried.receipt.receivedAt).toBe(metadata.receivedAt);
     expect(retried.receipt.sha256).toBe(await sha256(JSON.stringify(snapshot)));
     const repeat = await app("user@example.com").request("/snapshots", {
       method: "POST",
@@ -247,19 +248,72 @@ describe("immutable v2 snapshot service", () => {
   });
 });
 
+describe("snapshot helpers", () => {
+  it("extractSnapshotMetadata prefers computerName over hostname", () => {
+    const snapshot = fixture();
+    snapshot.machine.computerName = "Recovery Mac";
+    expect(extractSnapshotMetadata(snapshot)).toMatchObject({
+      hostname: "Recovery Mac",
+      platform: snapshot.machine.platform,
+      collectorCount: snapshot.collectors.length,
+    });
+  });
+
+  it("sha256 digests string and Uint8Array inputs equivalently", async () => {
+    const text = '{"fixture":true}';
+    const bytes = new TextEncoder().encode(text);
+    expect(await sha256(bytes)).toBe(await sha256(text));
+  });
+});
+
 describe("snapshot validation", () => {
   it.each([
     null,
     [],
     {},
     { version: 2 },
+    { ...fixture(), version: 3 },
     { ...fixture(), id: "../escape" },
+    { ...fixture(), id: "" },
     { ...fixture(), createdAt: "not-a-date" },
     { ...fixture(), machine: [] },
+    {
+      ...fixture(),
+      machine: { ...fixture().machine, hostname: "x".repeat(9000) },
+    },
     { ...fixture(), collectors: [null] },
+    {
+      ...fixture(),
+      collectors: Array.from({ length: 101 }, () => ({ files: [], lists: [] })),
+    },
+    { ...fixture(), collectors: [{ files: "nope", lists: [] }] },
   ])("rejects invalid top-level data: %j", (value) =>
     expect(isValidSnapshotPayload(value)).toBe(false),
   );
+
+  it.each([
+    ["machine.username", { ...fixture(), machine: { ...fixture().machine, username: 1 } }],
+    ["machine.arch", { ...fixture(), machine: { ...fixture().machine, arch: null } }],
+    [
+      "collector lists",
+      { ...fixture(), collectors: [{ files: [], lists: null as unknown as [] }] },
+    ],
+    [
+      "collector files",
+      { ...fixture(), collectors: [{ files: null as unknown as [], lists: [] }] },
+    ],
+    [
+      "collector shape",
+      {
+        ...fixture(),
+        collectors: [{ files: [], lists: [] }, null as unknown as { files: []; lists: [] }],
+      },
+    ],
+    ["invalid snapshot id charset", { ...fixture(), id: "has/slash" }],
+    ["invalid createdAt timestamp", { ...fixture(), createdAt: "2026-13-40T99:99:99.000Z" }],
+  ])("rejects malformed payload field %s", (_label, value) => {
+    expect(isValidSnapshotPayload(value)).toBe(false);
+  });
   it("rejects malformed roots, resources, duplicate paths, encoding errors, hashes and missing recovery metadata", async () => {
     const mutations: ((s: Snapshot) => void)[] = [
       (s) => {

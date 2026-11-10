@@ -60,17 +60,17 @@ L1 requires statements, branches, functions and lines each ≥95%, with no skipp
 
 | Dimension | Status | Required proof and current evidence/gap |
 |---|---|---|
-| L1 TypeScript | planned | Hooks/CI run coverage with statements/lines 95%, branches/functions 94%; UI/auth/entry and Worker exclusions leave full all-four 95% incomplete. |
+| L1 TypeScript | enforced | pre-commit runs `test:coverage` on the index snapshot with statements/branches/functions/lines each ≥95%; Worker UI exclusions remain by design; native/Swift coverage still ungated. |
 | L1 Swift | planned | Separate macOS CI runs native tests; no all-four 95% native coverage gate. |
-| L1 static (former G1, TypeScript / Swift) | planned | TS build/typecheck and Biome run in CI; `lint` is only typechecking, Biome lacks errors-on-warnings outside lint-staged, and strict native analysis is incomplete. |
+| L1 static (former G1, TypeScript / Swift) | enforced | pre-commit runs staged Biome (`--error-on-warnings`) and `tsc -b` inside the index snapshot; CI still typechecks/Biome the tree; Swift strict analysis remains a gap. |
 | L2 HTTP / CLI | planned | `test:l2` boots local Wrangler and tests real API/CLI flows; require verified 100% route/auth/error coverage. Unit driver fakes are not real HTTP proof. |
 | L3 web / native | planned | `test:e2e` serves built SPA/local Worker; macOS CI checks real AppKit and packaged CLI. Full page/desktop coverage is not enforced; both browser configs now use the locked local-only runner. |
 | G2 | enforced | Hooks/CI require OSV and gitleaks, including full-history pre-push scanning. |
 | D1 | planned | Local launchers allocate unique E2E D1/R2 state and identity, validate canonical path/owner and D1 markers before cleanup, and reject Prod credentials. Browser server reuse is disabled. Whole-repo isolation and external-boundary coverage remain incomplete. |
 
-Pre-commit runs staged Biome, plain unit tests, project-reference typecheck and staged gitleaks in parallel. Pre-push runs coverage, local L2, OSV and full-history gitleaks in parallel. CI adds Worker/build/browser gates and path-filtered macOS test/package jobs. Hooks inspect working files, not every pushed commit.
+Pre-commit exports the index with `git checkout-index`, then runs staged Biome, `test:coverage`, project-reference typecheck and staged gitleaks (gitleaks before snapshot export). Pre-push runs local L2, OSV and full-history gitleaks in parallel. CI adds Worker/build/browser gates and path-filtered macOS test/package jobs. Hooks grade the staged commit index, not unstaged worktree fixes.
 
-Target hooks: pre-commit checks unified L1 (types, check-only lint, coverage) against the index snapshot (`git checkout-index`) in <30s; pre-push checks L2 and G2 in parallel against every stdin push ref/commit in <3min, plus build where applicable. L3 runs in CI or an explicit manual lane.
+Target hooks: pre-commit checks unified L1 (types, check-only lint, coverage) against the index snapshot in <30s; pre-push checks L2 and G2 in parallel against every stdin push ref/commit in <3min, plus build where applicable. L3 runs in CI or an explicit manual lane.
 Never bypass commit/push hooks, force-push, or use autofix in checks. Documentation changes do not authorize deploying or implementing new gates.
 
 ## Resources / Isolation

@@ -51,6 +51,15 @@ describe("executeLogin — error branch coverage", () => {
     expect(events).toEqual(["timeout"]);
   });
 
+  it("returns success without a token field when nothing was persisted", async () => {
+    vi.mocked(performLogin).mockResolvedValue({ success: true });
+
+    const result = await executeLogin(configManager, {}, {});
+
+    expect(result.success).toBe(true);
+    expect(result.token).toBeUndefined();
+  });
+
   it("returns success with token when performLogin succeeds and config has token", async () => {
     vi.mocked(performLogin).mockImplementation(async (opts) => {
       opts.onSaveToken?.("mocked-token");
