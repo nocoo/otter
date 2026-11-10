@@ -41,6 +41,16 @@ describe("FontsCollector", () => {
     ]);
   });
 
+  it("records non-ENOENT failures when the font directory is unreadable", async () => {
+    await rm(join(tempHome, "Library", "Fonts"), { recursive: true });
+    await writeFile(join(tempHome, "Library", "Fonts"), "not-a-directory");
+
+    const collector = new FontsCollector(tempHome);
+    const result = await collector.collect();
+
+    expect(result.errors.some((e) => e.includes("Failed to read fonts directory"))).toBe(true);
+  });
+
   it("silently ignores ENOENT", async () => {
     await rm(join(tempHome, "Library", "Fonts"), { recursive: true });
     const collector = new FontsCollector(tempHome);

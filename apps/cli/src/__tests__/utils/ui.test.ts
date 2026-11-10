@@ -109,6 +109,16 @@ describe("ui", () => {
       // "42" should be padded to match "Count"/"1234" width
       expect(dataLines[0].trimEnd().endsWith("42")).toBe(true);
     });
+
+    it("pads ragged rows and honors right-aligned data columns", () => {
+      const columns = [{ label: "Name" }, { label: "Bytes", align: "right" as const }];
+      const rows = [["only-name"], ["a", "99"], ["longer-name", "1"]];
+      const result = table(columns, rows);
+      const lines = result.split("\n");
+      expect(lines.length).toBeGreaterThan(3);
+      expect(lines.some((line) => line.includes("only-name"))).toBe(true);
+      expect(lines.some((line) => line.trimEnd().endsWith("99"))).toBe(true);
+    });
   });
 
   // --- tree ---

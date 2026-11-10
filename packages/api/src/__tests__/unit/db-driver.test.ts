@@ -83,6 +83,24 @@ describe("createBindingDriver", () => {
     };
   }
 
+  it("query returns an empty array when D1 omits results", async () => {
+    const db = {
+      prepare: (_sql: string) => ({
+        bind: (..._values: unknown[]) => ({
+          all: async () => ({ success: true, meta: {} }),
+          first: async () => null,
+          run: async () => ({ success: true, meta: {} }),
+        }),
+        all: async () => ({ success: true, meta: {} }),
+        first: async () => null,
+        run: async () => ({ success: true, meta: {} }),
+      }),
+      batch: async () => [],
+    };
+    const driver = createBindingDriver(db as unknown as AnyDb);
+    await expect(driver.query("SELECT 1")).resolves.toEqual([]);
+  });
+
   it("query binds params and returns results array", async () => {
     const fake = makeFakeDb();
     fake.stage({ results: [{ a: 1 }] });

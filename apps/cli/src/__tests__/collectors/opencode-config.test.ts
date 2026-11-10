@@ -194,6 +194,11 @@ describe("parseSkillFrontmatter", () => {
     expect(meta.description).toBe("Use when user says: deploy now");
   });
 
+  it("ignores lines without a key or value", () => {
+    const content = "---\nname:\nnot-a-kv\nname: good\n---";
+    expect(parseSkillFrontmatter(content)).toEqual({ name: "good" });
+  });
+
   it("should ignore nested YAML structures", () => {
     const content = "---\nname: test\n  nested: value\n---";
     const meta = parseSkillFrontmatter(content);

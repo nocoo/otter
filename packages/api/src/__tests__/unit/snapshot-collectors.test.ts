@@ -40,6 +40,11 @@ const homebrewCollector = collectors[0]!;
 const vscodeCollector = collectors[1]!;
 
 describe("snapshot collector helpers", () => {
+  it("matches every collector when the query is blank", () => {
+    expect(matchesCollectorQuery(homebrewCollector, "   ")).toBe(true);
+    expect(matchesCollectorQuery(homebrewCollector, "")).toBe(true);
+  });
+
   it("matches against collector metadata and list content", () => {
     expect(matchesCollectorQuery(homebrewCollector, "pinned")).toBe(true);
     expect(matchesCollectorQuery(vscodeCollector, "github.copilot")).toBe(true);
@@ -48,6 +53,7 @@ describe("snapshot collector helpers", () => {
   });
 
   it("filters by category and query", () => {
+    expect(filterCollectors(collectors, { query: "bun", category: "config" })).toEqual([]);
     expect(filterCollectors(collectors, { query: "", category: "config" })).toEqual([
       collectors[1],
     ]);
@@ -65,6 +71,15 @@ describe("snapshot collector helpers", () => {
       environment: 1,
       withErrors: 0,
     });
+  });
+
+  it("counts collectors with errors in the overview", () => {
+    const withError: SnapshotCollector = {
+      ...homebrewCollector,
+      errors: ["brew doctor failed"],
+    };
+    const all = [withError, vscodeCollector];
+    expect(getCollectorOverview(all, all).withErrors).toBe(1);
   });
 
   it("groups collectors by category with aggregate totals", () => {

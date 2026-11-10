@@ -22,6 +22,19 @@ describe("VSCodeCollector", () => {
     expect(collector.category).toBe("config");
   });
 
+  it("lists cli extensions that omit a version suffix", async () => {
+    const collector = new VSCodeCollector(tempHome);
+    collector._execCommand = async (cmd: string) => {
+      if (cmd.startsWith("code ")) return "publisher.noversion\n";
+      return "";
+    };
+    const result = await collector.collect();
+    expect(result.lists).toContainEqual({
+      name: "publisher.noversion",
+      meta: { type: "vscode-extension", editor: "vscode" },
+    });
+  });
+
   it("should collect extensions from CLI when available", async () => {
     const collector = new VSCodeCollector(tempHome);
     collector._execCommand = async (cmd: string) => {

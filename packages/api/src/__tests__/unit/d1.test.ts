@@ -230,6 +230,19 @@ describe("D1 client", () => {
     await expect(query("INVALID SQL")).rejects.toThrow("D1 query failed: syntax error");
   });
 
+  it("throws when the batch HTTP response is not ok", async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 503,
+      text: async () => "service unavailable",
+    });
+
+    const { batch } = await import("../../lib/cf/d1");
+    await expect(batch([{ sql: "SELECT 1" }])).rejects.toThrow(
+      "D1 API error (503): service unavailable",
+    );
+  });
+
   it("throws on batch D1 failure", async () => {
     fetchMock.mockResolvedValue({
       ok: true,

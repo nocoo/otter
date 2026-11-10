@@ -548,6 +548,21 @@ describe("createApiWebhooksRoute", () => {
     expect(body.webhooks.map((w) => w.id)).toEqual(["w1"]);
   });
 
+  it("creates a webhook with an explicit label", async () => {
+    const app = buildApp({
+      driver: memoryDriver(state),
+      bucket: fakeBucket().bucket,
+      email: "alice@x",
+    });
+    const res = await app.request("/webhooks", {
+      method: "POST",
+      body: JSON.stringify({ label: "alerts" }),
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { webhook: { label: string } };
+    expect(body.webhook.label).toBe("alerts");
+  });
+
   it("creates a webhook with default label", async () => {
     const app = buildApp({
       driver: memoryDriver(state),
@@ -596,6 +611,19 @@ describe("createApiWebhooksRoute", () => {
     });
     expect(res.status).toBe(200);
     updateSpy.mockRestore();
+  });
+
+  it("patch :id returns 404 when the webhook id is unknown", async () => {
+    const app = buildApp({
+      driver: memoryDriver(state),
+      bucket: fakeBucket().bucket,
+      email: "alice@x",
+    });
+    const res = await app.request("/webhooks/missing", {
+      method: "PATCH",
+      body: JSON.stringify({ label: "x" }),
+    });
+    expect(res.status).toBe(404);
   });
 
   it("patch :id returns 404 when not owner", async () => {

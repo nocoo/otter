@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  redactCapturedText,
   redactJsonlSecrets,
   redactJsonSecrets,
   redactLineSecrets,
@@ -25,6 +26,13 @@ describe("redactJsonSecrets", () => {
     expect(result.env.SOME_API_KEY).toBe("[REDACTED]");
     expect(result.env.NORMAL_VALUE).toBe("keep-this");
     expect(result.enabledPlugins).toEqual(["foo"]);
+  });
+
+  it("should redact sensitive keys nested in arrays", () => {
+    const input = '{"items":[{"api_key":"secret","meta":{"auth_token":"t"}}]}';
+    const result = JSON.parse(redactJsonSecrets(input));
+    expect(result.items[0].api_key).toBe("[REDACTED]");
+    expect(result.items[0].meta.auth_token).toBe("[REDACTED]");
   });
 
   it("should redact nested credential keys", () => {
@@ -674,5 +682,13 @@ describe("redactSecrets (auto-detect)", () => {
     const result = redactSecrets(input, "/home/user/.claude/history.jsonl");
     expect(result).toContain("[REDACTED]");
     expect(result).not.toContain("ghp_");
+  });
+});
+
+describe("redactCapturedText", () => {
+  it("redacts JSONC, TOML and malformed structured configuration", () => {
+    expect(redactCapturedText('{ "api_key": "x" }', "settings.jsonc")).toContain("[REDACTED]");
+    expect(redactCapturedText('token = "secret"', "config.toml")).toContain("[REDACTED]");
+    expect(redactCapturedText("api_key: not yaml", "broken.yaml")).toContain("[REDACTED]");
   });
 });

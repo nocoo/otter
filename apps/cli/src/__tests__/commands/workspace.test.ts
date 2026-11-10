@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { diffSnapshots } from "../../commands/snapshot.js";
 import {
   runWorkspaceCommand,
+  selectCollectors,
   snapshotDigest,
   validatedApiUrl,
   workspaceConfigDirectory,
@@ -207,6 +208,39 @@ describe("native workspace protocol", () => {
     );
     expect(code).toBe(0);
     expect(JSON.parse(stdout)).toEqual([]);
+  });
+
+  it("registers a new absolute source folder through source add", async () => {
+    const sourcePath = join(root, "registered-source");
+    await mkdir(sourcePath, { recursive: true });
+    const result = await invoke(["source", "add", sourcePath, "--json"]);
+    expect(result.code).toBe(0);
+    expect(result.value.sources.some((entry: { path: string }) => entry.path === sourcePath)).toBe(
+      true,
+    );
+  });
+
+  it("rejects source fetch for an unknown registration id", async () => {
+    const result = await invoke(["source", "fetch", "missing-source", "--json"]);
+    expect(result.code).toBe(1);
+    expect(result.value.error.message).toContain("Registered source not found");
+  });
+
+  it("rejects source apply without a workspace file path", async () => {
+    const result = await invoke(["source", "apply", "--json"]);
+    expect(result.code).toBe(1);
+  });
+
+  it("rejects source import without a workspace file path", async () => {
+    const result = await invoke(["source", "import", "--json"]);
+    expect(result.code).toBe(1);
+    expect(result.value.error.message).toMatch(/workspace-file|source/);
+  });
+
+  it("lists registered sources through the structured source command", async () => {
+    const result = await invoke(["source", "list", "--json"]);
+    expect(result.code).toBe(0);
+    expect(result.value).toMatchObject({ sources: expect.any(Array) });
   });
 
   it("reports compatible capabilities and actual resolved paths without credentials", async () => {
@@ -421,7 +455,38 @@ describe("native workspace protocol", () => {
     "https://u:secret@example.com",
     "https://example.com/path",
     "https://example.com?token=secret",
+    "https://example.com#frag",
   ])("rejects unsafe API origin %s", (value) => {
     expect(() => validatedApiUrl(value)).toThrow();
+  });
+
+  it("accepts safe API origins", () => {
+    expect(validatedApiUrl("https://api.example.com")).toBe("https://api.example.com");
+    expect(validatedApiUrl("http://127.0.0.1")).toBe("http://127.0.0.1");
+    expect(validatedApiUrl("http://localhost")).toBe("http://localhost");
+    expect(validatedApiUrl("http://[::1]")).toBe("http://[::1]");
+  });
+
+  it("returns all default collectors when scanning the user home without a filter", () => {
+    const all = selectCollectors(homedir(), undefined, false, config);
+    expect(all.length).toBeGreaterThan(5);
+    expect(all.some((c) => c.id === "shell-config")).toBe(true);
+  });
+
+  it("requires explicit collectors when scan-root is not the user home", () => {
+    expect(() => selectCollectors(home, undefined, false, config)).toThrow(
+      "An explicit --scan-root requires --collectors",
+    );
+  });
+
+  it("rejects unknown and non-file collectors for isolated scans", () => {
+    expect(() => selectCollectors(home, "missing-collector", false, config)).toThrow(
+      "Unknown collector",
+    );
+    expect(() => selectCollectors(home, "shell-config,homebrew", false, config)).toThrow(
+      "isolated scan",
+    );
+    const selected = selectCollectors(home, "shell-config,hermes", false, config);
+    expect(selected.map((c) => c.id)).toEqual(["shell-config", "hermes"]);
   });
 });

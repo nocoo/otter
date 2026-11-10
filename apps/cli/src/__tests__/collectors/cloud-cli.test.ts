@@ -52,6 +52,12 @@ describe("CloudCLICollector", () => {
     expect(result.files.some((file) => file.content.includes("[REDACTED]"))).toBe(true);
   });
 
+  it("omits aws profiles when no config file exists", async () => {
+    const collector = new CloudCLICollector(tempHome);
+    const result = await collector.collect();
+    expect(result.lists.filter((item) => item.meta?.type === "aws-profile")).toEqual([]);
+  });
+
   it("ignores aws sections that are neither 'default' nor 'profile <name>'", async () => {
     await mkdir(join(tempHome, ".aws"), { recursive: true });
     await writeFile(

@@ -22,6 +22,14 @@ describe("ApplicationsCollector", () => {
     await rm(tempHome, { recursive: true, force: true });
   });
 
+  it("probes /System/Applications when the default system apps directory is used", async () => {
+    const collector = new ApplicationsCollector(tempHome);
+    collector._execCommand = async () => "";
+    const result = await collector.collect();
+    expect(result.lists).toEqual([]);
+    expect(result.errors).toEqual([]);
+  });
+
   it("should have correct metadata", () => {
     const collector = new ApplicationsCollector(tempHome, tempAppsDir, undefined, tempUserAppsDir);
     expect(collector.id).toBe("applications");
