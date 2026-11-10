@@ -47,7 +47,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
   );
   const avatarUrl = profile?.avatar;
   const avatar = (
-    <Avatar className="h-9 w-9 shrink-0">
+    <Avatar>
       {avatarUrl && <AvatarImage src={avatarUrl} alt={name} referrerPolicy="no-referrer" />}
       <AvatarFallback>{name[0]?.toUpperCase() ?? "?"}</AvatarFallback>
     </Avatar>
@@ -98,7 +98,9 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
     return collapsed ? (
       <Tooltip key={entry.href}>
         <TooltipTrigger asChild>{control}</TooltipTrigger>
-        <TooltipContent side="right">{entry.label}</TooltipContent>
+        <TooltipContent side="right" sideOffset={8}>
+          {entry.label}
+        </TooltipContent>
       </Tooltip>
     ) : (
       control
@@ -107,26 +109,36 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
   return (
     <BasaltSidebar collapsed={collapsed}>
       <SidebarHeader>
-        <div className="flex w-full items-center gap-3">
-          <img src="/logo-24.png" alt="Otter" width={24} height={24} className="shrink-0" />
-          {!collapsed && (
-            <>
-              <span className="text-lg font-semibold tracking-tight">Otter</span>
-              <span className="shrink-0 rounded-md bg-basalt-secondary px-basalt-space-md py-basalt-space-xs font-mono text-[10px] leading-none font-medium text-basalt-muted-foreground">
+        {collapsed ? (
+          <img src="/logo-24.png" alt="Otter" width={24} height={24} className="h-5 w-5 shrink-0" />
+        ) : (
+          <div className="flex w-full min-w-0 items-center justify-between">
+            <div className="flex min-w-0 items-center gap-basalt-space-lg">
+              <img
+                src="/logo-24.png"
+                alt="Otter"
+                width={24}
+                height={24}
+                className="h-5 w-5 shrink-0"
+              />
+              <span className="truncate text-lg font-semibold text-basalt-foreground md:text-xl">
+                Otter
+              </span>
+              <span className="shrink-0 rounded-md bg-basalt-secondary px-basalt-space-md py-basalt-space-xs text-basalt-xs font-medium leading-none text-basalt-muted-foreground">
                 v{APP_VERSION}
               </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="ml-auto"
-                aria-label="Collapse sidebar"
-                onClick={onToggle}
-              >
-                <PanelLeft strokeWidth={1.5} aria-hidden="true" />
-              </Button>
-            </>
-          )}
-        </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="shrink-0"
+              aria-label="Collapse sidebar"
+              onClick={onToggle}
+            >
+              <PanelLeft strokeWidth={1.5} aria-hidden="true" />
+            </Button>
+          </div>
+        )}
       </SidebarHeader>
       {collapsed && (
         <Button
@@ -163,7 +175,9 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
                 {avatar}
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">{email || name}</TooltipContent>
+            <TooltipContent side="right" sideOffset={8}>
+              {email || name}
+            </TooltipContent>
           </Tooltip>
         ) : (
           <SidebarUser name={name} email={email} avatar={avatar} action={signOut} />

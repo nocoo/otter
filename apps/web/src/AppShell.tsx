@@ -82,7 +82,7 @@ export function AppShell() {
         <AppHeader
           data-testid="app-header"
           density={isMobile ? "compact" : "comfortable"}
-          {...(!isMobile ? { title, breadcrumbs } : {})}
+          {...(isMobile ? {} : breadcrumbs.length > 0 ? { title, breadcrumbs } : { title })}
           leading={
             isMobile ? (
               <Button
