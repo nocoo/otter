@@ -47,7 +47,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
   );
   const avatarUrl = profile?.avatar;
   const avatar = (
-    <Avatar className="h-9 w-9 shrink-0">
+    <Avatar>
       {avatarUrl && <AvatarImage src={avatarUrl} alt={name} referrerPolicy="no-referrer" />}
       <AvatarFallback>{name[0]?.toUpperCase() ?? "?"}</AvatarFallback>
     </Avatar>
@@ -98,7 +98,9 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
     return collapsed ? (
       <Tooltip key={entry.href}>
         <TooltipTrigger asChild>{control}</TooltipTrigger>
-        <TooltipContent side="right">{entry.label}</TooltipContent>
+        <TooltipContent side="right" sideOffset={8}>
+          {entry.label}
+        </TooltipContent>
       </Tooltip>
     ) : (
       control
@@ -173,7 +175,9 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
                 {avatar}
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">{email || name}</TooltipContent>
+            <TooltipContent side="right" sideOffset={8}>
+              {email || name}
+            </TooltipContent>
           </Tooltip>
         ) : (
           <SidebarUser name={name} email={email} avatar={avatar} action={signOut} />
