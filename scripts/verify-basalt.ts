@@ -149,7 +149,7 @@ try {
   await page.waitForTimeout(350);
   const collapsedLogo = await page.locator("aside img[alt=Otter]").boundingBox();
   assert.equal(logo?.x, collapsedLogo?.x);
-  await page.getByRole("button", { name: /Sign out/ }).waitFor();
+  await page.getByRole("link", { name: /Sign out/i }).waitFor();
   assert.equal(
     await page.locator("aside").getByRole("link", { name: "Snapshots" }).getAttribute("href"),
     "/snapshots",
@@ -169,7 +169,7 @@ try {
   await writeFile(
     join(output, "manifest.json"),
     JSON.stringify(
-      { basalt: "2.2.0", fixture: 1, locale: "en-US", routes, captures, pageErrors: errors },
+      { basalt: "3.3.1", fixture: 1, locale: "en-US", routes, captures, pageErrors: errors },
       null,
       2,
     ),

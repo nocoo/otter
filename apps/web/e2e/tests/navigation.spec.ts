@@ -24,7 +24,7 @@ test.describe("Navigation", () => {
     await expect(page).toHaveURL(/\/$/);
 
     // Navigate to Snapshots
-    await page.locator("aside").getByRole("button", { name: "Snapshots" }).click();
+    await page.locator("aside").getByRole("link", { name: "Snapshots" }).click();
     await expect(page).toHaveURL(/\/snapshots$/);
     await expect(
       page
@@ -33,7 +33,7 @@ test.describe("Navigation", () => {
     ).toBeVisible();
 
     // Navigate to Settings
-    await page.locator("aside").getByRole("button", { name: "Settings" }).click();
+    await page.locator("aside").getByRole("link", { name: "Settings" }).click();
     await expect(page).toHaveURL(/\/settings$/);
     await expect(
       page
@@ -42,7 +42,7 @@ test.describe("Navigation", () => {
     ).toBeVisible();
 
     // Navigate back to Machines
-    await page.locator("aside").getByRole("button", { name: "Machines" }).click();
+    await page.locator("aside").getByRole("link", { name: "Machines" }).click();
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole("heading", { name: "Your machines" })).toBeVisible();
   });
@@ -51,10 +51,10 @@ test.describe("Navigation", () => {
     await page.goto("/snapshots");
 
     // The Snapshots row should be marked as the current page (text-foreground, NOT text-muted-foreground)
-    const snapshotsLink = page.locator("aside").getByRole("button", { name: "Snapshots" });
+    const snapshotsLink = page.locator("aside").getByRole("link", { name: "Snapshots" });
     await expect(snapshotsLink).toHaveAttribute("aria-current", "page");
 
-    const dashboardLink = page.locator("aside").getByRole("button", { name: "Machines" });
+    const dashboardLink = page.locator("aside").getByRole("link", { name: "Machines" });
     await expect(dashboardLink).not.toHaveAttribute("aria-current", "page");
   });
 
@@ -97,6 +97,25 @@ test.describe("Navigation", () => {
     await expect(page.locator("aside").getByText("Machines")).toBeVisible();
     await expect(page.locator("aside").getByText("Snapshots")).toBeVisible();
     await expect(page.locator("aside").getByText("Settings")).toBeVisible();
+  });
+
+  test("mobile drawer closes with dismiss control and restores menu focus", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto("/");
+    const menuButton = page.getByRole("button", { name: "Open navigation" });
+    await menuButton.click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.getByRole("button", { name: "Close navigation" }).click();
+    await expect(page.getByRole("dialog")).toBeHidden();
+    await expect(menuButton).toBeFocused();
+  });
+
+  test("sidebar shows Cloudflare Access sign out", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("aside").getByRole("link", { name: "Sign out" })).toHaveAttribute(
+      "href",
+      "/cdn-cgi/access/logout",
+    );
   });
 
   test("theme toggle cycles between system, light, and dark", async ({ page }) => {
