@@ -146,7 +146,7 @@ zhe                            # 共享 icons bucket
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/me` | 当前用户信息 |
+| GET | `/api/me` | 当前用户（`email`、`name`、`avatar`、`authenticated`；公开资料来自 lizheng.blog） |
 | GET | `/api/auth/cli?callback=&state=` | accessEmail 必须，铸 Bearer 并 302 回 loopback |
 | GET | `/api/snapshots` | 列表（支持 `?before=&limit=`） |
 | GET | `/api/snapshots/:id` | 详情（合并 D1 metadata + R2 内容） |
