@@ -60,8 +60,16 @@ describe("fetchAuthorProfile", () => {
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe(`${AUTHOR_PROFILE_URL}?hash=${KNOWN_HASH}`);
     expect(init.headers).toBeUndefined();
-    expect(init.redirect).toBe("error");
+    expect(init.redirect).toBe("manual");
     expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("returns nulls on 302 redirect without following", async () => {
+    fetchMock.mockResolvedValue(
+      new Response(null, { status: 302, headers: { Location: "https://evil.example/" } }),
+    );
+    await expect(fetchAuthorProfile(KNOWN_EMAIL)).resolves.toEqual({ name: null, avatar: null });
+    expect(fetchMock).toHaveBeenCalledOnce();
   });
 
   it("returns nulls on 429", async () => {
@@ -101,7 +109,7 @@ describe("public avatar lookup", () => {
     expect(url).toBe(`${AUTHOR_PROFILE_URL}?hash=${hash}`);
     expect(url).not.toContain("alice");
     expect(init.headers).toBeUndefined();
-    expect(init.redirect).toBe("error");
+    expect(init.redirect).toBe("manual");
   });
   it.each([
     null,

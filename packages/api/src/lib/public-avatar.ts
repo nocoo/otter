@@ -57,7 +57,7 @@ export async function fetchAuthorProfile(email: string): Promise<AuthorProfile> 
   const hash = await hashEmail(email);
   try {
     const response = await fetch(`${AUTHOR_PROFILE_URL}?hash=${hash}`, {
-      redirect: "error",
+      redirect: "manual",
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     if (!response.ok) return EMPTY_PROFILE;
