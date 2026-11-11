@@ -1,10 +1,11 @@
-// /api/me — return the authenticated user's email/name.
+// /api/me — return the authenticated user's email/name/avatar.
 // Reads `accessEmail` populated by accessAuth (CF Access JWT) or apiKeyAuth
 // (Bearer token). Falls back to decoding `Cf-Access-Jwt-Assertion` directly
 // so the route still works if no JWT-verifying middleware ran (e.g.
-// dev/local with explicit headers).
+// dev/local with explicit headers). Public name + avatar come from lizheng.blog.
 import { Hono } from "hono";
 import type { AppEnv } from "../lib/app-env";
+import { fetchAuthorProfile } from "../lib/public-avatar";
 
 export interface AccessJwtPayload {
   email?: string;
@@ -25,24 +26,49 @@ export function decodeJwtPayload(jwt: string): AccessJwtPayload | null {
   }
 }
 
+function resolveDisplayName(
+  profileName: string | null,
+  jwtName: string | undefined,
+  email: string | null,
+): string | null {
+  if (profileName) return profileName;
+  if (jwtName) return jwtName;
+  if (email) return email.split("@")[0] ?? null;
+  return null;
+}
+
 const app = new Hono<AppEnv>();
 
-app.get("/", (c) => {
+app.get("/", async (c) => {
   const ctxEmail = c.get("accessEmail");
+  const jwt = c.req.header("Cf-Access-Jwt-Assertion");
+  const jwtPayload = jwt ? decodeJwtPayload(jwt) : null;
+
   if (ctxEmail) {
+    const profile = await fetchAuthorProfile(ctxEmail);
     return c.json({
       email: ctxEmail,
-      name: ctxEmail.split("@")[0] ?? null,
+      name: resolveDisplayName(profile.name, jwtPayload?.name, ctxEmail),
+      avatar: profile.avatar,
       authenticated: true,
     });
   }
-  const jwt = c.req.header("Cf-Access-Jwt-Assertion");
-  if (!jwt) return c.json({ email: null, name: null, authenticated: false });
-  const payload = decodeJwtPayload(jwt);
-  if (!payload) return c.json({ email: null, name: null, authenticated: false });
+
+  if (!jwt) {
+    return c.json({ email: null, name: null, avatar: null, authenticated: false });
+  }
+
+  if (!jwtPayload) {
+    return c.json({ email: null, name: null, avatar: null, authenticated: false });
+  }
+
+  const email = jwtPayload.email ?? null;
+  const profile = email ? await fetchAuthorProfile(email) : { name: null, avatar: null };
+
   return c.json({
-    email: payload.email ?? null,
-    name: payload.name ?? payload.email?.split("@")[0] ?? null,
+    email,
+    name: resolveDisplayName(profile.name, jwtPayload.name, email),
+    avatar: profile.avatar,
     authenticated: true,
   });
 });

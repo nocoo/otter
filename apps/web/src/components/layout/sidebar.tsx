@@ -22,8 +22,8 @@ import {
 import { Archive, LayoutDashboard, type LucideIcon, Settings } from "lucide-react";
 import { type ReactNode, useCallback, useState } from "react";
 import { useLocation } from "react-router";
-import useSWR from "swr";
-import { apiFetch } from "@/api";
+import { useMe } from "@/hooks/use-me";
+import { getDisplayName } from "@/lib/display-name";
 import { APP_VERSION } from "@/lib/version";
 
 const ACCESS_LOGOUT_URL = "/cdn-cgi/access/logout";
@@ -112,21 +112,13 @@ function OtterSidebarBody({
   const { pathname } = useLocation();
   const { collapsed, peek, peeking } = useSidebar();
   const railCollapsed = collapsed && !(peek && peeking);
-  const { data: session } = useSWR<{ email: string }>("/api/me", (path: string) =>
-    apiFetch<{ email: string }>(path),
-  );
-  const email = session?.email ?? "";
-  const name = email.split("@")[0] || "User";
-  const { data: profile } = useSWR<{ avatar: string | null }>(
-    email ? ["/api/profile", email] : null,
-    ([path]: [string, string]) => apiFetch<{ avatar: string | null }>(path),
-    { revalidateOnFocus: false },
-  );
-  const avatarUrl = profile?.avatar;
-  const avatar = (
+  const { data: user } = useMe();
+  const { name, initial, email, avatar } = getDisplayName(user);
+
+  const userAvatar = (
     <Avatar>
-      {avatarUrl && <AvatarImage src={avatarUrl} alt={name} referrerPolicy="no-referrer" />}
-      <AvatarFallback>{name[0]?.toUpperCase() ?? "?"}</AvatarFallback>
+      {avatar ? <AvatarImage src={avatar} alt={name} referrerPolicy="no-referrer" /> : null}
+      <AvatarFallback>{initial}</AvatarFallback>
     </Avatar>
   );
 
@@ -196,9 +188,9 @@ function OtterSidebarBody({
       <SidebarFooter>
         <SidebarUser
           name={name}
-          email={email || undefined}
-          avatar={avatar}
-          tooltip={email || name}
+          email={email ?? undefined}
+          avatar={userAvatar}
+          tooltip={name}
           signOutHref={ACCESS_LOGOUT_URL}
           signOutLabel="Sign out"
         />

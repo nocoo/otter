@@ -51,20 +51,25 @@ traps and bounded scrolling. The file viewer retains Shiki syntax spans as a
 specialist renderer inside Basalt controls and surfaces; displayed content is not
 rewritten. Recovery ZIPs retain bytes, permissions and link metadata.
 
-## Public account avatar
+## User info (sidebar)
 
-Gecko was inspected for SidebarUser/Avatar composition. Its checked-out implementation
-used login-provided images, not a lizheng.blog client. Firefly's public author-profile
-source and live empty-query headers established the actual endpoint and lack of CORS.
+`/api/me` returns the Cloudflare Access identity (`email`, `authenticated`) and enriches
+it from the public author profile service:
 
-The sidebar requests `/api/profile` through the normal authenticated API. The Worker
-uses only `accessEmail`, normalizes and SHA-256 hashes it, then queries the fixed
-`https://lizheng.blog/api/authors/profile?hash=...` service without forwarding cookies,
-tokens or browser-selected endpoints. Redirects are rejected. Only a valid HTTPS
-avatar URL is returned; external name never replaces the authenticated account name.
-The response is no-store and the UI cache key includes account email. Local fixture
-identities never call the service. Missing image/profile/network error retains the
-Basalt initials fallback. Real-owner avatar visibility remains an explicit Prod check.
+```http
+GET https://lizheng.blog/api/authors/profile?hash=<sha256(email.trim().toLowerCase())>
+```
+
+The lookup uses a 2.5s timeout; 429, miss, and network failure yield an empty profile.
+The API responds with `{ email, name, avatar, authenticated }`. `name` prefers the
+public profile, then the JWT `name` claim, then the email local-part. `avatar` keeps
+only a validated HTTPS URL without embedded credentials.
+
+The sidebar calls `/api/me` via `useMe`, passes `name` / `email` / `avatar` into
+`SidebarUser` (expanded state shows email; collapsed rail keeps the Basalt avatar-only
+default), and falls back to a colored initial when no image is available. Local fixture
+accounts (`.test`) never call the external service. `/api/profile` remains for other
+callers that need avatar-only lookup with `Cache-Control: no-store`.
 
 ## Evidence
 
