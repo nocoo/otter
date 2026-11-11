@@ -59,6 +59,7 @@ describe("fetchAuthorProfile", () => {
     });
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe(`${AUTHOR_PROFILE_URL}?hash=${KNOWN_HASH}`);
+    expect(init.headers).toBeUndefined();
     expect(init.redirect).toBe("error");
     expect(init.signal).toBeInstanceOf(AbortSignal);
   });
@@ -95,15 +96,18 @@ describe("public avatar lookup", () => {
     expect(await publicAvatar(" Alice@Example.com ")).toBe(
       "https://images.example.test/avatar.jpg",
     );
-    const [url] = fetcher.mock.calls[0] ?? [];
+    const [url, init] = fetcher.mock.calls[0] ?? [];
     const hash = await hashEmail("alice@example.com");
     expect(url).toBe(`${AUTHOR_PROFILE_URL}?hash=${hash}`);
     expect(url).not.toContain("alice");
+    expect(init.headers).toBeUndefined();
+    expect(init.redirect).toBe("error");
   });
   it.each([
     null,
     "http://images.example.test/avatar.jpg",
     "https://user:pass@images.example.test/avatar.jpg",
+    "https://images.example.test/avatar.jpg",
     "not-url",
   ])("validates public avatar %s", async (avatar) => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ avatar })));
