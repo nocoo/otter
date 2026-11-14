@@ -1,9 +1,15 @@
 import { createHash } from "node:crypto";
-import { chmod, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readdir, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApplicationsCollector } from "../../collectors/applications.js";
+
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs/promises")>();
+  return { ...actual, readdir: vi.fn(actual.readdir) };
+});
+const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
 
 describe("ApplicationsCollector", () => {
   let tempHome: string;
@@ -11,6 +17,7 @@ describe("ApplicationsCollector", () => {
   let tempUserAppsDir: string;
 
   beforeEach(async () => {
+    vi.mocked(readdir).mockReset().mockImplementation(actual.readdir);
     tempHome = await mkdtemp(join(tmpdir(), "otter-test-"));
     tempAppsDir = join(tempHome, "Applications");
     tempUserAppsDir = join(tempHome, "UserApplications");
@@ -23,11 +30,17 @@ describe("ApplicationsCollector", () => {
   });
 
   it("probes /System/Applications when the default system apps directory is used", async () => {
+    vi.mocked(readdir).mockResolvedValue([]);
     const collector = new ApplicationsCollector(tempHome);
     collector._execCommand = async () => "";
     const result = await collector.collect();
     expect(result.lists).toEqual([]);
     expect(result.errors).toEqual([]);
+    expect(vi.mocked(readdir).mock.calls).toEqual([
+      ["/Applications", { withFileTypes: true }],
+      [join(tempHome, "Applications"), { withFileTypes: true }],
+      ["/System/Applications", { withFileTypes: true }],
+    ]);
   });
 
   it("should have correct metadata", () => {

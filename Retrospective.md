@@ -1,5 +1,22 @@
 # Retrospective
 
+## 2026-11-14: Browser locators must follow clipping and modal semantics
+
+The first new sidebar acceptance test assumed a generic badge slot and queried the
+menu by its accessible role while the modal made the background aria-hidden. The
+published brand uses `sidebar-brand-version`; inspect the actual declaration/source
+and include hidden background controls only for attribute/focus assertions.
+Collapsed brand-copy width is zero with overflow clipping, while a child badge can
+retain a nonzero layout box. Assert the visible intersection with the clipping
+ancestor instead of treating a child box, display value or zero-area viewport ratio
+as painted visibility. Exact geometry, first Escape and focus assertions remain.
+
+One environment-acceptance run timed out while another check rebuilt the same SPA
+asset directory. The full browser suite and serial environment run passed without
+assertion changes. Keep built-SPA browser verification serial with SPA builds, not
+just serial with the other browser runner; independently isolated Worker ports do
+not isolate the shared static output.
+
 ## 2026-10-24: A narrower browser command is not the CI browser job
 
 The Basalt 3.2.1 upgrade passed the root `test:e2e:bdd` smoke and was pushed, but

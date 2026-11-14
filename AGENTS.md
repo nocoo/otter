@@ -29,7 +29,7 @@ This file is the quality contract; hooks, CI and config are enforcement. Close i
 
 | Component | Path / choice |
 |---|---|
-| Web / Worker | `apps/web` Vite/React + `@nocoo/basalt` 2.2.0; `apps/api` D1/R2/SPA assets |
+| Web / Worker | `apps/web` Vite/React + `@nocoo/basalt` 3.3.4; `apps/api` D1/R2/SPA assets |
 | Shared / CLI | `packages/core`, `packages/api`, `apps/cli` |
 | Native | `apps/macos`, Swift/AppKit; isolated build/test scripts |
 

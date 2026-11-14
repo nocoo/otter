@@ -1,13 +1,6 @@
-import { ContentIsland, SidebarProvider } from "@nocoo/basalt";
+import { ContentIsland, SidebarDrawer } from "@nocoo/basalt";
 import { AppHeader, AppHeaderMenuButton, ProjectLinks } from "@nocoo/basalt/components/app-header";
 import { AppMain, AppSkipLink, AppShell as BasaltShell } from "@nocoo/basalt/components/app-shell";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@nocoo/basalt/components/sheet";
 import { ThemeToggle } from "@nocoo/basalt/components/theme-toggle";
 import { useEffect, useId, useRef } from "react";
 import { Outlet, useLocation } from "react-router";
@@ -76,30 +69,21 @@ function AppShellInner() {
         </PersistedSidebarProvider>
       )}
       {isMobile && (
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetContent
-            id={mobileSheetId}
-            side="left"
-            className="w-[260px] max-w-[260px] border-0 bg-basalt-background p-0 sm:max-w-[260px] sm:p-0"
-            onCloseAutoFocus={(event) => {
-              event.preventDefault();
-              menuButton.current?.focus();
-            }}
-          >
-            <SheetHeader className="sr-only">
-              <SheetTitle>Navigation</SheetTitle>
-              <SheetDescription>Navigate your configuration workspace.</SheetDescription>
-            </SheetHeader>
-            <SidebarProvider collapsed={false} defaultWidth={260}>
-              <Sidebar
-                ariaLabel="Navigation"
-                variant="mobile"
-                onNavigate={() => setMobileOpen(false)}
-                onDismiss={() => setMobileOpen(false)}
-              />
-            </SidebarProvider>
-          </SheetContent>
-        </Sheet>
+        <SidebarDrawer
+          id={mobileSheetId}
+          open={mobileOpen}
+          onOpenChange={setMobileOpen}
+          returnFocusRef={menuButton}
+          title="Navigation"
+          description="Navigate your configuration workspace."
+        >
+          <Sidebar
+            ariaLabel="Navigation"
+            variant="mobile"
+            onNavigate={() => setMobileOpen(false)}
+            onDismiss={() => setMobileOpen(false)}
+          />
+        </SidebarDrawer>
       )}
       <AppMain>
         <AppHeader
@@ -112,7 +96,7 @@ function AppShellInner() {
                 label="Open navigation"
                 aria-expanded={mobileOpen}
                 aria-haspopup="dialog"
-                aria-controls={mobileOpen ? mobileSheetId : undefined}
+                aria-controls={mobileSheetId}
                 onClick={() => setMobileOpen(true)}
               />
             ) : undefined
