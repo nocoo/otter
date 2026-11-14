@@ -2,10 +2,10 @@
 
 ## Scope and authority
 
-The Web UI uses `@nocoo/basalt` **2.2.0**, verified from the allowed npm mirror and
-installed artifact. The current upstream guide was read at Basalt revision
-`ac93bca576adc13f4af383250a5a068a0538756d`; package AI guides, exports, declarations
-and source maps bound the APIs actually used. Shared design procedure:
+The Web UI uses exact `@nocoo/basalt` **3.3.4**, verified from the allowed npm mirror,
+installed artifact and lock integrity. The upstream integration guide was read at
+Basalt revision `216a84f9099698cab4e727398475ff728e941c62`; the published 3.3.4 AI
+guides, exports, declarations and source maps bound the APIs actually used. Shared design procedure:
 `system0-design-basalt` 1.0.0. The macOS AppKit application is outside this Web change.
 
 All eight routes keep their URLs, API queries, account identity, filtering and saved
@@ -18,7 +18,8 @@ into its view state; this fixes an existing mock/API mismatch without changing r
 - `ThemeProvider` → `AccentProvider` (existing teal identity) → `TooltipProvider`,
   React Router `LinkProvider`, one Toaster.
 - Responsive `AppShell` owns safe areas and scroll geometry. Desktop Sidebar remains
-  in flow; mobile uses the same navigation in Basalt Sheet with focus restoration.
+  in flow; mobile uses the same navigation in `SidebarDrawer`, with package-owned
+  forced expansion, accessible labels, padding and focus restoration.
 - Sidebar owns accepted product logo, build-derived version, Recovery/Workspace
   navigation groups, current account and logout. Router links retain native browser
   modifier-click semantics. Logo left position stays fixed during collapse.
@@ -71,7 +72,51 @@ default), and falls back to a colored initial when no image is available. Local 
 accounts (`.test`) never call the external service. `/api/profile` remains for other
 callers that need avatar-only lookup with `Cache-Control: no-store`.
 
-## Evidence
+## 2026-11-14: Basalt 3.3.4 acceptance
+
+The owner approved changing acceptance from an outer 260px drawer to an outer
+320px drawer; the inner sidebar remains 260px. This is a user-approved criterion
+change, not a Basalt geometry fix or a pass against the former outer-260px criterion.
+No consumer CSS, inline sizing, package patch or avatar-size override is added.
+
+`AppShell` replaces its hand-built Sheet, width/padding classes, hidden title and
+description, inner provider and focus callback with `SidebarDrawer`. The shared
+sidebar keeps `SidebarToggle mode="dismiss"` on mobile and the desktop collapse
+preference stays independent. Close-on-route-change, Access sign-out, route
+matching, 24px logo, build-derived version and header actions remain intact.
+
+`apps/web/e2e/tests/sidebar-geometry.spec.ts` uses the real local Worker and fixture
+identity, without API mocks. Ten cases cover both themes, desktop widths 1280/1440
+and mobile widths 375/390/640. Assertions retain exact 260/68px desktop rails,
+36×36px avatar geometry and equal expanded/collapsed y, 16px email line-height,
+320/260px outer/inner mobile geometry, zero padding, first Escape, menu focus,
+route dismissal/current-page state and Access logout URL. Collapsed name/version
+have zero visible width inside the overflow-hidden brand copy; an unclipped child
+bounding box or `display` value alone is not visibility evidence.
+
+The CLI default-directory test retains its original empty-list/no-error assertions.
+A local `readdir` fake returns synthetic empty directories and asserts the exact
+`/Applications`, fixture-home `Applications` and `/System/Applications` probes.
+The constructor still exercises default paths; it no longer reads real Mac apps.
+The capture script checks sign-out while expanded (it is intentionally absent when
+collapsed), records 3.3.4, and measures the approved drawer geometry.
+
+Actual local results: frozen install, typecheck, check-only Biome (zero errors and
+warnings), builds, 815 unit tests, 21 Worker tests, 16 real HTTP/CLI tests, all 45 SPA
+browser tests, BDD smoke, environment switching/isolation acceptance, 51 Basalt
+captures, macOS tests plus 367 native/protocol checks and 32 native captures, and
+Worker deployment dry run passed. Coverage S/B/F/L is 97.37/95.06/96.49/97.99%,
+with all four existing 95% gates unchanged. Use Node 26.12.1 and Bun 1.4.2 as in CI;
+task-local binaries avoid changing global tools. Native execution emitted a local
+CoreSimulator version warning but completed the macOS and protocol checks.
+
+Retained application customizations are the persisted collapse preference,
+Recovery/Workspace routes and active matching, local environment switch,
+Cloudflare Access logout URL, account display-name/profile mapping and Shiki file
+renderer. They own application behavior, not Basalt geometry or styling.
+Signed-in production avatar/provider/Access acceptance remains a manual check.
+
+## Historical 2.2.0 migration evidence
 
 - Independent Codex source review found and verified fixes for viewer width/close,
   collapsed logout, navigation semantics, identity-bound cache and breadcrumbs;
@@ -104,4 +149,5 @@ rendered type scale, spacing, preview inset, non-overflow and file selection.
 
 Physical iPhone safe-area/software-keyboard behavior, real avatar/provider/Access
 login, exhaustive visual contrast and native desktop design remain unverified.
-No push, deploy, release or npm publication occurred.
+The original 2.2.0 migration evidence above predates this upgrade and does not
+establish current publication or deployment status.
