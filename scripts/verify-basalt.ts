@@ -144,12 +144,12 @@ try {
   await capture("file-viewer");
   await page.getByRole("button", { name: "Close file viewer" }).click();
   await page.goto(server.url);
+  await page.getByRole("link", { name: /Sign out/i }).waitFor();
   const logo = await page.locator("aside img[alt=Otter]").boundingBox();
   await page.getByRole("button", { name: "Collapse sidebar" }).click();
   await page.waitForTimeout(350);
   const collapsedLogo = await page.locator("aside img[alt=Otter]").boundingBox();
   assert.equal(logo?.x, collapsedLogo?.x);
-  await page.getByRole("link", { name: /Sign out/i }).waitFor();
   assert.equal(
     await page.locator("aside").getByRole("link", { name: "Snapshots" }).getAttribute("href"),
     "/snapshots",
@@ -159,6 +159,23 @@ try {
   const menu = page.getByRole("button", { name: "Open navigation" });
   await menu.click();
   await page.getByRole("dialog").getByRole("link", { name: "Snapshots" }).waitFor();
+  await page.waitForTimeout(350);
+  const drawer = page.locator('[data-slot="sidebar-drawer"]');
+  const drawerGeometry = await drawer.evaluate((element) => {
+    const sidebar = element.querySelector("[data-basalt-sidebar]");
+    if (!sidebar) throw new Error("Missing drawer sidebar");
+    const style = getComputedStyle(element);
+    return {
+      outer: element.getBoundingClientRect().width,
+      inner: sidebar.getBoundingClientRect().width,
+      padding: [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft],
+    };
+  });
+  assert.deepEqual(drawerGeometry, {
+    outer: 320,
+    inner: 260,
+    padding: ["0px", "0px", "0px", "0px"],
+  });
   await capture("mobile-navigation");
   await page.keyboard.press("Escape");
   await page.getByRole("dialog").waitFor({ state: "hidden" });
@@ -169,7 +186,15 @@ try {
   await writeFile(
     join(output, "manifest.json"),
     JSON.stringify(
-      { basalt: "3.3.1", fixture: 1, locale: "en-US", routes, captures, pageErrors: errors },
+      {
+        basalt: "3.3.4",
+        fixture: 1,
+        locale: "en-US",
+        routes,
+        captures,
+        drawerGeometry,
+        pageErrors: errors,
+      },
       null,
       2,
     ),
