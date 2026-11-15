@@ -1,5 +1,21 @@
 # Retrospective
 
+## 2026-11-16: A stale overlay layer can swallow the modal Escape key
+
+The 3.3.6 drawer width fix exposed a defect that the earlier wrong width assertion
+had masked: the mobile navigation sometimes ignored the first Escape. Radix
+dismissable layers register a document-level Escape listener, and the Basalt
+`AppHeaderMenuButton` tooltip leaves a closed tooltip layer mounted behind the open
+drawer. That stale listener calls `preventDefault()` before the drawer layer runs, so
+the drawer layer skips its own dismissal and stays open. The application now closes
+the mobile navigation on Escape itself while the drawer is open.
+
+Treat the first Escape of a modal as an application-owned behavior, not only a
+library default: sibling tooltip, popover and menu layers can consume the key. When
+a browser assertion fails only intermittently, look for a layer that outlives its
+visibility instead of retrying the assertion, and confirm the behavior with the
+component that owns the state, not only with the rendered DOM.
+
 ## 2026-11-14: Browser locators must follow clipping and modal semantics
 
 The first new sidebar acceptance test assumed a generic badge slot and queried the

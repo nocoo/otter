@@ -86,7 +86,7 @@ for (const theme of ["light", "dark"] as const) {
       await expect(drawer).toBeVisible();
       await expect(menu).toHaveAttribute("aria-controls", (await drawer.getAttribute("id")) ?? "");
       await expect(menu).toHaveAttribute("aria-expanded", "true");
-      await expect(drawer).toHaveCSS("width", "320px");
+      await expect(drawer).toHaveCSS("width", "260px");
       await expect(drawer.locator("[data-basalt-sidebar]")).toHaveCSS("width", "260px");
       await expect(drawer).toHaveCSS("padding-left", "0px");
       await expect(drawer).toHaveCSS("padding-right", "0px");
