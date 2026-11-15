@@ -2,9 +2,9 @@
 
 ## Scope and authority
 
-The Web UI uses exact `@nocoo/basalt` **3.3.4**, verified from the allowed npm mirror,
+The Web UI uses exact `@nocoo/basalt` **3.3.6**, verified from the allowed npm mirror,
 installed artifact and lock integrity. The upstream integration guide was read at
-Basalt revision `216a84f9099698cab4e727398475ff728e941c62`; the published 3.3.4 AI
+Basalt revision `216a84f9099698cab4e727398475ff728e941c62`; the published 3.3.6 AI
 guides, exports, declarations and source maps bound the APIs actually used. Shared design procedure:
 `system0-design-basalt` 1.0.0. The macOS AppKit application is outside this Web change.
 
@@ -71,6 +71,33 @@ The sidebar calls `/api/me` via `useMe`, passes `name` / `email` / `avatar` into
 default), and falls back to a colored initial when no image is available. Local fixture
 accounts (`.test`) never call the external service. `/api/profile` remains for other
 callers that need avatar-only lookup with `Cache-Control: no-store`.
+
+## 2026-11-16: Basalt 3.3.6 drawer geometry alignment
+
+Basalt 3.3.6 changed `SidebarDrawer` from a hand-sized outer shell to
+`w-[var(--basalt-size-sidebar-width)] max-w-[var(--basalt-size-sidebar-width)]`, so the
+drawer outer width is now the standard sidebar width `--basalt-size-sidebar-width`
+(16.25rem = 260px) instead of the previously approved 320px. The inner
+`[data-basalt-sidebar]` remains 260px, so outer and inner are now equal and the
+zero-padding outer shell no longer reserves an extra 60px.
+
+No consumer CSS, inline sizing, package patch or avatar-size override is added; the
+application keeps using the published `SidebarDrawer` component as-is. The acceptance
+criteria follow the package: `apps/web/e2e/tests/sidebar-geometry.spec.ts` asserts the
+drawer outer width as 260px and the inner sidebar as 260px, and
+`bun scripts/verify-basalt.ts` asserts outer 260 / inner 260 with zero padding and
+records basalt 3.3.6 in the capture manifest.
+
+This supersedes the outer-320px criterion approved on 2026-11-14 for 3.3.4; that
+section remains as the historical record of the 3.3.4 acceptance run.
+
+The same run exposed a pre-existing Escape defect that the wrong width assertion had
+been hiding. Radix dismissable layers keep a document-level Escape listener, and the
+Basalt `AppHeaderMenuButton` tooltip leaves a closed tooltip layer mounted behind the
+open drawer. That stale layer calls `preventDefault()` first, so the drawer layer
+skips its own dismissal and the mobile navigation stayed open. `AppShell` now closes
+the mobile navigation on Escape itself while the drawer is open, so the first Escape
+always dismisses the drawer and returns focus to the menu button.
 
 ## 2026-11-14: Basalt 3.3.4 acceptance
 

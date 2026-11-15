@@ -49,6 +49,15 @@ function AppShellInner() {
     setMobileOpen(false);
   }, [pathname, setMobileOpen]);
 
+  useEffect(() => {
+    if (!isMobile || !mobileOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileOpen(false);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [isMobile, mobileOpen, setMobileOpen]);
+
   const segments = pathname.split("/").filter(Boolean);
   const title = segments.length
     ? (LABELS[segments.at(-1) ?? ""] ?? segments.at(-1)?.slice(0, 32) ?? "Home")
