@@ -30,9 +30,19 @@ descriptor raises. A child that closes its output and never reads stdin now ends
 timeout or on an explicit cancellation instead of hanging, and the regression tests cover
 a large payload and a large reply in that situation.
 
+The second repair closed the pipe from the actor to release a blocked write, which raced
+with the writer: between its check and the `write(2)` the descriptor could be closed and
+reused, and the writer would deliver bytes into an unrelated resource. The pipe is now
+closed only inside the writer queue, which serializes the close with the writes, and
+aborting only stops the writer. On Darwin the death of the child closes the read end of
+the pipe, so the kernel ends a blocked write with `EPIPE` on its own, and the flush waits
+with a deadline so a run always ends. A cancelled run leaves nothing behind for the next
+run, which the regression tests check.
+
 Treat a subprocess pipe as a protocol, not as a file: order the payloads, serialize the
-writes, report a failed write instead of letting the child wait for a timeout, and never
-block the runner while a child pipe is still open.
+writes, report a failed write instead of letting the child wait for a timeout, never
+block the runner while a child pipe is still open, and close a pipe only where its writes
+are serialized.
 
 ## 2026-11-16: A stale overlay layer can swallow the modal Escape key
 

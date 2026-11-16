@@ -11,12 +11,31 @@ public struct ProcessResult: Sendable {
 }
 public enum ProcessReply: Sendable { case send(Data), finish, none }
 
+/// Resumes a continuation exactly once, whichever of the queue drain and the deadline
+/// arrives first.
+private final class FlushWaiter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<Bool, Never>?
+
+    init(_ continuation: CheckedContinuation<Bool, Never>) { self.continuation = continuation }
+
+    func finish(_ drained: Bool) {
+        lock.lock()
+        let pending = continuation
+        continuation = nil
+        lock.unlock()
+        pending?.resume(returning: drained)
+    }
+}
+
 /// Serialized writer for a child process' standard input.
 ///
 /// Bytes reach the pipe through write(2) instead of the buffered file APIs, and every
 /// payload leaves in the order it was queued: the handshake first, then the replies it
-/// triggers. A failed write is reported. Aborting closes the pipe, which releases a write
-/// that waits for a child that stopped reading, so a cancelled run never stalls.
+/// triggers. A failed write is reported. The pipe is only closed inside the writer queue,
+/// so a write can never run against a closed or reused descriptor, and aborting stops the
+/// writer while the child's death releases a write that waits for a child that stopped
+/// reading.
 final class StandardInputWriter: @unchecked Sendable {
     /// Payloads up to this size fit the pipe buffer, so writing them never blocks.
     private static let inlineLimit = 8 * 1024
@@ -38,6 +57,8 @@ final class StandardInputWriter: @unchecked Sendable {
 
     /// Writes the handshake payload. Small payloads are written inline so the child never
     /// waits on a background queue; larger ones are queued ahead of every later reply.
+    /// The inline write runs before the output drains start, so no close of the pipe can
+    /// be queued while it is in flight.
     func write(_ data: Data) throws {
         guard !data.isEmpty else { return }
         if data.count <= Self.inlineLimit {
@@ -58,24 +79,24 @@ final class StandardInputWriter: @unchecked Sendable {
         queue.async { [self] in closeNow() }
     }
 
-    /// Waits for the queued payloads to reach the pipe. The caller stays cancellable:
-    /// the wait suspends instead of blocking, so a timeout or a cancellation still runs.
-    func flush() async {
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            queue.async { continuation.resume() }
+    /// Waits for the queued payloads to reach the pipe. The wait suspends instead of
+    /// blocking, so a timeout or a cancellation still runs while it waits, and the deadline
+    /// keeps a run that waits for a child that never reads from ending.
+    func flush(deadline: TimeInterval) async -> Bool {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+            let waiter = FlushWaiter(continuation)
+            queue.async { waiter.finish(true) }
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + deadline) { waiter.finish(false) }
         }
     }
 
-    /// Releases a write that is blocked on a child that stopped reading. Closing the pipe
-    /// ends the blocked write with a broken pipe error and gives the child EOF.
+    /// Stops the writer. The pipe stays open until the writer queue closes it, so a write
+    /// in flight never meets a closed or reused descriptor. A write that waits for a child
+    /// that stopped reading ends when the child's death closes the read end of the pipe.
     func abort() {
         lock.lock()
-        if aborted { lock.unlock(); return }
         aborted = true
-        let already = closed
-        closed = true
         lock.unlock()
-        if !already { try? handle.close() }
     }
 
     var error: String? {
@@ -85,9 +106,9 @@ final class StandardInputWriter: @unchecked Sendable {
 
     private func attempt(_ work: () throws -> Void) {
         lock.lock()
-        let isClosed = closed
+        let isStopped = closed || aborted
         lock.unlock()
-        guard !isClosed else { return }
+        guard !isStopped else { return }
         do { try work() }
         catch {
             lock.lock()
@@ -103,6 +124,10 @@ final class StandardInputWriter: @unchecked Sendable {
             guard let base = buffer.baseAddress, buffer.count > 0 else { return }
             var offset = 0
             while offset < buffer.count {
+                lock.lock()
+                let isStopped = closed || aborted
+                lock.unlock()
+                if isStopped { throw WorkspaceError.message("写入 CLI 标准输入已取消") }
                 let written = Darwin.write(descriptor, base.advanced(by: offset), buffer.count - offset)
                 if written > 0 { offset += written; continue }
                 if written == 0 { throw WorkspaceError.message("写入 CLI 标准输入失败：管道已关闭") }
@@ -139,7 +164,8 @@ public actor ProcessRunner {
 
     public func cancel() {
         cancelled = true
-        // Releasing the pipe unblocks a write that waits for a child that stopped reading.
+        // The writer stops; the child's death closes the read end of the pipe and releases
+        // a write that waits for a child that stopped reading.
         standardInput?.abort()
         guard let process, process.isRunning else { return }
         let pid = process.processIdentifier
@@ -178,6 +204,7 @@ public actor ProcessRunner {
             return Int32(-1)
         }
         cancelled = false; timedOut = false; process = child
+        let started = Date()
         do { try child.run() }
         catch { termination.continuation.finish(); process = nil; throw WorkspaceError.message("启动 CLI 失败：\(error.localizedDescription)") }
         // A CLI exiting during an RPC reply must not deliver SIGPIPE to the application.
@@ -211,10 +238,13 @@ public actor ProcessRunner {
             do {
                 let (out, err) = try await (stdout, stderr)
                 // A reply that was queued while the child answered still has to reach the
-                // pipe. The wait suspends, so a timeout or a cancellation still runs.
-                await writer.flush()
+                // pipe. The wait suspends, so a timeout or a cancellation still runs, and it
+                // ends with the run's budget so a child that never reads cannot stall it.
+                let deadline = max(2, timeout - Date().timeIntervalSince(started)) + 2
+                let flushed = await writer.flush(deadline: deadline)
                 let status = await exitStatus.value
                 if let failure = writer.error { throw WorkspaceError.message(failure) }
+                if !flushed && !cancelled { throw WorkspaceError.message("写入 CLI 标准输入超时") }
                 return ProcessResult(status: status, stdout: out.data,
                     stderr: String(decoding: err.data, as: UTF8.self), cancelled: cancelled,
                     timedOut: timedOut, truncatedStderrBytes: err.dropped)
