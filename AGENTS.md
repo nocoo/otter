@@ -95,3 +95,4 @@ Move accident narratives to [Retrospective.md](Retrospective.md); keep at most a
 - Root and workspace dependency manifests must change together with the lockfile.
 - A local API fake does not validate schema migration or live storage behavior.
 - Preserve trusted dev TLS and host allowlists; do not turn historical TLS workarounds into default checks.
+- Native subprocess pipes are protocols: order the payloads, serialize the writes, and report a failed write instead of letting the child wait for a timeout.

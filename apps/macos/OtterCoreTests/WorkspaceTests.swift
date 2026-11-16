@@ -409,13 +409,59 @@ final class ProcessTests: XCTestCase {
         assert sys.stdin.read()==''
         """
         let result = try await ProcessRunner().run(executable: "/usr/bin/python3", arguments: ["-c", script],
-            input: Data("{\"id\":1}\n".utf8), timeout: 5, conversation: { line in
+            input: Data("{\"id\":1}\n".utf8), timeout: 10, conversation: { line in
                 guard let value = try? JSONDecoder().decode(JSONValue.self, from: line) else { return .none }
                 return value["id"].number == 1 ? .send(Data("{\"id\":2}\n".utf8)) : .finish
             })
-        XCTAssertEqual(result.status, 0)
-        XCTAssertFalse(result.cancelled)
-        XCTAssertTrue(String(decoding: result.stdout, as: UTF8.self).contains("\"skills\":[]"))
+        XCTAssertEqual(result.status, 0, result.stderr)
+        XCTAssertFalse(result.cancelled, result.stderr)
+        XCTAssertFalse(result.timedOut, result.stderr)
+        XCTAssertTrue(String(decoding: result.stdout, as: UTF8.self).contains("\"skills\":[]"), result.stderr)
+    }
+
+    func testHandshakePayloadReachesTheChildBeforeAnyReply() async throws {
+        // The child speaks before it reads, so the payload still has to be the first line.
+        let script = """
+        import json,sys
+        print('{"id":1,"result":{}}',flush=True)
+        first=json.loads(sys.stdin.readline())
+        assert first['id']==1, first
+        second=json.loads(sys.stdin.readline())
+        assert second['id']==2, second
+        print('{"id":2,"result":{"skills":[]}}',flush=True)
+        assert sys.stdin.read()==''
+        """
+        let result = try await ProcessRunner().run(executable: "/usr/bin/python3", arguments: ["-c", script],
+            input: Data("{\"id\":1}\n".utf8), timeout: 10, conversation: { line in
+                guard let value = try? JSONDecoder().decode(JSONValue.self, from: line) else { return .none }
+                return value["id"].number == 1 ? .send(Data("{\"id\":2}\n".utf8)) : .finish
+            })
+        XCTAssertEqual(result.status, 0, result.stderr)
+        XCTAssertTrue(String(decoding: result.stdout, as: UTF8.self).contains("\"skills\":[]"), result.stderr)
+    }
+
+    func testStandardInputIsClosedAfterThePayloadWithoutConversation() async throws {
+        let result = try await ProcessRunner().run(executable: "/usr/bin/python3",
+            arguments: ["-c", "import sys; print(len(sys.stdin.read()), flush=True)"],
+            input: Data("payload\n".utf8), timeout: 10)
+        XCTAssertEqual(result.status, 0, result.stderr)
+        XCTAssertFalse(result.timedOut, result.stderr)
+        XCTAssertEqual(String(decoding: result.stdout, as: UTF8.self), "8\n")
+    }
+
+    func testUndeliverableConversationReplyIsReportedInsteadOfStalling() async throws {
+        // The child drops standard input, so the reply can never reach it.
+        let script = """
+        import json,os,sys
+        sys.stdin.readline()
+        os.close(0)
+        print('{"id":1,"result":{}}',flush=True)
+        """
+        do {
+            _ = try await ProcessRunner().run(executable: "/usr/bin/python3", arguments: ["-c", script],
+                input: Data("{\"id\":1}\n".utf8), timeout: 10, conversation: { _ in .send(Data("{\"id\":2}\n".utf8)) })
+            XCTFail("An undeliverable reply must be reported instead of stalling the child")
+        } catch { /* the broken pipe ends the run instead of waiting for the timeout */ }
     }
 
     func testCancellationClosesDescendantPipes() async throws {

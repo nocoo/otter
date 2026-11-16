@@ -1,5 +1,28 @@
 # Retrospective
 
+## 2026-11-17: A native handshake write must not depend on buffered file APIs
+
+The macOS workflow failed once with `ProcessTests.testConversationKeepsStdinOpenForHandshakeAndFinalResponse`
+ending on status 15. The xcresult showed a 7.3 second test case: the runner's own five
+second timeout fired, SIGTERM reached the child, and the child had never received the
+bytes it waited for. The runner wrote the handshake payload with
+`FileHandle.write(contentsOf:)` while it read the child's output with raw `read(2)`, and it
+swallowed every write error with `try?`. A payload that never arrived, or a reply that
+could not be delivered, therefore surfaced as an unrelated timeout and a killed child
+instead of a failure. The payload and the conversation reply were also two independent
+writers on one descriptor, so nothing ordered the handshake before the reply it triggers.
+The failure reproduced on the macOS 26.7.2 / Xcode 26.6 runner only and never on the
+local macOS 27 host, which is why the same test had passed on every earlier run.
+
+Standard input now belongs to one serialized writer: raw `write(2)` with partial write and
+`EINTR` handling, the handshake payload written before the first output byte is read,
+replies queued behind it, a failed write reported while the child is stopped, and the pipe
+closed exactly once after the last queued payload. Regression tests cover the payload
+ordering, an undeliverable reply and the EOF a child waits for.
+
+Treat a subprocess pipe as a protocol, not as a file: order the payloads, serialize the
+writes, and report a failed write instead of letting the child wait for a timeout.
+
 ## 2026-11-16: A stale overlay layer can swallow the modal Escape key
 
 The 3.3.6 drawer width fix exposed a defect that the earlier wrong width assertion
