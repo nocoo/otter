@@ -1,5 +1,49 @@
 # Retrospective
 
+## 2026-11-17: A native handshake write must not depend on buffered file APIs
+
+The macOS workflow failed once with `ProcessTests.testConversationKeepsStdinOpenForHandshakeAndFinalResponse`
+ending on status 15. The xcresult showed a 7.3 second test case: the runner's own five
+second timeout fired, SIGTERM reached the child, and the child had never received the
+bytes it waited for. The runner wrote the handshake payload with
+`FileHandle.write(contentsOf:)` while it read the child's output with raw `read(2)`, and it
+swallowed every write error with `try?`. A payload that never arrived, or a reply that
+could not be delivered, therefore surfaced as an unrelated timeout and a killed child
+instead of a failure. The payload and the conversation reply were also two independent
+writers on one descriptor, so nothing ordered the handshake before the reply it triggers.
+The failure reproduced on the macOS 26.7.2 / Xcode 26.6 runner only and never on the
+local macOS 27 host, which is why the same test had passed on every earlier run.
+
+Standard input now belongs to one serialized writer: raw `write(2)` with partial write and
+`EINTR` handling, the handshake payload written before the first output byte is read,
+replies queued behind it, a failed write reported while the child is stopped, and the pipe
+closed exactly once after the last queued payload. Regression tests cover the payload
+ordering, an undeliverable reply and the EOF a child waits for.
+
+The first repair repeated the stall in another shape: draining the writer queue with a
+blocking `queue.sync` inside the runner froze the actor, so the timeout and the
+cancellation could not enter it and the child was never killed. The writer now waits for
+its queue with a continuation, so the actor stays free; the runner aborts the writer by
+closing the pipe, which releases a write that waits for a child that stopped reading; and
+the pipe descriptor is captured once, because asking a closed file handle for its
+descriptor raises. A child that closes its output and never reads stdin now ends on the
+timeout or on an explicit cancellation instead of hanging, and the regression tests cover
+a large payload and a large reply in that situation.
+
+The second repair closed the pipe from the actor to release a blocked write, which raced
+with the writer: between its check and the `write(2)` the descriptor could be closed and
+reused, and the writer would deliver bytes into an unrelated resource. The pipe is now
+closed only inside the writer queue, which serializes the close with the writes, and
+aborting only stops the writer. On Darwin the death of the child closes the read end of
+the pipe, so the kernel ends a blocked write with `EPIPE` on its own, and the flush waits
+with a deadline so a run always ends. A cancelled run leaves nothing behind for the next
+run, which the regression tests check.
+
+Treat a subprocess pipe as a protocol, not as a file: order the payloads, serialize the
+writes, report a failed write instead of letting the child wait for a timeout, never
+block the runner while a child pipe is still open, and close a pipe only where its writes
+are serialized.
+
 ## 2026-11-16: A stale overlay layer can swallow the modal Escape key
 
 The 3.3.6 drawer width fix exposed a defect that the earlier wrong width assertion

@@ -409,13 +409,127 @@ final class ProcessTests: XCTestCase {
         assert sys.stdin.read()==''
         """
         let result = try await ProcessRunner().run(executable: "/usr/bin/python3", arguments: ["-c", script],
-            input: Data("{\"id\":1}\n".utf8), timeout: 5, conversation: { line in
+            input: Data("{\"id\":1}\n".utf8), timeout: 10, conversation: { line in
                 guard let value = try? JSONDecoder().decode(JSONValue.self, from: line) else { return .none }
                 return value["id"].number == 1 ? .send(Data("{\"id\":2}\n".utf8)) : .finish
             })
-        XCTAssertEqual(result.status, 0)
-        XCTAssertFalse(result.cancelled)
-        XCTAssertTrue(String(decoding: result.stdout, as: UTF8.self).contains("\"skills\":[]"))
+        XCTAssertEqual(result.status, 0, result.stderr)
+        XCTAssertFalse(result.cancelled, result.stderr)
+        XCTAssertFalse(result.timedOut, result.stderr)
+        XCTAssertTrue(String(decoding: result.stdout, as: UTF8.self).contains("\"skills\":[]"), result.stderr)
+    }
+
+    func testHandshakePayloadReachesTheChildBeforeAnyReply() async throws {
+        // The child speaks before it reads, so the payload still has to be the first line.
+        let script = """
+        import json,sys
+        print('{"id":1,"result":{}}',flush=True)
+        first=json.loads(sys.stdin.readline())
+        assert first['id']==1, first
+        second=json.loads(sys.stdin.readline())
+        assert second['id']==2, second
+        print('{"id":2,"result":{"skills":[]}}',flush=True)
+        assert sys.stdin.read()==''
+        """
+        let result = try await ProcessRunner().run(executable: "/usr/bin/python3", arguments: ["-c", script],
+            input: Data("{\"id\":1}\n".utf8), timeout: 10, conversation: { line in
+                guard let value = try? JSONDecoder().decode(JSONValue.self, from: line) else { return .none }
+                return value["id"].number == 1 ? .send(Data("{\"id\":2}\n".utf8)) : .finish
+            })
+        XCTAssertEqual(result.status, 0, result.stderr)
+        XCTAssertTrue(String(decoding: result.stdout, as: UTF8.self).contains("\"skills\":[]"), result.stderr)
+    }
+
+    func testStandardInputIsClosedAfterThePayloadWithoutConversation() async throws {
+        let result = try await ProcessRunner().run(executable: "/usr/bin/python3",
+            arguments: ["-c", "import sys; print(len(sys.stdin.read()), flush=True)"],
+            input: Data("payload\n".utf8), timeout: 10)
+        XCTAssertEqual(result.status, 0, result.stderr)
+        XCTAssertFalse(result.timedOut, result.stderr)
+        XCTAssertEqual(String(decoding: result.stdout, as: UTF8.self), "8\n")
+    }
+
+    func testUndeliverableConversationReplyIsReportedInsteadOfStalling() async throws {
+        // The child drops standard input, so the reply can never reach it.
+        let script = """
+        import json,os,sys
+        sys.stdin.readline()
+        os.close(0)
+        print('{"id":1,"result":{}}',flush=True)
+        """
+        do {
+            _ = try await ProcessRunner().run(executable: "/usr/bin/python3", arguments: ["-c", script],
+                input: Data("{\"id\":1}\n".utf8), timeout: 10, conversation: { _ in .send(Data("{\"id\":2}\n".utf8)) })
+            XCTFail("An undeliverable reply must be reported instead of stalling the child")
+        } catch { /* the broken pipe ends the run instead of waiting for the timeout */ }
+    }
+
+    func testLargePayloadWithClosedOutputAndUnreadInputTimesOut() async throws {
+        // The child closes its output and never reads stdin, so the payload fills the pipe.
+        let script = """
+        import os,time
+        os.close(1); os.close(2)
+        time.sleep(30)
+        """
+        let start = Date()
+        let result = try await ProcessRunner().run(executable: "/usr/bin/python3", arguments: ["-c", script],
+            input: Data(repeating: 0x41, count: 512 * 1024), timeout: 1)
+        XCTAssertTrue(result.timedOut, result.stderr)
+        XCTAssertTrue(result.cancelled, result.stderr)
+        XCTAssertLessThan(Date().timeIntervalSince(start), 15, "A blocked write must not keep the runner busy")
+    }
+
+    func testLargeReplyWithClosedOutputAndUnreadInputTimesOut() async throws {
+        // The child answers once, closes its output and never reads the reply.
+        let script = """
+        import os,sys,time
+        print('{"id":1,"result":{}}',flush=True)
+        os.close(1); os.close(2)
+        time.sleep(30)
+        """
+        let start = Date()
+        let result = try await ProcessRunner().run(executable: "/usr/bin/python3", arguments: ["-c", script],
+            input: Data("{\"id\":1}\n".utf8), timeout: 1, conversation: { _ in .send(Data(repeating: 0x42, count: 512 * 1024)) })
+        XCTAssertTrue(result.timedOut, result.stderr)
+        XCTAssertTrue(result.cancelled, result.stderr)
+        XCTAssertLessThan(Date().timeIntervalSince(start), 15, "A blocked reply must not keep the runner busy")
+    }
+
+    func testExplicitCancelStopsARunBlockedOnAnUnreadInput() async throws {
+        let runner = ProcessRunner()
+        let script = """
+        import os,time
+        os.close(1); os.close(2)
+        time.sleep(30)
+        """
+        let cancel = Task { try await Task.sleep(for: .milliseconds(400)); await runner.cancel() }
+        defer { cancel.cancel() }
+        let start = Date()
+        let result = try await runner.run(executable: "/usr/bin/python3", arguments: ["-c", script],
+            input: Data(repeating: 0x41, count: 512 * 1024), timeout: 30)
+        XCTAssertTrue(result.cancelled, result.stderr)
+        XCTAssertFalse(result.timedOut, result.stderr)
+        XCTAssertLessThan(Date().timeIntervalSince(start), 15, "A cancellation must reach a blocked write")
+    }
+
+    func testCancelledWriteLeavesNoResidueForTheNextRun() async throws {
+        let runner = ProcessRunner()
+        let script = """
+        import os,time
+        os.close(1); os.close(2)
+        time.sleep(30)
+        """
+        let cancel = Task { try await Task.sleep(for: .milliseconds(300)); await runner.cancel() }
+        defer { cancel.cancel() }
+        let cancelled = try await runner.run(executable: "/usr/bin/python3", arguments: ["-c", script],
+            input: Data(repeating: 0x41, count: 512 * 1024), timeout: 20)
+        XCTAssertTrue(cancelled.cancelled, cancelled.stderr)
+        // The next run owns a fresh pipe: a write left over from the cancelled run must
+        // never reach it, so its own standard input stays empty.
+        let result = try await runner.run(executable: "/usr/bin/python3",
+            arguments: ["-c", "import sys; print(len(sys.stdin.read()), flush=True)"], timeout: 20)
+        XCTAssertEqual(result.status, 0, result.stderr)
+        XCTAssertEqual(String(decoding: result.stdout, as: UTF8.self), "0\n")
     }
 
     func testCancellationClosesDescendantPipes() async throws {

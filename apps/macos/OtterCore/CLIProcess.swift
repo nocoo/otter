@@ -11,15 +11,162 @@ public struct ProcessResult: Sendable {
 }
 public enum ProcessReply: Sendable { case send(Data), finish, none }
 
+/// Resumes a continuation exactly once, whichever of the queue drain and the deadline
+/// arrives first.
+private final class FlushWaiter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<Bool, Never>?
+
+    init(_ continuation: CheckedContinuation<Bool, Never>) { self.continuation = continuation }
+
+    func finish(_ drained: Bool) {
+        lock.lock()
+        let pending = continuation
+        continuation = nil
+        lock.unlock()
+        pending?.resume(returning: drained)
+    }
+}
+
+/// Serialized writer for a child process' standard input.
+///
+/// Bytes reach the pipe through write(2) instead of the buffered file APIs, and every
+/// payload leaves in the order it was queued: the handshake first, then the replies it
+/// triggers. A failed write is reported. The pipe is only closed inside the writer queue,
+/// so a write can never run against a closed or reused descriptor, and aborting stops the
+/// writer while the child's death releases a write that waits for a child that stopped
+/// reading.
+final class StandardInputWriter: @unchecked Sendable {
+    /// Payloads up to this size fit the pipe buffer, so writing them never blocks.
+    private static let inlineLimit = 8 * 1024
+    private let handle: FileHandle
+    /// Captured once: asking a closed handle for its descriptor raises.
+    private let descriptor: Int32
+    private let queue = DispatchQueue(label: "ai.hexly.otter.core.stdin")
+    private let lock = NSLock()
+    private let onFailure: @Sendable () -> Void
+    private var closed = false
+    private var aborted = false
+    private var failure: String?
+
+    init(handle: FileHandle, onFailure: @escaping @Sendable () -> Void) {
+        self.handle = handle
+        self.descriptor = handle.fileDescriptor
+        self.onFailure = onFailure
+    }
+
+    /// Writes the handshake payload. Small payloads are written inline so the child never
+    /// waits on a background queue; larger ones are queued ahead of every later reply.
+    /// The inline write runs before the output drains start, so no close of the pipe can
+    /// be queued while it is in flight.
+    func write(_ data: Data) throws {
+        guard !data.isEmpty else { return }
+        if data.count <= Self.inlineLimit {
+            do { try writeAll(data) }
+            catch { record(error.localizedDescription); throw error }
+            return
+        }
+        queue.async { [self] in attempt { try writeAll(data) } }
+    }
+
+    /// Writes a conversation reply, after the handshake payload reached the pipe.
+    func send(_ data: Data) {
+        queue.async { [self] in attempt { try writeAll(data) } }
+    }
+
+    /// Closes the pipe after every queued payload, so the child observes EOF.
+    func close() {
+        queue.async { [self] in closeNow() }
+    }
+
+    /// Waits for the queued payloads to reach the pipe. The wait suspends instead of
+    /// blocking, so a timeout or a cancellation still runs while it waits, and the deadline
+    /// keeps a run that waits for a child that never reads from ending.
+    func flush(deadline: TimeInterval) async -> Bool {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+            let waiter = FlushWaiter(continuation)
+            queue.async { waiter.finish(true) }
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + deadline) { waiter.finish(false) }
+        }
+    }
+
+    /// Stops the writer. The pipe stays open until the writer queue closes it, so a write
+    /// in flight never meets a closed or reused descriptor. A write that waits for a child
+    /// that stopped reading ends when the child's death closes the read end of the pipe.
+    func abort() {
+        lock.lock()
+        aborted = true
+        lock.unlock()
+    }
+
+    var error: String? {
+        lock.lock(); defer { lock.unlock() }
+        return failure
+    }
+
+    private func attempt(_ work: () throws -> Void) {
+        lock.lock()
+        let isStopped = closed || aborted
+        lock.unlock()
+        guard !isStopped else { return }
+        do { try work() }
+        catch {
+            lock.lock()
+            let wasAborted = aborted
+            lock.unlock()
+            // An aborted write was never delivered on purpose, so it is not a failure.
+            if !wasAborted { record(error.localizedDescription) }
+        }
+    }
+
+    private func writeAll(_ data: Data) throws {
+        try data.withUnsafeBytes { buffer in
+            guard let base = buffer.baseAddress, buffer.count > 0 else { return }
+            var offset = 0
+            while offset < buffer.count {
+                lock.lock()
+                let isStopped = closed || aborted
+                lock.unlock()
+                if isStopped { throw WorkspaceError.message("写入 CLI 标准输入已取消") }
+                let written = Darwin.write(descriptor, base.advanced(by: offset), buffer.count - offset)
+                if written > 0 { offset += written; continue }
+                if written == 0 { throw WorkspaceError.message("写入 CLI 标准输入失败：管道已关闭") }
+                if errno == EINTR { continue }
+                throw WorkspaceError.message("写入 CLI 标准输入失败：\(String(cString: strerror(errno)))")
+            }
+        }
+    }
+
+    private func closeNow() {
+        lock.lock()
+        if closed { lock.unlock(); return }
+        closed = true
+        lock.unlock()
+        try? handle.close()
+    }
+
+    private func record(_ text: String) {
+        lock.lock()
+        let first = failure == nil
+        failure = text
+        lock.unlock()
+        if first { onFailure() }
+    }
+}
+
 /// One owned subprocess at a time; streams are drained concurrently on blocking I/O queues.
 public actor ProcessRunner {
     private var process: Process?
+    private var standardInput: StandardInputWriter?
     private var cancelled = false
     private var timedOut = false
     public init() {}
 
     public func cancel() {
         cancelled = true
+        // The writer stops; the child's death closes the read end of the pipe and releases
+        // a write that waits for a child that stopped reading.
+        standardInput?.abort()
         guard let process, process.isRunning else { return }
         let pid = process.processIdentifier
         let ownGroup = getpgid(pid) == pid
@@ -57,30 +204,47 @@ public actor ProcessRunner {
             return Int32(-1)
         }
         cancelled = false; timedOut = false; process = child
+        let started = Date()
         do { try child.run() }
         catch { termination.continuation.finish(); process = nil; throw WorkspaceError.message("启动 CLI 失败：\(error.localizedDescription)") }
         // A CLI exiting during an RPC reply must not deliver SIGPIPE to the application.
         _ = fcntl(stdin.fileHandleForWriting.fileDescriptor, F_SETNOSIGPIPE, 1)
+        let writer = StandardInputWriter(handle: stdin.fileHandleForWriting) { Task { await self.cancel() } }
+        standardInput = writer
         let timeoutTask = Task {
             do { try await Task.sleep(for: .seconds(timeout)); self.timedOut = true; self.cancel() } catch { /* completed */ }
         }
-        defer { timeoutTask.cancel(); termination.continuation.finish(); child.terminationHandler = nil; process = nil }
+        defer {
+            timeoutTask.cancel(); termination.continuation.finish(); child.terminationHandler = nil
+            process = nil; standardInput = nil; writer.close()
+        }
+        // The handshake payload has to reach the pipe before the child answers, so it is
+        // written before the first output byte is read and before any reply can be queued.
+        do { try writer.write(input ?? Data()) }
+        catch { cancel(); _ = await exitStatus.value; throw error }
+        // Without a conversation the child only reads the payload, so it waits for EOF.
+        if conversation == nil { writer.close() }
         let receive: @Sendable (Data) -> Void = { line in
             onLine?(line)
             switch conversation?(line) ?? .none {
-            case .send(let data): try? stdin.fileHandleForWriting.write(contentsOf: data)
-            case .finish: try? stdin.fileHandleForWriting.close()
+            case .send(let data): writer.send(data)
+            case .finish: writer.close()
             case .none: break
             }
         }
         return try await withTaskCancellationHandler {
             async let stdout = Self.drain(output.fileHandleForReading, limit: outputLimit, keepTail: false, onLine: receive) { Task { await self.cancel() } }
             async let stderr = Self.drain(errors.fileHandleForReading, limit: 256 * 1024, keepTail: true, onLine: nil, overflow: {})
-            // stdin can be larger than PIPE_BUF; never block the actor/main thread.
-            async let write: Void = Self.feed(stdin.fileHandleForWriting, input: input, closeWhenDone: conversation == nil)
             do {
-                let (out, err, _) = try await (stdout, stderr, write)
+                let (out, err) = try await (stdout, stderr)
+                // A reply that was queued while the child answered still has to reach the
+                // pipe. The wait suspends, so a timeout or a cancellation still runs, and it
+                // ends with the run's budget so a child that never reads cannot stall it.
+                let deadline = max(2, timeout - Date().timeIntervalSince(started)) + 2
+                let flushed = await writer.flush(deadline: deadline)
                 let status = await exitStatus.value
+                if let failure = writer.error { throw WorkspaceError.message(failure) }
+                if !flushed && !cancelled { throw WorkspaceError.message("写入 CLI 标准输入超时") }
                 return ProcessResult(status: status, stdout: out.data,
                     stderr: String(decoding: err.data, as: UTF8.self), cancelled: cancelled,
                     timedOut: timedOut, truncatedStderrBytes: err.dropped)
@@ -88,15 +252,6 @@ public actor ProcessRunner {
                 cancel(); _ = await exitStatus.value; throw error
             }
         } onCancel: { Task { await self.cancel() } }
-    }
-
-    private static func feed(_ handle: FileHandle, input: Data?, closeWhenDone: Bool) async throws {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            DispatchQueue.global(qos: .utility).async {
-                do { defer { if closeWhenDone { try? handle.close() } }; if let input { try handle.write(contentsOf: input) }; continuation.resume() }
-                catch { continuation.resume(throwing: error) }
-            }
-        }
     }
     private struct Drained: Sendable { var data: Data; var dropped: Int }
     private static func drain(_ handle: FileHandle, limit: Int, keepTail: Bool, onLine: (@Sendable (Data) -> Void)?, overflow: @escaping @Sendable () -> Void) async throws -> Drained {
