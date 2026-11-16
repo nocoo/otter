@@ -464,6 +464,54 @@ final class ProcessTests: XCTestCase {
         } catch { /* the broken pipe ends the run instead of waiting for the timeout */ }
     }
 
+    func testLargePayloadWithClosedOutputAndUnreadInputTimesOut() async throws {
+        // The child closes its output and never reads stdin, so the payload fills the pipe.
+        let script = """
+        import os,time
+        os.close(1); os.close(2)
+        time.sleep(30)
+        """
+        let start = Date()
+        let result = try await ProcessRunner().run(executable: "/usr/bin/python3", arguments: ["-c", script],
+            input: Data(repeating: 0x41, count: 512 * 1024), timeout: 1)
+        XCTAssertTrue(result.timedOut, result.stderr)
+        XCTAssertTrue(result.cancelled, result.stderr)
+        XCTAssertLessThan(Date().timeIntervalSince(start), 15, "A blocked write must not keep the runner busy")
+    }
+
+    func testLargeReplyWithClosedOutputAndUnreadInputTimesOut() async throws {
+        // The child answers once, closes its output and never reads the reply.
+        let script = """
+        import os,sys,time
+        print('{"id":1,"result":{}}',flush=True)
+        os.close(1); os.close(2)
+        time.sleep(30)
+        """
+        let start = Date()
+        let result = try await ProcessRunner().run(executable: "/usr/bin/python3", arguments: ["-c", script],
+            input: Data("{\"id\":1}\n".utf8), timeout: 1, conversation: { _ in .send(Data(repeating: 0x42, count: 512 * 1024)) })
+        XCTAssertTrue(result.timedOut, result.stderr)
+        XCTAssertTrue(result.cancelled, result.stderr)
+        XCTAssertLessThan(Date().timeIntervalSince(start), 15, "A blocked reply must not keep the runner busy")
+    }
+
+    func testExplicitCancelStopsARunBlockedOnAnUnreadInput() async throws {
+        let runner = ProcessRunner()
+        let script = """
+        import os,time
+        os.close(1); os.close(2)
+        time.sleep(30)
+        """
+        let cancel = Task { try await Task.sleep(for: .milliseconds(400)); await runner.cancel() }
+        defer { cancel.cancel() }
+        let start = Date()
+        let result = try await runner.run(executable: "/usr/bin/python3", arguments: ["-c", script],
+            input: Data(repeating: 0x41, count: 512 * 1024), timeout: 30)
+        XCTAssertTrue(result.cancelled, result.stderr)
+        XCTAssertFalse(result.timedOut, result.stderr)
+        XCTAssertLessThan(Date().timeIntervalSince(start), 15, "A cancellation must reach a blocked write")
+    }
+
     func testCancellationClosesDescendantPipes() async throws {
         let runner = ProcessRunner(), start = Date()
         let cancel = Task { try await Task.sleep(for: .milliseconds(350)); await runner.cancel() }

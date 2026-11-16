@@ -20,8 +20,19 @@ replies queued behind it, a failed write reported while the child is stopped, an
 closed exactly once after the last queued payload. Regression tests cover the payload
 ordering, an undeliverable reply and the EOF a child waits for.
 
+The first repair repeated the stall in another shape: draining the writer queue with a
+blocking `queue.sync` inside the runner froze the actor, so the timeout and the
+cancellation could not enter it and the child was never killed. The writer now waits for
+its queue with a continuation, so the actor stays free; the runner aborts the writer by
+closing the pipe, which releases a write that waits for a child that stopped reading; and
+the pipe descriptor is captured once, because asking a closed file handle for its
+descriptor raises. A child that closes its output and never reads stdin now ends on the
+timeout or on an explicit cancellation instead of hanging, and the regression tests cover
+a large payload and a large reply in that situation.
+
 Treat a subprocess pipe as a protocol, not as a file: order the payloads, serialize the
-writes, and report a failed write instead of letting the child wait for a timeout.
+writes, report a failed write instead of letting the child wait for a timeout, and never
+block the runner while a child pipe is still open.
 
 ## 2026-11-16: A stale overlay layer can swallow the modal Escape key
 
