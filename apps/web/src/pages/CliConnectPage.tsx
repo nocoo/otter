@@ -1,7 +1,7 @@
 import { Button, LayerCard } from "@nocoo/basalt";
 import { Code, CodeBlock } from "@nocoo/basalt/components/code";
 import { PageHeader } from "@nocoo/basalt/components/page-header";
-import { ExternalLink, ShieldAlert, Terminal } from "lucide-react";
+import { ExternalLink, ShieldAlert, Terminal } from "@nocoo/basalt/icons";
 import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { apiPath } from "@/lib/environment";

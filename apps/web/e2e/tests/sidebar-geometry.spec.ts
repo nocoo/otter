@@ -16,7 +16,7 @@ for (const theme of ["light", "dark"] as const) {
       const avatar = identity.locator(".h-basalt-9.w-basalt-9");
       const brand = sidebar.locator('[data-slot="sidebar-brand-copy"]');
       await expect(page.locator("html")).toHaveAttribute("data-mode", theme);
-      await expect(sidebar).toHaveCSS("width", "260px");
+      await expect(sidebar).toHaveCSS("width", "240px");
       await expect(email).toContainText("@otter.test");
       await expect(email).toHaveCSS("line-height", "16px");
       await expect(avatar).toHaveCSS("width", "36px");
@@ -59,7 +59,7 @@ for (const theme of ["light", "dark"] as const) {
       );
       await page.getByRole("button", { name: "Expand sidebar" }).click();
       await page.mouse.move(width - 1, 0);
-      await expect(sidebar).toHaveCSS("width", "260px");
+      await expect(sidebar).toHaveCSS("width", "240px");
       await expect(email).toHaveCSS("line-height", "16px");
       await expect(brand).toBeVisible();
       await expect(sidebar.getByRole("link", { name: "Sign out" })).toHaveAttribute(
@@ -86,8 +86,8 @@ for (const theme of ["light", "dark"] as const) {
       await expect(drawer).toBeVisible();
       await expect(menu).toHaveAttribute("aria-controls", (await drawer.getAttribute("id")) ?? "");
       await expect(menu).toHaveAttribute("aria-expanded", "true");
-      await expect(drawer).toHaveCSS("width", "260px");
-      await expect(drawer.locator("[data-basalt-sidebar]")).toHaveCSS("width", "260px");
+      await expect(drawer).toHaveCSS("width", "240px");
+      await expect(drawer.locator("[data-basalt-sidebar]")).toHaveCSS("width", "240px");
       await expect(drawer).toHaveCSS("padding-left", "0px");
       await expect(drawer).toHaveCSS("padding-right", "0px");
       await expect(drawer).toHaveCSS("padding-top", "0px");

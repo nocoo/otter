@@ -1,6 +1,6 @@
 import { Badge, LayerCard } from "@nocoo/basalt";
 import { SectionRule } from "@nocoo/basalt/components/section-rule";
-import { AlertTriangle, FileText, Info, List, SkipForward } from "lucide-react";
+import { AlertTriangle, FileText, Info, List, SkipForward } from "@nocoo/basalt/icons";
 import { useEffect, useState } from "react";
 import { FileRow } from "./file-row";
 import { computeIconUrl, listItemKey, resolveIconUrl } from "./helpers";

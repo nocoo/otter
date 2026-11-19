@@ -1,9 +1,8 @@
 import { LayerCard } from "@nocoo/basalt";
-import { BarChart } from "@nocoo/basalt/charts/bar";
-import { DonutChart } from "@nocoo/basalt/charts/donut";
 import { SectionRule } from "@nocoo/basalt/components/section-rule";
-import { Archive, Cpu, HardDrive, Monitor, User } from "lucide-react";
+import { Archive, Cpu, HardDrive, Monitor, User } from "@nocoo/basalt/icons";
 import { formatSize } from "@/lib/utils";
+import { BarChart, DonutChart } from "./charts";
 import type { Collector, SnapshotMeta } from "./types";
 
 interface OverviewTabProps {

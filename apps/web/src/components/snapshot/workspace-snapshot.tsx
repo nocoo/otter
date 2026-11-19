@@ -29,8 +29,8 @@ import {
   TableHeader,
   TableRow,
 } from "@nocoo/basalt/components/table";
+import { Download, FolderGit2, Link2, Terminal, X } from "@nocoo/basalt/icons";
 import type { CaptureRoot, WorkspaceResource } from "@otter/core";
-import { Download, FolderGit2, Link2, Terminal, X } from "lucide-react";
 import { useState } from "react";
 import { coverageLabel, fileBytes, materializedFiles, recoveryArchive } from "@/lib/recovery";
 import { formatSize } from "@/lib/utils";
