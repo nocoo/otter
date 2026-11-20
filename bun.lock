@@ -19,11 +19,11 @@
     },
     "apps/api": {
       "name": "@otter/worker",
-      "version": "3.1.5",
+      "version": "3.1.6",
       "dependencies": {
         "@otter/api": "workspace:*",
         "hono": "4.13.17",
-        "jose": "^6.2.13",
+        "jose": "^6.2.18",
       },
       "devDependencies": {
         "@cloudflare/vitest-pool-workers": "0.23.0",
@@ -35,7 +35,7 @@
     },
     "apps/cli": {
       "name": "@nocoo/otter",
-      "version": "3.1.5",
+      "version": "3.1.6",
       "bin": {
         "otter": "dist/bin.js",
       },
@@ -52,7 +52,7 @@
     },
     "apps/web": {
       "name": "@otter/web",
-      "version": "3.1.5",
+      "version": "3.1.6",
       "dependencies": {
         "@nocoo/basalt": "^3.5.1",
         "@otter/api": "workspace:*",
@@ -80,10 +80,10 @@
     },
     "packages/api": {
       "name": "@otter/api",
-      "version": "3.1.5",
+      "version": "3.1.6",
       "dependencies": {
         "hono": "4.13.17",
-        "jose": "^6.2.13",
+        "jose": "^6.2.18",
         "zod": "4.6.7",
       },
       "devDependencies": {
@@ -94,7 +94,7 @@
     },
     "packages/core": {
       "name": "@otter/core",
-      "version": "3.1.5",
+      "version": "3.1.6",
       "devDependencies": {
         "@types/node": "26.6.6",
       },
@@ -719,7 +719,7 @@
 
     "jiti": ["jiti@2.7.0", "", { "bin": { "jiti": "lib/jiti-cli.mjs" } }, "sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ=="],
 
-    "jose": ["jose@6.2.13", "", {}, "sha512-7TIg10ZE1x82YediN+lcrPNvGMKge9yFHQD+Qho/b8y2adfugU3AsvvHfxV0fzyFllT6l9xCjf4RWY9g/Z9PJQ=="],
+    "jose": ["jose@6.2.18", "", {}, "sha512-doV4thUwgkrycJH4yLeqwTGIIZphHl+pk7CPReuMIhYhncmgzdko85MaCG4YQFTxqMFr1/oEH32tZuKKovcDEg=="],
 
     "js-tokens": ["js-tokens@10.0.0", "", {}, "sha512-lM/UBzQmfJRo9ABXbPWemivdCW8V2G8FHaHdypQaIy523snUjog0W71ayWXTjiR+ixeMyVHN2XcpnTd/liPg/Q=="],
 

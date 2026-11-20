@@ -14,7 +14,7 @@
   "dependencies": {
     "@otter/api": "workspace:*",
     "hono": "4.13.17",
-    "jose": "^6.2.13"
+    "jose": "^6.2.18"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.23.0",
