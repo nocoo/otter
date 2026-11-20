@@ -1,98 +1,72 @@
 # Otter
 
-Configuration backup snapshots with a CLI, browser workspace and native macOS app.
-Profile: ts-worker-web + native-tool (Swift/CLI).
-Human overview: [README.md](README.md). Direction: [configuration backup design](docs/features/04-configuration-backup-redesign.md). Frameworks must preserve this handbook. Maintain this root `AGENTS.md` as the only project handbook; do not create a `CLAUDE.md` alias, copy or import.
+Configuration backup snapshots across a CLI (`apps/cli`, `@nocoo/otter`), Vite/React web workspace (`apps/web`, `@nocoo/basalt` ^3.5.1), Cloudflare Worker (`apps/api`), and native macOS Swift/AppKit app (`apps/macos`), backed by shared `packages/core` and `packages/api`.
 
-## Sources of Truth
-
-This file is the quality contract; hooks, CI and config are enforcement. Close implementation gaps without lowering the contract. Historical test results are not evidence of a current passing run.
-
-| Fact | Where |
-|---|---|
-| Product / setup | [README.md](README.md), [development](docs/10-development.md) |
-| Native / collection | [native workspace](docs/features/03-macos-agent-workspace.md), [collectors](docs/02-collectors.md) |
-| Version / release | root `package.json`, [release procedure](docs/11-agent-release.md) |
-| Test truth | `vitest*.ts`, `scripts/run-api-e2e.ts`, `scripts/run-e2e-spa.ts`, hooks/CI |
-| Accidents | [Retrospective.md](Retrospective.md) |
-| Machine workflow | global `AGENTS.md` and Git rules |
-
-## Project Invariants
-
-- Preserve complete source bytes/symlinks within the collection policy; snapshot locally first, then upload identical immutable content. Collected user configuration may contain secrets.
-- `packages/api` exports a runtime-agnostic Hono factory, embedded by the sole Worker in `apps/api`; `/api/*` serves browsers, `/ingest/*` the CLI. D1 indexes and R2 payloads stay coordinated.
-- Access authentication falls through to verified Bearer tokens; no localhost or mode-based identity stamping. Demo/E2E seed server-held fixture tokens into local D1.
-- `bun run dev` launches the local-only Demo/E2E/Prod gateway. Only interactive Prod uses `OTTER_DEV_API_TOKEN` from `apps/web/.env` against the fixed production API. Vite has no production proxy; automated E2E never reads daily env files.
-- Build core declarations before downstream TypeScript reference checks. Keep `@nocoo/otter` as the CLI package; core type-only code is not separately published.
-
-## Stack / Layout
-
-| Component | Path / choice |
-|---|---|
-| Web / Worker | `apps/web` Vite/React + `@nocoo/basalt` ^3.5.1; `apps/api` D1/R2/SPA assets |
-| Shared / CLI | `packages/core`, `packages/api`, `apps/cli` |
-| Native | `apps/macos`, Swift/AppKit; isolated build/test scripts |
+Docs: [README.md](README.md) · [Architecture](docs/01-architecture.md) · [Backup design](docs/features/04-configuration-backup-redesign.md) · [Development](docs/10-development.md) · [Collectors](docs/02-collectors.md) · [Native workspace](docs/features/03-macos-agent-workspace.md) · [Basalt UI](docs/13-basalt-workspace.md) · [Local envs](docs/12-local-environments.md) · [Release](docs/11-agent-release.md) · [Retrospective](Retrospective.md)
 
 ## Commands
 
-Run from root with Bun, Node 26.12.1+ (supported engine range in package.json), gitleaks and OSV. Native checks require macOS, full Xcode and xcodegen. Before L2, build `packages/core`, `apps/cli`, `packages/api` in that order with `bun run --cwd <path> build`, then the SPA; the runner needs compiled CLI and static assets. If incremental metadata survives missing outputs, regenerate them with `bunx tsc -b packages/core apps/cli --force`. No CF credentials are needed for local L2.
+Run from root with Bun (`1.4.2` in CI), Node `>=26.12.1`, `gitleaks`, and `osv-scanner`. Native checks require macOS, full Xcode, and `xcodegen`. Local variable names live in `.env.example` (interactive Prod only -> `apps/web/.env`).
 
-```bash
+Before `test:l2` or browser E2E, build in order: `bun run --cwd packages/core build && bun run --cwd apps/cli build && bun run --cwd packages/api build && bun run build` (no Cloudflare credentials needed). If incremental `.tsbuildinfo` outlives missing outputs, run `bunx tsc -b packages/core apps/cli --force`.
+
+```sh
 bun install --frozen-lockfile
-bun run typecheck
-bun run lint:biome
-bun run build
-bun run test:coverage
-bun run test:worker
-bun run test:l2
-bun run test:e2e                 # built SPA + locked isolated local Worker
-bun run test:e2e:bdd             # same local-only runner, never Vite/prod proxy
-bun scripts/verify-environments.ts # local switching and isolation acceptance
-bun scripts/verify-basalt.ts       # built SPA, disposable rich E2E, all-route captures
-bun run macos:test
-bun run deploy:check             # build + local Worker dry run
+bun run dev                        # local Demo/E2E/Prod gateway -> 127.0.0.1:7019
+bun run dev -- --mode e2e          # interactive switchable E2E
+bun run dev:built                  # locally served production SPA build
+bun run demo:reset                 # stop the interactive server first
+bun run typecheck                  # S1: tsc -b across all 5 TS workspaces
+bun run lint:biome                 # S2: Biome check-only (pre-commit adds --error-on-warnings)
+bun run build                      # B1: apps/web SPA bundle
+bun run test:coverage              # L1: >=95% statements/branches/functions/lines
+bun run deploy:check               # L2: SPA build + wrangler deploy --dry-run
+bun run test:worker                # L2: apps/api Cloudflare Worker tests
+bun run test:l2                    # L3: local Wrangler HTTP API + CLI integration
+bun run test:e2e                   # L4: built SPA + locked local Worker (apps/web)
+bun run test:e2e:bdd               # L4: BDD browser suite (same locked local runner)
+bun scripts/verify-environments.ts # local env switching and isolation acceptance
+bun scripts/verify-basalt.ts       # built SPA + disposable E2E all-route captures
+bun run macos:test                 # native Swift/AppKit core + UI tests
+bun run macos:package              # universal macOS app + standalone CLI verification
 ```
 
-## Verification
+## Invariants
 
-Quality contract follows System1 slots (L1/L2/L3 + G2 + D1 test isolation). Status: `enforced`, `planned`, `manual`, or `N/A`; partial enforcement below does not certify the full required bar.
-L1 requires statements, branches, functions and lines each ≥95%, with no skipped/focused tests; preserve any stricter package threshold. Native tools must identify unmeasured metrics as gaps. L1 also includes check-only strict analysis/formatting with zero errors/warnings (the former G1 contract). G2 requires dependency and secret scans, with missing required scanners failing.
+- Preserve complete source bytes and symlinks within collection policy; snapshot locally first, then upload identical immutable content. Collected user configurations may contain secrets.
+- `packages/api` exports a runtime-agnostic Hono factory embedded by the sole Worker in `apps/api`; `/api/*` serves browsers and `/ingest/*` serves CLI/webhooks. Keep D1 indexes and R2 payloads coordinated.
+- Access JWT verification falls through to verified Bearer tokens; never stamp identity by localhost or mode. Demo and E2E seed server-held fixture tokens into local D1.
+- `bun run dev` runs the local-only Demo/E2E/Prod gateway; only interactive Prod injects `OTTER_DEV_API_TOKEN` from `apps/web/.env` to `https://otter.worker.hexly.ai`.
+- Vite has no production proxy; automated E2E never reads daily `.env` files, refuses inherited Prod credentials, and disables server reuse.
+- Build `packages/core` declarations before downstream TS reference checks. Keep `@nocoo/otter` (`apps/cli`) as the only npm package; `@otter/core` is type-only and unpublished.
+- Keep root and workspace `package.json` dependency manifests synchronized with `bun.lock`.
+- `apps/web` uses `@nocoo/basalt` ^3.5.1 ([docs/13-basalt-workspace.md](docs/13-basalt-workspace.md)); use published Basalt controls and tokens rather than raw controls or invented tokens.
+- In-memory driver fakes do not prove D1 schema migrations or live storage behavior; verify migrations and real HTTP/CLI flows with `test:worker` and `test:l2`.
+- Preserve trusted dev TLS and Vite host allowlists (`otter.dev.hexly.ai`); do not turn historical TLS workarounds into default checks.
+- Native subprocess pipes (`apps/macos`) are protocols: order payloads, serialize writes and closes on the writer queue, report write errors instead of timing out, and never block the runner on open pipes.
+- Releases follow [docs/11-agent-release.md](docs/11-agent-release.md) (9-file sync, changelog, tag, native artifacts). Worker CD tracks green CI; `npm publish`, signing, and real restore require explicit authorization.
 
-| Dimension | Status | Required proof and current evidence/gap |
-|---|---|---|
-| L1 TypeScript | enforced | pre-commit runs `test:coverage` on the index snapshot with statements/branches/functions/lines each ≥95%; Worker UI exclusions remain by design; native/Swift coverage still ungated. |
-| L1 Swift | planned | Separate macOS CI runs native tests; no all-four 95% native coverage gate. |
-| L1 static (former G1, TypeScript / Swift) | enforced | pre-commit runs staged Biome (`--error-on-warnings`) and `tsc -b` inside the index snapshot; CI still typechecks/Biome the tree; Swift strict analysis remains a gap. |
-| L2 HTTP / CLI | planned | `test:l2` boots local Wrangler and tests real API/CLI flows; require verified 100% route/auth/error coverage. Unit driver fakes are not real HTTP proof. |
-| L3 web / native | planned | `test:e2e` serves built SPA/local Worker; macOS CI checks real AppKit and packaged CLI. Full page/desktop coverage is not enforced; both browser configs now use the locked local-only runner. |
-| G2 | enforced | Hooks/CI require OSV and gitleaks, including full-history pre-push scanning. |
-| D1 | planned | Local launchers allocate unique E2E D1/R2 state and identity, validate canonical path/owner and D1 markers before cleanup, and reject Prod credentials. Browser server reuse is disabled. Whole-repo isolation and external-boundary coverage remain incomplete. |
+## Quality & Local Gates
 
-Pre-commit exports the index with `git checkout-index`, then runs staged Biome, `test:coverage`, project-reference typecheck and staged gitleaks (gitleaks before snapshot export). Pre-push runs local L2, OSV and full-history gitleaks in parallel. CI adds Worker/build/browser gates and path-filtered macOS test/package jobs. Hooks grade the staged commit index, not unstaged worktree fixes.
+Follows `system1-quality`; CI slot definitions and pinned `base-ci` revision live in `.github/workflows/quality-slots.yml` (`quality / Z1: Gate` required on `main` and by `.github/workflows/release.yml`). Status vocabulary: `enforced`, `planned`, `manual`, `N/A`.
 
-Target hooks: pre-commit checks unified L1 (types, check-only lint, coverage) against the index snapshot in <30s; pre-push checks L2 and G2 in parallel against every stdin push ref/commit in <3min, plus build where applicable. L3 runs in CI or an explicit manual lane.
-Never bypass commit/push hooks, force-push, or use autofix in checks. Documentation changes do not authorize deploying or implementing new gates.
+- **CI exceptions**: `S1`–`S3`, `G1`–`G2`, `B1`, and `L1`–`L4` are `enforced`. `P1 Package` is `N/A` in CI (private root; `@nocoo/otter` publish is `manual`, tarball smoke `planned`).
+- **L1 coverage boundary**: `vitest.config.ts` enforces >=95% on TS logic; excludes `apps/api/**` (`test:worker`), `.tsx` UI/hooks (`L4`), and thin entrypoints/infra glue.
+- **Native macOS lane**: path-filtered `.github/workflows/macos.yml` runs `macos:test` and `macos:package`; Swift 95% coverage and strict static analysis remain `planned`.
+- **Local hooks**: installed via `prepare` (`husky`, `.husky/`); `pre-commit` grades the staged index (never unstaged fixes), and checks forbid hook bypass or autofix.
+- **`pre-commit`**: staged `gitleaks` (`G1`) + `git checkout-index` snapshot (`scripts/precommit.ts`) running staged Biome `--error-on-warnings` (`S2`), `test:coverage` (`L1`), and `tsc -b` (`S1`).
+- **`pre-push`** (`.husky/pre-push`): parallel `osv-scanner` (`G2`), full-history `gitleaks git` (`G1`), and `test:l2` (`L3` local Wrangler API+CLI). Per-ref stdin OID isolation remains `planned`.
 
-## Resources / Isolation
+## Resources & Isolation
 
-Local gateway: loopback 7019 through `https://otter.dev.hexly.ai`; managed Workers and L2 allocate loopback ports. Both browser suites use gateway 27019 and must run serially, without server reuse. Demo persists in `apps/api/.wrangler/environments/demo`; each E2E owns a fresh sibling directory, identity and D1 marker. Cleanup rejects foreign paths, symlinks and ownership/marker mismatch. Never copy daily credentials or snapshots into fixtures. See [local environments](docs/12-local-environments.md).
+| Lane | Endpoint / State | Boundary |
+| --- | --- | --- |
+| Dev / Demo | `https://otter.dev.hexly.ai` -> `127.0.0.1:7019`; `apps/api/.wrangler/environments/demo` | Persistent local Demo (managed Worker on loopback port); stop server before `demo:reset`. Interactive Prod uses `apps/web/.env` |
+| Tests (L3 / L4) | `127.0.0.1:27019` (`scripts/run-e2e-spa.ts`) / dynamic loopback (`scripts/run-api-e2e.ts`); fresh sibling dir + D1 marker | Run browser suites serially with each other and with SPA builds (`apps/web/dist`); cleanup verifies canonical path, owner, and D1 marker; never copy daily creds/snapshots |
+| Prod | `https://otter.hexly.ai` (SPA + CF Access), `https://otter.worker.hexly.ai` (API/CLI); D1 `otter-db`, R2 `otter-snapshots` & `zhe` | Read-only checks (`bun run verify:web https://otter.worker.hexly.ai`) unless deployment is authorized; `workers_dev = false` |
 
-```bash
-bun run dev                     # preference, then Demo
-bun run dev -- --mode e2e        # interactive, switchable E2E
-bun run dev:built                # locally served production build
-bun run demo:reset               # stop the interactive server first
-```
-
-## Operations / Release
-
-Use [release procedures](docs/11-agent-release.md) for the nine-file version sync, changelog, build, commit/tag/push and native artifacts. Worker CD follows CI. npm publication is user-initiated only; do not infer it from a Git release. Keep release/package signing and real restore acceptance explicit.
+See [docs/12-local-environments.md](docs/12-local-environments.md) for the full gateway, lock, and cleanup contract.
 
 ## Retrospective
 
-Move accident narratives to [Retrospective.md](Retrospective.md); keep at most about ten concise recurring project rules here. Put architecture and operational detail in linked docs.
-
-- Root and workspace dependency manifests must change together with the lockfile.
-- A local API fake does not validate schema migration or live storage behavior.
-- Preserve trusted dev TLS and host allowlists; do not turn historical TLS workarounds into default checks.
-- Native subprocess pipes are protocols: order the payloads, serialize the writes, report a failed write instead of letting the child wait for a timeout, never block the runner while a child pipe is still open, and close a pipe only where its writes are serialized.
+Record incident narratives in [Retrospective.md](Retrospective.md); promote recurring project constraints to `Invariants` above and enforceable safeguards to tests/hooks.
