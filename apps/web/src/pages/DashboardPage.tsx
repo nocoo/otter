@@ -2,7 +2,7 @@ import { Badge, Button, DescriptionList, Input, LayerCard } from "@nocoo/basalt"
 import { CodeBlock } from "@nocoo/basalt/components/code";
 import { PageHeader } from "@nocoo/basalt/components/page-header";
 import { SectionRule } from "@nocoo/basalt/components/section-rule";
-import { Archive, ArrowRight, Laptop, ShieldCheck, Terminal } from "lucide-react";
+import { Archive, ArrowRight, Laptop, ShieldCheck, Terminal } from "@nocoo/basalt/icons";
 import { useState } from "react";
 import { Link } from "react-router";
 import { useApi } from "@/api";

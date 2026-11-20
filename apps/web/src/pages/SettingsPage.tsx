@@ -17,7 +17,7 @@ import {
 import { Code } from "@nocoo/basalt/components/code";
 import { PageHeader } from "@nocoo/basalt/components/page-header";
 import { SectionRule } from "@nocoo/basalt/components/section-rule";
-import { Check, Copy, Plus, Shield, Trash2, Webhook } from "lucide-react";
+import { Check, Copy, Plus, Shield, Trash2, Webhook } from "@nocoo/basalt/icons";
 import { useEffect, useId, useState } from "react";
 import { apiFetch, useApi } from "@/api";
 import { ingestBase, setEnvironmentDraft } from "@/lib/environment";

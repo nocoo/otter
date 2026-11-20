@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.1.6] - 2026-11-20
+
+### Changed
+
+- Upgrade `@nocoo/basalt` to `^3.5.1`, drop `lucide-react` and `tw-animate-css`, and switch `apps/web/src/globals.css` to `@import "@nocoo/basalt/styles"; @import "tailwindcss";`.
+- Migrate `BarChart` and `DonutChart` to `@nocoo/basalt/components/chart` with Recharts and align sidebar default width (`240px`) and `ContentIsland` inset tokens.
+
 ## [3.1.5] - 2026-11-10
 
 ### Changed

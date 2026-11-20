@@ -1,5 +1,5 @@
 import { Button, LayerCard } from "@nocoo/basalt";
-import { Check, Copy, Eye, FileText } from "lucide-react";
+import { Check, Copy, Eye, FileText } from "@nocoo/basalt/icons";
 import { useCallback, useState } from "react";
 import { FileViewerDialog } from "@/components/file-viewer-dialog";
 import { formatSize } from "@/lib/utils";

@@ -1,7 +1,7 @@
 import { Badge, LayerCard, Tabs, TabsContent, TabsList, TabsTrigger } from "@nocoo/basalt";
 import { Banner } from "@nocoo/basalt/components/banner";
 import { PageHeader } from "@nocoo/basalt/components/page-header";
-import { Globe, Settings } from "lucide-react";
+import { Globe, Settings } from "@nocoo/basalt/icons";
 import { useParams } from "react-router";
 import { useApi } from "@/api";
 import { CollectorsTab } from "@/components/snapshot/collectors-tab";

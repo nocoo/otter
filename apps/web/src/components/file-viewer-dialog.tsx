@@ -8,8 +8,8 @@ import {
   DialogTitle,
   LayerCard,
 } from "@nocoo/basalt";
+import { Check, Copy, FileText, Hash, Type, X } from "@nocoo/basalt/icons";
 import { useTheme } from "@nocoo/basalt/providers/theme";
-import { Check, Copy, FileText, Hash, Type, X } from "lucide-react";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { type BundledLanguage, codeToTokens, type ThemedToken } from "shiki";
 import { formatSize } from "@/lib/utils";

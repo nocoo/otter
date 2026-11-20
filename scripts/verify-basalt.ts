@@ -172,8 +172,8 @@ try {
     };
   });
   assert.deepEqual(drawerGeometry, {
-    outer: 260,
-    inner: 260,
+    outer: 240,
+    inner: 240,
     padding: ["0px", "0px", "0px", "0px"],
   });
   await capture("mobile-navigation");
@@ -187,7 +187,7 @@ try {
     join(output, "manifest.json"),
     JSON.stringify(
       {
-        basalt: "3.3.6",
+        basalt: "3.5.1",
         fixture: 1,
         locale: "en-US",
         routes,

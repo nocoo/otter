@@ -1,5 +1,5 @@
 import { Button, LayerCard } from "@nocoo/basalt";
-import { Clock, Download } from "lucide-react";
+import { Clock, Download } from "@nocoo/basalt/icons";
 import type { SnapshotData } from "./types";
 
 interface ExportSectionProps {

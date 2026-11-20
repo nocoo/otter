@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@nocoo/basalt/components/table";
-import { Archive, GitCompareArrows } from "lucide-react";
+import { Archive, GitCompareArrows } from "@nocoo/basalt/icons";
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useApi } from "@/api";

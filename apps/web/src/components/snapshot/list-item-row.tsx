@@ -1,5 +1,5 @@
 import { Badge, LayerCard } from "@nocoo/basalt";
-import { AppWindow, CircleCheck } from "lucide-react";
+import { AppWindow, CircleCheck } from "@nocoo/basalt/icons";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { badgeClassName, formatMetaLabel, metaEntries } from "./helpers";
