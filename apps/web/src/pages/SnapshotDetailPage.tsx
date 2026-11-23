@@ -47,7 +47,7 @@ export function SnapshotDetailPage() {
       ) : (
         <>
           <Banner
-            variant="secondary"
+            tone="neutral"
             description="Legacy snapshot: some skills were saved as names only. Missing package contents cannot be recovered from the list."
           />
           <RecoveryDownload data={snapshotData} />
@@ -56,11 +56,11 @@ export function SnapshotDetailPage() {
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="config">
                 <Settings aria-hidden="true" strokeWidth={1.5} />
-                Config <Badge variant="secondary">{configCount}</Badge>
+                Config <Badge tone="neutral">{configCount}</Badge>
               </TabsTrigger>
               <TabsTrigger value="environment">
                 <Globe aria-hidden="true" strokeWidth={1.5} />
-                Environment <Badge variant="secondary">{envCount}</Badge>
+                Environment <Badge tone="neutral">{envCount}</Badge>
               </TabsTrigger>
             </TabsList>
             <TabsContent value="overview">

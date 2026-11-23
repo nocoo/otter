@@ -39,7 +39,7 @@ export function DashboardPage() {
             Mac App.
           </p>
         </div>
-        <Badge variant="secondary">{data?.devices.length ?? 0} machines</Badge>
+        <Badge tone="neutral">{data?.devices.length ?? 0} machines</Badge>
       </LayerCard>
       <SectionRule
         title="Machines"
@@ -97,7 +97,7 @@ export function DashboardPage() {
                     </div>
                   </LayerCard.Header>
                   <LayerCard.Body className="space-y-3">
-                    <Badge variant={device.complete ? "success" : "warning"}>
+                    <Badge tone={device.complete ? "success" : "warning"}>
                       {coverageLabel(device.complete)}
                     </Badge>
                     <div className="space-y-1 text-xs text-basalt-muted-foreground">

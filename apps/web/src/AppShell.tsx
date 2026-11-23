@@ -97,7 +97,7 @@ function AppShellInner() {
       <AppMain>
         <AppHeader
           data-testid="app-header"
-          density={isMobile ? "compact" : "comfortable"}
+          density={isMobile ? "compact" : "default"}
           leading={
             isMobile ? (
               <AppHeaderMenuButton

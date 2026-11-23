@@ -410,7 +410,7 @@ export function WorkspaceSnapshot({ data }: { data: SnapshotData }) {
                       <div className="flex flex-wrap gap-2 text-xs">
                         {["instruction", "skill", "command", "rule", "hook", "configuration"].map(
                           (kind) => (
-                            <Badge key={kind} variant="secondary">
+                            <Badge key={kind} tone="neutral">
                               {
                                 w.resources.filter(
                                   (r) => r.agentIds.includes(agent.id) && r.kind === kind,

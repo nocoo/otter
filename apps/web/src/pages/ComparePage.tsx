@@ -46,13 +46,13 @@ export function ComparePage() {
             <p className="text-xs text-basalt-muted-foreground">
               {before.data?.data.createdAt} → {after.data?.data.createdAt}
             </p>
-            <Badge variant="secondary">
+            <Badge tone="neutral">
               {result.files.length} file changes · {result.environment.length} environment changes
             </Badge>
           </LayerCard>
           {result.incomplete && (
             <Banner
-              variant="alert"
+              tone="warning"
               description={
                 <>
                   {result.scopeChanged

@@ -60,7 +60,7 @@ export function CollectorCard({ collector }: { collector: Collector }) {
               </span>
             )}
             {hasErrors && (
-              <Badge variant="error" className="text-xs font-normal">
+              <Badge tone="danger" className="text-xs font-normal">
                 {collector.errors.length} error{collector.errors.length !== 1 ? "s" : ""}
               </Badge>
             )}

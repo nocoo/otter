@@ -127,7 +127,7 @@ export function SettingsPage() {
               <AvatarFallback>{me?.email?.[0]?.toUpperCase() ?? "?"}</AvatarFallback>
             </Avatar>
             <p className="min-w-0 flex-1 break-all text-sm font-medium">{me?.email || "—"}</p>
-            <Badge variant="secondary">
+            <Badge tone="neutral">
               <Shield className="h-3 w-3" strokeWidth={1.5} aria-hidden="true" />
               Cloudflare Access
             </Badge>
@@ -226,7 +226,7 @@ export function SettingsPage() {
                   <LayerCard.Header className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2">
                       <h3 className="truncate text-sm font-medium">{webhook.label}</h3>
-                      <Badge variant={webhook.isActive ? "success" : "secondary"}>
+                      <Badge tone={webhook.isActive ? "success" : "neutral"}>
                         {webhook.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </div>

@@ -42,7 +42,7 @@ export function DevicePage() {
       ) : (
         <>
           <LayerCard className="flex flex-wrap items-center gap-3">
-            <Badge variant={device.complete ? "success" : "warning"}>
+            <Badge tone={device.complete ? "success" : "warning"}>
               {coverageLabel(device.complete)}
             </Badge>
             <div className="text-xs text-basalt-muted-foreground">

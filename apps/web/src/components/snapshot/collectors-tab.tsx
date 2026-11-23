@@ -28,7 +28,7 @@ export function CollectorsTab({ collectors, category }: CollectorsTabProps) {
           placeholder="Search collectors, files, items, or metadata..."
           aria-label="Search collectors, files, items, or metadata"
         />
-        <Badge variant="secondary" className="text-xs font-normal shrink-0">
+        <Badge tone="neutral" className="text-xs font-normal shrink-0">
           {filtered.length}/{categoryCollectors.length}
         </Badge>
       </div>
