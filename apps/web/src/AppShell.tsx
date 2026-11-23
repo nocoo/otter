@@ -1,6 +1,14 @@
-import { ContentIsland, SidebarDrawer } from "@nocoo/basalt";
+import { ContentIsland } from "@nocoo/basalt";
 import { AppHeader, AppHeaderMenuButton, ProjectLinks } from "@nocoo/basalt/components/app-header";
 import { AppMain, AppSkipLink, AppShell as BasaltShell } from "@nocoo/basalt/components/app-shell";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@nocoo/basalt/components/sheet";
+import { SidebarProvider } from "@nocoo/basalt/components/sidebar";
 import { ThemeToggle } from "@nocoo/basalt/components/theme-toggle";
 import { useEffect, useId, useRef } from "react";
 import { Outlet, useLocation } from "react-router";
@@ -78,21 +86,34 @@ function AppShellInner() {
         </PersistedSidebarProvider>
       )}
       {isMobile && (
-        <SidebarDrawer
-          id={mobileSheetId}
-          open={mobileOpen}
-          onOpenChange={setMobileOpen}
-          returnFocusRef={menuButton}
-          title="Navigation"
-          description="Navigate your configuration workspace."
-        >
-          <Sidebar
-            ariaLabel="Navigation"
-            variant="mobile"
-            onNavigate={() => setMobileOpen(false)}
-            onDismiss={() => setMobileOpen(false)}
-          />
-        </SidebarDrawer>
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+          <SheetContent
+            id={mobileSheetId}
+            data-slot="sidebar-drawer"
+            side="left"
+            showCloseButton={false}
+            className="basalt-sidebar-drawer max-h-dvh w-[var(--basalt-size-sidebar-width)] max-w-[var(--basalt-size-sidebar-width)] border-r-0 bg-basalt-background p-0 sm:p-0"
+            onCloseAutoFocus={(event) => {
+              if (menuButton.current) {
+                event.preventDefault();
+                menuButton.current.focus();
+              }
+            }}
+          >
+            <SheetHeader className="sr-only">
+              <SheetTitle>Navigation</SheetTitle>
+              <SheetDescription>Navigate your configuration workspace.</SheetDescription>
+            </SheetHeader>
+            <SidebarProvider collapsed={false}>
+              <Sidebar
+                ariaLabel="Navigation"
+                variant="mobile"
+                onNavigate={() => setMobileOpen(false)}
+                onDismiss={() => setMobileOpen(false)}
+              />
+            </SidebarProvider>
+          </SheetContent>
+        </Sheet>
       )}
       <AppMain>
         <AppHeader

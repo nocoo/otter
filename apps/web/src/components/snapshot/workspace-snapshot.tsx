@@ -2,7 +2,6 @@ import {
   Badge,
   Button,
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -29,7 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@nocoo/basalt/components/table";
-import { Download, FolderGit2, Link2, Terminal, X } from "@nocoo/basalt/icons";
+import { Download, FolderGit2, Link2, Terminal } from "@nocoo/basalt/icons";
 import type { CaptureRoot, WorkspaceResource } from "@otter/core";
 import { useState } from "react";
 import { coverageLabel, fileBytes, materializedFiles, recoveryArchive } from "@/lib/recovery";
@@ -142,18 +141,9 @@ function ResourceContent({
     >
       <DialogContent
         size="xl"
+        closeLabel="Close resource viewer"
         className="flex max-h-[90vh] flex-col gap-4 overflow-auto p-4 text-sm sm:p-5"
       >
-        <DialogClose asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-3 top-3"
-            aria-label="Close resource viewer"
-          >
-            <X strokeWidth={1.5} aria-hidden="true" />
-          </Button>
-        </DialogClose>
         <DialogHeader className="space-y-1 pr-8">
           <DialogTitle className="break-words text-base leading-6">{resource.name}</DialogTitle>
           <DialogDescription className="flex flex-wrap gap-x-2 gap-y-1 text-xs leading-5">
