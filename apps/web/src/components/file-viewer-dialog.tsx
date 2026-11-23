@@ -1,14 +1,13 @@
 import {
   Button,
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
   LayerCard,
 } from "@nocoo/basalt";
-import { Check, Copy, FileText, Hash, Type, X } from "@nocoo/basalt/icons";
+import { Check, Copy, FileText, Hash, Type } from "@nocoo/basalt/icons";
 import { useTheme } from "@nocoo/basalt/providers/theme";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { type BundledLanguage, codeToTokens, type ThemedToken } from "shiki";
@@ -272,17 +271,11 @@ export function FileViewerDialog({ file, open, onOpenChange }: FileViewerDialogP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="xl" className="flex max-h-[85vh] flex-col gap-4 p-4 text-sm sm:p-5">
-        <DialogClose asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-3 top-3"
-            aria-label="Close file viewer"
-          >
-            <X strokeWidth={1.5} aria-hidden="true" />
-          </Button>
-        </DialogClose>
+      <DialogContent
+        size="xl"
+        closeLabel="Close file viewer"
+        className="flex max-h-[85vh] flex-col gap-4 p-4 text-sm sm:p-5"
+      >
         {/* Header */}
         <DialogHeader className="shrink-0">
           <div className="flex items-start justify-between gap-3 pr-8">
