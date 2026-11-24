@@ -9,6 +9,8 @@ export default defineConfig({
     },
   },
   test: {
+    allowOnly: false,
+    passWithNoTests: false,
     globals: true,
     pool: "vmThreads",
     maxWorkers: Math.min(12, availableParallelism()),
