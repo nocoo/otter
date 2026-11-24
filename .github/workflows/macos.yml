@@ -52,7 +52,6 @@ jobs:
         build/macos-native/*/*.log
   package:
     name: Universal app and standalone CLI package
-    needs: test
     uses: nocoo/base-ci/.github/workflows/test-job.yml@6424d395d36a815d931f10e557762eb635d511c0 # v2026.16
     with:
       runner: "macos-26"

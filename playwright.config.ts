@@ -4,8 +4,8 @@ export default defineConfig({
   testDir: "./e2e/bdd",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : 2,
+  retries: process.env.CI ? 1 : 0,
+  workers: 2,
   reporter: "html",
   use: {
     baseURL: "http://127.0.0.1:27019",

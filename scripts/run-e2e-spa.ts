@@ -3,8 +3,10 @@ import { assertTestCredentials, ROOT } from "./environments/runtime";
 import { startLocalServer } from "./environments/server";
 
 assertTestCredentials();
-const build = spawnSync("bun", ["run", "build"], { cwd: ROOT, stdio: "inherit" });
-if (build.status !== 0) throw new Error("SPA build failed");
+if (process.env.OTTER_E2E_SKIP_BUILD !== "1") {
+  const build = spawnSync("bun", ["run", "build"], { cwd: ROOT, stdio: "inherit" });
+  if (build.status !== 0) throw new Error("SPA build failed");
+}
 const server = await startLocalServer({
   mode: "e2e",
   automated: true,

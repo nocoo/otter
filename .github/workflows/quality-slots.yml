@@ -160,7 +160,7 @@ jobs:
           bun run --cwd apps/cli build
           bun run --cwd packages/api build
           bun run build
-          bun run test:e2e && bun run test:e2e:bdd
+          OTTER_E2E_SKIP_BUILD=1 bun run test:e2e && OTTER_E2E_SKIP_BUILD=1 bun run test:e2e:bdd
 
   p1-package:
     name: "P1: Package"
