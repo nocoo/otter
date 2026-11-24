@@ -90,7 +90,7 @@ bun run build
 node apps/cli/dist/bin.js --help
 ```
 
-根目录 `build` 只构建 Web。`typecheck` 与 `lint` 都调用类型检查脚本；共享类型变更后先 `bunx tsc -p packages/core` 生成声明，再检查下游。代码风格使用 `bun run lint:biome`。源代码 CLI 构建后使用 Node 执行，Bun 不是已发布 CLI 的必需运行时。
+根目录 `build` 只构建 Web。`typecheck` 检查 TypeScript 类型；共享类型变更后先 `bunx tsc -p packages/core` 生成声明，再检查下游。代码风格使用 `bun run lint`。源代码 CLI 构建后使用 Node 执行，Bun 不是已发布 CLI 的必需运行时。
 
 ## 本地联调
 

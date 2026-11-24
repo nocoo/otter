@@ -101,7 +101,7 @@ packages/core/     共享类型
 packages/api/      Hono 应用工厂、鉴权与数据访问库
 ```
 
-先运行 `bunx tsc -p packages/core`，再用 `bun run typecheck` 检查类型；`bun run lint:biome` 检查代码风格。生产 Worker 在 main 的 CI 成功后由 Release 部署；该流程不执行 D1 迁移，也不发布 npm CLI。3.0 上线前须先应用 `0005_snapshot_v2.sql`，再部署兼容 v1/v2 的 API/Web，最后分发 CLI/Mac，详见[升级与部署说明](docs/10-development.md#部署)。
+先运行 `bunx tsc -p packages/core`，再用 `bun run typecheck` 检查类型；`bun run lint` 检查代码风格。生产 Worker 在 main 的 CI 成功后由 Release 部署；该流程不执行 D1 迁移，也不发布 npm CLI。3.0 上线前须先应用 `0005_snapshot_v2.sql`，再部署兼容 v1/v2 的 API/Web，最后分发 CLI/Mac，详见[升级与部署说明](docs/10-development.md#部署)。
 
 `bun run deploy:check` 构建 Web 并执行 Wrangler 部署预演。构建产物位于 `apps/web/dist`，由 `apps/api/wrangler.toml` 的 `../web/dist` 托管；页面和 API 仍随一个 Worker 发布。
 

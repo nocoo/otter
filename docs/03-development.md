@@ -38,8 +38,8 @@ bun run test
 | `bun run test:watch` | 监听模式 |
 | `bun run test:coverage` | 覆盖率报告 |
 | `bun run test:e2e` | Playwright BDD E2E（`scripts/run-e2e-spa.ts` 启 wrangler dev `--local`） |
-| `bun run lint` | TypeScript 类型检查（所有 TypeScript workspace，含 Worker） |
-| `bun run lint:biome` / `lint:biome:fix` | Biome 检查 / 自动修 |
+| `bun run typecheck` | TypeScript 类型检查（所有 TypeScript workspace，含 Worker） |
+| `bun run lint` / `lint:fix` | Biome 检查 / 自动修 |
 
 CLI 命令请直接看 `node apps/cli/dist/bin.js --help` 或 [README 使用说明](../README.md#使用)。
 
@@ -119,7 +119,7 @@ bun run deploy        # 生产 worker（custom domain otter.hexly.ai + workers.d
 
 | Hook | 内容 |
 |---|---|
-| pre-commit | 并行执行：lint-staged（Biome） + `bun run test:coverage`（L1） + `bun run lint`（tsc） + `gitleaks protect --staged` |
+| pre-commit | 并行执行：Biome（index snapshot） + `bun run test:coverage`（L1） + `tsc -b`（S1） + `gitleaks protect --staged` |
 | pre-push | 并行执行：`osv-scanner`（lockfile vuln） + `gitleaks git`（全历史 secret 扫描） |
 
 所有 gates 通过才允许 commit / push。

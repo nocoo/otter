@@ -101,7 +101,7 @@ packages/core/     Shared types
 packages/api/      Hono app factory, authentication and data access library
 ```
 
-Emit core declarations with `bunx tsc -p packages/core` before `bun run typecheck`; `bun run lint:biome` checks code style. Release deploys the production Worker after successful CI on main. It neither applies D1 migrations nor publishes the npm CLI. For 3.0, apply `0005_snapshot_v2.sql` first, deploy the API/Web with v1/v2 support, then distribute CLI/Mac clients; see [deployment](10-development.md#部署).
+Emit core declarations with `bunx tsc -p packages/core` before `bun run typecheck`; `bun run lint` checks code style. Release deploys the production Worker after successful CI on main. It neither applies D1 migrations nor publishes the npm CLI. For 3.0, apply `0005_snapshot_v2.sql` first, deploy the API/Web with v1/v2 support, then distribute CLI/Mac clients; see [deployment](10-development.md#部署).
 
 `bun run deploy:check` builds the Web SPA and runs a Wrangler deployment dry run. `apps/api/wrangler.toml` serves the output from `../web/dist`, so the Web UI and API continue to ship as one Worker. The release check verifies the API version, JavaScript, CSS and SPA deep links.
 

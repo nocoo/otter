@@ -138,7 +138,7 @@ collector._execCommand = async (cmd: string) => "package1\npackage2\n";
 | 维度 | 命令 | 目标 |
 |---|---|---|
 | L1 | `bun run test:coverage` | Vitest 单元/集成测试 + v8 覆盖率门槛（statements / branches / functions / lines 为 95 / 94 / 94 / 95） |
-| G1 | `bun run lint` + `bun run lint:biome` | TypeScript 严格类型检查 + Biome 0 error/0 warning |
+| G1 | `bun run typecheck` + `bun run lint` | TypeScript 严格类型检查 + Biome 0 error/0 warning |
 | G2 | `osv-scanner` + `gitleaks` | lockfile 漏洞 + 全历史 secret 扫描（pre-push） |
 | L2 | `bun run test:l2` | :17020 的本地 Worker、D1 / R2、真实 HTTP 与 CLI 二进制 |
 | L3 | `bun run test:e2e` | 构建后 SPA、浏览器导航与快照页面 |

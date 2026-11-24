@@ -17,7 +17,7 @@ bun run dev -- --mode e2e          # interactive switchable E2E
 bun run dev:built                  # locally served production SPA build
 bun run demo:reset                 # stop the interactive server first
 bun run typecheck                  # S1: tsc -b across all 5 TS workspaces
-bun run lint:biome                 # S2: Biome check-only (pre-commit adds --error-on-warnings)
+bun run lint                       # S2: Biome check-only, 0 warnings
 bun run build                      # B1: apps/web SPA bundle
 bun run test:coverage              # L1: >=95% statements/branches/functions/lines
 bun run deploy:check               # L2: SPA build + wrangler deploy --dry-run
