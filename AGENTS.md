@@ -19,8 +19,8 @@ bun run demo:reset                 # stop the interactive server first
 bun run typecheck                  # S1: tsc -b across all 5 TS workspaces
 bun run lint                       # S2: Biome check-only, 0 warnings
 bun run build                      # B1: apps/web SPA bundle
-bun run test:coverage              # L1: >=95% statements/branches/functions/lines
-bun run deploy:check               # L2: SPA build + wrangler deploy --dry-run
+bun run test:coverage              # L1: >=80% statements/branches/functions/lines
+bun run deploy:check               # P1: SPA build + wrangler deploy --dry-run
 bun run test:worker                # L2: apps/api Cloudflare Worker tests
 bun run test:l2                    # L3: local Wrangler HTTP API + CLI integration
 bun run test:e2e                   # L4: built SPA + locked local Worker (apps/web)
@@ -50,8 +50,8 @@ bun run macos:package              # universal macOS app + standalone CLI verifi
 
 Follows `system1-quality`; CI slot definitions and pinned `base-ci` revision live in `.github/workflows/quality-slots.yml` (`quality / Z1: Gate` required on `main` and by `.github/workflows/release.yml`). Status vocabulary: `enforced`, `planned`, `manual`, `N/A`.
 
-- **CI exceptions**: `S1`–`S3`, `G1`–`G2`, `B1`, and `L1`–`L4` are `enforced`. `P1 Package` is `N/A` in CI (private root; `@nocoo/otter` publish is `manual`, tarball smoke `planned`).
-- **L1 coverage boundary**: `vitest.config.ts` enforces >=95% on TS logic; excludes `apps/api/**` (`test:worker`), `.tsx` UI/hooks (`L4`), and thin entrypoints/infra glue.
+- **CI exceptions**: `S1`–`S3`, `G1`–`G2`, `B1`, `L1`–`L4`, and `P1` (`wrangler deploy --dry-run` reusing `B1` `apps/web/dist`) are `enforced`; `L2` runs `apps/api test` (`miniflare`/`workerd`) only. `@nocoo/otter` npm publish is `manual`.
+- **L1 coverage boundary**: `vitest.config.ts` enforces >=80% on TS logic; excludes `apps/api/**` (`test:worker`), `.tsx` UI/hooks (`L4`), and thin entrypoints/infra glue.
 - **Native macOS lane**: path-filtered `.github/workflows/macos.yml` runs `macos:test` and `macos:package`; Swift 95% coverage and strict static analysis remain `planned`.
 - **Local hooks**: installed via `prepare` (`husky`, `.husky/`); `pre-commit` grades the staged index (never unstaged fixes), and checks forbid hook bypass or autofix.
 - **`pre-commit`**: staged `gitleaks` (`G1`) + `git checkout-index` snapshot (`scripts/precommit.ts`) running staged Biome `--error-on-warnings` (`S2`), `test:coverage` (`L1`), and `tsc -b` (`S1`).
