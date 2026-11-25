@@ -35,7 +35,7 @@ permissions:
 jobs:
   test:
     name: Native core and workspace UI
-    uses: nocoo/base-ci/.github/workflows/test-job.yml@6424d395d36a815d931f10e557762eb635d511c0 # v2026.16
+    uses: nocoo/base-ci/.github/workflows/test-job.yml@dc858360aa7812db61fd9d825943e4efd4dcd0e7 # v2026.17
     with:
       runner: "macos-26"
       runtime: "bun"
@@ -52,7 +52,7 @@ jobs:
         build/macos-native/*/*.log
   package:
     name: Universal app and standalone CLI package
-    uses: nocoo/base-ci/.github/workflows/test-job.yml@6424d395d36a815d931f10e557762eb635d511c0 # v2026.16
+    uses: nocoo/base-ci/.github/workflows/test-job.yml@dc858360aa7812db61fd9d825943e4efd4dcd0e7 # v2026.17
     with:
       runner: "macos-26"
       runtime: "bun"
