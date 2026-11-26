@@ -50,7 +50,7 @@ bun run macos:package              # universal macOS app + standalone CLI verifi
 
 Follows `system1-quality`; CI slot definitions and pinned `base-ci` revision live in `.github/workflows/quality-slots.yml` (`quality / Z1: Gate` required on `main` and by `.github/workflows/release.yml`). Status vocabulary: `enforced`, `planned`, `manual`, `N/A`.
 
-- **CI exceptions**: `S1`–`S3`, `G1`–`G2`, `B1`, `L1`–`L4`, and `P1` (`wrangler deploy --dry-run` reusing `B1` `apps/web/dist`) are `enforced`; `L2` runs `apps/api test` (`miniflare`/`workerd`) only. `@nocoo/otter` npm publish is `manual`.
+- **CI exceptions**: `S1`–`S3`, `G1`–`G2`, `B1`, `L1`–`L4`, and `P1` (`wrangler deploy --dry-run` reusing `B1` `apps/web/dist`) are `enforced`; `L2` runs `apps/api test` (`miniflare`/`workerd`) only; `L3`, `L4`, and `P1` reuse `B1` build artifacts (`packages/core/dist`, `apps/cli/dist`, `apps/web/dist`). `@nocoo/otter` npm publish is `manual`.
 - **L1 coverage boundary**: `vitest.config.ts` enforces >=80% on TS logic; excludes `apps/api/**` (`test:worker`), `.tsx` UI/hooks (`L4`), and thin entrypoints/infra glue.
 - **Native macOS lane**: path-filtered `.github/workflows/macos.yml` runs `macos:test` and `macos:package`; Swift 95% coverage and strict static analysis remain `planned`.
 - **Local hooks**: installed via `prepare` (`husky`, `.husky/`); `pre-commit` grades the staged index (never unstaged fixes), and checks forbid hook bypass or autofix.
