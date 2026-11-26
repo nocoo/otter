@@ -132,7 +132,7 @@ CI 在 main 推送后检查代码、类型与覆盖率，运行 Worker 单元测
 
 Release 等待 CI 成功，检出对应提交，在仓库根目录安装依赖和构建 Web，然后从 `apps/api` 部署单个 Worker。`apps/api/wrangler.toml` 的静态目录为 `../web/dist`。发布后通过同一个 Worker 的 `https://otter.worker.hexly.ai` 地址校验 API 版本、JS/CSS 资源和 SPA 路由，无需给 CI 配置 Cloudflare Access 登录凭据。
 
-生产环境继续使用 `CF_API_TOKEN`、`CF_ACCOUNT_ID` secrets 和 `deploy-otter-production` 并发锁。Release 不执行 D1 迁移。自行部署时需配置自己的 D1、两个 R2 绑定、Access team domain / audience、域名与生产环境的 Cloudflare 凭据，并在需要新 schema 的代码部署前完成迁移。
+生产环境（GitHub environment `production`）使用 `CLOUDFLARE_API_TOKEN` secret、`CLOUDFLARE_ACCOUNT_ID` variable 和 `deploy-otter-production` 并发锁。Release 不执行 D1 迁移。自行部署时需配置自己的 D1、两个 R2 绑定、Access team domain / audience、域名与生产环境的 Cloudflare 凭据，并在需要新 schema 的代码部署前完成迁移。
 
 3.0 的升级顺序：
 
