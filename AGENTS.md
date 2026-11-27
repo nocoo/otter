@@ -44,11 +44,11 @@ bun run macos:package              # universal macOS app + standalone CLI verifi
 - In-memory driver fakes do not prove D1 schema migrations or live storage behavior; verify migrations and real HTTP/CLI flows with `test:worker` and `test:l2`.
 - Preserve trusted dev TLS and Vite host allowlists (`otter.dev.hexly.ai`); do not turn historical TLS workarounds into default checks.
 - Native subprocess pipes (`apps/macos`) are protocols: order payloads, serialize writes and closes on the writer queue, report write errors instead of timing out, and never block the runner on open pipes.
-- Releases follow [docs/11-agent-release.md](docs/11-agent-release.md) (9-file sync, changelog, tag, native artifacts). Worker CD tracks green CI; `npm publish`, signing, and real restore require explicit authorization.
+- Releases follow [docs/11-agent-release.md](docs/11-agent-release.md) (9-file sync, changelog, tag, native artifacts). `main` push runs `.github/workflows/pipeline.yml` (`quality` -> `D1`–`D5` Worker deploy); `npm publish`, signing, and real restore require explicit authorization.
 
 ## Quality & Local Gates
 
-Follows `system1-quality`; CI slot definitions and pinned `base-ci` revision live in `.github/workflows/quality-slots.yml` (`quality / Z1: Gate` required on `main` and by `.github/workflows/release.yml`). Status vocabulary: `enforced`, `planned`, `manual`, `N/A`.
+Follows `system1-quality`; CI slot definitions and pinned `base-ci` revision live in `.github/workflows/quality-slots.yml`, orchestrated alongside `D1`–`D5` Worker deploy (reusing `B1` `b1-build` on `main` push) by `.github/workflows/pipeline.yml` (`quality / Z1: Gate` required on `main`). Status vocabulary: `enforced`, `planned`, `manual`, `N/A`.
 
 - **CI exceptions**: `S1`–`S3`, `G1`–`G2`, `B1`, `L1`–`L4`, and `P1` (`wrangler deploy --dry-run` reusing `B1` `apps/web/dist`) are `enforced`; `L2` runs `apps/api test` (`miniflare`/`workerd`) only; `L3`, `L4`, and `P1` reuse `B1` build artifacts (`packages/core/dist`, `apps/cli/dist`, `apps/web/dist`). `@nocoo/otter` npm publish is `manual`.
 - **L1 coverage boundary**: `vitest.config.ts` enforces >=80% on TS logic; excludes `apps/api/**` (`test:worker`), `.tsx` UI/hooks (`L4`), and thin entrypoints/infra glue.
