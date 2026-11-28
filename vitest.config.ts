@@ -31,7 +31,7 @@ export default defineConfig({
         "**/*.test.ts",
         // Type declarations — no runtime code
         "**/*.d.ts",
-        // React components — covered via E2E
+        // React components and pages — covered via E2E
         "**/*.tsx",
         // Module entry points — mostly barrel re-exports; files with
         // significant logic (e.g. Worker app wiring, collector registry) are
@@ -52,27 +52,18 @@ export default defineConfig({
         // React hooks — covered via E2E with the SPA
         "**/hooks/**",
         // Trivial helpers / constants
-        "**/lib/palette.ts",
         "**/lib/utils.ts",
         "**/lib/version.ts",
-        // Auth surface — covered by integration / E2E flows
-        "**/auth.ts",
-        "**/proxy.ts",
-        "**/api/auth/**",
         // Worker has its own vitest config with cloudflare pool
         "apps/api/**",
-        // New Vite SPA UI components — covered via E2E later (plan §12)
-        "apps/web/src/components/**",
-        "apps/web/src/pages/**",
-        "apps/web/src/AppShell.tsx",
-        "apps/web/src/main.tsx",
+        // SPA fetch wrapper — exercised via E2E
         "apps/web/src/api.ts",
       ],
       thresholds: {
-        statements: 80,
-        branches: 80,
-        functions: 80,
-        lines: 80,
+        statements: 90,
+        lines: 90,
+        functions: 90,
+        branches: 85,
       },
     },
   },
